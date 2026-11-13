@@ -159,10 +159,8 @@
     renderMs: [], lastReport: 0, longTasks: 0, maxFrameMs: 0, frameLog: []
   };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const gaussian = new Float32Array(2049);
-  for (let i = 0; i < gaussian.length; i++) gaussian[i] = Math.exp(-i * 8 / (gaussian.length - 1));
   let width=0, height=0, dpr=1, last=0, elapsed=0, hintTimer, raf=0, lastFrame=0;
-  let inv2Sigma2=0, rayMargin=0, geometry=null, imageStatus='loading';
+  let rayMargin=0, geometry=null, imageStatus='loading';
   const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width,height)/17)));
 
   function initGpu(){
@@ -184,7 +182,6 @@ layout(location=11) in vec2 a_o4;
 layout(location=12) in float a_side;
 layout(location=13) in float a_end;
 uniform vec2 u_resolution;
-uniform float u_inv2Sigma2;
 uniform vec2 u_pointer[10];
 uniform float u_rS[10];
 uniform int u_pointerCount;
@@ -270,8 +267,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(!gpuEnabled)return;
     gl.viewport(0,0,gpuCanvas.width,gpuCanvas.height);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(gpuProgram);
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
-    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_inv2Sigma2'),inv2Sigma2);
-    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_rayMargin'),rayMargin);
+        gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_rayMargin'),rayMargin);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),9.0);
     const xy=new Float32Array(20),rS=new Float32Array(10);let count=0;
     for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;rS[count]=2.2*Math.max(0,Math.min(1,p.strength));count++;}
@@ -303,11 +299,11 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       starts.push(xs.length);
       for(let y=-margin;y<=height+margin;y+=sampleStep){xs.push(x);ys.push(y);}
     }
+    const verticalLineCount=starts.length;
     for(let y=-margin;y<=height+margin;y+=step){
       starts.push(xs.length);
       for(let x=-margin;x<=width+margin;x+=sampleStep){xs.push(x);ys.push(y);}
     }
-    const xLineCount=starts.length;
     const n=xs.length, x=new Float32Array(xs), y=new Float32Array(ys);
     const sinA=new Float32Array(n),cosA=new Float32Array(n);
     const sinB=new Float32Array(n),cosB=new Float32Array(n);
@@ -322,7 +318,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       sinD[i]=Math.sin(d);cosD[i]=Math.cos(d);
       sinE[i]=Math.sin(e);cosE[i]=Math.cos(e);
     }
-    geometry={x,y,starts:new Uint32Array(starts),xLineCount,sinA,cosA,sinB,cosB,sinC,cosC,sinD,cosD,sinE,cosE};
+    geometry={x,y,starts:new Uint32Array(starts),verticalLineCount,sinA,cosA,sinB,cosB,sinC,cosC,sinD,cosD,sinE,cosE};
     uploadGpuGeometry(geometry);
   }
   function rebuildBackground(){
@@ -339,7 +335,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function resize(){
     dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:adaptiveDprCap);
     width=window.innerWidth;height=window.innerHeight;
-    const sigma=Math.min(width,height)*.19;inv2Sigma2=1/(2*sigma*sigma);rayMargin=spacing()*2;
+    rayMargin=spacing()*2;
     canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
     gpuCanvas.width=Math.round(width*dpr);gpuCanvas.height=Math.round(height*dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -604,7 +600,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     else {
       const g=geometry,times=[Math.sin(t*.00105),Math.cos(t*.00105),Math.sin(t*.00072),Math.cos(t*.00072),Math.sin(t*.00092),Math.cos(t*.00092),Math.sin(t*.00066),Math.cos(t*.00066),Math.sin(t*.00045),Math.cos(t*.00045)];
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
-      for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line<g.xLineCount;for(let i=from;i<to;i++){warpVertex(g,i,times,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
+      for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line>=g.verticalLineCount;for(let i=from;i<to;i++){warpVertex(g,i,times,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
       ctx.stroke();
     }
     for(const p of fields){
