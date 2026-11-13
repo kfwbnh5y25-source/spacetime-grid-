@@ -66,8 +66,8 @@ button:disabled{opacity:.45}
 <div class="metric"><b>INDEXEDDB</b><span id="dbTime">—</span></div>
 </div>
 <div id="workflow">
-<h3>CONTINUOUS GRAVITY FRAME · 4-WAY ROTATION TEST</h3>
-<p>Start upright in portrait, screen facing you, top edge up. Turn iOS Orientation Lock OFF. After you tap start, a 20-second setup countdown gives you time to get into position. The test rotates left and back to portrait, rotates right and back to portrait, verifies each screen angle, and uploads automatically.</p>
+<h3>GROUND-REFERENCED GRID · 4-WAY ROTATION TEST</h3>
+<p>Start upright in portrait, screen facing you, top edge up. Turn iOS Orientation Lock OFF. After you tap start, a 20-second setup countdown gives you time to get into position. The grid compensates for in-plane phone rotation using gyroscope integration, anchored to iOS screen-orientation changes. It rotates left and back, then right and back; each stop verifies both screen angle and ground-frame alignment. Upload is automatic.</p>
 <button id="workflowStart" class="primary">START 97s VERIFICATION TEST</button>
 <div id="workflowStatus">Ready · Start upright portrait · Orientation Lock OFF · 20s setup</div>
 </div><div id="runState">Drop masses, enable gravity, rotate the phone, drag/pinch the scene. Measurements are stored locally and uploaded automatically when the test finishes. No account identifier is sent.</div>
@@ -87,6 +87,9 @@ const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=
 function now(){return performance.now();}
 function currentAngle(){const a=Number.isFinite(screen.orientation&&screen.orientation.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);return ((a%360)+360)%360;}
 const GRAVITY_G=9.80665;
+const shortestDegrees=d=>((d+540)%360)-180;
+const groundFrame={referenceScreenAngle:currentAngle(),gyroRawDeg:0,gyroSign:1,gyroCalibrated:false,gyroSamples:0,gyroAvailable:false,correction:0,correctionTarget:0,angle:0,lastUpdate:0};
+function resetGroundReference(){groundFrame.referenceScreenAngle=currentAngle();groundFrame.gyroRawDeg=0;groundFrame.gyroSign=1;groundFrame.gyroCalibrated=false;groundFrame.gyroSamples=0;groundFrame.gyroAvailable=false;groundFrame.correction=0;groundFrame.correctionTarget=0;groundFrame.angle=0;groundFrame.lastUpdate=now();}
 function gravityToScreen(gx,gy,angleDeg){
  const a=angleDeg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
  return {x:(gx*c-gy*s)/GRAVITY_G,y:(-gx*s-gy*c)/GRAVITY_G};
@@ -104,10 +107,19 @@ function gravityMathSelfTest(){
 function syncScreenBasis(){
  const angle=currentAngle();
  if(angle!==lastScreenAngle){
+  const relative=shortestDegrees(angle-groundFrame.referenceScreenAngle);
+  if(!groundFrame.gyroCalibrated&&groundFrame.gyroSamples>8&&Math.abs(groundFrame.gyroRawDeg)>15){
+   const positive=Math.abs(shortestDegrees(relative-groundFrame.gyroRawDeg));
+   const negative=Math.abs(shortestDegrees(relative+groundFrame.gyroRawDeg));
+   groundFrame.gyroSign=positive<=negative?1:-1;
+   groundFrame.gyroCalibrated=true;
+   groundFrame.correction=groundFrame.angle-groundFrame.gyroSign*groundFrame.gyroRawDeg;
+  }
+  groundFrame.correctionTarget=shortestDegrees(relative-groundFrame.gyroSign*groundFrame.gyroRawDeg);
   const before={...lastScreenGravity};
   const after=gravityToScreen(motionSensorFilteredX,motionSensorFilteredY,angle);
   metrics.orientationChanges++;metrics.orientationChangeAt=now();
-  if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceGravity:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityScreenBefore:[+before.x.toFixed(4),+before.y.toFixed(4)],gravityScreenAfter:[+after.x.toFixed(4),+after.y.toFixed(4)],basisUpdate:'immediate; no cross-basis interpolation'});
+  if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceGravity:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityScreenBefore:[+before.x.toFixed(4),+before.y.toFixed(4)],gravityScreenAfter:[+after.x.toFixed(4),+after.y.toFixed(4)],groundReference:{relativeScreenAngle:relative,gyroRawDeg:+groundFrame.gyroRawDeg.toFixed(2),gyroSign:groundFrame.gyroSign,gyroCalibrated:groundFrame.gyroCalibrated,groundAngle:+groundFrame.angle.toFixed(2),correctionTarget:+groundFrame.correctionTarget.toFixed(2)},basisUpdate:'gyro-integrated with 180ms screen-angle correction'});
   lastScreenAngle=angle;
  }
  metrics.orientation=angle;
@@ -200,11 +212,11 @@ function cameraToTarget(patch){
   Object.assign(state.target,patch);
 }
 function screenToWorld(x,y){
-  const a=-state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a),sx=(x-state.w/2-state.camera.x)/state.camera.scale,sy=(y-state.h/2-state.camera.y)/state.camera.scale;
+  const a=(-state.camera.rotation+groundFrame.angle)*Math.PI/180,c=Math.cos(a),s=Math.sin(a),sx=(x-state.w/2-state.camera.x)/state.camera.scale,sy=(y-state.h/2-state.camera.y)/state.camera.scale;
   return {x:c*sx-s*sy,y:s*sx+c*sy};
 }
 function worldVectorFromScreen(x,y){
-  const a=-state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+  const a=(-state.camera.rotation+groundFrame.angle)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
   return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
 }
 function buildStaticGrid(){
@@ -222,7 +234,7 @@ const massGlowCanvas=document.createElement('canvas');massGlowCanvas.width=192;m
 function draw(){
   const w=state.w,h=state.h;
   ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
-  ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(state.camera.rotation*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
+  ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate((state.camera.rotation-groundFrame.angle)*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
   if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
   for(const m of state.masses){
     ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
@@ -236,7 +248,7 @@ function stepPhysics(dtMs){
   const force=110*state.sensitivity;
   const gx=touchGravityEnabled&&touchGravityActive?touchGravityX:motionFilteredX,gy=touchGravityEnabled&&touchGravityActive?touchGravityY:motionFilteredY;
   const worldG=worldVectorFromScreen(gx*force,gy*force);
-  const damp=Math.exp(-state.damping*dt),minX=-state.w/(2*state.camera.scale)+10,maxX=state.w/(2*state.camera.scale)-10,minY=-state.h/(2*state.camera.scale)+10,maxY=state.h/(2*state.camera.scale)-10;
+  const damp=Math.exp(-state.damping*dt),viewAngle=(state.camera.rotation-groundFrame.angle)*Math.PI/180,ca=Math.abs(Math.cos(viewAngle)),sa=Math.abs(Math.sin(viewAngle)),halfX=(ca*state.w+sa*state.h)/(2*state.camera.scale),halfY=(sa*state.w+ca*state.h)/(2*state.camera.scale),minX=-halfX+10,maxX=halfX-10,minY=-halfY+10,maxY=halfY-10;
   for(const m of state.masses){
     const edgeX=m.x<minX?Math.min(3,(minX-m.x)*.018):m.x>maxX?-Math.min(3,(m.x-maxX)*.018):0;
     const edgeY=m.y<minY?Math.min(3,(minY-m.y)*.018):m.y>maxY?-Math.min(3,(m.y-maxY)*.018):0;
@@ -252,6 +264,7 @@ function frame(t){
   const k=1-Math.exp(-dt/68);
   // Low-pass in the fixed device frame, then rotate into the current screen basis.
   // This prevents blending vectors expressed in different screen coordinate frames.
+  updateGroundFrame(dt);
   const sensorAlpha=1-Math.exp(-dt/90);
   motionSensorFilteredX+=(motionRawX-motionSensorFilteredX)*sensorAlpha;
   motionSensorFilteredY+=(motionRawY-motionSensorFilteredY)*sensorAlpha;
@@ -292,9 +305,12 @@ function onMotion(e){
   const a=e.accelerationIncludingGravity;if(!a||!Number.isFinite(a.x)||!Number.isFinite(a.y))return;
   motionRawX=-a.x;motionRawY=-a.y;
   const sampleTime=now();
+  const rr=e.rotationRate||{};
+  const gyroDt=Number.isFinite(e.interval)&&e.interval>0&&e.interval<100?e.interval/1000:(groundFrame.lastUpdate?Math.min(.05,(sampleTime-groundFrame.lastUpdate)/1000):0);
+  if(Number.isFinite(rr.alpha)&&gyroDt>0){const rate=Math.abs(rr.alpha)<.12?0:rr.alpha;groundFrame.gyroRawDeg+=rate*gyroDt;groundFrame.gyroSamples++;groundFrame.gyroAvailable=true;}
+  groundFrame.lastUpdate=sampleTime;
   if(orientationWorkflow.active&&sampleTime-orientationWorkflow.lastSample>=200){
-    const rr=e.rotationRate||{};
-    orientationWorkflow.samples.push({t:+(sampleTime-orientationWorkflow.started).toFixed(1),stage:orientationWorkflow.stage,ax:+a.x.toFixed(4),ay:+a.y.toFixed(4),az:Number.isFinite(a.z)?+a.z.toFixed(4):null,ra:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(2):null,rb:Number.isFinite(rr.beta)?+rr.beta.toFixed(2):null,rg:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(2):null,interval:Number.isFinite(e.interval)?+e.interval.toFixed(2):null,screenAngle:currentAngle(),screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceFiltered:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityFiltered:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],gravityNorm:+Math.hypot(motionFilteredX,motionFilteredY).toFixed(4),deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
+    orientationWorkflow.samples.push({t:+(sampleTime-orientationWorkflow.started).toFixed(1),stage:orientationWorkflow.stage,ax:+a.x.toFixed(4),ay:+a.y.toFixed(4),az:Number.isFinite(a.z)?+a.z.toFixed(4):null,ra:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(2):null,rb:Number.isFinite(rr.beta)?+rr.beta.toFixed(2):null,rg:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(2):null,interval:Number.isFinite(e.interval)?+e.interval.toFixed(2):null,screenAngle:currentAngle(),screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceFiltered:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityFiltered:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],gravityNorm:+Math.hypot(motionFilteredX,motionFilteredY).toFixed(4),groundAngle:+groundFrame.angle.toFixed(3),groundGyroRawDeg:+groundFrame.gyroRawDeg.toFixed(3),groundGyroSign:groundFrame.gyroSign,groundGyroAvailable:groundFrame.gyroAvailable,groundCorrection:+groundFrame.correction.toFixed(3),deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
     orientationWorkflow.lastSample=sampleTime;
   }
   metrics.motionCount++;
@@ -311,7 +327,7 @@ async function toggleMotion(){
       const permission=await DeviceMotionEvent.requestPermission();
       if(permission!=='granted')throw new Error('Permission denied');
     }
-    motionGranted=true;motionEnabled=true;motionRawX=motionRawY=motionFilteredX=motionFilteredY=motionSensorFilteredX=motionSensorFilteredY=0;lastScreenAngle=currentAngle();lastScreenGravity={x:0,y:0};motionListener=onMotion;window.addEventListener('devicemotion',motionListener,{passive:true});
+    motionGranted=true;motionEnabled=true;motionRawX=motionRawY=motionFilteredX=motionFilteredY=motionSensorFilteredX=motionSensorFilteredY=0;lastScreenAngle=currentAngle();lastScreenGravity={x:0,y:0};resetGroundReference();motionListener=onMotion;window.addEventListener('devicemotion',motionListener,{passive:true});
     $('motionBtn').classList.add('active');$('motionBtn').textContent='GRAVITY ON';$('runState').textContent='Motion active. Rotate the phone: gravity is reprojected using the current screen angle; the mass coordinates are not reset.';
   }catch(e){$('runState').textContent='Motion unavailable: '+e.message;}
 }
@@ -359,6 +375,7 @@ async function runOrientationWorkflow(){
  if(orientationWorkflow.active)return;
  if(!motionEnabled){await toggleMotion();if(!motionEnabled)return;}
  const physical='portrait_upright',lock='off';
+ resetGroundReference();
  const mathCheck=gravityMathSelfTest();
  if(!mathCheck.pass){$('workflowStatus').textContent='MATH SELF-TEST FAILED · '+JSON.stringify(mathCheck);return;}
  orientationWorkflow.active=true;orientationWorkflow.physical=physical;orientationWorkflow.lock=lock;
@@ -380,20 +397,20 @@ async function runOrientationWorkflow(){
      const current=now();remaining-=Math.max(0,current-last);last=current;
      let verificationText='';
      if(stage.expectedAngle!==undefined){
-       const actual=currentAngle(),passed=actual===stage.expectedAngle&&(stage.expectedAngle!==0||window.innerHeight>=window.innerWidth);
-       verificationText='\\nCHECK '+(passed?'PASSED':'WAITING')+' · expected '+stage.expectedAngle+'° · actual '+actual+'°';
+       const actual=currentAngle(),expectedGround=shortestDegrees(stage.expectedAngle-groundFrame.referenceScreenAngle),groundError=shortestDegrees(groundFrame.angle-expectedGround),passed=actual===stage.expectedAngle&&(stage.expectedAngle!==0||window.innerHeight>=window.innerWidth)&&Math.abs(groundError)<=12;
+       verificationText='\\nSCREEN '+actual+'° / '+stage.expectedAngle+'° · GROUND '+groundFrame.angle.toFixed(1)+'° / '+expectedGround.toFixed(1)+'° · '+(passed?'ALIGNED':'SETTLING');
      }
      $('workflowStatus').textContent=stage.label+'\\n'+stage.instruction+'\\n'+Math.max(0,remaining/1000).toFixed(1)+' s remaining · '+(i+1)+'/'+workflowStages.length+verificationText;
      await wait(100);
    }
    if(stage.expectedAngle!==undefined){
      const actual=currentAngle(),portrait=stage.expectedAngle===0,viewportOK=portrait?window.innerHeight>=window.innerWidth:window.innerWidth>=window.innerHeight;
-     const passed=actual===stage.expectedAngle&&viewportOK;
-     orientationWorkflow.verification.push({stage:stage.id,expectedAngle:stage.expectedAngle,actualAngle:actual,viewport:[window.innerWidth,window.innerHeight],viewportOK,passed});
+     const expectedGround=shortestDegrees(stage.expectedAngle-groundFrame.referenceScreenAngle),groundError=shortestDegrees(groundFrame.angle-expectedGround),groundAligned=Math.abs(groundError)<=12,passed=actual===stage.expectedAngle&&viewportOK&&groundAligned;
+     orientationWorkflow.verification.push({stage:stage.id,expectedAngle:stage.expectedAngle,actualAngle:actual,viewport:[window.innerWidth,window.innerHeight],viewportOK,expectedGroundAngle:expectedGround,actualGroundAngle:+groundFrame.angle.toFixed(3),groundError:+groundError.toFixed(3),groundAligned,gyroAvailable:groundFrame.gyroAvailable,passed});
    }
  }
  orientationWorkflow.active=false;orientationWorkflow.stage='complete';
- const summary={protocol:'orientation-gravity-rotation-v4-continuous-basis',physicalOrientation:physical,declaredRotationLock:lock,startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ const summary={protocol:'orientation-ground-reference-v5-gyro-screen-anchor',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{referenceScreenAngle:groundFrame.referenceScreenAngle,groundAngleEnd:+groundFrame.angle.toFixed(3),gyroRawDeg:+groundFrame.gyroRawDeg.toFixed(3),gyroSign:groundFrame.gyroSign,gyroCalibrated:groundFrame.gyroCalibrated,gyroAvailable:groundFrame.gyroAvailable,correction:+groundFrame.correction.toFixed(3)},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
  orientationWorkflow.lastReport=summary;
  $('workflowStatus').textContent='COMPLETE · '+summary.verificationPassed+'/'+summary.verificationTotal+' orientation checks passed · '+summary.samples.length+' samples · uploading…';
  const report=resultObject();report.workflow=summary;lastCompletedResult=report;
