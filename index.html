@@ -85,7 +85,9 @@
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_strength[0]'),strength);
     const rates=[.00105,.00072,.00092,.00066,.00045],phases=new Float32Array(10);for(let i=0;i<5;i++){phases[2*i]=Math.sin(t*rates[i]);phases[2*i+1]=Math.cos(t*rates[i]);}
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_phase[0]'),phases);
-    gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gpuIndexBuffer);\n    const offsetLoc=gl.getUniformLocation(gpuProgram,'u_offsetPx');\n    for(const offset of [[0,0],[.5,0],[-.5,0],[0,.5],[0,-.5]]){gl.uniform2f(offsetLoc,offset[0],offset[1]);gl.drawElements(gl.LINES,gpuIndexCount,gl.UNSIGNED_INT,0);}
+    gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gpuIndexBuffer);
+    const offsetLoc=gl.getUniformLocation(gpuProgram,'u_offsetPx');
+    for(const offset of [[0,0],[.5,0],[-.5,0],[0,.5],[0,-.5]]){gl.uniform2f(offsetLoc,offset[0],offset[1]);gl.drawElements(gl.LINES,gpuIndexCount,gl.UNSIGNED_INT,0);}
   }
 
   const smooth = (a,b,t) => a+(b-a)*t;
