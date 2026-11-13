@@ -35,10 +35,14 @@
   const background = document.createElement('canvas');
   const bgctx = background.getContext('2d', { alpha: false });
   const benchMode = new URLSearchParams(location.search).has('bench');
+  const benchParams = new URLSearchParams(location.search);
+  let requestedDpr = [1,1.5,1.75].includes(Number(benchParams.get('dpr'))) ? Number(benchParams.get('dpr')) : 1.75;
+  let frameCap = [60,120].includes(Number(benchParams.get('cap'))) ? Number(benchParams.get('cap')) : 60;
+  let testLabel = benchParams.get('test') || 'unlabelled';
   const perf = {
     started: performance.now(), firstFrame: null, imageStart: performance.now(),
     imageLoad: null, imageBytes: null, samples: [], dropped: 0, baselineFrameMs: null, frames: 0,
-    renderMs: [], lastReport: 0, longTasks: 0, maxFrameMs: 0
+    renderMs: [], lastReport: 0, longTasks: 0, maxFrameMs: 0, frameLog: []
   };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const gaussian = new Float32Array(2049);
@@ -97,7 +101,7 @@
     bgctx.globalAlpha=1;bgctx.fillStyle='rgba(0,0,0,.58)';bgctx.fillRect(0,0,width,height);
   }
   function resize(){
-    dpr=Math.min(window.devicePixelRatio||1,1.75);
+    dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:1.75);
     width=window.innerWidth;height=window.innerHeight;
     const sigma=Math.min(width,height)*.19;inv2Sigma2=1/(2*sigma*sigma);
     canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
@@ -108,13 +112,13 @@
 
   function pointerDown(e){
     e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
-    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:0,targetStrength:1,life:1,down:true});
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:0,targetStrength:1,life:1,down:true,pointerType:e.pointerType});
     hint.classList.add('hidden');clearTimeout(hintTimer);
   }
   function pointerMove(e){
     const p=pointers.get(e.pointerId);
     if(p){p.tx=e.clientX;p.ty=e.clientY;}
-    else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:0,targetStrength:.72,life:1,hover:true});
+    else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
   }
   function pointerEnd(e){const p=pointers.get(e.pointerId);if(p){p.life=0;p.targetStrength=0;p.down=false;}}
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -146,6 +150,7 @@
   function report(){
     const samples=perf.samples, frames=perf.frames, avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
     const data={
+      test:{label:testLabel,frameCapHz:frameCap,startedAt:perf.started,frameLog:perf.frameLog},
       device:{userAgent:navigator.userAgent,screen:`${screen.width}x${screen.height}`,viewport:`${innerWidth}x${innerHeight}`,dpr:devicePixelRatio,effectiveDpr:dpr,hardwareConcurrency:navigator.hardwareConcurrency||null},
       session:{seconds:Math.round((performance.now()-perf.started)/1000),frames,observedFps:+(frames/Math.max(.001,(performance.now()-perf.started)/1000)).toFixed(1),estimatedDroppedFrames:perf.dropped,baselineFrameIntervalMs:perf.baselineFrameMs===null?null:+perf.baselineFrameMs.toFixed(2),longTasks:perf.longTasks},
       frameIntervalMs:{p50:+percentile(samples,.5).toFixed(2),p95:+percentile(samples,.95).toFixed(2),p99:+percentile(samples,.99).toFixed(2),max:+perf.maxFrameMs.toFixed(2)},
@@ -160,8 +165,18 @@
   if(benchMode){
     panel=document.createElement('section');
     panel.style.cssText='position:fixed;z-index:5;top:12px;left:12px;max-width:min(360px,calc(100vw - 24px));max-height:48vh;overflow:auto;padding:12px 14px;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.22);color:#e8edf7;font:11px/1.5 ui-monospace,monospace;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);touch-action:pan-y;user-select:text;-webkit-user-select:text';
-    panel.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><b>DEVICE BENCHMARK</b><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Run 2 min idle, 2 min continuous dragging, then 30 s with 2–5 fingers. Keep this tab foregrounded. Thermal state is not exposed by Safari.</p>';
+    panel.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><b>DEVICE BENCHMARK</b><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><label>Test <select id="testLabel" style="font:inherit"><option value="idle">Idle</option><option value="drag">One-finger drag</option><option value="multitouch">Multitouch</option></select></label><label>DPR <select id="testDpr" style="font:inherit"><option>1</option><option>1.5</option><option selected>1.75</option></select></label><label>Cap <select id="testCap" style="font:inherit"><option>60</option><option>120</option></select></label><button id="startTest" style="background:#fff;color:#000;border:0;padding:5px 8px;font:inherit">Reset test</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Run separate 60–90 s tests: idle, continuous one-finger dragging, then 2–5 fingers. Keep the tab foregrounded and use the same duration for each. Change DPR and repeat to test GPU/fill-rate sensitivity.</p>
     document.body.appendChild(panel);reportText=panel.querySelector('#benchText');
+    panel.querySelector('#testLabel').value=testLabel;
+    panel.querySelector('#testDpr').value=String(requestedDpr);
+    panel.querySelector('#testCap').value=String(frameCap);
+    panel.querySelector('#testDpr').addEventListener('change',e=>{requestedDpr=Number(e.target.value);resize();});
+    panel.querySelector('#testCap').addEventListener('change',e=>{frameCap=Number(e.target.value);});
+    panel.querySelector('#testLabel').addEventListener('change',e=>{testLabel=e.target.value;});
+    panel.querySelector('#startTest').addEventListener('click',()=>{
+      testLabel=panel.querySelector('#testLabel').value;requestedDpr=Number(panel.querySelector('#testDpr').value);frameCap=Number(panel.querySelector('#testCap').value);resize();
+      perf.started=performance.now();perf.firstFrame=null;perf.samples=[];perf.renderMs=[];perf.frameLog=[];perf.dropped=0;perf.baselineFrameMs=null;perf.frames=0;perf.maxFrameMs=0;perf.longTasks=0;perf.lastReport=0;
+    });
     panel.querySelector('#saveBench').addEventListener('click',()=>{
       const blob=new Blob([JSON.stringify(report(),null,2)],{type:'application/json'});
       const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='spacetime-iphone-benchmark.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -173,7 +188,7 @@
 
   function render(now){
     let hasTouch=false;for(const p of pointers.values()){if(p.down){hasTouch=true;break;}}
-    const targetHz=hasTouch?120:60,frameInterval=1000/targetHz;
+    const targetHz=benchMode?frameCap:(hasTouch?120:60),frameInterval=1000/targetHz;
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
     if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();perf.frames++;if(perf.samples.length===30&&perf.baselineFrameMs===null)perf.baselineFrameMs=percentile(perf.samples,.5);else if(perf.baselineFrameMs!==null&&frameDelta>perf.baselineFrameMs*1.5)perf.dropped+=Math.max(1,Math.round(frameDelta/perf.baselineFrameMs)-1);perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
@@ -208,7 +223,9 @@
       glow.addColorStop(1,'rgba(190,215,255,0)');
       ctx.fillStyle=glow;ctx.fillRect(p.x-radius,p.y-radius,radius*2,radius*2);
     }
-    perf.renderMs.push(performance.now()-renderStart);if(perf.renderMs.length>18000)perf.renderMs.shift();
+    const renderCost=performance.now()-renderStart;
+    perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
+    if(benchMode){let touchPointers=0,downPointers=0;for(const p of pointers.values()){if(p.down){downPointers++;if(p.pointerType==='touch')touchPointers++;}}perf.frameLog.push({t:+(now-perf.started).toFixed(1),intervalMs:+frameDelta.toFixed(2),renderCpuMs:+renderCost.toFixed(2),activePointers:pointers.size,downPointers,touchPointers,dpr,frameCapHz:frameCap});if(perf.frameLog.length>18000)perf.frameLog.shift();}
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
       `Session ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
