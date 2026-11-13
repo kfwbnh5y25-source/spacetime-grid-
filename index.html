@@ -28,6 +28,11 @@
   canvas { transform-origin:50% 50%; will-change:transform; backface-visibility:hidden; }
   #gestureStatus { position:fixed;z-index:4;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(255,255,255,.14);border-radius:20px;background:rgba(0,0,0,.55);color:rgba(255,255,255,.72);font:10px/1.3 ui-monospace,monospace;letter-spacing:.08em;opacity:0;pointer-events:none;transition:opacity .2s; }
   #gestureStatus.visible { opacity:1; }
+  #resetViewButton { display:none; }
+  @media (pointer:coarse) {
+    #resetViewButton { display:flex; position:fixed; z-index:6; top:max(14px,env(safe-area-inset-top)); right:max(14px,env(safe-area-inset-right)); align-items:center; justify-content:center; width:42px; height:42px; padding:0; border:1px solid rgba(255,255,255,.24); border-radius:50%; background:rgba(8,12,20,.62); color:rgba(245,248,255,.9); font:24px/1 system-ui,sans-serif; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    #resetViewButton:active { background:rgba(120,150,195,.35); transform:scale(.94); }
+  }
   @media (prefers-reduced-motion: reduce) { .planet-cursor,.hint,#gestureStatus { transition:none; } }
   @media (hover:hover) and (pointer:fine) { canvas { cursor:none; } }
   .hint {
@@ -46,6 +51,7 @@
 <div class="hint" id="hint">move · touch · explore</div>
 <div class="planet-cursor" id="planetCursor" aria-hidden="true"></div>
 <div id="gestureStatus" aria-live="polite"></div>
+<button id="resetViewButton" type="button" aria-label="Reset view" title="Reset view">↺</button>
 <script>
 (() => {
   'use strict';
@@ -67,6 +73,11 @@
   function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
   function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
   function resetView(){viewScale=1;viewX=0;viewY=0;viewRotation=0;persistentMasses.length=0;applyView();saveState();showStatus('VIEW RESET');}
+  document.getElementById('resetViewButton').addEventListener('click',()=>{
+    stopInertia();gestureBase=null;panBase=null;trackpadGestureBase=null;lastTouchSample=null;
+    for(const [id,p] of pointers){if(p.pointerType==='touch'){p.life=0;p.targetStrength=0;p.down=false;}}
+    resetView();
+  });
   restoreState();
   const pointers = new Map();
   const fields = [];
