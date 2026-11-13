@@ -37,7 +37,7 @@
   const benchMode = new URLSearchParams(location.search).has('bench');
   const perf = {
     started: performance.now(), firstFrame: null, imageStart: performance.now(),
-    imageLoad: null, imageBytes: null, samples: [], dropped: 0, frames: 0,
+    imageLoad: null, imageBytes: null, samples: [], dropped: 0, baselineFrameMs: null, frames: 0,
     renderMs: [], lastReport: 0, longTasks: 0, maxFrameMs: 0
   };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -108,22 +108,22 @@
 
   function pointerDown(e){
     e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
-    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:1,life:1,down:true});
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:0,targetStrength:1,life:1,down:true});
     hint.classList.add('hidden');clearTimeout(hintTimer);
   }
   function pointerMove(e){
     const p=pointers.get(e.pointerId);
     if(p){p.tx=e.clientX;p.ty=e.clientY;}
-    else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:.72,life:1,hover:true});
+    else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:0,targetStrength:.72,life:1,hover:true});
   }
-  function pointerEnd(e){const p=pointers.get(e.pointerId);if(p){p.life=0;p.down=false;}}
+  function pointerEnd(e){const p=pointers.get(e.pointerId);if(p){p.life=0;p.targetStrength=0;p.down=false;}}
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
   canvas.addEventListener('pointerdown',pointerDown,{passive:false});
   canvas.addEventListener('pointermove',pointerMove,{passive:true});
   canvas.addEventListener('pointerup',pointerEnd);
   canvas.addEventListener('pointercancel',pointerEnd);
   canvas.addEventListener('lostpointercapture',pointerEnd);
-  canvas.addEventListener('pointerleave',e=>{const p=pointers.get(e.pointerId);if(p&&p.hover)p.life=0;});
+  canvas.addEventListener('pointerleave',e=>{const p=pointers.get(e.pointerId);if(p&&p.hover){p.life=0;p.targetStrength=0;}});
 
   let warpedX=0, warpedY=0;
   function warpVertex(g,i,times){
@@ -147,12 +147,12 @@
     const samples=perf.samples, frames=perf.frames, avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
     const data={
       device:{userAgent:navigator.userAgent,screen:`${screen.width}x${screen.height}`,viewport:`${innerWidth}x${innerHeight}`,dpr:devicePixelRatio,effectiveDpr:dpr,hardwareConcurrency:navigator.hardwareConcurrency||null},
-      session:{seconds:Math.round((performance.now()-perf.started)/1000),frames,estimatedDroppedFrames:perf.dropped,longTasks:perf.longTasks},
+      session:{seconds:Math.round((performance.now()-perf.started)/1000),frames,observedFps:+(frames/Math.max(.001,(performance.now()-perf.started)/1000)).toFixed(1),estimatedDroppedFrames:perf.dropped,baselineFrameIntervalMs:perf.baselineFrameMs===null?null:+perf.baselineFrameMs.toFixed(2),longTasks:perf.longTasks},
       frameIntervalMs:{p50:+percentile(samples,.5).toFixed(2),p95:+percentile(samples,.95).toFixed(2),p99:+percentile(samples,.99).toFixed(2),max:+perf.maxFrameMs.toFixed(2)},
       renderCpuMs:{mean:+avg(perf.renderMs).toFixed(2),p95:+percentile(perf.renderMs,.95).toFixed(2)},
       startup:{firstFrameMs:perf.firstFrame===null?null:+(perf.firstFrame-perf.started).toFixed(1),backgroundImage:imageStatus,imageLoadMs:perf.imageLoad===null?null:+perf.imageLoad.toFixed(1),imageTransferBytes:perf.imageBytes},
       interaction:{activePointers:pointers.size,gridVertices:geometry?geometry.x.length:0,reducedMotion:reducedMotion.matches},
-      note:'Browser-side estimates only. Safari does not expose device thermal state or exact compositor/GPU dropped-frame counts.'
+      note:'Missed-frame estimate uses the median cadence of the first 30 animation frames as baseline; it is a browser-side estimate, not an exact compositor/GPU count. Safari does not expose device thermal state.'
     };
     return data;
   }
@@ -176,7 +176,7 @@
     const targetHz=hasTouch?120:60,frameInterval=1000/targetHz;
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
-    if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();if(frameDelta>frameInterval*1.5)perf.dropped++;perf.frames++;perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
+    if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();perf.frames++;if(perf.samples.length===30&&perf.baselineFrameMs===null)perf.baselineFrameMs=percentile(perf.samples,.5);else if(perf.baselineFrameMs!==null&&frameDelta>perf.baselineFrameMs*1.5)perf.dropped+=Math.max(1,Math.round(frameDelta/perf.baselineFrameMs)-1);perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
     const renderStart=performance.now();
     const dt=Math.min(40,now-(last||now));last=now;lastFrame=now;elapsed+=dt;
     if(perf.firstFrame===null)perf.firstFrame=now;
@@ -185,8 +185,8 @@
     fields.length=0;
     for(const [id,p] of pointers){
       p.x=smooth(p.x,p.tx,.22);p.y=smooth(p.y,p.ty,.22);
-      if(p.life<=0)p.strength*=.985;
-      if(p.life<=0&&p.strength<.025){pointers.delete(id);continue;}
+      p.strength=smooth(p.strength,p.targetStrength,1-Math.exp(-dt/170));
+      if(p.life<=0&&p.strength<.012){pointers.delete(id);continue;}
       fields.push(p);
     }
     const g=geometry;
@@ -210,7 +210,7 @@
     }
     perf.renderMs.push(performance.now()-renderStart);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Session ${r.session.seconds}s · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nDropped-frame estimate ${r.session.estimatedDroppedFrames}\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Session ${r.session.seconds}s · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
