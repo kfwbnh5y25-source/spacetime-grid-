@@ -80,7 +80,9 @@ function currentAngle(){const a=Number.isFinite(screen.orientation&&screen.orien
 function resize(){
   const oldW=state.w,oldH=state.h;
   state.w=window.innerWidth;state.h=window.innerHeight;
-  state.dpr=Math.min(window.devicePixelRatio||1,2.5);
+  // Two physical pixels per CSS pixel is a good clarity/performance balance
+  // on 3x iPhones. This does not cap requestAnimationFrame refresh rate.
+  state.dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.width=Math.round(state.w*state.dpr);canvas.height=Math.round(state.h*state.dpr);
   ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
   metrics.orientation=currentAngle();
@@ -144,7 +146,7 @@ function addMass(){
 }
 function reset(){
   state.masses=[];state.camera={x:0,y:0,scale:1,rotation:0};state.target={x:0,y:0,scale:1};
-  motionFilteredX=motionFilteredY=0;panInertia={x:0,y:0};render();saveState();pulse([12,35,12]);
+  motionFilteredX=motionFilteredY=0;panInertia={x:0,y:0};draw();saveState();pulse([12,35,12]);
   $('runState').textContent='Experiment reset. Camera and masses returned to baseline.';
 }
 function pulse(pattern){
@@ -181,8 +183,12 @@ function draw(){
   ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(state.camera.rotation*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
   const step=38,extent=Math.max(w,h)*1.25;
   ctx.lineWidth=1;ctx.strokeStyle='rgba(185,211,255,.42)';
-  for(let x=-extent;x<=extent;x+=step){ctx.beginPath();for(let y=-extent;y<=extent;y+=5){const bend=0;const px=x+Math.sin(y*.012)*bend,py=y+Math.sin(x*.01)*bend;if(y===-extent)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
-  for(let y=-extent;y<=extent;y+=step){ctx.beginPath();for(let x=-extent;x<=extent;x+=5){const bend=0;const px=x+Math.sin(y*.012)*bend,py=y+Math.sin(x*.01)*bend;if(x===-extent)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
+  // The experiment grid is straight: batch one segment per grid line.
+  // Avoid thousands of redundant vertices and per-line strokes every frame.
+  ctx.beginPath();
+  for(let x=-extent;x<=extent;x+=step){ctx.moveTo(x,-extent);ctx.lineTo(x,extent);}
+  for(let y=-extent;y<=extent;y+=step){ctx.moveTo(-extent,y);ctx.lineTo(extent,y);}
+  ctx.stroke();
   for(const m of state.masses){
     const r=95,g=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,r);
     g.addColorStop(0,'rgba(175,211,255,.22)');g.addColorStop(.3,'rgba(90,145,205,.09)');g.addColorStop(1,'rgba(65,110,170,0)');
@@ -215,7 +221,6 @@ function frame(t){
   stepPhysics(dt);draw();
   if(metrics.runActive)metrics.runFrames.push(dt);
   if(metrics.frameTimes.length&&t-lastSave>500){lastSave=t;updateMetrics();}
-  raf=requestAnimationFrame(frame);
 }
 function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
 function recordInputStart(t){metrics.inputTimes.push(t);if(metrics.inputTimes.length>80)metrics.inputTimes.shift();if(metrics.runActive)metrics.runInputs.push(t);}
@@ -399,9 +404,9 @@ function registerFrameLatency(){
     if(typeof v==='number'){metrics.inputTimes[i]={done:Math.max(0,now()-v)};break;}
   }
 }
-function renderTick(){
+function renderTick(timestamp){
   registerFrameLatency();
-  frame(now());
+  frame(timestamp);
   raf=requestAnimationFrame(renderTick);
 }
 (async function boot(){
