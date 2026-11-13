@@ -99,7 +99,7 @@ void main(){
  vec2 p1=warp(a_other,a_o0,a_o1,a_o2,a_o3,a_o4);
  vec2 tangent=normalize(p1-p0);
  vec2 normal=vec2(-tangent.y,tangent.x);
- vec2 p=mix(p0,p1,a_end)+normal*a_side*.9;
+ vec2 p=mix(p0,p1,a_end)+tangent*(a_end*2.0-1.0)*1.2+normal*a_side*1.2;
  gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
  v_edge=a_side;
 }`;
@@ -107,7 +107,7 @@ void main(){
 precision mediump float;
 in float v_edge;
 out vec4 color;
-void main(){float coverage=1.0-smoothstep(.55,1.0,abs(v_edge));color=vec4(.92,.95,1.0,.58*coverage);}`;
+void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float coverage=1.0-smoothstep(1.0-aa,1.0+aa,edge);color=vec4(.94,.97,1.0,.64*coverage);}`;
     const compile=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
     try{const v=compile(gl.VERTEX_SHADER,vs),f=compile(gl.FRAGMENT_SHADER,fs);gpuProgram=gl.createProgram();gl.attachShader(gpuProgram,v);gl.attachShader(gpuProgram,f);gl.linkProgram(gpuProgram);gl.deleteShader(v);gl.deleteShader(f);if(!gl.getProgramParameter(gpuProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(gpuProgram));gpuVertexBuffer=gl.createBuffer();gpuIndexBuffer=gl.createBuffer();gl.useProgram(gpuProgram);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);return true;}
     catch(e){gpuError=String(e&&e.message||e);console.warn('WebGL2 unavailable; retaining Canvas 2D renderer:',e);gpuCanvas.style.display='none';return false;}
@@ -327,7 +327,7 @@ void main(){float coverage=1.0-smoothstep(.55,1.0,abs(v_edge));color=vec4(.92,.9
     if(gpuEnabled)drawGpu(t);
     else {
       const g=geometry,times=[Math.sin(t*.00105),Math.cos(t*.00105),Math.sin(t*.00072),Math.cos(t*.00072),Math.sin(t*.00092),Math.cos(t*.00092),Math.sin(t*.00066),Math.cos(t*.00066),Math.sin(t*.00045),Math.cos(t*.00045)];
-      ctx.lineWidth=1.25;ctx.strokeStyle='rgba(235,242,255,.29)';ctx.beginPath();
+      ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
       for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;for(let i=from;i<to;i++){warpVertex(g,i,times);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
       ctx.stroke();
     }
