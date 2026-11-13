@@ -245,8 +245,8 @@ vec4 traceTimelike(vec2 p,vec2 direction){
  // Grid points are released from rest: u^i(t=0)=0.
  vec2 v=vec2(0.0);
  float total=min(max(u_time,0.0)*0.0015,24.0);
- float h=total/1200.0;
- for(int k=0;k<1200;k++){
+ float h=total/2400.0;
+ for(int k=0;k<2400;k++){
   vec2 a0=geodesicAccel(p);
   vec2 vm=v+0.5*h*a0;
   vec2 pm=p+0.5*h*v;
@@ -324,7 +324,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   starfield.onerror = () => { imageStatus='failed'; perf.imageLoad=performance.now()-perf.imageStart; };
 
   function buildGeometry() {
-    const step=spacing(), sampleStep=8.0, margin=step*2, xs=[], ys=[], starts=[];
+    const step=spacing(), sampleStep=16.0, margin=step*2, xs=[], ys=[], starts=[];
     for(let x=-margin;x<=width+margin;x+=step){
       starts.push(xs.length);
       for(let y=-margin;y<=height+margin;y+=sampleStep){xs.push(x);ys.push(y);}
@@ -650,7 +650,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function warpVertex(g,i,t,horizontal){
     let x=g.x[i],y=g.y[i];
     let vx=0,vy=0;
-    const total=Math.min(Math.max(0,t)*0.0015,24.0),h=total/1200;
+    const total=Math.min(Math.max(0,t)*0.0015,24.0),h=total/2400;
     const accel=(px,py)=>{
       let ax=0,ay=0;
       for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
@@ -660,7 +660,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       }
       return [ax,ay];
     };
-    for(let k=0;k<1200;k++){
+    for(let k=0;k<2400;k++){
       const [ax,ay]=accel(x,y),mx=x+0.5*h*vx,my=y+0.5*h*vy;
       const [amx,amy]=accel(mx,my);
       x+=h*(vx+0.5*h*ax);y+=h*(vy+0.5*h*ay);
