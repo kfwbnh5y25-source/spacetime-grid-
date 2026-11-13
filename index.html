@@ -242,11 +242,11 @@ vec2 geodesicAccel(vec2 p){
  return a;
 }
 vec4 traceTimelike(vec2 p,vec2 direction){
- vec2 v=direction*0.38;
- // Advance one common initial congruence continuously, without a periodic time reset.
+ // Grid points are released from rest: u^i(t=0)=0.
+ vec2 v=vec2(0.0);
  float total=min(max(u_time,0.0)*0.0015,24.0);
- float h=total/24.0;
- for(int k=0;k<24;k++){
+ float h=total/1200.0;
+ for(int k=0;k<1200;k++){
   vec2 a0=geodesicAccel(p);
   vec2 vm=v+0.5*h*a0;
   vec2 pm=p+0.5*h*v;
@@ -259,7 +259,7 @@ vec4 traceTimelike(vec2 p,vec2 direction){
 void main(){
  vec2 initial=mix(a_xy,a_other,a_end);
  vec4 state=traceTimelike(initial,normalize(a_other-a_xy));
- vec2 tangent=normalize(state.zw);
+ vec2 tangent=length(state.zw)>1e-6?normalize(state.zw):normalize(a_other-a_xy);
  vec2 normal=vec2(-tangent.y,tangent.x);
  vec2 p=state.xy+normal*a_side*1.2;
  gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
@@ -324,7 +324,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   starfield.onerror = () => { imageStatus='failed'; perf.imageLoad=performance.now()-perf.imageStart; };
 
   function buildGeometry() {
-    const step=spacing(), sampleStep=1.0, margin=step*2, xs=[], ys=[], starts=[];
+    const step=spacing(), sampleStep=8.0, margin=step*2, xs=[], ys=[], starts=[];
     for(let x=-margin;x<=width+margin;x+=step){
       starts.push(xs.length);
       for(let y=-margin;y<=height+margin;y+=sampleStep){xs.push(x);ys.push(y);}
@@ -649,8 +649,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   let warpedX=0, warpedY=0;
   function warpVertex(g,i,t,horizontal){
     let x=g.x[i],y=g.y[i];
-    let vx=horizontal?0.38:0,vy=horizontal?0:0.38;
-    const total=Math.min(Math.max(0,t)*0.0015,24.0),h=total/24;
+    let vx=0,vy=0;
+    const total=Math.min(Math.max(0,t)*0.0015,24.0),h=total/1200;
     const accel=(px,py)=>{
       let ax=0,ay=0;
       for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
@@ -660,7 +660,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       }
       return [ax,ay];
     };
-    for(let k=0;k<24;k++){
+    for(let k=0;k<1200;k++){
       const [ax,ay]=accel(x,y),mx=x+0.5*h*vx,my=y+0.5*h*vy;
       const [amx,amy]=accel(mx,my);
       x+=h*(vx+0.5*h*ax);y+=h*(vy+0.5*h*ay);
@@ -674,7 +674,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const total=Math.min(Math.max(0,t)*0.0015,24.0);
     const active=fields.filter(m=>m.strength>.01).slice(0,MAX_GPU_POINTERS);
     if(total<1e-5||!active.length)return {sources:active.length,simTime:total,rmsPx:0,maxPx:0,samples:0};
-    const h=total/12;
+    const h=total/1200;
     const accel=(px,py)=>{
       let ax=0,ay=0;
       for(const m of active){
@@ -686,15 +686,15 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     };
     let sumSq=0,max=0,samples=0;
     const probe=(sx,sy,horizontal)=>{
-      let x=sx,y=sy,vx=horizontal ? 0.38 : 0,vy=horizontal ? 0 : 0.38;
-      for(let k=0;k<24;k++){
+      let x=sx,y=sy,vx=0,vy=0;
+      for(let k=0;k<1200;k++){
         const [ax,ay]=accel(x,y),mx=x+.5*h*vx,my=y+.5*h*vy;
         const [amx,amy]=accel(mx,my);
         x+=h*(vx+.5*h*ax);y+=h*(vy+.5*h*ay);
         vx+=h*amx;vy+=h*amy;
       }
-      const dx=x-(sx+(horizontal ? 0.38 : 0)*total);
-      const dy=y-(sy+(horizontal?0:.38)*total);
+      const dx=x-sx;
+      const dy=y-sy;
       const shift=Math.hypot(dx,dy);
       sumSq+=shift*shift;max=Math.max(max,shift);samples++;
     };
