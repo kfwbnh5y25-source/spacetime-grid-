@@ -436,20 +436,14 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function drawNewtonProbe(){
     trajectoryCtx.clearRect(0,0,width,height);trajectoryCtx.save();
     trajectoryCtx.lineCap='round';trajectoryCtx.lineJoin='round';
-    // Render all body positions and their blue trails in the instantaneous
-    // centre-of-mass coordinate system, centred on the viewport.
-    let total=0,comX=0,comY=0;
+    // Positions and trails are already stored in the same COM coordinates
+    // used by the gravity field and geodesic renderer.
     for(const body of persistentMasses){
-      const m=Math.max(0,body.mass??20);total+=m;comX+=m*body.x;comY+=m*body.y;
-    }
-    if(total>0){comX/=total;comY/=total;}else{comX=width*.5;comY=height*.5;}
-    const localPoint=q=>({x:q.x-comX+width*.5,y:q.y-comY+height*.5});
-    for(const body of persistentMasses){
-      const pos=localPoint(body);
+      const pos=body;
       if(trailsEnabled&&body.trail?.length>1){
         trajectoryCtx.beginPath();
         for(let i=0;i<body.trail.length;i++){
-          const q=localPoint(body.trail[i]);
+          const q=body.trail[i];
           if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);
         }
         trajectoryCtx.strokeStyle='rgba(118,174,255,.36)';trajectoryCtx.lineWidth=1.35;trajectoryCtx.stroke();
@@ -473,24 +467,28 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
     if(persistentMasses.length>=24)persistentMasses.shift();
     persistentMasses.push({x,y,mass,vx,vy,trail:[{x,y}],trailClock:0,strength:1});
-    setCenterOfMassVelocityFrame();
+    setCenterOfMassFrame();
     showStatus('PLANET ADDED · '+mass);
   }
-  function setCenterOfMassVelocityFrame(){
+  function setCenterOfMassFrame(){
     if(!phonePhysics||persistentMasses.length<2)return;
-    let total=0,vx=0,vy=0;
+    let total=0,cx=0,cy=0,vx=0,vy=0;
     for(const body of persistentMasses){
       const mass=Math.max(0,body.mass??20);
-      total+=mass;vx+=mass*(body.vx||0);vy+=mass*(body.vy||0);
+      total+=mass;cx+=mass*body.x;cy+=mass*body.y;
+      vx+=mass*(body.vx||0);vy+=mass*(body.vy||0);
     }
     if(total<=0)return;
-    vx/=total;vy/=total;
-    // Apply a single Galilean boost when a body is added. Do not repeat this
-    // during integration: Newtonian internal forces conserve COM momentum.
+    cx/=total;cy/=total;vx/=total;vy/=total;
+    // One coordinate translation and one Galilean boost at insertion.
+    // All physics, grid sources and trails remain in this same COM frame.
+    const dx=width*.5-cx,dy=height*.5-cy;
     for(const body of persistentMasses){
-      body.vx=(body.vx||0)-vx;
-      body.vy=(body.vy||0)-vy;
+      body.x+=dx;body.y+=dy;
+      if(body.trail)for(const q of body.trail){q.x+=dx;q.y+=dy;}
+      body.vx=(body.vx||0)-vx;body.vy=(body.vy||0)-vy;
     }
+    if(phoneProbe){phoneProbe.x+=dx;phoneProbe.y+=dy;if(phoneProbe.trail)for(const q of phoneProbe.trail){q.x+=dx;q.y+=dy;}}
   }
   function massAccelerationAt(index){
     const body=persistentMasses[index];let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
