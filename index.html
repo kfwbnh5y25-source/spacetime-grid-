@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Spacetime — Interactive Grid</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body { touch-action: none; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  .hint {
+    position: fixed; left: 50%; bottom: max(24px, env(safe-area-inset-bottom));
+    transform: translateX(-50%); color: rgba(255,255,255,.42);
+    font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: .22em; text-transform: uppercase; white-space: nowrap;
+    pointer-events: none; transition: opacity 1.2s ease;
+  }
+  .hint.hidden { opacity: 0; }
+</style>
+</head>
+<body>
+<canvas id="universe" aria-label="Interactive curved spacetime grid. Move or touch to bend the grid."></canvas>
+<div class="hint" id="hint">move · touch · explore</div>
+<script>
+(() => {
+  const canvas = document.getElementById('universe');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const hint = document.getElementById('hint');
+  const pointers = new Map();
+  const fields = [];
+  let width = 0, height = 0, dpr = 1, last = 0, elapsed = 0, hintTimer;
+
+  const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width, height) / 17)));
+  const smooth = (a, b, t) => a + (b - a) * t;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize, { passive: true });
+  resize();
+
+  function pointerDown(e) {
+    e.preventDefault();
+    canvas.setPointerCapture?.(e.pointerId);
+    pointers.set(e.pointerId, { x:e.clientX, y:e.clientY, tx:e.clientX, ty:e.clientY, strength:1, life:1 });
+    hint.classList.add('hidden');
+    clearTimeout(hintTimer);
+  }
+  function pointerMove(e) {
+    const p = pointers.get(e.pointerId);
+    if (p) { p.tx = e.clientX; p.ty = e.clientY; }
+    else if (e.pointerType === 'mouse') {
+      pointers.set(e.pointerId, { x:e.clientX, y:e.clientY, tx:e.clientX, ty:e.clientY, strength:.72, life:1, hover:true });
+    }
+  }
+  function pointerEnd(e) {
+    const p = pointers.get(e.pointerId);
+    if (p) p.life = 0;
+  }
+  canvas.addEventListener('pointerdown', pointerDown, { passive:false });
+  canvas.addEventListener('pointermove', pointerMove, { passive:false });
+  canvas.addEventListener('pointerup', pointerEnd);
+  canvas.addEventListener('pointercancel', pointerEnd);
+  canvas.addEventListener('lostpointercapture', pointerEnd);
+
+  function drawField(x, y, strength, life, t, px, py) {
+    const dx = px - x, dy = py - y;
+    const r2 = dx*dx + dy*dy + 1;
+    const r = Math.sqrt(r2);
+    const sigma = Math.min(width, height) * .19;
+    const influence = Math.exp(-r2 / (2*sigma*sigma));
+    // A smooth radial lens: nearby grid points are pulled toward the mass.
+    const bend = 78 * strength * life * influence;
+    return { x: x - dx/r * bend, y: y - dy/r * bend };
+  }
+
+  function warped(x, y, t) {
+    let ox = x, oy = y;
+    for (const p of fields) {
+      const q = drawField(x, y, p.strength, p.life, t, p.x, p.y);
+      ox += q.x - x;
+      oy += q.y - y;
+    }
+    // Barely perceptible breathing keeps the empty universe alive.
+    const breathe = Math.sin(t * .00045 + x * .002 + y * .0015) * .65;
+    return [ox, oy + breathe];
+  }
+
+  function render(now) {
+    const dt = Math.min(40, now - (last || now));
+    last = now; elapsed += dt;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, height);
+
+    fields.length = 0;
+    for (const [id,p] of pointers) {
+      p.x = smooth(p.x, p.tx, .22);
+      p.y = smooth(p.y, p.ty, .22);
+      if (p.life <= 0) p.strength *= .985;
+      if (p.life <= 0 && p.strength < .025) { pointers.delete(id); continue; }
+      fields.push(p);
+    }
+
+    const step = spacing();
+    const margin = step * 2;
+    ctx.lineWidth = .75;
+    ctx.strokeStyle = 'rgba(235,242,255,.29)';
+    ctx.beginPath();
+
+    for (let x = -margin; x <= width + margin; x += step) {
+      let first = true;
+      for (let y = -margin; y <= height + margin; y += 8) {
+        const [wx,wy] = warped(x,y,elapsed);
+        if (first) { ctx.moveTo(wx,wy); first = false; } else ctx.lineTo(wx,wy);
+      }
+    }
+    for (let y = -margin; y <= height + margin; y += step) {
+      let first = true;
+      for (let x = -margin; x <= width + margin; x += 8) {
+        const [wx,wy] = warped(x,y,elapsed);
+        if (first) { ctx.moveTo(wx,wy); first = false; } else ctx.lineTo(wx,wy);
+      }
+    }
+    ctx.stroke();
+
+    // Soft, restrained glow around active masses.
+    for (const p of fields) {
+      const radius = 110;
+      const glow = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,radius);
+      glow.addColorStop(0, 'rgba(190,215,255,' + (.075*p.strength) + ')');
+      glow.addColorStop(1, 'rgba(190,215,255,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(p.x-radius,p.y-radius,radius*2,radius*2);
+    }
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+
+  hintTimer = setTimeout(() => hint.classList.add('hidden'), 6500);
+})();
+</script>
+</body>
+</html>
