@@ -23,6 +23,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Node.js 26 LTS
+        uses: actions/setup-node@v6
+        with:
+          node-version: 26.13.0
       - name: Validate inline JavaScript
         run: |
           python3 - <<'PY'
