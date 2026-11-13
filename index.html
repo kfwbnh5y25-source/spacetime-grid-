@@ -472,23 +472,20 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   }
   function setCenterOfMassFrame(){
     if(!phonePhysics||persistentMasses.length<2)return;
-    let total=0,cx=0,cy=0,vx=0,vy=0;
+    let total=0,vx=0,vy=0;
     for(const body of persistentMasses){
       const mass=Math.max(0,body.mass??20);
-      total+=mass;cx+=mass*body.x;cy+=mass*body.y;
-      vx+=mass*(body.vx||0);vy+=mass*(body.vy||0);
+      total+=mass;vx+=mass*(body.vx||0);vy+=mass*(body.vy||0);
     }
     if(total<=0)return;
-    cx/=total;cy/=total;vx/=total;vy/=total;
-    // One coordinate translation and one Galilean boost at insertion.
-    // All physics, grid sources and trails remain in this same COM frame.
-    const dx=width*.5-cx,dy=height*.5-cy;
+    vx/=total;vy/=total;
+    // Change only the inertial frame's velocity origin. Keep every position
+    // and every recorded trail sample untouched, so insertion cannot jump
+    // existing planets or redraw their history at a new location.
     for(const body of persistentMasses){
-      body.x+=dx;body.y+=dy;
-      if(body.trail)for(const q of body.trail){q.x+=dx;q.y+=dy;}
-      body.vx=(body.vx||0)-vx;body.vy=(body.vy||0)-vy;
+      body.vx=(body.vx||0)-vx;
+      body.vy=(body.vy||0)-vy;
     }
-    if(phoneProbe){phoneProbe.x+=dx;phoneProbe.y+=dy;if(phoneProbe.trail)for(const q of phoneProbe.trail){q.x+=dx;q.y+=dy;}}
   }
   function massAccelerationAt(index){
     const body=persistentMasses[index];let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
