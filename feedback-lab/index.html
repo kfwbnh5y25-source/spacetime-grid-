@@ -99,7 +99,7 @@ function updateGroundFrame(dt,gx,gy){
 }
 function gravityToScreen(gx,gy,angleDeg){
  const a=angleDeg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
- return {x:(gx*c+gy*s)/GRAVITY_G,y:(-gx*s+gy*c)/GRAVITY_G};
+ return {x:(gx*c-gy*s)/GRAVITY_G,y:(gx*s+gy*c)/GRAVITY_G};
 }
 function groundFrameMathSelfTest(){
  let maxWorldRoundTrip=0,maxScreenRoundTrip=0,maxGravityAlignmentError=0;
@@ -421,7 +421,7 @@ async function runOrientationWorkflow(){
    }
  }
  orientationWorkflow.active=false;orientationWorkflow.stage='complete';
- const summary={protocol:'orientation-ground-reference-v8-selftest-fix',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'filtered accelerationIncludingGravity projected into current screen coordinates',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ const summary={protocol:'orientation-ground-reference-v9-screen-basis-sign-fix',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'filtered accelerationIncludingGravity projected into current screen coordinates',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
  orientationWorkflow.lastReport=summary;
  $('workflowStatus').textContent='COMPLETE · '+summary.verificationPassed+'/'+summary.verificationTotal+' orientation checks passed · '+summary.samples.length+' samples · uploading…';
  const report=resultObject();report.workflow=summary;lastCompletedResult=report;
