@@ -81,7 +81,7 @@ const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:
 const $=id=>document.getElementById(id);
 const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
 const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
-let orientationMotionTimer=0,gridRotation=0,raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=currentAngle(),lastScreenGravity={x:0,y:0},gravityTransition=null,motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+let orientationMotionTimer=0,gridRotation=0,raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=currentAngle(),motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
 const orientationWorkflow={active:false,stage:'idle',stageStarted:0,started:0,lastSample:0,samples:[],events:[],verification:[],completed:new Set(),physical:'portrait_upright',lock:'off'};
 let latestDeviceOrientation={alpha:null,beta:null,gamma:null,absolute:null};
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
@@ -98,11 +98,14 @@ function updateGroundFrame(dt,gx,gy){
  const error=shortestDegrees(groundFrame.targetAngle-groundFrame.angle);
  groundFrame.angle+=error*(1-Math.exp(-Math.max(0,dt)/160));
 }
-function gravityToScreen(gx,gy,angleDeg){
- // screen.orientation.angle is the clockwise display rotation; counter-rotate
- // device-frame gravity to express it in the visible screen coordinate frame.
- const a=-angleDeg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
- return {x:(gx*c-gy*s)/GRAVITY_G,y:(gx*s+gy*c)/GRAVITY_G};
+function rotate2(x,y,degrees){
+ const a=degrees*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+ return {x:x*c-y*s,y:x*s+y*c};
+}
+function sceneAngle(){return matchMedia('(pointer:coarse)').matches?-gridRotation:state.camera.rotation;}
+function gravityToScreen(x,y,screenAngle){
+ const v=rotate2(x,y,-screenAngle);
+ return {x:v.x/GRAVITY_G,y:v.y/GRAVITY_G};
 }
 function groundFrameMathSelfTest(){
  let maxWorldRoundTrip=0,maxScreenRoundTrip=0,maxGravityAlignmentError=0;
@@ -134,23 +137,21 @@ function gravityMathSelfTest(){
  }
  return {pass:maxRoundTripError<1e-10&&maxNormError<1e-10,maxRoundTripError,maxNormError,angles:[0,37,90,180,270,359],method:'proper device-to-screen rotation; inverse uses negative screen angle'};
 }
+function worldToScreen(x,y){
+ const phoneMode=matchMedia('(pointer:coarse)').matches,p=phoneMode?massCentroidWorld():{x:0,y:0};
+ const r=rotate2(x-p.x,y-p.y,sceneAngle()),s=state.camera.scale;
+ return {x:state.w/2+state.camera.x+(p.x+r.x)*s,y:state.h/2+state.camera.y+(p.y+r.y)*s};
+}
 function massScreenPositions(){
-  const phoneMode=matchMedia('(pointer:coarse)').matches,angle=(phoneMode?-gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
-  const baseX=state.w/2+state.camera.x,baseY=state.h/2+state.camera.y,p=massCentroidWorld();
-  return state.masses.map(m=>{const dx=(m.x-p.x)*state.camera.scale,dy=(m.y-p.y)*state.camera.scale;return {x:+(baseX+p.x*state.camera.scale+c*dx-s*dy).toFixed(2),y:+(baseY+p.y*state.camera.scale+s*dx+c*dy).toFixed(2)};});
+ return state.masses.map(m=>{const p=worldToScreen(m.x,m.y);return {x:+p.x.toFixed(2),y:+p.y.toFixed(2)};});
 }
 function syncScreenBasis(){
  const angle=currentAngle();
  if(angle!==lastScreenAngle){
-  const before={...lastScreenGravity},after=gravityToScreen(motionSensorFilteredX,motionSensorFilteredY,angle);
   const delta=((angle-lastScreenAngle+540)%360)-180;
-  // Rotate the grid around the masses while leaving their screen coordinates
-  // fixed. The angle returns to zero when the phone returns to its start pose.
   if(matchMedia('(pointer:coarse)').matches)gridRotation=((gridRotation+delta+540)%360)-180;
-  const transitionStart=gravityToScreen(before.x,before.y,delta);
-  gravityTransition={fromX:transitionStart.x,fromY:transitionStart.y,started:now(),duration:220};
   metrics.orientationChanges++;metrics.orientationChangeAt=now();
-  if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],canvasPixels:[canvas.width,canvas.height],gridCameraRotationDeg:+state.camera.rotation.toFixed(3),renderRotationDeg:+(matchMedia('(pointer:coarse)').matches?0:state.camera.rotation).toFixed(3),deviceGravity:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityScreenBefore:[+before.x.toFixed(4),+before.y.toFixed(4)],gravityScreenAfter:[+after.x.toFixed(4),+after.y.toFixed(4)],groundReference:{groundAngle:+groundFrame.angle.toFixed(2),gravityMagnitude:+groundFrame.gravityMagnitude.toFixed(3),confidence:+groundFrame.confidence.toFixed(2)},basisUpdate:'gravity-derived screen-space vertical',gridRotationDeg:+gridRotation.toFixed(3),massAnchorCount:state.masses.length});
+  if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],canvasPixels:[canvas.width,canvas.height],gridRotationDeg:+gridRotation.toFixed(3),massAnchorCount:state.masses.length});
   lastScreenAngle=angle;
  }
  metrics.orientation=angle;return angle;
@@ -286,19 +287,15 @@ function massCentroidWorld(){
   return {x:x/state.masses.length,y:y/state.masses.length};
 }
 function screenToWorld(x,y){
-  const phoneMode=matchMedia('(pointer:coarse)').matches;
-  const angle=(phoneMode?-gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
-  const sx=(x-state.w/2-state.camera.x)/state.camera.scale,sy=(y-state.h/2-state.camera.y)/state.camera.scale;
-  if(phoneMode){const p=massCentroidWorld(),dx=sx-p.x,dy=sy-p.y;return {x:p.x+c*dx+s*dy,y:p.y-s*dx+c*dy};}
-  return {x:c*sx-s*sy,y:s*sx+c*sy};
+ const phoneMode=matchMedia('(pointer:coarse)').matches,p=phoneMode?massCentroidWorld():{x:0,y:0};
+ const sx=(x-state.w/2-state.camera.x)/state.camera.scale-p.x;
+ const sy=(y-state.h/2-state.camera.y)/state.camera.scale-p.y;
+ const r=rotate2(sx,sy,-sceneAngle());
+ return {x:p.x+r.x,y:p.y+r.y};
 }
 function worldVectorFromScreen(x,y){
-  const phoneMode=matchMedia('(pointer:coarse)').matches;
-  // motionFilteredX/Y are already expressed in the current screen basis.
-  // gridRotation maps the ground frame into that screen basis, so gravity
-  // must be transformed with the inverse rotation before entering physics.
-  const angle=(phoneMode?gridRotation:-state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
-  return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
+ const r=rotate2(x,y,-sceneAngle()),s=state.camera.scale;
+ return {x:r.x/s,y:r.y/s};
 }
 function buildStaticGrid(){
   const w=state.w,h=state.h,dpr=state.dpr;if(!w||!h)return;
@@ -316,7 +313,6 @@ function draw(){
   const w=state.w,h=state.h;
   ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
   const phoneMode=matchMedia('(pointer:coarse)').matches;
-  const renderRotation=phoneMode?0:state.camera.rotation;
   if(phoneMode){
     // Both the grid and mass coordinates are expressed in the ground frame.
     // Rotate the complete scene around the mass centroid as the display turns,
@@ -326,8 +322,8 @@ function draw(){
     const baseX=w/2+state.camera.x,baseY=h/2+state.camera.y,scale=state.camera.scale;
     const pivotX=baseX+mx*scale,pivotY=baseY+my*scale;
     ctx.save();
-    ctx.translate(pivotX,pivotY);ctx.rotate(-gridRotation*Math.PI/180);ctx.translate(-pivotX,-pivotY);
-    ctx.translate(baseX,baseY);ctx.scale(scale,scale);
+    ctx.translate(baseX+mx*scale,baseY+my*scale);
+    ctx.rotate(sceneAngle());ctx.scale(scale,scale);ctx.translate(-mx,-my);
     if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
     for(const m of state.masses){
       ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
@@ -335,7 +331,7 @@ function draw(){
     }
     ctx.restore();
   }else{
-    ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(renderRotation*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
+    ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(sceneAngle());ctx.scale(state.camera.scale,state.camera.scale);
     if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
     for(const m of state.masses){
       ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
@@ -372,16 +368,8 @@ function frame(t){
   motionSensorFilteredX+=(motionRawX-motionSensorFilteredX)*sensorAlpha;
   motionSensorFilteredY+=(motionRawY-motionSensorFilteredY)*sensorAlpha;
   const measuredScreenGravity=gravityToScreen(motionSensorFilteredX,motionSensorFilteredY,angle);
-  let screenGravity=measuredScreenGravity;
-  if(gravityTransition){
-    const p=Math.max(0,Math.min(1,(now()-gravityTransition.started)/gravityTransition.duration));
-    const eased=p*p*(3-2*p);
-    screenGravity={x:gravityTransition.fromX+(measuredScreenGravity.x-gravityTransition.fromX)*eased,y:gravityTransition.fromY+(measuredScreenGravity.y-gravityTransition.fromY)*eased};
-    if(p>=1)gravityTransition=null;
-  }
   const dead=v=>Math.abs(v)<.045?0:Math.sign(v)*Math.min(1,(Math.abs(v)-.045)/.955);
-  motionFilteredX=dead(screenGravity.x);motionFilteredY=dead(screenGravity.y);
-  lastScreenGravity={x:motionFilteredX,y:motionFilteredY};
+  motionFilteredX=dead(measuredScreenGravity.x);motionFilteredY=dead(measuredScreenGravity.y);
   updateGroundFrame(dt,motionFilteredX,motionFilteredY);
   state.camera.x+=(state.target.x-state.camera.x)*k;state.camera.y+=(state.target.y-state.camera.y)*k;state.camera.scale+=(state.target.scale-state.camera.scale)*k;
   if(Math.abs(state.target.x-state.camera.x)<.08)state.camera.x=state.target.x;
@@ -434,7 +422,7 @@ async function toggleMotion(){
       const permission=await DeviceMotionEvent.requestPermission();
       if(permission!=='granted')throw new Error('Permission denied');
     }
-    motionGranted=true;motionEnabled=true;motionRawX=motionRawY=motionFilteredX=motionFilteredY=motionSensorFilteredX=motionSensorFilteredY=0;lastScreenAngle=currentAngle();lastScreenGravity={x:0,y:0};resetGroundReference();motionListener=onMotion;window.addEventListener('devicemotion',motionListener,{passive:true});
+    motionGranted=true;motionEnabled=true;motionRawX=motionRawY=motionFilteredX=motionFilteredY=motionSensorFilteredX=motionSensorFilteredY=0;lastScreenAngle=currentAngle();resetGroundReference();motionListener=onMotion;window.addEventListener('devicemotion',motionListener,{passive:true});
     $('motionBtn').classList.add('active');$('motionBtn').textContent='GRAVITY ON';$('runState').textContent='Motion active. Grid orientation follows measured gravity; screen angle only converts sensor axes into the current display frame.';
   }catch(e){$('runState').textContent='Motion unavailable: '+e.message;}
 }
