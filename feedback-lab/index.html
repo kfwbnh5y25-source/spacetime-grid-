@@ -67,7 +67,7 @@ button:disabled{opacity:.45}
 </div>
 <div id="workflow">
 <h3>AUTOMATIC ORIENTATION + ROTATION TEST · ABOUT 1 MIN</h3>
-<p>Start position: portrait upright, screen facing you, top edge up. Turn iOS Orientation Lock OFF. You will have 15 seconds to get into position before measurements begin. Then follow the on-screen prompts; all steps advance and save automatically.</p>
+<p>Start position: portrait upright, screen facing you, top edge up. Turn iOS Orientation Lock OFF. You will have 20 seconds to get into position before measurements begin. Then follow the on-screen prompts; all steps advance and save automatically.</p>
 <button id="workflowStart" class="primary">START AUTOMATIC TEST</button>
 <div id="workflowStatus">Ready · Portrait upright · Orientation Lock OFF</div>
 </div><div id="runState">Drop masses, enable gravity, rotate the phone, drag/pinch the scene. Measurements are stored locally and uploaded automatically when the test finishes. No account identifier is sent.</div>
@@ -289,13 +289,6 @@ async function toggleMotion(){
   }catch(e){$('runState').textContent='Motion unavailable: '+e.message;}
 }
 $('motionBtn').addEventListener('click',()=>{recordInputStart(now());toggleMotion();});
-async function toggleWake(){
-  if(wakeSentinel){try{await wakeSentinel.release();}catch(e){}wakeSentinel=null;$('wakeBtn').classList.remove('active');$('wakeBtn').textContent='KEEP AWAKE';updateMetrics();return;}
-  if(!('wakeLock'in navigator)){ $('runState').textContent='Screen Wake Lock not exposed in this browser.';return;}
-  try{wakeSentinel=await navigator.wakeLock.request('screen');wakeSentinel.addEventListener('release',()=>{if(wakeSentinel&&wakeSentinel.releasedState){wakeSentinel=null;$('wakeBtn').classList.remove('active');$('wakeBtn').textContent='KEEP AWAKE';updateMetrics();}});$('wakeBtn').classList.add('active');$('wakeBtn').textContent='AWAKE';updateMetrics();}
-  catch(e){$('runState').textContent='Wake lock denied: '+e.message;}
-}
-$('wakeBtn').addEventListener('click',toggleWake);
 document.addEventListener('visibilitychange',async()=>{
   if(document.visibilityState==='visible'){
     if(orientationWorkflow.active&&wakeSentinel===null&&'wakeLock'in navigator){try{wakeSentinel=await navigator.wakeLock.request('screen');}catch(e){}}
@@ -311,7 +304,7 @@ function resultObject(){
 let lastCompletedResult=null;
 try{const saved=localStorage.getItem('spacetime-feedback-last-report-v1');if(saved)lastCompletedResult=JSON.parse(saved);}catch(e){}
 const workflowStages=[
- {id:'prepare',label:'GET READY · PORTRAIT UPRIGHT',seconds:15,instruction:'Place the phone upright in portrait, screen facing you, top edge up. Turn iOS Orientation Lock OFF now. You have 15 seconds to get into position.'},
+ {id:'prepare',label:'GET READY · PORTRAIT UPRIGHT',seconds:20,instruction:'Place the phone upright in portrait, screen facing you, top edge up. Turn iOS Orientation Lock OFF now. You have 20 seconds to get into position.'},
  {id:'still',label:'HOLD STILL',seconds:3,instruction:'Hold the phone steady in portrait. Do not tilt.'},
  {id:'tilt_left',label:'TILT LEFT',seconds:4,instruction:'Tilt the TOP of the phone toward your LEFT by about 20–30°, then hold.'},
  {id:'return_center',label:'RETURN TO NEUTRAL',seconds:3,instruction:'Return slowly to upright portrait.'},
