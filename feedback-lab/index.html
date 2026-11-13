@@ -517,7 +517,7 @@ const gravityStages=[
 function medianValue(values){const a=values.filter(Number.isFinite).slice().sort((x,y)=>x-y);return a.length?a[Math.floor(a.length/2)]:null;}
 function summarizeGravityStage(id){
  const a=gravityDiagnostic.samples.filter(s=>s.stage===id);
- return {stage:id,n:a.length,screenAngle:medianValue(a.map(s=>s.screenAngle)),rawX:medianValue(a.map(s=>s.rawX)),rawY:medianValue(a.map(s=>s.rawY)),worldX:medianValue(a.map(s=>s.worldX)),worldY:medianValue(a.map(s=>s.worldY)),filteredX:medianValue(a.map(s=>s.filteredX)),filteredY:medianValue(a.map(s=>s.filteredY)),filteredNorm:medianValue(a.map(s=>s.filteredNorm)),deviceOrientation:[0,1,2].map(i=>medianValue(a.map(s=>s.deviceOrientation[i])))};
+ return {stage:id,n:a.length,screenAngle:medianValue(a.map(s=>s.screenAngle)),rawX:medianValue(a.map(s=>s.rawX)),rawY:medianValue(a.map(s=>s.rawY)),rawZ:medianValue(a.map(s=>s.az)),worldX:medianValue(a.map(s=>s.worldX)),worldY:medianValue(a.map(s=>s.worldY)),filteredX:medianValue(a.map(s=>s.filteredX)),filteredY:medianValue(a.map(s=>s.filteredY)),filteredNorm:medianValue(a.map(s=>s.filteredNorm)),deviceOrientation:[0,1,2].map(i=>medianValue(a.map(s=>s.deviceOrientation[i])))};
 }
 function evaluateGravityDiagnostic(stages){
  const by=Object.fromEntries(stages.map(s=>[s.stage,s])),base=by.upright,landL=by.landscape_left,landR=by.landscape_right;
@@ -528,18 +528,18 @@ function evaluateGravityDiagnostic(stages){
   return {pass:a[key]*b[key]<0&&delta>.18,deltaG:+delta.toFixed(3),aG:a[key],bG:b[key]};
  };
  const lr=reversal(by.lean_left,by.lean_right,'rawX');
- const fb=reversal(by.tilt_away,by.tilt_toward,'rawY');
+ const fb=reversal(by.tilt_away,by.tilt_toward,'rawZ');
  const leftError=pair(base,landL),rightError=pair(base,landR);
  const checks=[
   {id:'sensor_samples',pass:stages.reduce((n,s)=>n+s.n,0)>=100,detail:'At least 100 accelerometer samples'},
   {id:'upright_gravity_visible',pass:!!base&&base.n>=10&&Math.hypot(base.worldX||0,base.worldY||0)>.45,detail:'Upright pose has a measurable in-plane gravity vector'},
   {id:'left_right_raw_axis_reverses',...lr,pass:lr.pass,detail:'Raw device X should reverse when the top edge is tilted left versus right'},
-  {id:'forward_backward_raw_axis_reverses',...fb,pass:fb.pass,detail:'Raw device Y should reverse when the top edge is tilted away versus toward you'},
+  {id:'forward_backward_raw_z_reverses',...fb,pass:fb.pass,detail:'Raw device Z should reverse when the top edge is tilted away versus toward you'},
   {id:'landscape_left_invariant',errorG:leftError,pass:leftError!==null&&leftError<.35,detail:'Ground-frame gravity should match portrait after 90° left rotation'},
   {id:'landscape_right_invariant',errorG:rightError,pass:rightError!==null&&rightError<.35,detail:'Ground-frame gravity should match portrait after 90° right rotation'},
   {id:'orientation_data_changes',pass:!!landL&&!!landR&&landL.screenAngle!==base?.screenAngle&&landR.screenAngle!==base?.screenAngle,detail:'iOS reports distinct screen angles in landscape'}
  ];
- return {status:checks.every(x=>x.pass)?'PASS':'DIAGNOSTIC_FAILURE_OR_INCOMPLETE',checks,measurements:{leanLeftRawX:by.lean_left?.rawX??null,leanRightRawX:by.lean_right?.rawX??null,topAwayRawY:by.tilt_away?.rawY??null,topTowardRawY:by.tilt_toward?.rawY??null,portraitToLandscapeLeftErrorG:leftError,portraitToLandscapeRightErrorG:rightError},thresholds:{minSamples:100,minUprightNormG:.45,rawAxisReversalDeltaG:.18,landscapeWorldVectorErrorG:.35},interpretation:'Physical tilt is checked in raw device axes. Ground-frame values are checked separately for invariance across screen rotations. A transformed axis is not expected to reverse merely because the phone is tilted.'};
+ return {status:checks.every(x=>x.pass)?'PASS':'DIAGNOSTIC_FAILURE_OR_INCOMPLETE',checks,measurements:{leanLeftRawX:by.lean_left?.rawX??null,leanRightRawX:by.lean_right?.rawX??null,topAwayRawZ:by.tilt_away?.rawZ??null,topTowardRawZ:by.tilt_toward?.rawZ??null,portraitToLandscapeLeftErrorG:leftError,portraitToLandscapeRightErrorG:rightError},thresholds:{minSamples:100,minUprightNormG:.45,rawAxisReversalDeltaG:.18,landscapeWorldVectorErrorG:.35},interpretation:'Physical tilt is checked in raw device axes. Ground-frame values are checked separately for invariance across screen rotations. A transformed axis is not expected to reverse merely because the phone is tilted.'};
 }
 async function runGravityDiagnostic(){
  if(gravityDiagnostic.active)return;
@@ -559,7 +559,7 @@ async function runGravityDiagnostic(){
  }
  gravityDiagnostic.active=false;gravityDiagnostic.stage='complete';
  const evaluation=evaluateGravityDiagnostic(gravityDiagnostic.stageSummaries);
- const summary={protocol:'gravity-axis-diagnostic-v2-raw-tilt-checks',startedAt:new Date(Date.now()-(now()-gravityDiagnostic.started)).toISOString(),durationMs:+(now()-gravityDiagnostic.started).toFixed(0),sampleCount:gravityDiagnostic.samples.length,sampleIntervalTargetMs:100,device:{userAgent:navigator.userAgent,screen:[screen.width,screen.height],viewport:[window.innerWidth,window.innerHeight],standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},sensor:{event:'devicemotion',source:'accelerationIncludingGravity',gravityTransform:'rotate device x/y by negative reported screen angle; divide by 9.80665',rawAxisConvention:'rawX=accelerationIncludingGravity.x; rawY=-accelerationIncludingGravity.y',screenAngleSources:{windowOrientation:Number.isFinite(Number(window.orientation))?Number(window.orientation):null,screenOrientationAngle:Number.isFinite(Number(screen.orientation?.angle))?Number(screen.orientation.angle):null,screenOrientationType:screen.orientation?.type||'unsupported'}},stages:gravityDiagnostic.stageSummaries,evaluation,samples:gravityDiagnostic.samples};
+ const summary={protocol:'gravity-axis-diagnostic-v3-raw-z-pitch-check',startedAt:new Date(Date.now()-(now()-gravityDiagnostic.started)).toISOString(),durationMs:+(now()-gravityDiagnostic.started).toFixed(0),sampleCount:gravityDiagnostic.samples.length,sampleIntervalTargetMs:100,device:{userAgent:navigator.userAgent,screen:[screen.width,screen.height],viewport:[window.innerWidth,window.innerHeight],standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},sensor:{event:'devicemotion',source:'accelerationIncludingGravity',gravityTransform:'rotate device x/y by negative reported screen angle; divide by 9.80665',rawAxisConvention:'rawX=accelerationIncludingGravity.x; rawY=-accelerationIncludingGravity.y',screenAngleSources:{windowOrientation:Number.isFinite(Number(window.orientation))?Number(window.orientation):null,screenOrientationAngle:Number.isFinite(Number(screen.orientation?.angle))?Number(screen.orientation.angle):null,screenOrientationType:screen.orientation?.type||'unsupported'}},stages:gravityDiagnostic.stageSummaries,evaluation,samples:gravityDiagnostic.samples};
  gravityDiagnostic.lastReport=summary;orientationWorkflow.lastReport=null;
  const report=resultObject();report.workflow={protocol:'gravity-axis-diagnostic-v2-raw-tilt-checks',gravityDiagnostic:summary};lastCompletedResult=report;
  $('gravityStatus').textContent='COMPLETE · '+evaluation.status+' · '+summary.sampleCount+' samples · uploading…';
