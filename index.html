@@ -257,7 +257,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(p){p.tx=w.x;p.ty=w.y;if(Math.hypot(p.tx-p.x,p.ty-p.y)>12&&longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}}
     else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
   }
-  function pointerEnd(e){if(e.pointerType==='mouse')return;if(longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}const p=pointers.get(e.pointerId);if(p){p.life=0;p.targetStrength=0;p.down=false;}}
+  function pointerEnd(e){const p=pointers.get(e.pointerId);if(e.pointerType==='mouse'||p?.hover||p?.pointerType==='mouse')return;if(longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}if(p){p.life=0;p.targetStrength=0;p.down=false;}}
   document.addEventListener('contextmenu',e=>e.preventDefault());
   document.addEventListener('selectstart',e=>e.preventDefault());
   document.addEventListener('dragstart',e=>e.preventDefault());
@@ -267,7 +267,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   canvas.addEventListener('pointerup',pointerEnd);
   canvas.addEventListener('pointercancel',pointerEnd);
   canvas.addEventListener('lostpointercapture',pointerEnd);
-  canvas.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')planetCursor.classList.remove('visible');const p=pointers.get(e.pointerId);if(p&&p.hover){p.life=0;p.targetStrength=0;}});
+  canvas.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')planetCursor.classList.remove('visible');});
+  window.addEventListener('blur',()=>{for(const [id,p] of pointers){if(p.hover){p.life=0;p.targetStrength=0;}}planetCursor.classList.remove('visible');});
   let gestureBase=null;
   canvas.addEventListener('touchstart',e=>{if(e.touches.length===2){const a=e.touches[0],b=e.touches[1];gestureBase={distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),scale:viewScale,x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2,viewX,viewY};clearTimeout(longPressTimer);longPressPointer=null;}},{passive:true});
   canvas.addEventListener('touchmove',e=>{if(e.touches.length===2&&gestureBase){e.preventDefault();const a=e.touches[0],b=e.touches[1],dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2;viewScale=Math.max(.7,Math.min(2.5,gestureBase.scale*dist/Math.max(1,gestureBase.distance)));viewX=gestureBase.viewX+mx-gestureBase.x;viewY=gestureBase.viewY+my-gestureBase.y;applyView();}},{passive:false});
