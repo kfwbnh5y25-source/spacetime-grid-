@@ -22,6 +22,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   #gpuCanvas { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+  #trajectoryCanvas { position:fixed; inset:0; z-index:3; pointer-events:none; }
   .planet-cursor { position:fixed; z-index:4; left:0; top:0; width:18px; height:18px; border-radius:50%; pointer-events:none; opacity:0; will-change:transform; background:radial-gradient(circle at 32% 27%,#fff 0%,#b9d9ff 13%,#547da9 43%,#182d49 76%,#080f1b 100%); box-shadow:0 0 7px 2px rgba(154,202,255,.35),inset -3px -2px 5px rgba(0,0,0,.65); transition:opacity .12s ease; }
   .planet-cursor::after { content:""; position:absolute; width:27px; height:8px; left:-5px; top:5px; border:1px solid rgba(190,220,255,.8); border-radius:50%; transform:rotate(-24deg); box-shadow:0 0 4px rgba(150,200,255,.45); }
   .planet-cursor.visible { opacity:1; }
@@ -53,6 +54,7 @@
 <body>
 <canvas id="universe" aria-label="Interactive spacetime grid showing freely falling timelike geodesics. Touch to place a gravitating mass."></canvas>
 <canvas id="gpuCanvas" aria-hidden="true"></canvas>
+<canvas id="trajectoryCanvas" aria-hidden="true"></canvas>
 <div class="hint" id="hint">move · touch · explore</div>
 <div class="planet-cursor" id="planetCursor" aria-hidden="true"></div>
 <div id="gestureStatus" aria-live="polite"></div>
@@ -64,6 +66,12 @@
   const canvas = document.getElementById('universe');
   const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   const gpuCanvas=document.getElementById('gpuCanvas');
+  const trajectoryCanvas=document.getElementById('trajectoryCanvas');
+  const trajectoryCtx=trajectoryCanvas.getContext('2d',{alpha:true,desynchronized:true});
+  const phonePhysics=matchMedia('(pointer:coarse)').matches;
+  let phoneProbe=null;
+  const NEWTON_MU_PER_STRENGTH=1.0e8; // G*M in CSS-pixel^3/s^2; effective screen-space mass scale.
+  const NEWTON_BODY_RADIUS=9; // Uniform-density spherical source inside this radius.
   const gl=gpuCanvas.getContext('webgl2',{alpha:true,antialias:true,desynchronized:true,powerPreference:'high-performance'});
   let gpuProgram=null,gpuVertexBuffer=null,gpuIndexBuffer=null,gpuIndexCount=0,gpuError=null;
   const MAX_GPU_POINTERS=10;
@@ -75,7 +83,7 @@
   const storageKey='spacetime-grid-state-v1';
   let cameraAnimationRaf=0,cameraAnimationTarget=null,cameraAnimationLast=0;
   function worldPoint(x,y){const dx=x-width/2-viewX,dy=y-height/2-viewY,a=viewRotation*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);return {x:(dx*c+dy*sn)/viewScale+width/2,y:(-dx*sn+dy*c)/viewScale+height/2};}
-  function applyView(){const v='translate('+viewX+'px,'+viewY+'px) rotate('+viewRotation+'deg) scale('+viewScale+')';canvas.style.transform=v;gpuCanvas.style.transform=v;}
+  function applyView(){const v='translate('+viewX+'px,'+viewY+'px) rotate('+viewRotation+'deg) scale('+viewScale+')';canvas.style.transform=v;gpuCanvas.style.transform=v;trajectoryCanvas.style.transform=v;}
   function stopCameraAnimation(){if(cameraAnimationRaf)cancelAnimationFrame(cameraAnimationRaf);cameraAnimationRaf=0;cameraAnimationTarget=null;cameraAnimationLast=0;}
   function animateCameraTo(target){
     cameraAnimationTarget={viewX:target.viewX,viewY:target.viewY,viewScale:target.viewScale,viewRotation:target.viewRotation};
@@ -105,7 +113,7 @@
   function showStatus(m){gestureStatus.textContent=m;gestureStatus.classList.add('visible');clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>gestureStatus.classList.remove('visible'),1300);}
   function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
   function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
-  function resetView(){persistentMasses.length=0;updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
+  function resetView(){persistentMasses.length=0;phoneProbe=null;updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
   const gyroButton=document.getElementById('gyroButton');
   let gyroEnabled=false,gyroBaseline=null,gyroTargetX=0,gyroTargetY=0,gyroX=0,gyroY=0,gyroListener=null;
   function handleDeviceOrientation(e){
@@ -342,18 +350,94 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     rayMargin=spacing()*2;
     canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
     gpuCanvas.width=Math.round(width*dpr);gpuCanvas.height=Math.round(height*dpr);
+    trajectoryCanvas.width=Math.round(width*dpr);trajectoryCanvas.height=Math.round(height*dpr);
+    trajectoryCtx.setTransform(dpr,0,0,dpr,0,0);
     ctx.setTransform(dpr,0,0,dpr,0,0);
     if(gpuEnabled)gl.viewport(0,0,gpuCanvas.width,gpuCanvas.height);
     buildGeometry();rebuildBackground();
   }
   window.addEventListener('resize',resize,{passive:true});resize();applyView();
 
+  function addFingerSample(p,w,now){
+    p.samples.push({t:now,x:w.x,y:w.y});
+    while(p.samples.length>2&&(p.samples.length>8||now-p.samples[0].t>120))p.samples.shift();
+    p.travel=Math.max(p.travel,Math.hypot(w.x-p.startX,w.y-p.startY));
+  }
+  function fingerReleaseVelocity(p){
+    const samples=p.samples;
+    if(samples.length<2)return {vx:0,vy:0,speed:0};
+    const t0=samples[0].t,ts=samples.map(q=>(q.t-t0)*0.001);
+    const meanT=ts.reduce((a,b)=>a+b,0)/ts.length;
+    const meanX=samples.reduce((a,b)=>a+b.x,0)/samples.length;
+    const meanY=samples.reduce((a,b)=>a+b.y,0)/samples.length;
+    let denom=0,nx=0,ny=0;
+    for(let i=0;i<samples.length;i++){const dt=ts[i]-meanT;denom+=dt*dt;nx+=dt*(samples[i].x-meanX);ny+=dt*(samples[i].y-meanY);}
+    if(denom<1e-7)return {vx:0,vy:0,speed:0};
+    const vx=nx/denom,vy=ny/denom;
+    return {vx,vy,speed:Math.hypot(vx,vy)};
+  }
+  function launchNewtonProbe(p){
+    const v=fingerReleaseVelocity(p);
+    if(v.speed<35)return;
+    phoneProbe={x:p.startX,y:p.startY,vx:v.vx,vy:v.vy,accumulator:0,age:0,trail:[{x:p.startX,y:p.startY}],active:true,captured:false};
+    showStatus('NEWTON PROBE · '+Math.round(v.speed)+' PX/S');
+  }
+  function newtonAcceleration(x,y){
+    let ax=0,ay=0;
+    for(const mass of persistentMasses){
+      const dx=x-mass.x,dy=y-mass.y,r2=dx*dx+dy*dy,r=Math.sqrt(r2);
+      const mu=NEWTON_MU_PER_STRENGTH*Math.max(0,mass.strength);
+      // Exact inverse-square field outside each body; uniform-density sphere inside.
+      const scale=r<NEWTON_BODY_RADIUS?-mu/(NEWTON_BODY_RADIUS**3):-mu/(r2*r||1);
+      ax+=scale*dx;ay+=scale*dy;
+    }
+    return {x:ax,y:ay};
+  }
+  function stepNewtonProbe(frameMs){
+    const p=phoneProbe;if(!p||!p.active||paused)return;
+    p.accumulator+=Math.min(50,Math.max(0,frameMs))*0.001;
+    const h=1/480;let steps=0;
+    while(p.accumulator>=h&&steps<24){
+      const a0=newtonAcceleration(p.x,p.y);
+      p.vx+=0.5*a0.x*h;p.vy+=0.5*a0.y*h;
+      p.x+=p.vx*h;p.y+=p.vy*h;
+      const a1=newtonAcceleration(p.x,p.y);
+      p.vx+=0.5*a1.x*h;p.vy+=0.5*a1.y*h;
+      p.accumulator-=h;p.age+=h;steps++;
+      for(const mass of persistentMasses){
+        if(Math.hypot(p.x-mass.x,p.y-mass.y)<=NEWTON_BODY_RADIUS){p.active=false;p.captured=true;break;}
+      }
+      if(!p.active)break;
+      if(p.x< -width*2||p.x>width*3||p.y< -height*2||p.y>height*3||p.age>30){p.active=false;break;}
+    }
+    if(steps>=24)p.accumulator=0;
+    if(p.active){
+      const last=p.trail[p.trail.length-1];
+      if(!last||Math.hypot(p.x-last.x,p.y-last.y)>1.5)p.trail.push({x:p.x,y:p.y});
+      if(p.trail.length>900)p.trail.shift();
+    }
+  }
+  function drawNewtonProbe(){
+    trajectoryCtx.clearRect(0,0,width,height);
+    const p=phoneProbe;if(!p||!p.trail.length)return;
+    trajectoryCtx.save();
+    trajectoryCtx.lineWidth=2;trajectoryCtx.lineJoin='round';trajectoryCtx.lineCap='round';
+    trajectoryCtx.strokeStyle='rgba(125,190,255,.82)';trajectoryCtx.beginPath();
+    for(let i=0;i<p.trail.length;i++){const q=p.trail[i];if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);}
+    trajectoryCtx.stroke();
+    trajectoryCtx.shadowColor='rgba(140,205,255,.9)';trajectoryCtx.shadowBlur=12;
+    trajectoryCtx.fillStyle=p.captured?'rgba(255,190,125,.95)':'rgba(225,242,255,.98)';
+    trajectoryCtx.beginPath();trajectoryCtx.arc(p.x,p.y,4.5,0,Math.PI*2);trajectoryCtx.fill();
+    trajectoryCtx.restore();
+  }
   function pointerDown(e){
     if(e.pointerType==="mouse")return;
     e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
-    const w=worldPoint(e.clientX,e.clientY);
-    pointers.set(e.pointerId,{x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:1,life:1,down:true,pointerType:e.pointerType});
-    if(e.pointerType==='touch'){clearTimeout(longPressTimer);longPressPointer=e.pointerId;longPressTimer=setTimeout(()=>{const p=pointers.get(e.pointerId);if(p&&p.down){if(persistentMasses.length>=8)persistentMasses.shift();persistentMasses.push({x:p.tx,y:p.ty,strength:1});saveState();showStatus('MASS PLACED · '+persistentMasses.length);}},560);}
+    const w=worldPoint(e.clientX,e.clientY),now=performance.now();
+    const p={x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:1,life:1,down:true,pointerType:e.pointerType,
+      startX:w.x,startY:w.y,samples:[{t:now,x:w.x,y:w.y}],travel:0,massPlaced:false};
+    pointers.set(e.pointerId,p);
+    if(e.pointerType==='touch'){clearTimeout(longPressTimer);longPressPointer=e.pointerId;longPressTimer=setTimeout(()=>{const active=pointers.get(e.pointerId);if(active&&active.down){if(persistentMasses.length>=8)persistentMasses.shift();persistentMasses.push({x:active.tx,y:active.ty,strength:1});active.massPlaced=true;saveState();showStatus('MASS PLACED · '+persistentMasses.length);}},560);}
     hint.classList.add('hidden');clearTimeout(hintTimer);
   }
   function pointerMove(e){
@@ -362,10 +446,22 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       planetCursor.classList.add("visible");
     }
     const w=worldPoint(e.clientX,e.clientY),p=pointers.get(e.pointerId);
-    if(p){p.tx=w.x;p.ty=w.y;if(Math.hypot(p.tx-p.x,p.ty-p.y)>12&&longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}}
-    else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
+    if(p){
+      p.tx=w.x;p.ty=w.y;
+      if(p.down&&p.pointerType==='touch')addFingerSample(p,w,performance.now());
+      if(Math.hypot(p.tx-p.x,p.ty-p.y)>12&&longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}
+    }else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
   }
-  function pointerEnd(e){const p=pointers.get(e.pointerId);if(e.pointerType==='mouse'||p?.hover||p?.pointerType==='mouse')return;if(longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}if(p){p.life=0;p.targetStrength=0;p.down=false;}}
+  function pointerEnd(e){
+    const p=pointers.get(e.pointerId);
+    if(e.pointerType==='mouse'||p?.hover||p?.pointerType==='mouse'||!p?.down)return;
+    if(longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}
+    if(e.type==='pointerup'&&phonePhysics&&!p.massPlaced){
+      const w=worldPoint(e.clientX,e.clientY);addFingerSample(p,w,performance.now());
+      if(p.travel>14)launchNewtonProbe(p);
+    }
+    p.life=0;p.targetStrength=0;p.down=false;
+  }
   document.addEventListener('contextmenu',e=>e.preventDefault());
   document.addEventListener('selectstart',e=>e.preventDefault());
   document.addEventListener('dragstart',e=>e.preventDefault());
@@ -599,6 +695,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
     if(gpuEnabled)drawGpu(t);
+    if(phonePhysics){stepNewtonProbe(dt);drawNewtonProbe();}
     else {
       const g=geometry;
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
@@ -620,7 +717,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
   function start(){if(!document.hidden&&!raf)raf=requestAnimationFrame(render);}
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){persistentMasses.length=0;if(raf)cancelAnimationFrame(raf);raf=0;last=0;lastFrame=0;}else start();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){persistentMasses.length=0;phoneProbe=null;if(raf)cancelAnimationFrame(raf);raf=0;last=0;lastFrame=0;}else start();});
   reducedMotion.addEventListener?.('change',start);
   if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
   start();
