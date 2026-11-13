@@ -232,7 +232,7 @@ function screenToWorld(x,y){
   return {x:c*sx-s*sy,y:s*sx+c*sy};
 }
 function worldVectorFromScreen(x,y){
-  const a=(-state.camera.rotation+groundViewAngle())*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+  const a=(-state.camera.rotation)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
   return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
 }
 function buildStaticGrid(){
