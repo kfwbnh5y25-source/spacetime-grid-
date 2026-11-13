@@ -134,6 +134,9 @@ function gravityMathSelfTest(){
  }
  return {pass:maxRoundTripError<1e-10&&maxNormError<1e-10,maxRoundTripError,maxNormError,angles:[0,37,90,180,270,359],method:'proper device-to-screen rotation; inverse uses negative screen angle'};
 }
+function massScreenPositions(){
+  return state.masses.map(m=>({x:+(state.w/2+state.camera.x+m.x*state.camera.scale).toFixed(2),y:+(state.h/2+state.camera.y+m.y*state.camera.scale).toFixed(2)}));
+}
 function syncScreenBasis(){
  const angle=currentAngle();
  if(angle!==lastScreenAngle){
@@ -467,16 +470,22 @@ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 function evaluateGridOrientation(events){
  const transitions=events.filter(e=>e.type==='screen-basis-change');
  const resizes=events.filter(e=>e.type==='viewport-resize');
+ const initialAngle=transitions.length?transitions[0].fromAngle:0;
  const checks=transitions.map(t=>{
   const expectedLandscape=t.toAngle===90||t.toAngle===270;
-  const matching=resizes.filter(r=>r.t>=t.t&&r.t-t.t<=2500&&((r.viewport[0]>=r.viewport[1])===expectedLandscape));
-  const resize=matching.length?matching[matching.length-1]:null;
-  const locked=Math.abs(Number(t.renderRotationDeg)||0)<=0.01;
-  return {fromAngle:t.fromAngle,toAngle:t.toAngle,atMs:t.t,renderRotationDeg:t.renderRotationDeg,renderLocked:locked,viewportUpdated:!!resize,viewport:resize?.viewport||null,canvasPixels:resize?.canvasPixels||null,orientationMatches:!!resize,passed:locked&&!!resize};
+  const resize=resizes.find(r=>r.t>=t.t&&r.t-t.t<=2500&&((r.viewport[0]>=r.viewport[1])===expectedLandscape))||null;
+  const expectedGridRotation=((t.toAngle-initialAngle+540)%360)-180;
+  const gridRotationError=Math.abs(((Number(t.gridRotationDeg)-expectedGridRotation+540)%360)-180);
+  const before=t.massScreenPositions||[],after=resize?.massScreenPositions||[];
+  let maxMassDisplacementPx=null;
+  if(before.length&&before.length===after.length)maxMassDisplacementPx=Math.max(...before.map((p,i)=>Math.hypot(p.x-after[i].x,p.y-after[i].y)));
+  const massesHeld=maxMassDisplacementPx===null?before.length===0:maxMassDisplacementPx<=3;
+  const gridRotated=Math.abs(gridRotationError)<=0.1;
+  return {fromAngle:t.fromAngle,toAngle:t.toAngle,atMs:t.t,gridRotationDeg:t.gridRotationDeg,expectedGridRotationDeg:expectedGridRotation,gridRotationErrorDeg:+gridRotationError.toFixed(3),gridRotated,viewportUpdated:!!resize,viewport:resize?.viewport||null,canvasPixels:resize?.canvasPixels||null,massCount:before.length,maxMassDisplacementPx:maxMassDisplacementPx===null?null:+maxMassDisplacementPx.toFixed(2),massesHeld,passed:gridRotated&&!!resize&&massesHeld};
  });
  const passed=checks.filter(c=>c.passed).length;
  const complete=transitions.length===4;
- return {protocol:'mass-anchored-grid-v2',status:complete&&passed===4?'PASS':'INCOMPLETE_OR_FAIL',criteria:{requiredTransitions:4,observedTransitions:transitions.length,renderRotationToleranceDeg:0.01,viewportResizeWindowMs:2500},passed,total:checks.length,checks,notes:['On touch devices the grid rotates around the collective mass centre while mass screen positions are held fixed across viewport changes.','Each transition records the grid rotation and a matching viewport resize within 2.5 seconds.']};
+ return {protocol:'mass-anchored-grid-v2',status:complete&&passed===4?'PASS':'INCOMPLETE_OR_FAIL',criteria:{requiredTransitions:4,observedTransitions:transitions.length,gridRotationToleranceDeg:0.1,massScreenPositionTolerancePx:3,viewportResizeWindowMs:2500},passed,total:checks.length,checks,notes:['On touch devices the grid rotates around the collective mass centre while mass screen positions are held fixed across viewport changes.','Each transition must rotate the grid to the phone's relative screen angle, retain mass screen positions within 3 px, and record a matching viewport resize within 2.5 seconds.']};
 }
 async function runOrientationWorkflow(){
  if(orientationWorkflow.active)return;
