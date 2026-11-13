@@ -1,4 +1,4 @@
-const CACHE='spacetime-feedback-shell-v2';
+const CACHE='spacetime-feedback-shell-v3';
 const SHELL=['./','./index.html','./manifest.webmanifest','../icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
@@ -12,8 +12,8 @@ self.addEventListener('message',event=>{
 self.addEventListener('fetch',event=>{
   const request=event.request,url=new URL(request.url);
   if(request.method!=='GET'||url.origin!==self.location.origin)return;
-  event.respondWith(caches.match(request).then(hit=>hit||fetch(request).then(response=>{
+  event.respondWith(caches.open(CACHE).then(cache=>cache.match(request)).then(hit=>hit||fetch(request).then(response=>{
     if(response.ok){const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(request,copy));}
     return response;
-  }).catch(()=>caches.match('./index.html'))));
+  }).catch(()=>caches.open(CACHE).then(cache=>cache.match('./index.html')))));
 });
