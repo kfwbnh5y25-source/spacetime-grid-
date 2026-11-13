@@ -77,7 +77,7 @@ button:disabled{opacity:.45}
 <div class="metric"><b>INDEXEDDB</b><span id="dbTime">—</span></div>
 </div>
 <div id="workflow">
-<h3>ADVANCED SENSOR CHECK · 24 SECONDS</h3>
+<h3>ADVANCED SENSOR + ROTATION CHECK · 38 SECONDS</h3>
 <p>This is a separate short diagnostic: one selected starting orientation, six tilt movements, then a continuous 90° left rotation and return (about 38 seconds). Run this with iOS Orientation Lock OFF to measure the live screen-orientation transition. The four-orientation matrix remains a separate static-axis comparison.</p>
 <div class="wf-controls">
 <select id="physicalOrientation" aria-label="Physical phone orientation"><option value="portrait_upright">Portrait · upright</option><option value="portrait_inverted">Portrait · upside down</option><option value="landscape_left">Landscape · left</option><option value="landscape_right">Landscape · right</option></select>
@@ -373,8 +373,8 @@ async function runOrientationWorkflow(){
  $('workflowStart').textContent='RUN AGAIN';
 }
 $('workflowStart').addEventListener('click',runOrientationWorkflow);
-$('physicalOrientation').addEventListener('change',()=>{$('workflowStart').textContent='START 6-STEP RUN';});
-$('rotationLock').addEventListener('change',()=>{$('workflowStart').textContent='START 6-STEP RUN';});
+$('physicalOrientation').addEventListener('change',()=>{$('workflowStart').textContent='START 38s ROTATION CHECK';});
+$('rotationLock').addEventListener('change',()=>{$('workflowStart').textContent='START 38s ROTATION CHECK';});
 
 function makeRunId(){
   if(window.crypto&&typeof crypto.randomUUID==='function')return crypto.randomUUID();
