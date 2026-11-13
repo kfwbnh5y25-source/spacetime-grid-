@@ -259,7 +259,7 @@ vec4 traceTimelike(vec2 p,vec2 direction){
 void main(){
  vec2 initial=mix(a_xy,a_other,a_end);
  vec4 state=traceTimelike(initial,normalize(a_other-a_xy));
- vec2 tangent=length(state.zw)>1e-6?normalize(state.zw):normalize(a_other-a_xy);
+ vec2 tangent=normalize(a_other-a_xy);
  vec2 normal=vec2(-tangent.y,tangent.x);
  vec2 p=state.xy+normal*a_side*1.2;
  gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
