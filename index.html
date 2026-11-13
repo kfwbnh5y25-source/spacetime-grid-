@@ -245,8 +245,8 @@ vec4 traceTimelike(vec2 p,vec2 direction){
  // Grid points are released from rest: u^i(t=0)=0.
  vec2 v=vec2(0.0);
  float total=min(max(u_time,0.0)*0.0015,24.0);
- float h=total/64.0;
- for(int k=0;k<64;k++){
+ float h=total/12.0;
+ for(int k=0;k<12;k++){
   vec2 a0=geodesicAccel(p);
   vec2 vm=v+0.5*h*a0;
   vec2 pm=p+0.5*h*v;
@@ -670,7 +670,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function warpVertex(g,i,t,horizontal){
     let x=g.x[i],y=g.y[i];
     let vx=0,vy=0;
-    const total=Math.min(Math.max(0,t)*0.0015,24.0),h=total/64;
+    const total=Math.min(Math.max(0,t)*0.0015,24.0),h=total/12;
     const accel=(px,py)=>{
       let ax=0,ay=0;
       for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
@@ -680,7 +680,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       }
       return [ax,ay];
     };
-    for(let k=0;k<64;k++){
+    for(let k=0;k<12;k++){
       const [ax,ay]=accel(x,y),mx=x+0.5*h*vx,my=y+0.5*h*vy;
       const [amx,amy]=accel(mx,my);
       x+=h*(vx+0.5*h*ax);y+=h*(vy+0.5*h*ay);
@@ -694,7 +694,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const total=Math.min(Math.max(0,t)*0.0015,24.0);
     const active=fields.filter(m=>m.strength>.01).slice(0,MAX_GPU_POINTERS);
     if(total<1e-5||!active.length)return {sources:active.length,simTime:total,rmsPx:0,maxPx:0,samples:0};
-    const h=total/64;
+    const h=total/12;
     const accel=(px,py)=>{
       let ax=0,ay=0;
       for(const m of active){
@@ -707,7 +707,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     let sumSq=0,max=0,samples=0;
     const probe=(sx,sy,horizontal)=>{
       let x=sx,y=sy,vx=0,vy=0;
-      for(let k=0;k<64;k++){
+      for(let k=0;k<12;k++){
         const [ax,ay]=accel(x,y),mx=x+.5*h*vx,my=y+.5*h*vy;
         const [amx,amy]=accel(mx,my);
         x+=h*(vx+.5*h*ax);y+=h*(vy+.5*h*ay);
