@@ -433,17 +433,32 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       if(p.trail.length>900)p.trail.shift();
     }
   }
-  function drawNewtonProbe(){
+  let trailFrameX=null,trailFrameY=null;
+  function drawNewtonProbe(frameMs=16){
     trajectoryCtx.clearRect(0,0,width,height);trajectoryCtx.save();
     trajectoryCtx.lineCap='round';trajectoryCtx.lineJoin='round';
-    // Positions and trails are already stored in the same COM coordinates
-    // used by the gravity field and geodesic renderer.
+    // Trails and planet markers are rendered in a COM-centred local frame.
+    // Physics positions and stored trail samples remain in inertial coordinates.
+    let totalMass=0,comX=0,comY=0;
     for(const body of persistentMasses){
-      const pos=body;
+      const weight=Math.max(0,body.mass??20);
+      totalMass+=weight;comX+=weight*body.x;comY+=weight*body.y;
+    }
+    if(totalMass>0){comX/=totalMass;comY/=totalMass;}
+    else{comX=width*.5;comY=height*.5;}
+    if(trailFrameX===null||trailFrameY===null){trailFrameX=comX;trailFrameY=comY;}
+    else{
+      const blend=1-Math.exp(-Math.min(100,Math.max(0,frameMs))/180);
+      trailFrameX+=(comX-trailFrameX)*blend;
+      trailFrameY+=(comY-trailFrameY)*blend;
+    }
+    const localPoint=q=>({x:q.x-trailFrameX+width*.5,y:q.y-trailFrameY+height*.5});
+    for(const body of persistentMasses){
+      const pos=localPoint(body);
       if(trailsEnabled&&body.trail?.length>1){
         trajectoryCtx.beginPath();
         for(let i=0;i<body.trail.length;i++){
-          const q=body.trail[i];
+          const q=localPoint(body.trail[i]);
           if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);
         }
         trajectoryCtx.strokeStyle='rgba(118,174,255,.36)';trajectoryCtx.lineWidth=1.35;trajectoryCtx.stroke();
@@ -859,7 +874,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     // A synthetic source exists only in the benchmark URL; it never enters saved app state.
     if(benchMode&&benchParams.has('probe'))fields.push({x:width*.5,y:height*.5,strength:1,benchmarkProbe:true});
     if(gpuEnabled)drawGpu(t);
-    stepNewtonProbe(dt);drawNewtonProbe();
+    stepNewtonProbe(dt);drawNewtonProbe(dt);
     if(!gpuEnabled){
       const g=geometry;
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
