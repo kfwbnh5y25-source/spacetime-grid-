@@ -434,42 +434,59 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }
   }
   function drawNewtonProbe(){
-    trajectoryCtx.clearRect(0,0,width,height);trajectoryCtx.save();trajectoryCtx.lineCap='round';trajectoryCtx.lineJoin='round';
+    trajectoryCtx.clearRect(0,0,width,height);trajectoryCtx.save();
+    trajectoryCtx.lineCap='round';trajectoryCtx.lineJoin='round';
+    // Render all body positions and their blue trails in the instantaneous
+    // centre-of-mass coordinate system, centred on the viewport.
+    let total=0,comX=0,comY=0;
     for(const body of persistentMasses){
+      const m=Math.max(0,body.mass??20);total+=m;comX+=m*body.x;comY+=m*body.y;
+    }
+    if(total>0){comX/=total;comY/=total;}else{comX=width*.5;comY=height*.5;}
+    const localPoint=q=>({x:q.x-comX+width*.5,y:q.y-comY+height*.5});
+    for(const body of persistentMasses){
+      const pos=localPoint(body);
       if(trailsEnabled&&body.trail?.length>1){
-        trajectoryCtx.beginPath();for(let i=0;i<body.trail.length;i++){const q=body.trail[i];if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);}
+        trajectoryCtx.beginPath();
+        for(let i=0;i<body.trail.length;i++){
+          const q=localPoint(body.trail[i]);
+          if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);
+        }
         trajectoryCtx.strokeStyle='rgba(118,174,255,.36)';trajectoryCtx.lineWidth=1.35;trajectoryCtx.stroke();
       }
       const radius=Math.max(4,Math.min(22,3+Math.sqrt(Math.max(0,body.mass??20))*1.45));
-      const glow=trajectoryCtx.createRadialGradient(body.x-radius*.28,body.y-radius*.3,1,body.x,body.y,radius*2.2);
+      const glow=trajectoryCtx.createRadialGradient(pos.x-radius*.28,pos.y-radius*.3,1,pos.x,pos.y,radius*2.2);
       glow.addColorStop(0,'rgba(255,255,255,.98)');glow.addColorStop(.22,'rgba(188,220,255,.98)');glow.addColorStop(.62,'rgba(77,133,205,.9)');glow.addColorStop(1,'rgba(44,86,145,0)');
-      trajectoryCtx.fillStyle=glow;trajectoryCtx.shadowColor='rgba(120,180,255,.85)';trajectoryCtx.shadowBlur=12;trajectoryCtx.beginPath();trajectoryCtx.arc(body.x,body.y,radius*2.2,0,Math.PI*2);trajectoryCtx.fill();
-      trajectoryCtx.shadowBlur=0;trajectoryCtx.fillStyle='rgba(225,239,255,.95)';trajectoryCtx.beginPath();trajectoryCtx.arc(body.x,body.y,radius*.62,0,Math.PI*2);trajectoryCtx.fill();
-      if((body.mass??0)>=45){trajectoryCtx.strokeStyle='rgba(190,220,255,.55)';trajectoryCtx.lineWidth=1;trajectoryCtx.beginPath();trajectoryCtx.ellipse(body.x,body.y,radius*1.65,radius*.58,-.35,0,Math.PI*2);trajectoryCtx.stroke();}
+      trajectoryCtx.fillStyle=glow;trajectoryCtx.shadowColor='rgba(120,180,255,.85)';trajectoryCtx.shadowBlur=12;
+      trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,radius*2.2,0,Math.PI*2);trajectoryCtx.fill();
+      trajectoryCtx.shadowBlur=0;trajectoryCtx.fillStyle='rgba(225,239,255,.95)';
+      trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,radius*.62,0,Math.PI*2);trajectoryCtx.fill();
+      if((body.mass??0)>=45){
+        trajectoryCtx.strokeStyle='rgba(190,220,255,.55)';trajectoryCtx.lineWidth=1;
+        trajectoryCtx.beginPath();trajectoryCtx.ellipse(pos.x,pos.y,radius*1.65,radius*.58,-.35,0,Math.PI*2);trajectoryCtx.stroke();
+      }
     }
-    const p=phoneProbe;
-    if(p&&p.trail){
-      if(trailsEnabled&&p.trail.length){trajectoryCtx.lineWidth=2;trajectoryCtx.strokeStyle='rgba(125,190,255,.88)';trajectoryCtx.beginPath();for(let i=0;i<p.trail.length;i++){const q=p.trail[i];if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);}trajectoryCtx.stroke();}
-      if(p.active||p.captured){trajectoryCtx.shadowColor='rgba(140,205,255,.9)';trajectoryCtx.shadowBlur=12;trajectoryCtx.fillStyle=p.captured?'rgba(255,190,125,.95)':'rgba(225,242,255,.98)';trajectoryCtx.beginPath();trajectoryCtx.arc(p.x,p.y,4.5,0,Math.PI*2);trajectoryCtx.fill();}
-    }
+    // The legacy probe is an inertial-frame Newtonian path, not a local-frame
+    // geodesic, so deliberately do not display its blue trajectory.
     trajectoryCtx.restore();
   }
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
     if(persistentMasses.length>=24)persistentMasses.shift();
     persistentMasses.push({x,y,mass,vx,vy,trail:[{x,y}],trailClock:0,strength:1});
+    setCenterOfMassVelocityFrame();
     showStatus('PLANET ADDED · '+mass);
   }
-  function subtractMeanMotion(){
+  function setCenterOfMassVelocityFrame(){
     if(!phonePhysics||persistentMasses.length<2)return;
     let total=0,vx=0,vy=0;
     for(const body of persistentMasses){
-      const mass=body.mass??20;
+      const mass=Math.max(0,body.mass??20);
       total+=mass;vx+=mass*(body.vx||0);vy+=mass*(body.vy||0);
     }
     if(total<=0)return;
     vx/=total;vy/=total;
-    // Work in the centre-of-mass frame: remove only the shared translational
-    // velocity. Positions and relative velocities are never shifted.
+    // Apply a single Galilean boost when a body is added. Do not repeat this
+    // during integration: Newtonian internal forces conserve COM momentum.
     for(const body of persistentMasses){
       body.vx=(body.vx||0)-vx;
       body.vy=(body.vy||0)-vy;
@@ -498,7 +515,6 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       for(let i=0;i<n;i++){
         const b=persistentMasses[i];b.vx=(b.vx||0)+.5*planetAx[i]*PLANET_DT;b.vy=(b.vy||0)+.5*planetAy[i]*PLANET_DT;
       }
-      subtractMeanMotion();
       for(const b of persistentMasses){b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;}
       for(let i=0;i<n;i++){const a=massAccelerationAt(i),b=persistentMasses[i];b.vx+=.5*a.x*PLANET_DT;b.vy+=.5*a.y*PLANET_DT;}
       subtractMeanMotion();
