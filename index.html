@@ -32,7 +32,7 @@
   const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   const gpuCanvas=document.getElementById('gpuCanvas');
   const gl=gpuCanvas.getContext('webgl2',{alpha:true,antialias:true,desynchronized:true,powerPreference:'high-performance'});
-  let gpuProgram=null,gpuVertexBuffer=null,gpuIndexBuffer=null,gpuIndexCount=0;
+  let gpuProgram=null,gpuVertexBuffer=null,gpuIndexBuffer=null,gpuIndexCount=0,gpuError=null;
   const MAX_GPU_POINTERS=10;
   const hint = document.getElementById('hint');
   const pointers = new Map();
@@ -60,10 +60,10 @@
   function initGpu(){
     if(!gl)return false;
     const vs="#version 300 es\nprecision highp float;\nlayout(location=0) in vec2 a_xy;\nlayout(location=1) in vec2 a_ab;\nlayout(location=2) in vec2 a_cd;\nlayout(location=3) in vec2 a_ef;\nlayout(location=4) in vec2 a_gh;\nlayout(location=5) in vec2 a_ij;\nuniform vec2 u_resolution;\nuniform float u_inv2Sigma2;\nuniform vec2 u_pointer[10];\nuniform float u_strength[10];\nuniform int u_pointerCount;\nuniform vec2 u_phase[5];\nvoid main(){\nvec2 p=a_xy;\nfor(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-a_xy;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p-=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}\nfloat wx=2.0*(a_ab.x*u_phase[0].y+a_ab.y*u_phase[0].x)+(a_cd.x*u_phase[1].y-a_cd.y*u_phase[1].x);\nfloat wy=2.0*(a_ef.x*u_phase[2].y-a_ef.y*u_phase[2].x)+(a_gh.x*u_phase[3].y+a_gh.y*u_phase[3].x);\nfloat br=0.45*(a_ij.x*u_phase[4].y+a_ij.y*u_phase[4].x);p+=vec2(wx,wy+br);\ngl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);\n}";
-    const fs='#version 300 es\\nprecision mediump float;\\nout vec4 color;\\nvoid main(){color=vec4(0.92,0.95,1.0,0.29);}';
+    const fs='#version 300 es\nprecision mediump float;\nout vec4 color;\nvoid main(){color=vec4(0.92,0.95,1.0,0.29);}';
     const compile=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
     try{const v=compile(gl.VERTEX_SHADER,vs),f=compile(gl.FRAGMENT_SHADER,fs);gpuProgram=gl.createProgram();gl.attachShader(gpuProgram,v);gl.attachShader(gpuProgram,f);gl.linkProgram(gpuProgram);gl.deleteShader(v);gl.deleteShader(f);if(!gl.getProgramParameter(gpuProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(gpuProgram));gpuVertexBuffer=gl.createBuffer();gpuIndexBuffer=gl.createBuffer();gl.useProgram(gpuProgram);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);return true;}
-    catch(e){console.warn('WebGL2 unavailable; retaining Canvas 2D renderer:',e);gpuCanvas.style.display='none';return false;}
+    catch(e){gpuError=String(e&&e.message||e);console.warn('WebGL2 unavailable; retaining Canvas 2D renderer:',e);gpuCanvas.style.display='none';return false;}
   }
   const gpuEnabled=initGpu();
   function uploadGpuGeometry(g){
@@ -191,7 +191,7 @@
   function report(){
     const samples=perf.samples, frames=perf.frames, avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
     const data={
-      renderer:gpuEnabled?'WebGL 2':'Canvas 2D fallback',
+      renderer:gpuEnabled?'WebGL 2':'Canvas 2D fallback',gpuError,
       test:{label:testLabel,renderer:gpuEnabled?'WebGL 2':'Canvas 2D fallback',frameCapHz:frameCap,startedAt:perf.started,frameLog:perf.frameLog},
       device:{userAgent:navigator.userAgent,screen:`${screen.width}x${screen.height}`,viewport:`${innerWidth}x${innerHeight}`,dpr:devicePixelRatio,effectiveDpr:dpr,hardwareConcurrency:navigator.hardwareConcurrency||null},
       session:{seconds:Math.round((performance.now()-perf.started)/1000),frames,observedFps:+(frames/Math.max(.001,(performance.now()-perf.started)/1000)).toFixed(1),estimatedDroppedFrames:perf.dropped,baselineFrameIntervalMs:perf.baselineFrameMs===null?null:+perf.baselineFrameMs.toFixed(2),longTasks:perf.longTasks},
@@ -276,7 +276,7 @@
     perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode){let touchPointers=0,downPointers=0;for(const p of pointers.values()){if(p.down){downPointers++;if(p.pointerType==='touch')touchPointers++;}}perf.frameLog.push({t:+(now-perf.started).toFixed(1),intervalMs:+frameDelta.toFixed(2),renderCpuMs:+renderCost.toFixed(2),activePointers:pointers.size,downPointers,touchPointers,dpr,frameCapHz:frameCap});if(perf.frameLog.length>18000)perf.frameLog.shift();}
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
