@@ -133,7 +133,7 @@
       const q=Math.min(8,r2*inv2Sigma2);
       const qi=q*(gaussian.length-1)/8,lo=qi|0;
       const influence=gaussian[lo]+(gaussian[Math.min(lo+1,gaussian.length-1)]-gaussian[lo])*(qi-lo);
-      const bend=55*p.strength*p.life*influence, invR=1/Math.sqrt(r2);
+      const bend=55*p.strength*influence, invR=1/Math.sqrt(r2);
       ox-=dx*invR*bend;oy-=dy*invR*bend;
     }
     const [s1,c1,s2,c2,s3,c3,s4,c4,s5,c5]=times;
@@ -210,7 +210,7 @@
     }
     perf.renderMs.push(performance.now()-renderStart);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Session ${r.session.seconds}s · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Session ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
