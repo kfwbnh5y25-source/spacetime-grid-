@@ -30,6 +30,10 @@
   const hint = document.getElementById('hint');
   const pointers = new Map();
   const fields = [];
+  const starfield = new Image();
+  starfield.src = 'https://assets.science.nasa.gov/dynamicimage/assets/science/missions/hubble/releases/2012/11/STScI-01EVSKKXBHFJX27QM0284AZ7GZ.jpg?fit=crop&w=1600&h=900';
+  let starfieldReady = false;
+  starfield.onload = () => { starfieldReady = true; };
   let width = 0, height = 0, dpr = 1, last = 0, elapsed = 0, hintTimer;
 
   const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width, height) / 17)));
@@ -88,9 +92,13 @@
       ox += q.x - x;
       oy += q.y - y;
     }
-    // Barely perceptible breathing keeps the empty universe alive.
-    const breathe = Math.sin(t * .00045 + x * .002 + y * .0015) * .65;
-    return [ox, oy + breathe];
+    // Slow travelling ripples make the grid gently undulate even away from the pointer.
+    const waveX = Math.sin(y * .017 + t * .00105) * 2.0
+                + Math.sin((x + y) * .008 - t * .00072) * 1.0;
+    const waveY = Math.sin(x * .016 - t * .00092) * 2.0
+                + Math.sin((x - y) * .009 + t * .00066) * 1.0;
+    const breathe = Math.sin(t * .00045 + x * .002 + y * .0015) * .45;
+    return [ox + waveX, oy + waveY + breathe];
   }
 
   function render(now) {
@@ -98,6 +106,15 @@
     last = now; elapsed += dt;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, width, height);
+    if (starfieldReady) {
+      const scale = Math.max(width / starfield.width, height / starfield.height);
+      const sw = starfield.width * scale, sh = starfield.height * scale;
+      ctx.globalAlpha = .34;
+      ctx.drawImage(starfield, (width - sw) / 2, (height - sh) / 2, sw, sh);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = 'rgba(0,0,0,.58)';
+      ctx.fillRect(0, 0, width, height);
+    }
 
     fields.length = 0;
     for (const [id,p] of pointers) {
