@@ -135,7 +135,9 @@ function gravityMathSelfTest(){
  return {pass:maxRoundTripError<1e-10&&maxNormError<1e-10,maxRoundTripError,maxNormError,angles:[0,37,90,180,270,359],method:'proper device-to-screen rotation; inverse uses negative screen angle'};
 }
 function massScreenPositions(){
-  return state.masses.map(m=>({x:+(state.w/2+state.camera.x+m.x*state.camera.scale).toFixed(2),y:+(state.h/2+state.camera.y+m.y*state.camera.scale).toFixed(2)}));
+  const phoneMode=matchMedia('(pointer:coarse)').matches,angle=(phoneMode?gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+  const baseX=state.w/2+state.camera.x,baseY=state.h/2+state.camera.y,p=massCentroidWorld();
+  return state.masses.map(m=>{const dx=(m.x-p.x)*state.camera.scale,dy=(m.y-p.y)*state.camera.scale;return {x:+(baseX+p.x*state.camera.scale+c*dx-s*dy).toFixed(2),y:+(baseY+p.y*state.camera.scale+s*dx+c*dy).toFixed(2)};});
 }
 function syncScreenBasis(){
  const angle=currentAngle();
@@ -278,12 +280,20 @@ function cameraToTarget(patch){
   if(matchMedia('(pointer:coarse)').matches){patch={...patch};delete patch.rotation;}
   Object.assign(state.target,patch);
 }
+function massCentroidWorld(){
+  if(!state.masses.length)return {x:0,y:0};
+  let x=0,y=0;for(const m of state.masses){x+=m.x;y+=m.y;}
+  return {x:x/state.masses.length,y:y/state.masses.length};
+}
 function screenToWorld(x,y){
-  const a=(-state.camera.rotation)*Math.PI/180,c=Math.cos(a),s=Math.sin(a),sx=(x-state.w/2-state.camera.x)/state.camera.scale,sy=(y-state.h/2-state.camera.y)/state.camera.scale;
+  const phoneMode=matchMedia('(pointer:coarse)').matches;
+  const angle=(phoneMode?gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+  const sx=(x-state.w/2-state.camera.x)/state.camera.scale,sy=(y-state.h/2-state.camera.y)/state.camera.scale;
+  if(phoneMode){const p=massCentroidWorld(),dx=sx-p.x,dy=sy-p.y;return {x:p.x+c*dx+s*dy,y:p.y-s*dx+c*dy};}
   return {x:c*sx-s*sy,y:s*sx+c*sy};
 }
 function worldVectorFromScreen(x,y){
-  const a=(-state.camera.rotation)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+  const angle=-(matchMedia('(pointer:coarse)').matches?gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
   return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
 }
 function buildStaticGrid(){
@@ -304,8 +314,9 @@ function draw(){
   const phoneMode=matchMedia('(pointer:coarse)').matches;
   const renderRotation=phoneMode?0:state.camera.rotation;
   if(phoneMode){
-    // The grid has its own display transform. Its pivot is the collective
-    // centre of the masses; the masses themselves are rendered unrotated.
+    // Both the grid and mass coordinates are expressed in the ground frame.
+    // Rotate the complete scene around the mass centroid as the display turns,
+    // so a ground-vertical row becomes horizontal on a landscape display.
     let mx=0,my=0;
     if(state.masses.length){for(const m of state.masses){mx+=m.x;my+=m.y;}mx/=state.masses.length;my/=state.masses.length;}
     const baseX=w/2+state.camera.x,baseY=h/2+state.camera.y,scale=state.camera.scale;
@@ -314,8 +325,6 @@ function draw(){
     ctx.translate(pivotX,pivotY);ctx.rotate(gridRotation*Math.PI/180);ctx.translate(-pivotX,-pivotY);
     ctx.translate(baseX,baseY);ctx.scale(scale,scale);
     if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
-    ctx.restore();
-    ctx.save();ctx.translate(baseX,baseY);ctx.scale(scale,scale);
     for(const m of state.masses){
       ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
       ctx.fillStyle='#d9eaff';ctx.beginPath();ctx.arc(m.x,m.y,4.5,0,Math.PI*2);ctx.fill();
@@ -333,11 +342,12 @@ function draw(){
 }
 function stepPhysics(dtMs){
   const dt=Math.min(.04,Math.max(0,dtMs/1000));if(!dt||!state.masses.length)return;
-  const a=state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+  const phoneMode=matchMedia('(pointer:coarse)').matches;
+  const viewAngle=(phoneMode?gridRotation:state.camera.rotation)*Math.PI/180;
   const force=110*state.sensitivity;
   const gx=touchGravityEnabled&&touchGravityActive?touchGravityX:motionFilteredX,gy=touchGravityEnabled&&touchGravityActive?touchGravityY:motionFilteredY;
   const worldG=worldVectorFromScreen(gx*force,gy*force);
-  const damp=Math.exp(-state.damping*dt),viewAngle=state.camera.rotation*Math.PI/180,ca=Math.abs(Math.cos(viewAngle)),sa=Math.abs(Math.sin(viewAngle)),halfX=(ca*state.w+sa*state.h)/(2*state.camera.scale),halfY=(sa*state.w+ca*state.h)/(2*state.camera.scale),minX=-halfX+10,maxX=halfX-10,minY=-halfY+10,maxY=halfY-10;
+  const damp=Math.exp(-state.damping*dt),ca=Math.abs(Math.cos(viewAngle)),sa=Math.abs(Math.sin(viewAngle)),halfX=(ca*state.w+sa*state.h)/(2*state.camera.scale),halfY=(sa*state.w+ca*state.h)/(2*state.camera.scale),minX=-halfX+10,maxX=halfX-10,minY=-halfY+10,maxY=halfY-10;
   for(const m of state.masses){
     const edgeX=m.x<minX?Math.min(3,(minX-m.x)*.018):m.x>maxX?-Math.min(3,(m.x-maxX)*.018):0;
     const edgeY=m.y<minY?Math.min(3,(minY-m.y)*.018):m.y>maxY?-Math.min(3,(m.y-maxY)*.018):0;
