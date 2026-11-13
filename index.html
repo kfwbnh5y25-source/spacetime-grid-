@@ -68,7 +68,7 @@
 </style>
 </head>
 <body>
-<canvas id="universe" aria-label="Interactive spacetime grid. Swipe to launch a Newtonian test particle; long-press to place a gravitating mass."></canvas>
+<canvas id="universe" aria-label="Interactive spacetime grid. Swipe to shoot a gravitating planet into the system."></canvas>
 <canvas id="gpuCanvas" aria-hidden="true"></canvas>
 <canvas id="trajectoryCanvas" aria-hidden="true"></canvas>
 <div class="hint" id="hint">swipe · launch · long-press · place mass</div>
@@ -93,7 +93,7 @@
       <label class="simSlider">NEW MASS <output id="massOutput">20</output><input id="massSlider" type="range" min="2" max="100" step="1" value="20"></label>
       <label class="simSlider">GRAVITY G <output id="gravityOutput">3.0</output><input id="gravitySlider" type="range" min="0.5" max="12" step="0.1" value="3"></label>
       <div class="simButtons"><button id="placeMass" type="button">PLACE AT CURSOR</button><button id="launchProbe" type="button">LAUNCH PROBE</button></div>
-      <p class="simHelp">Touch: swipe to launch, long-press to add a mass. Mac: canvas clicks remain inactive; move the cursor, then use Place at Cursor. Right-drag pans. Space pauses · T trails · G gravity · F fit.</p>
+      <p class="simHelp">Phone: swipe to shoot a planet; swipe direction and speed set its initial velocity. Mac: canvas clicks remain inactive; move the cursor, then use Place at Cursor. Right-drag pans. Space pauses · T trails · G gravity · F fit.</p>
     </div>
   </details>
 </section>
@@ -111,7 +111,7 @@
   const NEWTON_BODY_RADIUS=9; // Uniform-density spherical source inside this radius.
   const gl=gpuCanvas.getContext('webgl2',{alpha:true,antialias:true,desynchronized:true,powerPreference:'high-performance'});
   let gpuProgram=null,gpuVertexBuffer=null,gpuIndexBuffer=null,gpuIndexCount=0,gpuError=null;
-  const MAX_GPU_POINTERS=10;
+  const MAX_GPU_POINTERS=24;
   const hint = document.getElementById('hint');
   const planetCursor = document.getElementById('planetCursor');
   const gestureStatus=document.getElementById('gestureStatus');
@@ -219,42 +219,29 @@ layout(location=1) in vec2 a_other;
 layout(location=2) in float a_side;
 layout(location=3) in float a_end;
 uniform vec2 u_resolution;
-uniform vec2 u_pointer[10];
-uniform float u_rS[10];
+uniform vec2 u_pointer[24];
+uniform float u_rS[24];
 uniform int u_pointerCount;
 uniform float u_softening;
 out float v_edge;
 
-// Timelike geodesics in the weak-field, slow-motion limit of the
-// isotropic Schwarzschild metric. In dimensionless screen units:
-// d²x/dτ² = -(r_s/2) (x-X)/(|x-X|²+eps²)^(3/2).
-// Each grid sample is a freely-falling test particle with initial
-// velocity tangent to its grid line. Midpoint integration advances it.
+// Static weak-field spatial geometry in isotropic coordinates.
+// Newtonian potentials superpose; g_ij ≈ (1 - 2 Phi/c²) delta_ij.
+// Render a bounded radial spatial stretch directly, so a lone mass
+// has a stationary field instead of making the grid fall forever.
 uniform float u_time;
-vec2 geodesicAccel(vec2 p){
- vec2 a=vec2(0.0);
- for(int i=0;i<10;i++){
+vec4 traceTimelike(vec2 p,vec2 direction){
+ vec2 displacement=vec2(0.0);
+ for(int i=0;i<24;i++){
   if(i>=u_pointerCount)break;
   vec2 d=p-u_pointer[i];
   float r2=dot(d,d)+u_softening*u_softening;
-  a-=0.5*u_rS[i]*d/(r2*sqrt(r2));
+  float stretch=min(0.22,0.003*u_rS[i]/r2);
+  displacement+=normalize(d+vec2(0.0001))*stretch*sqrt(r2);
  }
- return a;
-}
-vec4 traceTimelike(vec2 p,vec2 direction){
- // Grid points are released from rest: u^i(t=0)=0.
- vec2 v=vec2(0.0);
- float total=min(max(u_time,0.0)*0.0015,24.0);
- float h=total/12.0;
- for(int k=0;k<12;k++){
-  vec2 a0=geodesicAccel(p);
-  vec2 vm=v+0.5*h*a0;
-  vec2 pm=p+0.5*h*v;
-  vec2 am=geodesicAccel(pm);
-  p+=h*vm;
-  v+=h*am;
- }
- return vec4(p,v);
+ float mag=length(displacement);
+ if(mag>34.0)displacement*=34.0/mag;
+ return vec4(p+displacement,0.0,0.0);
 }
 void main(){
  vec2 initial=mix(a_xy,a_other,a_end);
@@ -301,7 +288,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),9.0);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t);
-    const xy=new Float32Array(20),rS=new Float32Array(10);let count=0;
+    const xy=new Float32Array(48),rS=new Float32Array(24);let count=0;
     for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;const mass=p.mass??(p.strength*.25);rS[count]=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);count++;}
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);
@@ -385,8 +372,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const v=fingerReleaseVelocity(p);
     if(v.speed<35)return;
     const speedScale=.35;
-    phoneProbe={x:p.startX,y:p.startY,vx:v.vx*speedScale,vy:v.vy*speedScale,accumulator:0,age:0,trail:[{x:p.startX,y:p.startY}],active:true,captured:false};
-    showStatus('NEWTON PROBE · '+Math.round(v.speed*speedScale)+' PX/S');
+    createMass(p.startX,p.startY,newMassValue,v.vx*speedScale,v.vy*speedScale);
+    showStatus('PLANET SHOT · '+Math.round(v.speed*speedScale)+' PX/S');
   }
   function newtonAcceleration(x,y){
     let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
@@ -443,9 +430,14 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     trajectoryCtx.restore();
   }
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
-    if(persistentMasses.length>=12)persistentMasses.shift();
+    if(persistentMasses.length>=24)persistentMasses.shift();
     persistentMasses.push({x,y,mass,vx,vy,trail:[{x,y}],trailClock:0,strength:1});
-    showStatus('MASS ADDED · '+mass);
+    // Remove shared centre-of-mass drift while preserving relative velocities.
+    let totalMass=0,momentumX=0,momentumY=0;
+    for(const body of persistentMasses){const m=body.mass??20;totalMass+=m;momentumX+=m*(body.vx||0);momentumY+=m*(body.vy||0);}
+    const comVx=momentumX/Math.max(totalMass,1),comVy=momentumY/Math.max(totalMass,1);
+    for(const body of persistentMasses){body.vx=(body.vx||0)-comVx;body.vy=(body.vy||0)-comVy;}
+    showStatus('PLANET ADDED · '+mass);
   }
   function massAccelerationAt(index){
     const body=persistentMasses[index];let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
@@ -506,7 +498,6 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       }
     }
     pointers.set(e.pointerId,p);
-    if(e.pointerType==='touch'){clearTimeout(longPressTimer);longPressPointer=e.pointerId;longPressTimer=setTimeout(()=>{const active=pointers.get(e.pointerId);if(active&&active.down){createMass(active.tx,active.ty,newMassValue);active.massPlaced=true;}},560);}
     hint.classList.add('hidden');clearTimeout(hintTimer);
   }
   function pointerMove(e){
@@ -519,14 +510,12 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(p){
       p.tx=w.x;p.ty=w.y;
       if(p.down&&p.pointerType==='touch')addFingerSample(p,w,performance.now());
-      if(Math.hypot(p.tx-p.x,p.ty-p.y)>12&&longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}
     }else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
   }
   function pointerEnd(e){
     if(e.pointerType==='mouse'){if(mousePan){mousePan=null;scheduleViewSave();}return;}
     const p=pointers.get(e.pointerId);
     if(p?.hover||p?.pointerType==='mouse'||!p?.down)return;
-    if(longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}
     if(e.type==='pointerup'&&phonePhysics&&!p.massPlaced&&!p.multiTouch){
       const w=worldPoint(e.clientX,e.clientY);addFingerSample(p,w,performance.now());
       if(p.travel>14)launchNewtonProbe(p);
@@ -680,13 +669,15 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       }
       return [ax,ay];
     };
-    for(let k=0;k<12;k++){
-      const [ax,ay]=accel(x,y),mx=x+0.5*h*vx,my=y+0.5*h*vy;
-      const [amx,amy]=accel(mx,my);
-      x+=h*(vx+0.5*h*ax);y+=h*(vy+0.5*h*ay);
-      vx+=h*amx;vy+=h*amy;
+    let dxTotal=0,dyTotal=0;
+    for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
+      const m=fields[j],dx=x-m.x,dy=y-m.y,r2=dx*dx+dy*dy+81;
+      const mass=m.mass??(m.strength*.25),rs=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);
+      const stretch=Math.min(.22,.003*rs/r2),r=Math.sqrt(r2);
+      dxTotal+=dx/(r||1)*stretch*r;dyTotal+=dy/(r||1)*stretch*r;
     }
-    warpedX=x;warpedY=y;
+    const mag=Math.hypot(dxTotal,dyTotal),cap=mag>34?34/mag:1;
+    warpedX=x+dxTotal*cap;warpedY=y+dyTotal*cap;
   }
   // Bench-only CPU mirror of the GPU geodesic integrator. Measures shape change
   // relative to each particle's flat-space drift, so uniform translation is excluded.
