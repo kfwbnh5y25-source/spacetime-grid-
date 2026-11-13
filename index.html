@@ -264,10 +264,9 @@ vec4 traceGeodesic(vec2 p,vec2 direction,float distanceAlong){
  return state;
 }
 void main(){
- vec2 segment=a_other-a_xy;
- float segmentLength=length(segment);
- vec2 initial=mix(a_xy,a_other,a_end);
- vec4 state=traceGeodesic(initial,segment,segmentLength);
+ float signedDistance=a_end;
+ vec2 direction=normalize(a_other)*(signedDistance<0.0?-1.0:1.0);
+ vec4 state=traceGeodesic(a_xy,direction,abs(signedDistance));
  vec2 tangent=normalize(state.zw);
  vec2 normal=vec2(-tangent.y,tangent.x);
  vec2 p=state.xy+normal*a_side*1.2;
@@ -287,14 +286,18 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function uploadGpuGeometry(g){
     if(!gpuEnabled)return;
     const segments=[];
-    const pushVertex=(ia,ib,side,end)=>{
-      segments.push(g.x[ia],g.y[ia],g.x[ib],g.y[ib],side,end);
+    const pushVertex=(anchorX,anchorY,dirX,dirY,side,signedDistance)=>{
+      segments.push(anchorX,anchorY,dirX,dirY,side,signedDistance);
     };
     for(let line=0;line<g.starts.length;line++){
       const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;
+      const anchorIndex=Math.floor((from+to-1)*.5),anchorX=g.x[anchorIndex],anchorY=g.y[anchorIndex];
+      const vertical=line<g.verticalLineCount,dirX=vertical?0:1,dirY=vertical?1:0;
       for(let i=from;i<to-1;i++){
-        pushVertex(i,i+1,-1,0);pushVertex(i,i+1,1,0);pushVertex(i,i+1,-1,1);
-        pushVertex(i,i+1,-1,1);pushVertex(i,i+1,1,0);pushVertex(i,i+1,1,1);
+        const d0=(g.x[i]-anchorX)*dirX+(g.y[i]-anchorY)*dirY;
+        const d1=(g.x[i+1]-anchorX)*dirX+(g.y[i+1]-anchorY)*dirY;
+        pushVertex(anchorX,anchorY,dirX,dirY,-1,d0);pushVertex(anchorX,anchorY,dirX,dirY,1,d0);pushVertex(anchorX,anchorY,dirX,dirY,-1,d1);
+        pushVertex(anchorX,anchorY,dirX,dirY,-1,d1);pushVertex(anchorX,anchorY,dirX,dirY,1,d0);pushVertex(anchorX,anchorY,dirX,dirY,1,d1);
       }
     }
     const data=new Float32Array(segments);
@@ -721,10 +724,11 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       const start=g.starts[k],end=k+1<g.starts.length?g.starts[k+1]:g.x.length;
       if(i>=start&&i<end){lineStart=start;lineEnd=end;break;}
     }
-    const neighbor=i+1<lineEnd?i+1:Math.max(lineStart,i-1);
-    const tx=g.x[neighbor]-g.x[i],ty=g.y[neighbor]-g.y[i],distance=Math.hypot(tx,ty);
-    const state=traceSpatialGeodesic(g.x[i],g.y[i],tx,ty,distance);
-    const speed=Math.hypot(state.vx,state.vy)||1,nx=-state.vy/speed,ny=state.vx/speed;
+    const anchorIndex=Math.floor((lineStart+lineEnd-1)*.5),anchorX=g.x[anchorIndex],anchorY=g.y[anchorIndex];
+    const tx=horizontal?1:0,ty=horizontal?0:1;
+    const signedDistance=(g.x[i]-anchorX)*tx+(g.y[i]-anchorY)*ty;
+    const sign=signedDistance<0?-1:1;
+    const state=traceSpatialGeodesic(anchorX,anchorY,tx*sign,ty*sign,Math.abs(signedDistance));
     warpedX=state.x;warpedY=state.y;
   }
   // Bench-only CPU mirror of the GPU geodesic integrator. Measures shape change
