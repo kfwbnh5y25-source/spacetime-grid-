@@ -432,12 +432,22 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
     if(persistentMasses.length>=24)persistentMasses.shift();
     persistentMasses.push({x,y,mass,vx,vy,trail:[{x,y}],trailClock:0,strength:1});
-    // Remove shared centre-of-mass drift while preserving relative velocities.
-    let totalMass=0,momentumX=0,momentumY=0;
-    for(const body of persistentMasses){const m=body.mass??20;totalMass+=m;momentumX+=m*(body.vx||0);momentumY+=m*(body.vy||0);}
-    const comVx=momentumX/Math.max(totalMass,1),comVy=momentumY/Math.max(totalMass,1);
-    for(const body of persistentMasses){body.vx=(body.vx||0)-comVx;body.vy=(body.vy||0)-comVy;}
     showStatus('PLANET ADDED · '+mass);
+  }
+  function followCenterOfMass(){
+    if(!phonePhysics||!persistentMasses.length)return;
+    let total=0,cx=0,cy=0;
+    for(const body of persistentMasses){const m=body.mass??20;total+=m;cx+=m*body.x;cy+=m*body.y;}
+    cx/=Math.max(total,1);cy/=Math.max(total,1);
+    const target=worldPoint(width*.5,height*.5),dx=target.x-cx,dy=target.y-cy;
+    if(Math.abs(dx)+Math.abs(dy)<.001)return;
+    // Translate the whole N-body system into its centre-of-mass frame.
+    // Relative positions, orbital velocities and trails remain unchanged.
+    for(const body of persistentMasses){
+      body.x+=dx;body.y+=dy;
+      if(body.trail)for(const point of body.trail){point.x+=dx;point.y+=dy;}
+    }
+    if(phoneProbe){phoneProbe.x+=dx;phoneProbe.y+=dy;if(phoneProbe.trail)for(const point of phoneProbe.trail){point.x+=dx;point.y+=dy;}}
   }
   function massAccelerationAt(index){
     const body=persistentMasses[index];let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
@@ -799,6 +809,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }
     gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
     advanceMasses(dt);
+    followCenterOfMass();
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
     // A synthetic source exists only in the benchmark URL; it never enters saved app state.
     if(benchMode&&benchParams.has('probe'))fields.push({x:width*.5,y:height*.5,strength:1,benchmarkProbe:true});
