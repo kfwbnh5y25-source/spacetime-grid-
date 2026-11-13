@@ -330,7 +330,7 @@ canvas.addEventListener('pointercancel',pointerEnd,{passive:true});
 canvas.addEventListener('lostpointercapture',pointerEnd,{passive:true});
 canvas.addEventListener('wheel',e=>{
   e.preventDefault();recordInputStart(e.timeStamp||now());
-  if(e.ctrlKey||e.metaKey){const factor=Math.exp(-e.deltaY*.002);cameraToTarget({scale:Math.max(.55,Math.min(3.5,state.target.scale*factor)});}
+  if(e.ctrlKey||e.metaKey){const factor=Math.exp(-e.deltaY*.002);cameraToTarget({scale:Math.max(.55,Math.min(3.5,state.target.scale*factor))});}
   else cameraToTarget({x:state.target.x-e.deltaX,y:state.target.y-e.deltaY});
 },{passive:false});
 if(matchMedia('(hover:hover) and (pointer:fine)').matches){
