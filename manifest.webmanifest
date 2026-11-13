@@ -1,0 +1,13 @@
+{
+  "name":"Spacetime — Interactive Grid",
+  "short_name":"Spacetime",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "display_override":["standalone","minimal-ui"],
+  "background_color":"#000000",
+  "theme_color":"#000000",
+  "orientation":"any",
+  "description":"An interactive curved spacetime grid.",
+  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
