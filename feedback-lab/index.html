@@ -162,15 +162,26 @@ function resize(){
 }
 function scheduleResize(){
   clearTimeout(resizeTimer);
-  resizeTimer=setTimeout(()=>{resize();},140);
+  // iOS WebKit can deliver viewport resize updates during its native
+  // orientation animation. Keep the existing canvas backing store intact
+  // until the viewport has settled, then rebuild it once.
+  const settleDelay=matchMedia('(pointer:coarse)').matches?360:140;
+  resizeTimer=setTimeout(()=>{
+    resize();
+    if(orientationWorkflow.active&&metrics.orientationChangeAt){
+      const last=orientationWorkflow.events[orientationWorkflow.events.length-1];
+      if(last&&last.type==='screen-basis-change')last.resizeSettledAfterMs=+(now()-metrics.orientationChangeAt).toFixed(1);
+    }
+  },settleDelay);
 }
 window.addEventListener('resize',scheduleResize,{passive:true});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleResize,{passive:true});
 if('ResizeObserver'in window){const viewportObserver=new ResizeObserver(scheduleResize);viewportObserver.observe(document.documentElement);}
 function handleOrientationChange(){
-  // Orientation changes update the viewport and sensor basis only; they never rotate the scene camera.
+  // Keep the phone-locked scene transform untouched. Do not resize the
+  // canvas during UIKit/WebKit's animated viewport transition; coalesce
+  // resize/orientation/ResizeObserver notifications and rebuild after settling.
   syncScreenBasis();
-  resize();
   scheduleResize();
 }
 window.addEventListener('orientationchange',handleOrientationChange,{passive:true});
