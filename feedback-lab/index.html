@@ -48,7 +48,7 @@ button:disabled{opacity:.45}
 <button id="wakeBtn">KEEP AWAKE</button>
 <button id="shareBtn">SHARE RESULTS</button>
 <button id="exportBtn">EXPORT JSON</button>
-<button id="sampleBtn">10s MEASURE</button>
+<button id="sampleBtn">10s MEASURE</button><button id="saveBtn">SAVE RESULTS</button>
 </nav>
 <section id="metrics" aria-live="polite">
 <header><strong>SPACETIME FEEDBACK LAB · PWA</strong><span id="status">INITIALISING</span></header>
@@ -63,7 +63,7 @@ button:disabled{opacity:.45}
 <div class="metric"><b>WEB HAPTICS</b><span id="haptics">—</span></div>
 <div class="metric"><b>INDEXEDDB</b><span id="dbTime">—</span></div>
 </div>
-<div id="runState">Drop masses, enable gravity, rotate the phone, drag/pinch the scene. The scene remains center-anchored; only this toolbar changes edge.</div>
+<div id="runState">Drop masses, enable gravity, rotate the phone, drag/pinch the scene. Measurements stay on this device until you tap SAVE RESULTS. No continuous telemetry or account identifier is sent.</div>
 <div id="testResults"></div>
 </section>
 <script>
@@ -279,6 +279,47 @@ function resultObject(){
   const frames=metrics.runFrames.length?metrics.runFrames:metrics.frameTimes;
   return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:percentile(frames,.5),p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,gravityScreen:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges},interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
 }
+let lastCompletedResult=null;
+function makeRunId(){
+  if(window.crypto&&typeof crypto.randomUUID==='function')return crypto.randomUUID();
+  const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
+  bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+  const h=Array.from(bytes,v=>v.toString(16).padStart(2,'0')).join('');
+  return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+}
+async function uploadResult(snapshot){
+  const button=$('saveBtn'),status=$('status');
+  const report=snapshot||lastCompletedResult||resultObject();
+  if(!report){$('runState').textContent='No result is available yet.';return false;}
+  button.disabled=true;const previous=button.textContent;button.textContent='SAVING…';status.textContent='UPLOADING';
+  try{
+    const response=await fetch('https://dpnzgpmlbdrlwackyafa.supabase.co/rest/v1/spacetime_feedback_runs',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey':'sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz',
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify({client_run_id:makeRunId(),app_version:'feedback-lab-v1',report})
+    });
+    if(!response.ok){
+      const detail=await response.text();
+      throw new Error('HTTP '+response.status+' '+detail.slice(0,220));
+    }
+    status.textContent='SAVED TO SERVER';
+    $('runState').textContent='Result uploaded successfully. Stored without an account ID; this app does not stream telemetry in the background.';
+    button.textContent='SAVED ✓';button.classList.add('active');
+    return true;
+  }catch(error){
+    status.textContent='UPLOAD FAILED';
+    $('runState').textContent='Upload failed: '+error.message+'. Your local result remains available for retry or JSON export.';
+    button.textContent='RETRY SAVE';return false;
+  }finally{
+    button.disabled=false;
+    if(button.textContent==='SAVING…')button.textContent=previous;
+  }
+}
+$('saveBtn').addEventListener('click',()=>uploadResult());
 $('exportBtn').addEventListener('click',()=>{
   const data=resultObject(),blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
   a.href=url;a.download='spacetime-feedback-pwa-'+Date.now()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -290,10 +331,11 @@ $('shareBtn').addEventListener('click',async()=>{
 $('sampleBtn').addEventListener('click',()=>{
   metrics.runActive=true;metrics.runStart=now();metrics.runFrames=[];metrics.runInputs=[];metrics.runOrientations=metrics.orientationChanges;
   $('sampleBtn').disabled=true;$('testResults').textContent='Measuring 10 seconds… keep the app foregrounded; move the phone and use the controls.';
-  setTimeout(()=>{
+  setTimeout(async()=>{
     metrics.runActive=false;$('sampleBtn').disabled=false;
-    const r=resultObject();
-    $('testResults').textContent='10 SECOND SAMPLE\nFPS: '+(r.render.fps?r.render.fps.toFixed(1):'—')+'\nFrame p95: '+r.render.p95FrameMs.toFixed(2)+' ms\nFrame max: '+r.render.maxFrameMs.toFixed(2)+' ms\nMotion sample rate: '+r.motion.sampleHz.toFixed(1)+' Hz\nOrientation changes during run: '+(metrics.orientationChanges-metrics.runOrientations)+'\nMass count: '+r.interaction.masses+'\nVibration API: '+(r.feedback.vibrationApi?'exposed (output unverified)':'not exposed')+'\nWake Lock API: '+(r.feedback.wakeLockApi?'exposed':'not exposed')+'\nExport JSON for full measurements.';
+    const r=resultObject();lastCompletedResult=r;
+    $('testResults').textContent='10 SECOND SAMPLE\nFPS: '+(r.render.fps?r.render.fps.toFixed(1):'—')+'\nFrame p95: '+r.render.p95FrameMs.toFixed(2)+' ms\nFrame max: '+r.render.maxFrameMs.toFixed(2)+' ms\nMotion sample rate: '+r.motion.sampleHz.toFixed(1)+' Hz\nOrientation changes during run: '+(metrics.orientationChanges-metrics.runOrientations)+'\nMass count: '+r.interaction.masses+'\nVibration API: '+(r.feedback.vibrationApi?'exposed (output unverified)':'not exposed')+'\nWake Lock API: '+(r.feedback.wakeLockApi?'exposed':'not exposed')+'\nTap SAVE RESULTS to upload, or Export JSON to keep it locally.';
+    $('runState').textContent='Measurement complete. Nothing has been uploaded yet; tap SAVE RESULTS to send this sample.';
   },10000);
 });
 function updateCameraFromGesture(){
