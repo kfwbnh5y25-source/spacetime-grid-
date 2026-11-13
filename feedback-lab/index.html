@@ -95,7 +95,7 @@ function updateGroundFrame(dt,gx,gy){
  if(magnitude<.18)return;
  groundFrame.targetAngle=-Math.atan2(-gx,-gy)*180/Math.PI;
  const error=shortestDegrees(groundFrame.targetAngle-groundFrame.angle);
- groundFrame.angle+=error*(1-Math.exp(-Math.max(0,dt)/115));
+ groundFrame.angle+=error*(1-Math.exp(-Math.max(0,dt)/160));
 }
 function gravityToScreen(gx,gy,angleDeg){
  const a=angleDeg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
@@ -115,7 +115,7 @@ function groundFrameMathSelfTest(){
   maxGravityAlignmentError=Math.max(maxGravityAlignmentError,Math.hypot(v.x,v.y+1));
  }
  let correction=0,maxCorrectionStep=0;
- for(let i=0;i<90;i++){const before=correction;correction+=shortestDegrees(90-correction)*(1-Math.exp(-(1000/60)/115));maxCorrectionStep=Math.max(maxCorrectionStep,Math.abs(correction-before));}
+ for(let i=0;i<90;i++){const before=correction;correction+=shortestDegrees(90-correction)*(1-Math.exp(-(1000/60)/160));maxCorrectionStep=Math.max(maxCorrectionStep,Math.abs(correction-before));}
  return {pass:maxWorldRoundTrip<1e-10&&maxScreenRoundTrip<1e-10&&maxGravityAlignmentError<1e-10&&maxCorrectionStep<10,maxWorldRoundTrip,maxScreenRoundTrip,maxGravityAlignmentError,maxCorrectionStepDeg:maxCorrectionStep,angles:[0,37,90,-90,180,270],description:'gravity-derived world vertical is invariant across portrait and both landscape device frames; render/pointer/physics transforms round-trip'};
 }
 function gravityMathSelfTest(){
@@ -421,7 +421,7 @@ async function runOrientationWorkflow(){
    }
  }
  orientationWorkflow.active=false;orientationWorkflow.stage='complete';
- const summary={protocol:'orientation-ground-reference-v7-counter-rotation-sign',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'filtered accelerationIncludingGravity projected into current screen coordinates',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ const summary={protocol:'orientation-ground-reference-v8-selftest-fix',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'filtered accelerationIncludingGravity projected into current screen coordinates',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
  orientationWorkflow.lastReport=summary;
  $('workflowStatus').textContent='COMPLETE · '+summary.verificationPassed+'/'+summary.verificationTotal+' orientation checks passed · '+summary.samples.length+' samples · uploading…';
  const report=resultObject();report.workflow=summary;lastCompletedResult=report;
