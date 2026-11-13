@@ -72,8 +72,8 @@ button:disabled{opacity:.45}
 const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
 const $=id=>document.getElementById(id);
 const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
-const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runMotion:0,runInputs:[],runOrientations:0};
-let raf=0,lastSave=0,saveTimer=0,resizeTimer=0,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionListener=null,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
+let raf=0,lastSave=0,saveTimer=0,resizeTimer=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionListener=null,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
 function now(){return performance.now();}
 function currentAngle(){const a=Number.isFinite(screen.orientation&&screen.orientation.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);return ((a%360)+360)%360;}
@@ -82,9 +82,10 @@ function resize(){
   state.w=window.innerWidth;state.h=window.innerHeight;
   // Two physical pixels per CSS pixel is a good clarity/performance balance
   // on 3x iPhones. This does not cap requestAnimationFrame refresh rate.
-  state.dpr=Math.min(window.devicePixelRatio||1,2);
+  state.dpr=Math.min(window.devicePixelRatio||1,1.5);
   canvas.width=Math.round(state.w*state.dpr);canvas.height=Math.round(state.h*state.dpr);
   ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
+  buildStaticGrid();
   metrics.orientation=currentAngle();
   $('orientation').textContent=state.w>=state.h?'LANDSCAPE '+metrics.orientation+'°':'PORTRAIT '+metrics.orientation+'°';
   if(oldW&&oldH){/* World coordinates are center-relative: changing viewport size never rescales or teleports masses. */}
@@ -177,22 +178,25 @@ function worldVectorFromScreen(x,y){
   const a=-state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
   return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
 }
+function buildStaticGrid(){
+  const w=state.w,h=state.h,dpr=state.dpr;if(!w||!h)return;
+  if(!gridCanvas)gridCanvas=document.createElement('canvas');
+  gridCanvas.width=Math.ceil(w*3*dpr);gridCanvas.height=Math.ceil(h*3*dpr);
+  const g=gridCanvas.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  g.clearRect(0,0,w*3,h*3);g.lineWidth=1;g.strokeStyle='rgba(185,211,255,.42)';g.beginPath();
+  for(let x=0;x<=w*3;x+=38){g.moveTo(x,0);g.lineTo(x,h*3);}
+  for(let y=0;y<=h*3;y+=38){g.moveTo(0,y);g.lineTo(w*3,y);}
+  g.stroke();
+}
+const massGlowCanvas=document.createElement('canvas');massGlowCanvas.width=192;massGlowCanvas.height=192;
+(function(){const g=massGlowCanvas.getContext('2d'),z=96,grad=g.createRadialGradient(z,z,0,z,z,z);grad.addColorStop(0,'rgba(175,211,255,.22)');grad.addColorStop(.3,'rgba(90,145,205,.09)');grad.addColorStop(1,'rgba(65,110,170,0)');g.fillStyle=grad;g.fillRect(0,0,192,192);})();
 function draw(){
   const w=state.w,h=state.h;
   ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
   ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(state.camera.rotation*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
-  const step=38,extent=Math.max(w,h)*1.25;
-  ctx.lineWidth=1;ctx.strokeStyle='rgba(185,211,255,.42)';
-  // The experiment grid is straight: batch one segment per grid line.
-  // Avoid thousands of redundant vertices and per-line strokes every frame.
-  ctx.beginPath();
-  for(let x=-extent;x<=extent;x+=step){ctx.moveTo(x,-extent);ctx.lineTo(x,extent);}
-  for(let y=-extent;y<=extent;y+=step){ctx.moveTo(-extent,y);ctx.lineTo(extent,y);}
-  ctx.stroke();
+  if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
   for(const m of state.masses){
-    const r=95,g=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,r);
-    g.addColorStop(0,'rgba(175,211,255,.22)');g.addColorStop(.3,'rgba(90,145,205,.09)');g.addColorStop(1,'rgba(65,110,170,0)');
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(m.x,m.y,r,0,Math.PI*2);ctx.fill();
+    ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
     ctx.fillStyle='#d9eaff';ctx.beginPath();ctx.arc(m.x,m.y,4.5,0,Math.PI*2);ctx.fill();
   }
   ctx.restore();
@@ -210,17 +214,20 @@ function stepPhysics(dtMs){
   }
 }
 function frame(t){
-  if(metrics.lastFrame){const d=t-metrics.lastFrame;metrics.frameTimes.push(d);if(metrics.frameTimes.length>900)metrics.frameTimes.shift();}
+  const interval=metrics.lastFrame?t-metrics.lastFrame:0;
   metrics.lastFrame=t;metrics.frames++;
-  const dt=frame.last?Math.min(40,t-frame.last):16.67;frame.last=t;
+  if(interval>=4.1&&interval<=1000){metrics.frameTimes.push(interval);if(metrics.frameTimes.length>900)metrics.frameTimes.shift();}
+  const dt=frame.last?Math.min(40,Math.max(0,t-frame.last)):16.67;frame.last=t;
+  const renderStarted=now();
   const k=1-Math.exp(-dt/68);
   state.camera.x+=(state.target.x-state.camera.x)*k;state.camera.y+=(state.target.y-state.camera.y)*k;state.camera.scale+=(state.target.scale-state.camera.scale)*k;
   if(Math.abs(state.target.x-state.camera.x)<.08)state.camera.x=state.target.x;
   if(Math.abs(state.target.y-state.camera.y)<.08)state.camera.y=state.target.y;
   if(Math.abs(state.target.scale-state.camera.scale)<.0005)state.camera.scale=state.target.scale;
   stepPhysics(dt);draw();
-  if(metrics.runActive)metrics.runFrames.push(dt);
-  if(metrics.frameTimes.length&&t-lastSave>500){lastSave=t;updateMetrics();}
+  const renderCost=now()-renderStarted;
+  if(metrics.runActive&&now()-metrics.runStart>=500&&interval>=4.1&&interval<=1000){metrics.runFrames.push(interval);metrics.runRenderTimes.push(renderCost);}
+  if(metrics.frameTimes.length&&t-lastSave>500{lastSave=t;updateMetrics();}
 }
 function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
 function recordInputStart(t){metrics.inputTimes.push(t);if(metrics.inputTimes.length>80)metrics.inputTimes.shift();if(metrics.runActive)metrics.runInputs.push(t);}
@@ -230,7 +237,7 @@ function registerInputFrame(){
   metrics.inputTimes.push({done:d});
 }
 function updateMetrics(){
-  const a=metrics.frameTimes,fps= a.length?1000/(a.reduce((s,v)=>s+v,0)/a.length):0;
+  const a=metrics.frameTimes,fps=a.length?1000/percentile(a,.5):0;
   const latency=metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done);
   $('fps').textContent=fps.toFixed(1)+' fps';
   $('frameP95').textContent=percentile(a,.95).toFixed(1)+' ms';
@@ -282,7 +289,9 @@ document.addEventListener('visibilitychange',async()=>{
 });
 function resultObject(){
   const frames=metrics.runFrames.length?metrics.runFrames:metrics.frameTimes;
-  return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:percentile(frames,.5),p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,gravityScreen:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges},interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
+  const renderTimes=metrics.runRenderTimes.length?metrics.runRenderTimes:[];
+  const medianFrame=percentile(frames,.5);
+  return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:medianFrame,p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:medianFrame?Math.min(120,1000/medianFrame):null,rawCallbackHz:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null,renderCpuMeanMs:renderTimes.length?renderTimes.reduce((s,v)=>s+v,0)/renderTimes.length:null,renderCpuP95Ms:percentile(renderTimes,.95),measurement:'unique RAF intervals; sub-4.1ms callback bursts excluded; display cadence bounded to 120Hz'},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,gravityScreen:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges},interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
 }
 let lastCompletedResult=null;
 function makeRunId(){
@@ -334,7 +343,7 @@ $('shareBtn').addEventListener('click',async()=>{
   try{if(navigator.share)await navigator.share({title:'Spacetime Feedback Lab results',text});else if(navigator.clipboard){await navigator.clipboard.writeText(text);$('runState').textContent='Results copied to clipboard.';}else $('runState').textContent='Use Export JSON to save results.';}catch(e){if(e.name!=='AbortError')$('runState').textContent='Share unavailable: '+e.message;}
 });
 $('sampleBtn').addEventListener('click',()=>{
-  metrics.runActive=true;metrics.runStart=now();metrics.runFrames=[];metrics.runInputs=[];metrics.runOrientations=metrics.orientationChanges;
+  metrics.runActive=true;metrics.runStart=now();metrics.runFrames=[];metrics.runRenderTimes=[];metrics.runInputs=[];metrics.runOrientations=metrics.orientationChanges;
   $('sampleBtn').disabled=true;$('testResults').textContent='Measuring 10 seconds… keep the app foregrounded; move the phone and use the controls.';
   setTimeout(async()=>{
     metrics.runActive=false;$('sampleBtn').disabled=false;
