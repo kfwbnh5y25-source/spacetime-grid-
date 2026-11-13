@@ -48,7 +48,7 @@ button:disabled{opacity:.45}
 <button id="wakeBtn">KEEP AWAKE</button>
 <button id="shareBtn">SHARE RESULTS</button>
 <button id="exportBtn">EXPORT JSON</button>
-<button id="sampleBtn">10s MEASURE</button><button id="saveBtn">SAVE RESULTS</button>
+<button id="sampleBtn">10s MEASURE + SAVE</button><button id="saveBtn">SAVE RESULTS</button>
 </nav>
 <section id="metrics" aria-live="polite">
 <header><strong>SPACETIME FEEDBACK LAB · PWA</strong><span id="status">INITIALISING</span></header>
@@ -82,7 +82,7 @@ function resize(){
   state.w=window.innerWidth;state.h=window.innerHeight;
   // Two physical pixels per CSS pixel is a good clarity/performance balance
   // on 3x iPhones. This does not cap requestAnimationFrame refresh rate.
-  state.dpr=Math.min(window.devicePixelRatio||1,1.5);
+  state.dpr=Math.min(window.devicePixelRatio||1,(matchMedia('(pointer:coarse)').matches?1.5:2));
   canvas.width=Math.round(state.w*state.dpr);canvas.height=Math.round(state.h*state.dpr);
   ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
   buildStaticGrid();
@@ -227,7 +227,7 @@ function frame(t){
   stepPhysics(dt);draw();
   const renderCost=now()-renderStarted;
   if(metrics.runActive&&now()-metrics.runStart>=500&&interval>=4.1&&interval<=1000){metrics.runFrames.push(interval);metrics.runRenderTimes.push(renderCost);}
-  if(metrics.frameTimes.length&&t-lastSave>500{lastSave=t;updateMetrics();}
+  if(metrics.frameTimes.length&&t-lastSave>500){lastSave=t;updateMetrics();}
 }
 function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
 function recordInputStart(t){metrics.inputTimes.push(t);if(metrics.inputTimes.length>80)metrics.inputTimes.shift();if(metrics.runActive)metrics.runInputs.push(t);}
