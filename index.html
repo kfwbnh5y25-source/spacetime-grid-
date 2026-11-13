@@ -384,8 +384,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function launchNewtonProbe(p){
     const v=fingerReleaseVelocity(p);
     if(v.speed<35)return;
-    phoneProbe={x:p.startX,y:p.startY,vx:v.vx,vy:v.vy,accumulator:0,age:0,trail:[{x:p.startX,y:p.startY}],active:true,captured:false};
-    showStatus('NEWTON PROBE · '+Math.round(v.speed)+' PX/S');
+    const speedScale=.35;
+    phoneProbe={x:p.startX,y:p.startY,vx:v.vx*speedScale,vy:v.vy*speedScale,accumulator:0,age:0,trail:[{x:p.startX,y:p.startY}],active:true,captured:false};
+    showStatus('NEWTON PROBE · '+Math.round(v.speed*speedScale)+' PX/S');
   }
   function newtonAcceleration(x,y){
     let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
@@ -399,8 +400,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function stepNewtonProbe(frameMs){
     const p=phoneProbe;if(!p||!p.active||paused)return;
     p.accumulator+=Math.min(50,Math.max(0,frameMs))*0.001;
-    const h=1/480;let steps=0;
-    while(p.accumulator>=h&&steps<24){
+    const h=1/48000;let steps=0;
+    while(p.accumulator>=h&&steps<2400){
       const a0=newtonAcceleration(p.x,p.y);
       p.vx+=0.5*a0.x*h;p.vy+=0.5*a0.y*h;
       p.x+=p.vx*h;p.y+=p.vy*h;
@@ -413,7 +414,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       if(!p.active)break;
       if(p.x< -width*2||p.x>width*3||p.y< -height*2||p.y>height*3||p.age>30){p.active=false;break;}
     }
-    if(steps>=24)p.accumulator=0;
+    if(steps>=2400)p.accumulator=0;
     if(p.active){
       const last=p.trail[p.trail.length-1];
       if(!last||Math.hypot(p.x-last.x,p.y-last.y)>1.5)p.trail.push({x:p.x,y:p.y});
@@ -454,20 +455,39 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }
     return {x:ax,y:ay};
   }
+  const PLANET_DT=1/48000;
+  let planetAccumulator=0;
   function advanceMasses(frameMs){
-    if(paused||persistentMasses.length<1)return;
-    const h=Math.min(.05,Math.max(0,frameMs)*.001);if(h<=0)return;
-    const ax=new Float64Array(persistentMasses.length),ay=new Float64Array(persistentMasses.length);
-    for(let i=0;i<persistentMasses.length;i++){const a=massAccelerationAt(i);ax[i]=a.x;ay[i]=a.y;}
-    for(let i=0;i<persistentMasses.length;i++){
-      const b=persistentMasses[i];b.vx=(b.vx||0)+ax[i]*h;b.vy=(b.vy||0)+ay[i]*h;b.x+=b.vx*h;b.y+=b.vy*h;b.trailClock=(b.trailClock||0)+h;
-      if(b.trailClock>.05&&Math.hypot(b.x-(b.trail.at(-1)?.x??b.x),b.y-(b.trail.at(-1)?.y??b.y))>1){b.trail.push({x:b.x,y:b.y});b.trailClock=0;if(b.trail.length>520)b.trail.shift();}
+    if(paused)return;
+    planetAccumulator+=Math.min(50,Math.max(0,frameMs))*.001;
+    let steps=0;
+    while(planetAccumulator+1e-12>=PLANET_DT&&steps<2400){
+      const n=persistentMasses.length;
+      if(!n){planetAccumulator=0;break;}
+      const ax=new Float64Array(n),ay=new Float64Array(n);
+      // Velocity-Verlet: Newtonian N-body forces with equal-and-opposite pair forces.
+      for(let i=0;i<n;i++){const a=massAccelerationAt(i);ax[i]=a.x;ay[i]=a.y;}
+      for(let i=0;i<n;i++){
+        const b=persistentMasses[i];b.vx=(b.vx||0)+.5*ax[i]*PLANET_DT;b.vy=(b.vy||0)+.5*ay[i]*PLANET_DT;
+        b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;
+      }
+      for(let i=0;i<n;i++){const a=massAccelerationAt(i),b=persistentMasses[i];b.vx+=.5*a.x*PLANET_DT;b.vy+=.5*a.y*PLANET_DT;}
+      for(const b of persistentMasses){
+        b.trailClock=(b.trailClock||0)+PLANET_DT;
+        if(b.trailClock>=.05&&Math.hypot(b.x-(b.trail.at(-1)?.x??b.x),b.y-(b.trail.at(-1)?.y??b.y))>1){
+          b.trail.push({x:b.x,y:b.y});b.trailClock=0;if(b.trail.length>520)b.trail.shift();
+        }
+      }
+      planetAccumulator-=PLANET_DT;steps++;
     }
+    if(steps>=2400)planetAccumulator=Math.min(planetAccumulator,PLANET_DT);
     for(let i=0;i<persistentMasses.length;i++)for(let j=i+1;j<persistentMasses.length;j++){
-      const a=persistentMasses[i],b=persistentMasses[j],ma=a.mass??20,mb=b.mass??20,ra=3+Math.sqrt(ma)*1.45,rb=3+Math.sqrt(mb)*1.45,dx=b.x-a.x,dy=b.y-a.y;
+      const a=persistentMasses[i],b=persistentMasses[j],ma=a.mass??20,mb=b.mass??20;
+      const ra=3+Math.sqrt(ma)*1.45,rb=3+Math.sqrt(mb)*1.45,dx=b.x-a.x,dy=b.y-a.y;
       if(dx*dx+dy*dy<(ra+rb)*(ra+rb)){
         const m=ma+mb;a.x=(a.x*ma+b.x*mb)/m;a.y=(a.y*ma+b.y*mb)/m;
-        a.vx=((a.vx||0)*ma+(b.vx||0)*mb)/m;a.vy=((a.vy||0)*ma+(b.vy||0)*mb)/m;a.mass=m;a.trail=(a.trail||[]).concat(b.trail||[]).slice(-520);persistentMasses.splice(j,1);j--;
+        a.vx=((a.vx||0)*ma+(b.vx||0)*mb)/m;a.vy=((a.vy||0)*ma+(b.vy||0)*mb)/m;
+        a.mass=m;a.trail=(a.trail||[]).concat(b.trail||[]).slice(-520);persistentMasses.splice(j,1);j--;
       }
     }
   }
