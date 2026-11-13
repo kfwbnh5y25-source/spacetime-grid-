@@ -41,6 +41,22 @@
   }
   @media (prefers-reduced-motion: reduce) { .planet-cursor,.hint,#gestureStatus { transition:none; } }
   @media (hover:hover) and (pointer:fine) { canvas { cursor:none; } }
+  #simHud { position:fixed;z-index:7;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));color:#eaf1ff;font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em; }
+  #simReadout { display:flex;gap:14px;justify-content:flex-end;padding:8px 10px;border:1px solid rgba(210,225,255,.18);border-radius:12px;background:rgba(4,9,18,.62);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px); }
+  #simReadout b { color:#fff;font-weight:600;margin-left:4px;font-variant-numeric:tabular-nums; }
+  #simControls { width:min(310px,calc(100vw - 28px));margin-top:7px;margin-left:auto;border:1px solid rgba(210,225,255,.18);border-radius:13px;background:rgba(4,9,18,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px); }
+  #simControls summary { list-style:none;cursor:pointer;padding:9px 11px;color:rgba(235,243,255,.76);letter-spacing:.16em;font-size:9px; }
+  #simControls summary::-webkit-details-marker { display:none; }
+  #simControls[open] summary { border-bottom:1px solid rgba(210,225,255,.12); }
+  .simControlsBody { padding:10px 11px 11px;display:grid;gap:10px; }
+  .simButtons { display:flex;gap:6px;flex-wrap:wrap; }
+  .simButtons button,.simControlsBody select { min-height:30px;border:1px solid rgba(215,230,255,.2);border-radius:7px;background:rgba(130,160,205,.12);color:#edf4ff;padding:5px 8px;font:10px ui-monospace,monospace;letter-spacing:.04em; }
+  .simControlsBody select { width:100%; }
+  .simSlider { display:grid;grid-template-columns:1fr auto;gap:3px 8px;align-items:center;color:rgba(230,239,255,.7);font-size:9px;letter-spacing:.1em; }
+  .simSlider output { color:#fff;font-variant-numeric:tabular-nums; }
+  .simSlider input { grid-column:1 / -1;width:100%;accent-color:#a9cfff;height:16px;margin:0; }
+  #simControls .simHelp { margin:0;color:rgba(225,236,255,.42);font-size:9px;line-height:1.5;letter-spacing:.03em; }
+  @media (pointer:coarse) { #simHud { top:max(66px,calc(env(safe-area-inset-top) + 58px));right:10px; } #simReadout { gap:9px;padding:7px 8px; } #simControls { width:min(280px,calc(100vw - 20px)); } }
   .hint {
     position: fixed; z-index: 3; left: 50%; bottom: max(24px, env(safe-area-inset-bottom));
     transform: translateX(-50%); color: rgba(255,255,255,.42);
@@ -60,6 +76,27 @@
 <div id="gestureStatus" aria-live="polite"></div>
 <button id="resetViewButton" type="button" aria-label="Reset view" title="Reset view">↺</button>
 <button id="gyroButton" type="button" aria-pressed="false">TILT MASSES</button>
+<section id="simHud" aria-label="Simulation status">
+  <div id="simReadout"><span>BODIES<b id="bodyCount">0</b></span><span>T<b id="simClock">0.0</b></span><span>FPS<b id="liveFps">—</b></span></div>
+  <details id="simControls">
+    <summary>GRAVITY LAB · CONTROLS</summary>
+    <div class="simControlsBody">
+      <select id="scenePreset" aria-label="Load a simulation preset">
+        <option value="empty">Empty spacetime</option>
+        <option value="binary">Binary system</option>
+        <option value="figure8">Figure-eight trio</option>
+        <option value="solar">Solar system</option>
+      </select>
+      <div class="simButtons">
+        <button id="runToggle" type="button">PAUSE</button><button id="gravityToggle" type="button">G ON</button><button id="trailToggle" type="button">TRAILS ON</button><button id="clearScene" type="button">CLEAR</button>
+      </div>
+      <label class="simSlider">NEW MASS <output id="massOutput">20</output><input id="massSlider" type="range" min="2" max="100" step="1" value="20"></label>
+      <label class="simSlider">GRAVITY G <output id="gravityOutput">3.0</output><input id="gravitySlider" type="range" min="0.5" max="12" step="0.1" value="3"></label>
+      <div class="simButtons"><button id="placeMass" type="button">PLACE AT CURSOR</button><button id="launchProbe" type="button">LAUNCH PROBE</button></div>
+      <p class="simHelp">Touch: swipe to launch, long-press to add a mass. Mac: canvas clicks remain inactive; move the cursor, then use Place at Cursor. Right-drag pans. Space pauses · T trails · G gravity · F fit.</p>
+    </div>
+  </details>
+</section>
 <script>
 (() => {
   'use strict';
@@ -79,6 +116,8 @@
   const planetCursor = document.getElementById('planetCursor');
   const gestureStatus=document.getElementById('gestureStatus');
   const persistentMasses=[];
+  let gravityG=3,newMassValue=20,gravityEnabled=true,trailsEnabled=true;
+  let mouseWorld={x:innerWidth/2,y:innerHeight/2},mousePan=null;
   let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1.5:2,slowFrames=0,smoothFrames=0;
   const storageKey='spacetime-grid-state-v1';
   let cameraAnimationRaf=0,cameraAnimationTarget=null,cameraAnimationLast=0;
@@ -263,7 +302,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),9.0);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t);
     const xy=new Float32Array(20),rS=new Float32Array(10);let count=0;
-    for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;rS[count]=120.0*Math.max(0,Math.min(1,p.strength));count++;}
+    for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;const mass=p.mass??(p.strength*.25);rS[count]=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);count++;}
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);
     gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_rS[0]'),rS);
@@ -349,12 +388,10 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     showStatus('NEWTON PROBE · '+Math.round(v.speed)+' PX/S');
   }
   function newtonAcceleration(x,y){
-    let ax=0,ay=0;
+    let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
     for(const mass of persistentMasses){
-      const dx=x-mass.x,dy=y-mass.y,r2=dx*dx+dy*dy,r=Math.sqrt(r2);
-      const mu=NEWTON_MU_PER_STRENGTH*Math.max(0,mass.strength);
-      // Exact inverse-square field outside each body; uniform-density sphere inside.
-      const scale=r<NEWTON_BODY_RADIUS?-mu/(NEWTON_BODY_RADIUS**3):-mu/(r2*r||1);
+      const dx=mass.x-x,dy=mass.y-y,r2=dx*dx+dy*dy+64;
+      const mu=gravityG*100*Math.max(0,mass.mass??mass.strength??1),scale=mu/(r2*Math.sqrt(r2));
       ax+=scale*dx;ay+=scale*dy;
     }
     return {x:ax,y:ay};
@@ -384,20 +421,61 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }
   }
   function drawNewtonProbe(){
-    trajectoryCtx.clearRect(0,0,width,height);
-    const p=phoneProbe;if(!p||!p.trail.length)return;
-    trajectoryCtx.save();
-    trajectoryCtx.lineWidth=2;trajectoryCtx.lineJoin='round';trajectoryCtx.lineCap='round';
-    trajectoryCtx.strokeStyle='rgba(125,190,255,.82)';trajectoryCtx.beginPath();
-    for(let i=0;i<p.trail.length;i++){const q=p.trail[i];if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);}
-    trajectoryCtx.stroke();
-    trajectoryCtx.shadowColor='rgba(140,205,255,.9)';trajectoryCtx.shadowBlur=12;
-    trajectoryCtx.fillStyle=p.captured?'rgba(255,190,125,.95)':'rgba(225,242,255,.98)';
-    trajectoryCtx.beginPath();trajectoryCtx.arc(p.x,p.y,4.5,0,Math.PI*2);trajectoryCtx.fill();
+    trajectoryCtx.clearRect(0,0,width,height);trajectoryCtx.save();trajectoryCtx.lineCap='round';trajectoryCtx.lineJoin='round';
+    for(const body of persistentMasses){
+      if(trailsEnabled&&body.trail?.length>1){
+        trajectoryCtx.beginPath();for(let i=0;i<body.trail.length;i++){const q=body.trail[i];if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);}
+        trajectoryCtx.strokeStyle='rgba(118,174,255,.36)';trajectoryCtx.lineWidth=1.35;trajectoryCtx.stroke();
+      }
+      const radius=Math.max(4,Math.min(22,3+Math.sqrt(Math.max(0,body.mass??20))*1.45));
+      const glow=trajectoryCtx.createRadialGradient(body.x-radius*.28,body.y-radius*.3,1,body.x,body.y,radius*2.2);
+      glow.addColorStop(0,'rgba(255,255,255,.98)');glow.addColorStop(.22,'rgba(188,220,255,.98)');glow.addColorStop(.62,'rgba(77,133,205,.9)');glow.addColorStop(1,'rgba(44,86,145,0)');
+      trajectoryCtx.fillStyle=glow;trajectoryCtx.shadowColor='rgba(120,180,255,.85)';trajectoryCtx.shadowBlur=12;trajectoryCtx.beginPath();trajectoryCtx.arc(body.x,body.y,radius*2.2,0,Math.PI*2);trajectoryCtx.fill();
+      trajectoryCtx.shadowBlur=0;trajectoryCtx.fillStyle='rgba(225,239,255,.95)';trajectoryCtx.beginPath();trajectoryCtx.arc(body.x,body.y,radius*.62,0,Math.PI*2);trajectoryCtx.fill();
+      if((body.mass??0)>=45){trajectoryCtx.strokeStyle='rgba(190,220,255,.55)';trajectoryCtx.lineWidth=1;trajectoryCtx.beginPath();trajectoryCtx.ellipse(body.x,body.y,radius*1.65,radius*.58,-.35,0,Math.PI*2);trajectoryCtx.stroke();}
+    }
+    const p=phoneProbe;
+    if(p&&p.trail){
+      if(trailsEnabled&&p.trail.length){trajectoryCtx.lineWidth=2;trajectoryCtx.strokeStyle='rgba(125,190,255,.88)';trajectoryCtx.beginPath();for(let i=0;i<p.trail.length;i++){const q=p.trail[i];if(i===0)trajectoryCtx.moveTo(q.x,q.y);else trajectoryCtx.lineTo(q.x,q.y);}trajectoryCtx.stroke();}
+      if(p.active||p.captured){trajectoryCtx.shadowColor='rgba(140,205,255,.9)';trajectoryCtx.shadowBlur=12;trajectoryCtx.fillStyle=p.captured?'rgba(255,190,125,.95)':'rgba(225,242,255,.98)';trajectoryCtx.beginPath();trajectoryCtx.arc(p.x,p.y,4.5,0,Math.PI*2);trajectoryCtx.fill();}
+    }
     trajectoryCtx.restore();
   }
+  function createMass(x,y,mass=newMassValue,vx=0,vy=0){
+    if(persistentMasses.length>=12)persistentMasses.shift();
+    persistentMasses.push({x,y,mass,vx,vy,trail:[{x,y}],trailClock:0,strength:1});
+    showStatus('MASS ADDED · '+mass);
+  }
+  function massAccelerationAt(index){
+    const body=persistentMasses[index];let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
+    for(let j=0;j<persistentMasses.length;j++){
+      if(j===index)continue;const other=persistentMasses[j],dx=other.x-body.x,dy=other.y-body.y,r2=dx*dx+dy*dy+64;
+      const scale=gravityG*100*(other.mass??20)/(r2*Math.sqrt(r2));ax+=scale*dx;ay+=scale*dy;
+    }
+    return {x:ax,y:ay};
+  }
+  function advanceMasses(frameMs){
+    if(paused||persistentMasses.length<1)return;
+    const h=Math.min(.05,Math.max(0,frameMs)*.001);if(h<=0)return;
+    const ax=new Float64Array(persistentMasses.length),ay=new Float64Array(persistentMasses.length);
+    for(let i=0;i<persistentMasses.length;i++){const a=massAccelerationAt(i);ax[i]=a.x;ay[i]=a.y;}
+    for(let i=0;i<persistentMasses.length;i++){
+      const b=persistentMasses[i];b.vx=(b.vx||0)+ax[i]*h;b.vy=(b.vy||0)+ay[i]*h;b.x+=b.vx*h;b.y+=b.vy*h;b.trailClock=(b.trailClock||0)+h;
+      if(b.trailClock>.05&&Math.hypot(b.x-(b.trail.at(-1)?.x??b.x),b.y-(b.trail.at(-1)?.y??b.y))>1){b.trail.push({x:b.x,y:b.y});b.trailClock=0;if(b.trail.length>520)b.trail.shift();}
+    }
+    for(let i=0;i<persistentMasses.length;i++)for(let j=i+1;j<persistentMasses.length;j++){
+      const a=persistentMasses[i],b=persistentMasses[j],ma=a.mass??20,mb=b.mass??20,ra=3+Math.sqrt(ma)*1.45,rb=3+Math.sqrt(mb)*1.45,dx=b.x-a.x,dy=b.y-a.y;
+      if(dx*dx+dy*dy<(ra+rb)*(ra+rb)){
+        const m=ma+mb;a.x=(a.x*ma+b.x*mb)/m;a.y=(a.y*ma+b.y*mb)/m;
+        a.vx=((a.vx||0)*ma+(b.vx||0)*mb)/m;a.vy=((a.vy||0)*ma+(b.vy||0)*mb)/m;a.mass=m;a.trail=(a.trail||[]).concat(b.trail||[]).slice(-520);persistentMasses.splice(j,1);j--;
+      }
+    }
+  }
   function pointerDown(e){
-    if(e.pointerType==="mouse")return;
+    if(e.pointerType==="mouse"){
+      if(e.button===2){e.preventDefault();stopInertia();mousePan={x:e.clientX,y:e.clientY,viewX,viewY};canvas.setPointerCapture?.(e.pointerId);}
+      return;
+    }
     e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
     const w=worldPoint(e.clientX,e.clientY),now=performance.now();
     const p={x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:1,life:1,down:true,pointerType:e.pointerType,
@@ -408,13 +486,14 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       }
     }
     pointers.set(e.pointerId,p);
-    if(e.pointerType==='touch'){clearTimeout(longPressTimer);longPressPointer=e.pointerId;longPressTimer=setTimeout(()=>{const active=pointers.get(e.pointerId);if(active&&active.down){if(persistentMasses.length>=8)persistentMasses.shift();persistentMasses.push({x:active.tx,y:active.ty,strength:1});active.massPlaced=true;saveState();showStatus('MASS PLACED · '+persistentMasses.length);}},560);}
+    if(e.pointerType==='touch'){clearTimeout(longPressTimer);longPressPointer=e.pointerId;longPressTimer=setTimeout(()=>{const active=pointers.get(e.pointerId);if(active&&active.down){createMass(active.tx,active.ty,newMassValue);active.massPlaced=true;}},560);}
     hint.classList.add('hidden');clearTimeout(hintTimer);
   }
   function pointerMove(e){
     if(e.pointerType==="mouse"){
-      planetCursor.style.transform=`translate3d(${e.clientX-9}px,${e.clientY-9}px,0)`;
-      planetCursor.classList.add("visible");
+      planetCursor.style.transform=`translate3d(${e.clientX-9}px,${e.clientY-9}px,0)`;planetCursor.classList.add("visible");
+      mouseWorld=worldPoint(e.clientX,e.clientY);
+      if(mousePan&&(e.buttons&2)){viewX=mousePan.viewX+(e.clientX-mousePan.x);viewY=mousePan.viewY+(e.clientY-mousePan.y);applyView();return;}
     }
     const w=worldPoint(e.clientX,e.clientY),p=pointers.get(e.pointerId);
     if(p){
@@ -424,8 +503,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
   }
   function pointerEnd(e){
+    if(e.pointerType==='mouse'){if(mousePan){mousePan=null;scheduleViewSave();}return;}
     const p=pointers.get(e.pointerId);
-    if(e.pointerType==='mouse'||p?.hover||p?.pointerType==='mouse'||!p?.down)return;
+    if(p?.hover||p?.pointerType==='mouse'||!p?.down)return;
     if(longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}
     if(e.type==='pointerup'&&phonePhysics&&!p.massPlaced&&!p.multiTouch){
       const w=worldPoint(e.clientX,e.clientY);addFingerSample(p,w,performance.now());
@@ -575,7 +655,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       let ax=0,ay=0;
       for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
         const m=fields[j],dx=px-m.x,dy=py-m.y,r2=dx*dx+dy*dy+81;
-        const scale=-60.0*Math.max(0,Math.min(1,m.strength))/(r2*Math.sqrt(r2));
+        const mass=m.mass??(m.strength*.25),scale=-(gravityEnabled?gravityG*100:0)*Math.max(0,mass)/(r2*Math.sqrt(r2));
         ax+=scale*dx;ay+=scale*dy;
       }
       return [ax,ay];
@@ -599,7 +679,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       let ax=0,ay=0;
       for(const m of active){
         const dx=px-m.x,dy=py-m.y,r2=dx*dx+dy*dy+81;
-        const scale=-60.0*Math.max(0,Math.min(1,m.strength))/(r2*Math.sqrt(r2));
+        const mass=m.mass??(m.strength*.25),scale=-(gravityEnabled?gravityG*100:0)*Math.max(0,mass)/(r2*Math.sqrt(r2));
         ax+=scale*dx;ay+=scale*dy;
       }
       return [ax,ay];
@@ -707,12 +787,13 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       fields.push(p);
     }
     gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
+    advanceMasses(dt);
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
     // A synthetic source exists only in the benchmark URL; it never enters saved app state.
     if(benchMode&&benchParams.has('probe'))fields.push({x:width*.5,y:height*.5,strength:1,benchmarkProbe:true});
     if(gpuEnabled)drawGpu(t);
-    if(phonePhysics){stepNewtonProbe(dt);drawNewtonProbe();}
-    else {
+    stepNewtonProbe(dt);drawNewtonProbe();
+    if(!gpuEnabled){
       const g=geometry;
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
       for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line>=g.verticalLineCount;for(let i=from;i<to;i++){warpVertex(g,i,t,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
