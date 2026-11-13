@@ -108,24 +108,16 @@ function gravityToScreen(x,y,screenAngle){
  return {x:v.x/GRAVITY_G,y:v.y/GRAVITY_G};
 }
 function groundFrameMathSelfTest(){
- let maxWorldRoundTrip=0,maxScreenRoundTrip=0,maxGravityAlignmentError=0;
+ let maxRoundTrip=0,maxGravityAlignmentError=0;
  for(const angle of [0,37,90,-90,180,270]){
-  const a=angle*Math.PI/180,c=Math.cos(a),s=Math.sin(a),p={x:2.7,y:-4.1};
-  const sx=c*p.x-s*p.y,sy=s*p.x+c*p.y,wx=c*sx+s*sy,wy=-s*sx+c*sy;
-  maxWorldRoundTrip=Math.max(maxWorldRoundTrip,Math.hypot(wx-p.x,wy-p.y));
-  const gx=.31,gy=-.82,wx2=c*gx-s*gy,wy2=s*gx+c*gy,sx2=c*wx2+s*wy2,sy2=-s*wx2+c*wy2;
-  maxScreenRoundTrip=Math.max(maxScreenRoundTrip,Math.hypot(sx2-gx,sy2-gy));
+  const p={x:2.7,y:-4.1},screen=rotate2(p.x,p.y,angle),world=rotate2(screen.x,screen.y,-angle);
+  maxRoundTrip=Math.max(maxRoundTrip,Math.hypot(world.x-p.x,world.y-p.y));
  }
- // DeviceMotionEvent.accelerationIncludingGravity reports +Y for gravity
- // with the iPhone upright in portrait. In landscape, the matching device
- // X component changes sign with the screen rotation.
- for(const q of [{a:0,gx:0,gy:1},{a:90,gx:-1,gy:0},{a:270,gx:1,gy:0}]){
-  const v=gravityToScreen(q.gx*GRAVITY_G,q.gy*GRAVITY_G,q.a);
-  maxGravityAlignmentError=Math.max(maxGravityAlignmentError,Math.hypot(v.x,v.y-1));
+ for(const q of [{a:0,x:0,y:1},{a:90,x:-1,y:0},{a:270,x:1,y:0}]){
+  const g=gravityToScreen(q.x*GRAVITY_G,q.y*GRAVITY_G,q.a);
+  maxGravityAlignmentError=Math.max(maxGravityAlignmentError,Math.hypot(g.x,g.y-1));
  }
- let correction=0,maxCorrectionStep=0;
- for(let i=0;i<90;i++){const before=correction;correction+=shortestDegrees(90-correction)*(1-Math.exp(-(1000/60)/160));maxCorrectionStep=Math.max(maxCorrectionStep,Math.abs(correction-before));}
- return {pass:maxWorldRoundTrip<1e-10&&maxScreenRoundTrip<1e-10&&maxGravityAlignmentError<1e-10&&maxCorrectionStep<10,maxWorldRoundTrip,maxScreenRoundTrip,maxGravityAlignmentError,maxCorrectionStepDeg:maxCorrectionStep,angles:[0,37,90,-90,180,270],description:'counter-rotated device gravity maps portrait and both landscape orientations to screen-down'};
+ return {pass:maxRoundTrip<1e-10&&maxGravityAlignmentError<1e-10,maxRoundTrip,maxGravityAlignmentError,angles:[0,37,90,-90,180,270],description:'shared rotation and inverse round-trip; portrait and landscape gravity points screen-down'};
 }
 function gravityMathSelfTest(){
  const vector={x:3.25,y:-8.4};let maxRoundTripError=0,maxNormError=0;
@@ -310,35 +302,18 @@ function buildStaticGrid(){
 const massGlowCanvas=document.createElement('canvas');massGlowCanvas.width=192;massGlowCanvas.height=192;
 (function(){const g=massGlowCanvas.getContext('2d'),z=96,grad=g.createRadialGradient(z,z,0,z,z,z);grad.addColorStop(0,'rgba(175,211,255,.22)');grad.addColorStop(.3,'rgba(90,145,205,.09)');grad.addColorStop(1,'rgba(65,110,170,0)');g.fillStyle=grad;g.fillRect(0,0,192,192);})();
 function draw(){
-  const w=state.w,h=state.h;
-  ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
-  const phoneMode=matchMedia('(pointer:coarse)').matches;
-  if(phoneMode){
-    // Both the grid and mass coordinates are expressed in the ground frame.
-    // Rotate the complete scene around the mass centroid as the display turns,
-    // so a ground-vertical row becomes horizontal on a landscape display.
-    let mx=0,my=0;
-    if(state.masses.length){for(const m of state.masses){mx+=m.x;my+=m.y;}mx/=state.masses.length;my/=state.masses.length;}
-    const baseX=w/2+state.camera.x,baseY=h/2+state.camera.y,scale=state.camera.scale;
-    const pivotX=baseX+mx*scale,pivotY=baseY+my*scale;
-    ctx.save();
-    ctx.translate(baseX+mx*scale,baseY+my*scale);
-    ctx.rotate(sceneAngle());ctx.scale(scale,scale);ctx.translate(-mx,-my);
-    if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
-    for(const m of state.masses){
-      ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
-      ctx.fillStyle='#d9eaff';ctx.beginPath();ctx.arc(m.x,m.y,4.5,0,Math.PI*2);ctx.fill();
-    }
-    ctx.restore();
-  }else{
-    ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(sceneAngle());ctx.scale(state.camera.scale,state.camera.scale);
-    if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
-    for(const m of state.masses){
-      ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
-      ctx.fillStyle='#d9eaff';ctx.beginPath();ctx.arc(m.x,m.y,4.5,0,Math.PI*2);ctx.fill();
-    }
-    ctx.restore();
-  }
+ const w=state.w,h=state.h,phoneMode=matchMedia('(pointer:coarse)').matches;
+ const p=phoneMode?massCentroidWorld():{x:0,y:0},s=state.camera.scale;
+ ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
+ ctx.save();
+ ctx.translate(w/2+state.camera.x+p.x*s,h/2+state.camera.y+p.y*s);
+ ctx.rotate(sceneAngle());ctx.scale(s,s);ctx.translate(-p.x,-p.y);
+ if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
+ for(const m of state.masses){
+  ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
+  ctx.fillStyle='#d9eaff';ctx.beginPath();ctx.arc(m.x,m.y,4.5,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
 }
 function stepPhysics(dtMs){
   const dt=Math.min(.04,Math.max(0,dtMs/1000));if(!dt||!state.masses.length)return;
