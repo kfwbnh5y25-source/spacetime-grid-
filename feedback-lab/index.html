@@ -62,7 +62,7 @@ button:disabled{opacity:.45}
 <button id="exportBtn">EXPORT JSON</button>
 <button id="sampleBtn">10s MEASURE + SAVE</button><button id="saveBtn">SAVE RESULTS</button>
 </nav>
-<section id="guidePanel" hidden><header><strong>5-MINUTE ORIENTATION TEST</strong><button id="guideClose">CLOSE</button></header><div id="guideProgress">Step 1 of 10 · 5-minute guided test</div><p id="guideInstruction"></p><p id="guideHint"></p><button id="guideNext" class="primary">START STEP</button></section>
+<section id="guidePanel" hidden><header><strong>5-MINUTE ORIENTATION TEST</strong><button id="guideClose">CLOSE</button></header><div id="guideProgress">Step 1 of 10 · 5-minute guided test</div><p id="guideInstruction"></p><p id="guideHint"></p><button id="guideTouchBtn" hidden>ENABLE TOUCH GRAVITY</button><button id="guideNext" class="primary">START STEP</button></section>
 <section id="metrics" aria-live="polite">
 <header><strong>SPACETIME FEEDBACK LAB · PWA</strong><span id="status">INITIALISING</span></header>
 <div class="metric-grid">
@@ -444,11 +444,11 @@ const guideSteps=[
  {title:'Touch gravity · sensor bypass',seconds:30,instruction:'First tap ENABLE SENSOR GRAVITY to turn sensor gravity OFF. Then tap TOUCH GRAVITY: ON. Drag one finger across the centre of the canvas left, right, up, and down; release between directions. The masses should accelerate in the drag direction. Turn TOUCH GRAVITY OFF when finished.',hint:'The guide card is now touch-transparent: your finger should reach the simulation even beneath the instructions. Two-finger gestures remain camera controls.'},
  {title:'Final baseline · portrait upright',seconds:30,instruction:'Turn TOUCH GRAVITY OFF if it is still enabled. Turn ENABLE SENSOR GRAVITY back ON. Return to upright portrait with Orientation Lock OFF. Hold still for 10 seconds, then tap FINISH & SAVE.',hint:'The upload contains ten checkpoints, raw sensor axes, screen gravity, orientation changes, and touch-gravity state.'}
 ];
-function renderGuide(){const step=guideSteps[guideIndex];$('guideProgress').textContent='STEP '+(guideIndex+1)+' / '+guideSteps.length+' · '+step.title+' · '+step.seconds+' s';$('guideInstruction').textContent=step.instruction;$('guideHint').textContent=step.hint;$('guideNext').textContent=guideIndex===guideSteps.length-1?'FINISH & SAVE':'NEXT STEP';}
+function renderGuide(){const step=guideSteps[guideIndex];$('guideProgress').textContent='STEP '+(guideIndex+1)+' / '+guideSteps.length+' · '+step.title+' · '+step.seconds+' s';$('guideInstruction').textContent=step.instruction;$('guideHint').textContent=step.hint;$('guideNext').textContent=guideIndex===guideSteps.length-1?'FINISH & SAVE':'NEXT STEP';$('guideTouchBtn').hidden=guideIndex!==8;$('guideTouchBtn').textContent=touchGravityEnabled?'TOUCH GRAVITY: ON · TAP TO DISABLE':'ENABLE TOUCH GRAVITY';$('guideTouchBtn').classList.toggle('active',touchGravityEnabled);}
 $('guideBtn').addEventListener('click',()=>{$('guidePanel').hidden=!$('guidePanel').hidden;if(!$('guidePanel').hidden&&guideIndex<0){guideIndex=0;renderGuide();}});
 $('guideClose').addEventListener('click',()=>{$('guidePanel').hidden=true;});
 $('guideNext').addEventListener('click',async()=>{const t=now();if(guideIndex>=0){guideLog.push({step:guideIndex+1,title:guideSteps[guideIndex].title,recordedAt:new Date().toISOString(),screenAngle:currentAngle(),viewport:state.w+'x'+state.h,orientationLockHint:guideIndex<=4?'OFF':guideIndex<=7?'ON':'OFF',motionEnabled,motionRate:metrics.motionRate,rawDevice:[motionRawX,motionRawY],gravityScreen:[motionFilteredX,motionFilteredY],touchGravityEnabled});}if(guideIndex===guideSteps.length-1){$('guidePanel').hidden=true;const r=resultObject();lastCompletedResult=r;$('testResults').textContent='GUIDED ORIENTATION WORKFLOW COMPLETE · '+guideLog.length+' checkpoints captured.';await uploadResult(r);guideIndex=-1;return;}guideIndex=Math.min(guideSteps.length-1,guideIndex+1);renderGuide();});
-$('touchGravityBtn').addEventListener('click',()=>{touchGravityEnabled=!touchGravityEnabled;touchGravityActive=false;touchGravityX=touchGravityY=0;$('touchGravityBtn').textContent='TOUCH GRAVITY: '+(touchGravityEnabled?'ON':'OFF');$('touchGravityBtn').classList.toggle('active',touchGravityEnabled);$('runState').textContent=touchGravityEnabled?'Touch gravity active: drag one finger to apply a temporary gravity vector. Two-finger camera gestures remain available.':'Touch gravity disabled; sensor gravity remains active.';});
+function toggleTouchGravity(){touchGravityEnabled=!touchGravityEnabled;touchGravityActive=false;touchGravityX=touchGravityY=0;$('touchGravityBtn').textContent='TOUCH GRAVITY: '+(touchGravityEnabled?'ON':'OFF');$('touchGravityBtn').classList.toggle('active',touchGravityEnabled);$('guideTouchBtn').textContent=touchGravityEnabled?'TOUCH GRAVITY: ON · TAP TO DISABLE':'ENABLE TOUCH GRAVITY';$('guideTouchBtn').classList.toggle('active',touchGravityEnabled);$('runState').textContent=touchGravityEnabled?'TOUCH GRAVITY ON · one-finger drag applies force; the grid must stay still.':'Touch gravity disabled; one-finger drag pans the grid.';} $('touchGravityBtn').addEventListener('click',toggleTouchGravity);$('guideTouchBtn').addEventListener('click',toggleTouchGravity);
 
 function updateCameraFromGesture(){
   const ps=Array.from(pointers.values());
@@ -460,7 +460,7 @@ function updateCameraFromGesture(){
 function pointerDown(e){
   e.preventDefault();canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{id:e.pointerId,x:e.clientX,y:e.clientY});
   recordInputStart(e.timeStamp||now());
-  if(touchGravityEnabled&&pointers.size===1){touchGravityActive=true;touchGravityX=touchGravityY=0;gesture={type:'touch-gravity',id:e.pointerId,x:e.clientX,y:e.clientY};}
+  if(touchGravityEnabled&&pointers.size===1){touchGravityActive=true;touchGravityX=touchGravityY=0;gesture={type:'touch-gravity',id:e.pointerId,x:e.clientX,y:e.clientY};$('runState').textContent='TOUCH INPUT CAPTURED · drag direction is driving the masses; camera pan is disabled.';}
   else updateCameraFromGesture();pulse([7]);
 }
 function pointerMove(e){
