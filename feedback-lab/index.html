@@ -293,7 +293,11 @@ function screenToWorld(x,y){
   return {x:c*sx-s*sy,y:s*sx+c*sy};
 }
 function worldVectorFromScreen(x,y){
-  const angle=-(matchMedia('(pointer:coarse)').matches?gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+  const phoneMode=matchMedia('(pointer:coarse)').matches;
+  // motionFilteredX/Y are already expressed in the current screen basis.
+  // gridRotation maps the ground frame into that screen basis, so gravity
+  // must be transformed with the inverse rotation before entering physics.
+  const angle=(phoneMode?-gridRotation:-state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
   return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
 }
 function buildStaticGrid(){
