@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#000000">
 <title>Spacetime — Interactive Grid</title>
 <style>
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
   body { touch-action: none; }
   canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
@@ -68,6 +68,7 @@
     const p = pointers.get(e.pointerId);
     if (p) p.life = 0;
   }
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
   canvas.addEventListener('pointerdown', pointerDown, { passive:false });
   canvas.addEventListener('pointermove', pointerMove, { passive:false });
   canvas.addEventListener('pointerup', pointerEnd);
@@ -80,7 +81,6 @@
     const r = Math.sqrt(r2);
     const sigma = Math.min(width, height) * .19;
     const influence = Math.exp(-r2 / (2*sigma*sigma));
-    // A smooth radial lens: nearby grid points are pulled toward the mass.
     const bend = 55 * strength * life * influence;
     return { x: x - dx/r * bend, y: y - dy/r * bend };
   }
@@ -92,7 +92,6 @@
       ox += q.x - x;
       oy += q.y - y;
     }
-    // Slow travelling ripples make the grid gently undulate even away from the pointer.
     const waveX = Math.sin(y * .017 + t * .00105) * 2.0
                 + Math.sin((x + y) * .008 - t * .00072) * 1.0;
     const waveY = Math.sin(x * .016 - t * .00092) * 2.0
@@ -147,7 +146,6 @@
     }
     ctx.stroke();
 
-    // Soft, restrained glow around active masses.
     for (const p of fields) {
       const radius = 110;
       const glow = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,radius);
