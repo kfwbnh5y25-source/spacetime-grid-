@@ -156,6 +156,7 @@ function resize(){
   ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
   buildStaticGrid();
   metrics.orientation=currentAngle();
+  if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'viewport-resize',screenAngle:metrics.orientation,screenOrientation:screen.orientation?.type||'unsupported',viewport:[+state.w.toFixed(1),+state.h.toFixed(1)],windowViewport:[window.innerWidth,window.innerHeight],canvasPixels:[canvas.width,canvas.height],dpr:state.dpr,renderRotationDeg:+(matchMedia('(pointer:coarse)').matches?0:state.camera.rotation).toFixed(3)});
   $('orientation').textContent=state.w>=state.h?'LANDSCAPE '+metrics.orientation+'°':'PORTRAIT '+metrics.orientation+'°';
   if(oldW&&oldH){/* World coordinates are center-relative: changing viewport size never rescales or teleports masses. */}
 }
@@ -405,6 +406,20 @@ const workflowStages=[
  {id:'final_hold',label:'FINAL · HOLD STILL',seconds:5,instruction:'Keep the phone upright and still. The diagnostic will save automatically.'}
 ];
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function evaluateGridOrientation(events){
+ const transitions=events.filter(e=>e.type==='screen-basis-change');
+ const resizes=events.filter(e=>e.type==='viewport-resize');
+ const checks=transitions.map(t=>{
+  const expectedLandscape=t.toAngle===90||t.toAngle===270;
+  const matching=resizes.filter(r=>r.t>=t.t&&r.t-t.t<=2500&&((r.viewport[0]>=r.viewport[1])===expectedLandscape));
+  const resize=matching.length?matching[matching.length-1]:null;
+  const locked=Math.abs(Number(t.renderRotationDeg)||0)<=0.01;
+  return {fromAngle:t.fromAngle,toAngle:t.toAngle,atMs:t.t,renderRotationDeg:t.renderRotationDeg,renderLocked:locked,viewportUpdated:!!resize,viewport:resize?.viewport||null,canvasPixels:resize?.canvasPixels||null,orientationMatches:!!resize,passed:locked&&!!resize};
+ });
+ const passed=checks.filter(c=>c.passed).length;
+ const complete=transitions.length===4;
+ return {protocol:'grid-display-lock-v1',status:complete&&passed===4?'PASS':'INCOMPLETE_OR_FAIL',criteria:{requiredTransitions:4,observedTransitions:transitions.length,renderRotationToleranceDeg:0.01,viewportResizeWindowMs:2500},passed,total:checks.length,checks,notes:['Evaluates grid render rotation only; gravity and mass motion are excluded.','Each transition must retain zero render rotation and record a matching viewport resize within 2.5 seconds.']};
+}
 async function runOrientationWorkflow(){
  if(orientationWorkflow.active)return;
  if(!motionEnabled){await toggleMotion();if(!motionEnabled)return;}
@@ -442,9 +457,10 @@ async function runOrientationWorkflow(){
    }
  }
  orientationWorkflow.active=false;orientationWorkflow.stage='complete';
- const summary={protocol:'phone-locked-grid-v17-display-locked-render-and-viewport-observer',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ const gridEvaluation=evaluateGridOrientation(orientationWorkflow.events);
+ const summary={protocol:'phone-locked-grid-v18-server-grid-evaluation',gridEvaluation,physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
  orientationWorkflow.lastReport=summary;
- $('workflowStatus').textContent='COMPLETE · '+summary.verificationPassed+'/'+summary.verificationTotal+' orientation checks passed · '+summary.samples.length+' samples · uploading…';
+ $('workflowStatus').textContent='COMPLETE · GRID '+gridEvaluation.status+' ('+gridEvaluation.passed+'/'+gridEvaluation.total+') · uploading report and evaluation…';
  const report=resultObject();report.workflow=summary;lastCompletedResult=report;
  await uploadResult(report);
  $('workflowStart').disabled=false;$('workflowStart').textContent='RUN AGAIN';
@@ -481,7 +497,7 @@ async function uploadResult(snapshot){
     }
     status.textContent='SAVED TO SERVER';
     $('runState').textContent='Result uploaded successfully. Stored without an account ID; this app does not stream telemetry in the background.';
-    $('workflowStatus').textContent='SAVED ✓ · diagnostic uploaded successfully.';
+    $('workflowStatus').textContent='SAVED ✓ · raw report and grid evaluation uploaded successfully.';
     return true;
   }catch(error){
     status.textContent='UPLOAD FAILED';
