@@ -162,7 +162,7 @@
   const gaussian = new Float32Array(2049);
   for (let i = 0; i < gaussian.length; i++) gaussian[i] = Math.exp(-i * 8 / (gaussian.length - 1));
   let width=0, height=0, dpr=1, last=0, elapsed=0, hintTimer, raf=0, lastFrame=0;
-  let inv2Sigma2=0, geometry=null, imageStatus='loading';
+  let inv2Sigma2=0, rayMargin=0, geometry=null, imageStatus='loading';
   const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width,height)/17)));
 
   function initGpu(){
@@ -186,20 +186,47 @@ layout(location=13) in float a_end;
 uniform vec2 u_resolution;
 uniform float u_inv2Sigma2;
 uniform vec2 u_pointer[10];
-uniform float u_strength[10];
+uniform float u_rS[10];
 uniform int u_pointerCount;
+uniform float u_rayMargin;
+uniform float u_softening;
 uniform vec2 u_phase[5];
 out float v_edge;
-vec2 warp(vec2 p,vec2 t0,vec2 t1,vec2 t2,vec2 t3,vec2 t4){
- for(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-p;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p+=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}
+
+// Weak-field GR in isotropic coordinates: n_opt ~= 1 - 2 Phi/c^2.
+// For Phi=-GM/sqrt(r^2+eps^2), a null ray obeys
+// d^2 x_perp/ds^2 ~= r_s * b / ((s-q)^2+b^2+eps^2)^(3/2),
+// where r_s=2GM/c^2. This is its analytic first-order (Born) integral.
+float lensIntegral(float s,float q,float b2){
+ float v1=s-q,v0=-q;
+ float root1=sqrt(v1*v1+b2),root0=sqrt(v0*v0+b2);
+ float f1=v1/(b2*root1),f0=v0/(b2*root0);
+ return max(0.0,(s-q)*(f1-f0)+(1.0/root1-1.0/root0));
+}
+vec2 warp(vec2 pA,vec2 pB,float endpoint,vec2 t0,vec2 t1,vec2 t2,vec2 t3,vec2 t4){
+ vec2 p=mix(pA,pB,endpoint);
+ vec2 direction=normalize(pB-pA);
+ bool horizontal=abs(direction.x)>abs(direction.y);
+ vec2 origin=horizontal?vec2(-u_rayMargin,p.y):vec2(p.x,-u_rayMargin);
+ float s=max(0.0,dot(p-origin,direction));
+ vec2 normal=vec2(-direction.y,direction.x);
+ vec2 displacement=vec2(0.0);
+ for(int i=0;i<10;i++){
+  if(i>=u_pointerCount)break;
+  vec2 rel=u_pointer[i]-origin;
+  float q=dot(rel,direction),b=dot(rel,normal);
+  float b2=b*b+u_softening*u_softening;
+  displacement+=normal*(u_rS[i]*b*lensIntegral(s,q,b2));
+ }
+ p+=displacement;
  float wx=5.5*(t0.x*u_phase[0].y+t0.y*u_phase[0].x)+2.8*(t1.x*u_phase[1].y-t1.y*u_phase[1].x);
  float wy=5.5*(t2.x*u_phase[2].y-t2.y*u_phase[2].x)+2.8*(t3.x*u_phase[3].y+t3.y*u_phase[3].x);
  float br=1.5*(t4.x*u_phase[4].y+t4.y*u_phase[4].x);
  return p+vec2(wx,wy+br);
 }
 void main(){
- vec2 p0=warp(a_xy,a_t0,a_t1,a_t2,a_t3,a_t4);
- vec2 p1=warp(a_other,a_o0,a_o1,a_o2,a_o3,a_o4);
+ vec2 p0=warp(a_xy,a_other,0.0,a_t0,a_t1,a_t2,a_t3,a_t4);
+ vec2 p1=warp(a_xy,a_other,1.0,a_o0,a_o1,a_o2,a_o3,a_o4);
  vec2 tangent=normalize(p1-p0);
  vec2 normal=vec2(-tangent.y,tangent.x);
  vec2 p=mix(p0,p1,a_end)+tangent*(a_end*2.0-1.0)*0.35+normal*a_side*1.2;
@@ -242,10 +269,15 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function drawGpu(t){
     if(!gpuEnabled)return;
     gl.viewport(0,0,gpuCanvas.width,gpuCanvas.height);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(gpuProgram);
-    gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_inv2Sigma2'),inv2Sigma2);
-    const xy=new Float32Array(20),strength=new Float32Array(10);let count=0;
-    for(const p of fields){if(count>=10)break;xy[count*2]=p.x;xy[count*2+1]=p.y;strength[count]=p.strength;count++;}
-    gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_strength[0]'),strength);
+    gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_inv2Sigma2'),inv2Sigma2);
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_rayMargin'),rayMargin);
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),9.0);
+    const xy=new Float32Array(20),rS=new Float32Array(10);let count=0;
+    for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;rS[count]=2.2*Math.max(0,Math.min(1,p.strength));count++;}
+    gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
+    gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);
+    gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_rS[0]'),rS);
     const rates=[.00105,.00072,.00092,.00066,.00045],phases=new Float32Array(10);for(let i=0;i<5;i++){phases[2*i]=Math.sin(t*rates[i]);phases[2*i+1]=Math.cos(t*rates[i]);}
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_phase[0]'),phases);
     gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);
@@ -275,6 +307,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       starts.push(xs.length);
       for(let x=-margin;x<=width+margin;x+=sampleStep){xs.push(x);ys.push(y);}
     }
+    const xLineCount=starts.length;
     const n=xs.length, x=new Float32Array(xs), y=new Float32Array(ys);
     const sinA=new Float32Array(n),cosA=new Float32Array(n);
     const sinB=new Float32Array(n),cosB=new Float32Array(n);
@@ -289,7 +322,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       sinD[i]=Math.sin(d);cosD[i]=Math.cos(d);
       sinE[i]=Math.sin(e);cosE[i]=Math.cos(e);
     }
-    geometry={x,y,starts:new Uint32Array(starts),sinA,cosA,sinB,cosB,sinC,cosC,sinD,cosD,sinE,cosE};
+    geometry={x,y,starts:new Uint32Array(starts),xLineCount,sinA,cosA,sinB,cosB,sinC,cosC,sinD,cosD,sinE,cosE};
     uploadGpuGeometry(geometry);
   }
   function rebuildBackground(){
@@ -306,7 +339,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function resize(){
     dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:adaptiveDprCap);
     width=window.innerWidth;height=window.innerHeight;
-    const sigma=Math.min(width,height)*.19;inv2Sigma2=1/(2*sigma*sigma);
+    const sigma=Math.min(width,height)*.19;inv2Sigma2=1/(2*sigma*sigma);rayMargin=spacing()*2;
     canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
     gpuCanvas.width=Math.round(width*dpr);gpuCanvas.height=Math.round(height*dpr);
     ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -467,16 +500,23 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   });
 
   let warpedX=0, warpedY=0;
-  function warpVertex(g,i,times){
-    const x=g.x[i],y=g.y[i];let ox=x,oy=y;
-    for(let j=0;j<fields.length;j++){
-      const p=fields[j],dx=p.x-x,dy=p.y-y,r2=dx*dx+dy*dy+1;
-      const q=Math.min(8,r2*inv2Sigma2);
-      const qi=q*(gaussian.length-1)/8,lo=qi|0;
-      const influence=gaussian[lo]+(gaussian[Math.min(lo+1,gaussian.length-1)]-gaussian[lo])*(qi-lo);
-      const bend=55*p.strength*influence, invR=1/Math.sqrt(r2);
-      ox+=dx*invR*bend;oy+=dy*invR*bend;
+  function lensIntegral(s,q,b2){
+    const v1=s-q,v0=-q,root1=Math.sqrt(v1*v1+b2),root0=Math.sqrt(v0*v0+b2);
+    const f1=v1/(b2*root1),f0=v0/(b2*root0);
+    return Math.max(0,(s-q)*(f1-f0)+(1/root1-1/root0));
+  }
+  function warpVertex(g,i,times,horizontal){
+    const x=g.x[i],y=g.y[i];
+    const originX=horizontal?-rayMargin:x,originY=horizontal?y:-rayMargin;
+    const s=horizontal?x-originX:y-originY;
+    const normalX=horizontal?0:-1,normalY=horizontal?1:0;
+    let displacement=0;
+    for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
+      const mass=fields[j],rx=mass.x-originX,ry=mass.y-originY;
+      const q=horizontal?rx:ry,b=horizontal?ry:-rx;
+      displacement+=2.2*Math.max(0,Math.min(1,mass.strength))*b*lensIntegral(s,q,b*b+81);
     }
+    const ox=x+normalX*displacement,oy=y+normalY*displacement;
     const [s1,c1,s2,c2,s3,c3,s4,c4,s5,c5]=times;
     const waveX=5.5*(g.sinA[i]*c1+g.cosA[i]*s1)+2.8*(g.sinB[i]*c2-g.cosB[i]*s2);
     const waveY=5.5*(g.sinC[i]*c3-g.cosC[i]*s3)+2.8*(g.sinD[i]*c4+g.cosD[i]*s4);
@@ -564,7 +604,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     else {
       const g=geometry,times=[Math.sin(t*.00105),Math.cos(t*.00105),Math.sin(t*.00072),Math.cos(t*.00072),Math.sin(t*.00092),Math.cos(t*.00092),Math.sin(t*.00066),Math.cos(t*.00066),Math.sin(t*.00045),Math.cos(t*.00045)];
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
-      for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;for(let i=from;i<to;i++){warpVertex(g,i,times);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
+      for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line<g.xLineCount;for(let i=from;i<to;i++){warpVertex(g,i,times,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
       ctx.stroke();
     }
     for(const p of fields){
