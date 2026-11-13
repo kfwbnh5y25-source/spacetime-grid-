@@ -640,14 +640,14 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     };
     let sumSq=0,max=0,samples=0;
     const probe=(sx,sy,horizontal)=>{
-      let x=sx,y=sy,vx=horizontal?.38:0,vy=horizontal?0:.38;
+      let x=sx,y=sy,vx=horizontal ? 0.38 : 0,vy=horizontal ? 0 : 0.38;
       for(let k=0;k<12;k++){
         const [ax,ay]=accel(x,y),mx=x+.5*h*vx,my=y+.5*h*vy;
         const [amx,amy]=accel(mx,my);
         x+=h*(vx+.5*h*ax);y+=h*(vy+.5*h*ay);
         vx+=h*amx;vy+=h*amy;
       }
-      const dx=x-(sx+(horizontal?.38:0)*total);
+      const dx=x-(sx+(horizontal ? 0.38 : 0)*total);
       const dy=y-(sy+(horizontal?0:.38)*total);
       const shift=Math.hypot(dx,dy);
       sumSq+=shift*shift;max=Math.max(max,shift);samples++;
@@ -685,7 +685,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   if(benchMode){
     panel=document.createElement('section');
     panel.style.cssText='position:fixed;z-index:5;top:12px;left:12px;max-width:min(360px,calc(100vw - 24px));max-height:48vh;overflow:auto;padding:12px 14px;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.22);color:#e8edf7;font:11px/1.5 ui-monospace,monospace;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);touch-action:pan-y;user-select:text;-webkit-user-select:text';
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>DEVICE BENCHMARK</b><span style="display:flex;gap:6px"><button id="uploadBench" style="background:#dce8ff;color:#07111f;border:0;padding:6px 9px;font:inherit">Save to server</button><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></span></div><div id="saveStatus" role="status" style="margin-top:5px;color:#aab4c5"></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><label>Test <select id="testLabel" style="font:inherit"><option value="idle">Idle</option><option value="drag">Mouse hover / move</option><option value="multitouch">Multitouch</option></select></label><label>DPR <select id="testDpr" style="font:inherit"><option>1</option><option>1.5</option><option>1.75</option><option>2</option><option>2.5</option><option selected>3</option></select></label><label>Cap <select id="testCap" style="font:inherit"><option>60</option><option selected>120</option></select></label><button id="startTest" style="background:#fff;color:#000;border:0;padding:5px 8px;font:inherit">Reset test</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Mac test: run 60 s idle, then 60 s moving the mouse continuously over the grid. Keep the tab foregrounded. Use DPR 2 first; repeat at DPR 3 to compare GPU load. Click Save to server or Export JSON for a compact report.</p>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>DEVICE BENCHMARK</b><span style="display:flex;gap:6px"><button id="uploadBench" style="background:#dce8ff;color:#07111f;border:0;padding:6px 9px;font:inherit">Save to server</button><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></span></div><div id="saveStatus" role="status" style="margin-top:5px;color:#aab4c5"></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><label>Test <select id="testLabel" style="font:inherit"><option value="idle">Idle</option><option value="drag">Mouse hover / move</option><option value="multitouch">Multitouch</option></select></label><label>DPR <select id="testDpr" style="font:inherit"><option>1</option><option>1.5</option><option>1.75</option><option>2</option><option>2.5</option><option selected>3</option></select></label><label>Cap <select id="testCap" style="font:inherit"><option>60</option><option selected>120</option></select></label><button id="startTest" style="background:#fff;color:#000;border:0;padding:5px 8px;font:inherit">Reset test</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Geodesic probe test: open this page with &probe=1 to place a temporary test mass at screen center (benchmark only; it is not saved). Confirm Shape deformation becomes non-zero. For performance, run 60 s idle, then 60 s moving the pointer; keep the tab foregrounded. Compare DPR 2 and 3. Export JSON or Save to server.</p>`;
     document.body.appendChild(panel);reportText=panel.querySelector('#benchText');
     panel.querySelector('#testLabel').value=testLabel;
     panel.querySelector('#testDpr').value=String(requestedDpr);
@@ -742,6 +742,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }
     gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
+    // A synthetic source exists only in the benchmark URL; it never enters saved app state.
+    if(benchMode&&benchParams.has('probe'))fields.push({x:width*.5,y:height*.5,strength:1,benchmarkProbe:true});
     if(gpuEnabled)drawGpu(t);
     if(phonePhysics){stepNewtonProbe(dt);drawNewtonProbe();}
     else {
