@@ -485,7 +485,7 @@ function evaluateGridOrientation(events){
  });
  const passed=checks.filter(c=>c.passed).length;
  const complete=transitions.length===4;
- return {protocol:'mass-anchored-grid-v2',status:complete&&passed===4?'PASS':'INCOMPLETE_OR_FAIL',criteria:{requiredTransitions:4,observedTransitions:transitions.length,gridRotationToleranceDeg:0.1,massScreenPositionTolerancePx:3,viewportResizeWindowMs:2500},passed,total:checks.length,checks,notes:['On touch devices the grid rotates around the collective mass centre while mass screen positions are held fixed across viewport changes.','Each transition must rotate the grid to the phone's relative screen angle, retain mass screen positions within 3 px, and record a matching viewport resize within 2.5 seconds.']};
+ return {protocol:'mass-anchored-grid-v2',status:complete&&passed===4?'PASS':'INCOMPLETE_OR_FAIL',criteria:{requiredTransitions:4,observedTransitions:transitions.length,gridRotationToleranceDeg:0.1,massScreenPositionTolerancePx:3,viewportResizeWindowMs:2500},passed,total:checks.length,checks,notes:['On touch devices the grid rotates around the collective mass centre while mass screen positions are held fixed across viewport changes.',"Each transition must rotate the grid to the phone relative screen angle, retain mass screen positions within 3 px, and record a matching viewport resize within 2.5 seconds."]};
 }
 async function runOrientationWorkflow(){
  if(orientationWorkflow.active)return;
