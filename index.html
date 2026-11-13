@@ -165,7 +165,7 @@
   if(benchMode){
     panel=document.createElement('section');
     panel.style.cssText='position:fixed;z-index:5;top:12px;left:12px;max-width:min(360px,calc(100vw - 24px));max-height:48vh;overflow:auto;padding:12px 14px;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.22);color:#e8edf7;font:11px/1.5 ui-monospace,monospace;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);touch-action:pan-y;user-select:text;-webkit-user-select:text';
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><b>DEVICE BENCHMARK</b><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><label>Test <select id="testLabel" style="font:inherit"><option value="idle">Idle</option><option value="drag">One-finger drag</option><option value="multitouch">Multitouch</option></select></label><label>DPR <select id="testDpr" style="font:inherit"><option>1</option><option>1.5</option><option selected>1.75</option></select></label><label>Cap <select id="testCap" style="font:inherit"><option>60</option><option>120</option></select></label><button id="startTest" style="background:#fff;color:#000;border:0;padding:5px 8px;font:inherit">Reset test</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Run separate 60–90 s tests: idle, continuous one-finger dragging, then 2–5 fingers. Keep the tab foregrounded and use the same duration for each. Change DPR and repeat to test GPU/fill-rate sensitivity.</p>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>DEVICE BENCHMARK</b><span style="display:flex;gap:6px"><button id="uploadBench" style="background:#dce8ff;color:#07111f;border:0;padding:6px 9px;font:inherit">Save to server</button><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></span></div><div id="saveStatus" role="status" style="margin-top:5px;color:#aab4c5"></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><label>Test <select id="testLabel" style="font:inherit"><option value="idle">Idle</option><option value="drag">One-finger drag</option><option value="multitouch">Multitouch</option></select></label><label>DPR <select id="testDpr" style="font:inherit"><option>1</option><option>1.5</option><option selected>1.75</option></select></label><label>Cap <select id="testCap" style="font:inherit"><option>60</option><option>120</option></select></label><button id="startTest" style="background:#fff;color:#000;border:0;padding:5px 8px;font:inherit">Reset test</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Run separate 60–90 s tests: idle, continuous one-finger dragging, then 2–5 fingers. Keep the tab foregrounded and use the same duration for each. Change DPR and repeat to test GPU/fill-rate sensitivity.</p>`;
     document.body.appendChild(panel);reportText=panel.querySelector('#benchText');
     panel.querySelector('#testLabel').value=testLabel;
     panel.querySelector('#testDpr').value=String(requestedDpr);
@@ -176,6 +176,20 @@
     panel.querySelector('#startTest').addEventListener('click',()=>{
       testLabel=panel.querySelector('#testLabel').value;requestedDpr=Number(panel.querySelector('#testDpr').value);frameCap=Number(panel.querySelector('#testCap').value);resize();
       perf.started=performance.now();perf.firstFrame=null;perf.samples=[];perf.renderMs=[];perf.frameLog=[];perf.dropped=0;perf.baselineFrameMs=null;perf.frames=0;perf.maxFrameMs=0;perf.longTasks=0;perf.lastReport=0;
+    });
+    panel.querySelector('#uploadBench').addEventListener('click',async()=>{
+      const button=panel.querySelector('#uploadBench'),status=panel.querySelector('#saveStatus');
+      button.disabled=true;button.textContent='Saving…';status.textContent='Sending benchmark to server';
+      try{
+        const response=await fetch('https://dpnzgpmlbdrlwackyafa.supabase.co/rest/v1/spacetime_benchmarks',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':'sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz','Authorization':'Bearer sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz','Prefer':'return=minimal'},
+          body:JSON.stringify({report:report()})
+        });
+        if(!response.ok){const detail=await response.text();throw new Error('HTTP '+response.status+' '+detail.slice(0,240));}
+        status.textContent='Saved to server · '+new Date().toLocaleTimeString();button.textContent='Saved ✓';
+      }catch(error){status.textContent='Save failed: '+error.message;button.textContent='Retry save';}
+      finally{button.disabled=false;}
     });
     panel.querySelector('#saveBench').addEventListener('click',()=>{
       const blob=new Blob([JSON.stringify(report(),null,2)],{type:'application/json'});
