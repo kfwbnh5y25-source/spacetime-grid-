@@ -81,13 +81,20 @@ const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:
 const $=id=>document.getElementById(id);
 const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
 const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
-let orientationMotionTimer=0,gridRotation=((currentAngle()+540)%360)-180,scenePivot={x:0,y:0},raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=currentAngle(),motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+const initialScreenAngle=currentAngle();
+let orientationMotionTimer=0,gridRotation=0,scenePivot={x:0,y:0},raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=initialScreenAngle,motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
 const orientationWorkflow={active:false,stage:'idle',stageStarted:0,started:0,lastSample:0,samples:[],events:[],verification:[],completed:new Set(),physical:'portrait_upright',lock:'off'};
 let latestDeviceOrientation={alpha:null,beta:null,gamma:null,absolute:null};
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
 function now(){return performance.now();}
 function currentAngle(){
- const raw=Number.isFinite(screen.orientation?.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);
+ // iOS Safari/PWA can expose a stale screen.orientation.angle during rotation.
+ // Prefer UIKit's window.orientation when it reports a cardinal value.
+ const legacy=Number(window.orientation);
+ const modern=Number(screen.orientation?.angle);
+ const raw=Number.isFinite(legacy)&&[0,90,-90,180,270,-180].includes(legacy)
+   ?legacy
+   :(Number.isFinite(modern)?modern:0);
  return ((Math.round(raw/90)*90%360)+360)%360;
 }
 const GRAVITY_G=9.80665;
@@ -149,7 +156,10 @@ function syncScreenBasis(){
  const angle=currentAngle();
  if(angle!==lastScreenAngle){
   // Set an absolute cardinal angle; never accumulate transient resize deltas.
-  if(matchMedia('(pointer:coarse)').matches){scenePivot=massCentroidWorld();gridRotation=((angle+540)%360)-180;}
+  if(matchMedia('(pointer:coarse)').matches){
+    scenePivot=massCentroidWorld();
+    gridRotation=shortestDegrees(angle-initialScreenAngle);
+   }
   metrics.orientationChanges++;metrics.orientationChangeAt=now();
   if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],canvasPixels:[canvas.width,canvas.height],gridRotationDeg:+gridRotation.toFixed(3),massAnchorCount:state.masses.length});
   lastScreenAngle=angle;
