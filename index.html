@@ -73,12 +73,39 @@
   const persistentMasses=[];
   let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1.5:2,slowFrames=0,smoothFrames=0;
   const storageKey='spacetime-grid-state-v1';
+  let cameraAnimationRaf=0,cameraAnimationTarget=null,cameraAnimationLast=0;
   function worldPoint(x,y){const dx=x-width/2-viewX,dy=y-height/2-viewY,a=viewRotation*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);return {x:(dx*c+dy*sn)/viewScale+width/2,y:(-dx*sn+dy*c)/viewScale+height/2};}
   function applyView(){const v='translate('+viewX+'px,'+viewY+'px) rotate('+viewRotation+'deg) scale('+viewScale+')';canvas.style.transform=v;gpuCanvas.style.transform=v;}
+  function stopCameraAnimation(){if(cameraAnimationRaf)cancelAnimationFrame(cameraAnimationRaf);cameraAnimationRaf=0;cameraAnimationTarget=null;cameraAnimationLast=0;}
+  function animateCameraTo(target){
+    cameraAnimationTarget={viewX:target.viewX,viewY:target.viewY,viewScale:target.viewScale,viewRotation:target.viewRotation};
+    if(cameraAnimationRaf)return;
+    cameraAnimationLast=performance.now();
+    const tick=now=>{
+      const dt=Math.min(50,Math.max(1,now-cameraAnimationLast));cameraAnimationLast=now;
+      const t=cameraAnimationTarget;
+      if(!t){cameraAnimationRaf=0;return;}
+      const blend=1-Math.exp(-dt/88);
+      viewX+=(t.viewX-viewX)*blend;viewY+=(t.viewY-viewY)*blend;
+      viewScale+=(t.viewScale-viewScale)*blend;viewRotation+=(t.viewRotation-viewRotation)*blend;
+      const settled=Math.abs(t.viewX-viewX)<.08&&Math.abs(t.viewY-viewY)<.08&&
+        Math.abs(t.viewScale-viewScale)<.0005&&Math.abs(t.viewRotation-viewRotation)<.015;
+      if(settled){
+        viewX=t.viewX;viewY=t.viewY;viewScale=t.viewScale;viewRotation=t.viewRotation;
+        cameraAnimationRaf=0;cameraAnimationTarget=null;cameraAnimationLast=0;applyView();saveState();return;
+      }
+      applyView();cameraAnimationRaf=requestAnimationFrame(tick);
+    };
+    cameraAnimationRaf=requestAnimationFrame(tick);
+  }
+  function updateCameraTarget(patch){
+    const base=cameraAnimationTarget||{viewX,viewY,viewScale,viewRotation};
+    animateCameraTo({...base,...patch});
+  }
   function showStatus(m){gestureStatus.textContent=m;gestureStatus.classList.add('visible');clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>gestureStatus.classList.remove('visible'),1300);}
   function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
   function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
-  function resetView(){viewScale=1;viewX=0;viewY=0;viewRotation=0;persistentMasses.length=0;applyView();saveState();showStatus('VIEW RESET');}
+  function resetView(){persistentMasses.length=0;updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
   const gyroButton=document.getElementById('gyroButton');
   let gyroEnabled=false,gyroBaseline=null,gyroTargetX=0,gyroTargetY=0,gyroX=0,gyroY=0,gyroListener=null;
   function handleDeviceOrientation(e){
@@ -339,7 +366,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   // iOS uses the touch handlers below exclusively to avoid double-applying pinch/twist.
   if(matchMedia('(hover:hover) and (pointer:fine)').matches){
     canvas.addEventListener('gesturestart',e=>{
-      e.preventDefault();stopInertia();
+      e.preventDefault();stopInertia();stopCameraAnimation();
       trackpadGestureBase={scale:viewScale,rotation:viewRotation,x:width/2,y:height/2,viewX,viewY};
     },{passive:false});
     canvas.addEventListener('gesturechange',e=>{
@@ -368,7 +395,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     lastTouchSample={x,y,t:now};
   }
   canvas.addEventListener('touchstart',e=>{
-    stopInertia();lastTouchSample=null;
+    stopInertia();stopCameraAnimation();lastTouchSample=null;
     if(e.touches.length===2){
       const a=e.touches[0],b=e.touches[1],x=(a.clientX+b.clientX)/2,y=(a.clientY+b.clientY)/2;
       gestureBase={idA:a.identifier,idB:b.identifier,distance:Math.max(1,Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)),angle:touchAngle(a,b),scale:viewScale,rotation:viewRotation,x,y,viewX,viewY};
@@ -399,7 +426,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gestureBase=null;panBase=null;lastTouchSample=null;stopInertia();scheduleViewSave();
   },{passive:true});
   canvas.addEventListener('wheel',e=>{
-    if(!Number.isFinite(e.deltaY))return;e.preventDefault();stopInertia();
+    if(!Number.isFinite(e.deltaY))return;e.preventDefault();stopInertia();stopCameraAnimation();
     if(e.ctrlKey){
       if(trackpadGestureBase)return;
       const dy=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*height:e.deltaY;
@@ -413,7 +440,31 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }
     applyView();scheduleViewSave();
   },{passive:false});
-  window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||''))return;const k=e.key.toLowerCase(),step=36;if(e.code==='Space'){e.preventDefault();if(!paused)pauseTime=elapsed;paused=!paused;showStatus(paused?'PAUSED':'RESUMED');}else if(k==='r')resetView();else if(e.key==='+'||e.key==='='){viewScale=Math.min(2.5,viewScale*1.12);applyView();saveState();}else if(e.key==='-'){viewScale=Math.max(.7,viewScale/1.12);applyView();saveState();}else if(e.key.startsWith('Arrow')){e.preventDefault();viewX+=e.key==='ArrowLeft'?step:e.key==='ArrowRight'?-step:0;viewY+=e.key==='ArrowUp'?step:e.key==='ArrowDown'?-step:0;applyView();saveState();}else if(k==='s'){if(navigator.share)navigator.share({title:'Spacetime Grid',url:location.href}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(location.href).then(()=>showStatus('LINK COPIED'));}});
+  window.addEventListener('keydown',e=>{
+    if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||''))return;
+    const k=e.key.toLowerCase(),step=36;
+    if(e.code==='Space'){
+      e.preventDefault();if(!paused)pauseTime=elapsed;paused=!paused;showStatus(paused?'PAUSED':'RESUMED');
+    }else if(k==='r'){
+      e.preventDefault();stopInertia();resetView();
+    }else if(e.key==='+'||e.key==='='){
+      e.preventDefault();const base=cameraAnimationTarget||{viewX,viewY,viewScale,viewRotation};
+      updateCameraTarget({viewScale:Math.min(2.5,base.viewScale*1.12)});
+    }else if(e.key==='-'){
+      e.preventDefault();const base=cameraAnimationTarget||{viewX,viewY,viewScale,viewRotation};
+      updateCameraTarget({viewScale:Math.max(.7,base.viewScale/1.12)});
+    }else if(e.key.startsWith('Arrow')){
+      e.preventDefault();stopInertia();
+      const base=cameraAnimationTarget||{viewX,viewY,viewScale,viewRotation};
+      updateCameraTarget({
+        viewX:base.viewX+(e.key==='ArrowLeft'?step:e.key==='ArrowRight'?-step:0),
+        viewY:base.viewY+(e.key==='ArrowUp'?step:e.key==='ArrowDown'?-step:0)
+      });
+    }else if(k==='s'){
+      if(navigator.share)navigator.share({title:'Spacetime Grid',url:location.href}).catch(()=>{});
+      else if(navigator.clipboard)navigator.clipboard.writeText(location.href).then(()=>showStatus('LINK COPIED'));
+    }
+  });
 
   let warpedX=0, warpedY=0;
   function warpVertex(g,i,times){
