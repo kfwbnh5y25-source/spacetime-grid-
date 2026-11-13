@@ -225,28 +225,50 @@ uniform int u_pointerCount;
 uniform float u_softening;
 out float v_edge;
 
-// Static weak-field spatial geometry in isotropic coordinates.
-// Newtonian potentials superpose; g_ij ≈ (1 - 2 Phi/c²) delta_ij.
-// Render a bounded radial spatial stretch directly, so a lone mass
-// has a stationary field instead of making the grid fall forever.
+// Geodesics of a conformally-flat, time-symmetric spatial metric.
+// For one non-spinning mass this is the exact Schwarzschild spatial slice
+// in isotropic coordinates: dl² = psi^4 (dx²+dy²), psi=1+r_s/(4r).
+// Multiple sources use the conformal-factor superposition (Brill-Lindquist
+// initial-data form); this is a spatial-slice model, not a full 4-D orbit.
 uniform float u_time;
-vec4 traceTimelike(vec2 p,vec2 direction){
- vec2 displacement=vec2(0.0);
+vec2 gradLogConformal(vec2 p){
+ float psi=1.0;
+ vec2 gradPsi=vec2(0.0);
  for(int i=0;i<24;i++){
   if(i>=u_pointerCount)break;
   vec2 d=p-u_pointer[i];
-  float r2=dot(d,d)+u_softening*u_softening;
-  float stretch=min(0.22,0.02*u_rS[i]/r2);
-  displacement+=normalize(d+vec2(0.0001))*stretch*sqrt(r2);
+  float r=sqrt(dot(d,d)+u_softening*u_softening);
+  float rs=0.02*u_rS[i];
+  psi+=rs/(4.0*r);
+  gradPsi-=rs*d/(4.0*r*r*r);
  }
- float mag=length(displacement);
- if(mag>34.0)displacement*=34.0/mag;
- return vec4(p+displacement,0.0,0.0);
+ return 2.0*gradPsi/psi; // grad(log(psi²))
+}
+vec4 geodesicDerivative(vec4 state){
+ vec2 v=state.zw;
+ vec2 grad=gradLogConformal(state.xy);
+ vec2 acceleration=-2.0*dot(v,grad)*v+dot(v,v)*grad;
+ return vec4(v,acceleration);
+}
+vec4 traceGeodesic(vec2 p,vec2 direction,float distanceAlong){
+ vec4 state=vec4(p,normalize(direction));
+ if(distanceAlong<=0.0001)return state;
+ float h=distanceAlong/6.0;
+ for(int k=0;k<6;k++){
+  vec4 k1=geodesicDerivative(state);
+  vec4 k2=geodesicDerivative(state+0.5*h*k1);
+  vec4 k3=geodesicDerivative(state+0.5*h*k2);
+  vec4 k4=geodesicDerivative(state+h*k3);
+  state+=(h/6.0)*(k1+2.0*k2+2.0*k3+k4);
+ }
+ return state;
 }
 void main(){
+ vec2 segment=a_other-a_xy;
+ float segmentLength=length(segment);
  vec2 initial=mix(a_xy,a_other,a_end);
- vec4 state=traceTimelike(initial,normalize(a_other-a_xy));
- vec2 tangent=normalize(a_other-a_xy);
+ vec4 state=traceGeodesic(initial,segment,segmentLength);
+ vec2 tangent=normalize(state.zw);
  vec2 normal=vec2(-tangent.y,tangent.x);
  vec2 p=state.xy+normal*a_side*1.2;
  gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
@@ -669,28 +691,41 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   });
 
   let warpedX=0, warpedY=0;
-  function warpVertex(g,i,t,horizontal){
-    let x=g.x[i],y=g.y[i];
-    let vx=0,vy=0;
-    const total=Math.min(Math.max(0,t)*0.0015,24.0),h=total/12;
-    const accel=(px,py)=>{
-      let ax=0,ay=0;
-      for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
-        const m=fields[j],dx=px-m.x,dy=py-m.y,r2=dx*dx+dy*dy+81;
-        const mass=m.mass??(m.strength*.25),scale=-(gravityEnabled?gravityG*100:0)*Math.max(0,mass)/(r2*Math.sqrt(r2));
-        ax+=scale*dx;ay+=scale*dy;
-      }
-      return [ax,ay];
-    };
-    let dxTotal=0,dyTotal=0;
-    for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
-      const m=fields[j],dx=x-m.x,dy=y-m.y,r2=dx*dx+dy*dy+81;
-      const mass=m.mass??(m.strength*.25),rs=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);
-      const stretch=Math.min(.22,.02*rs/r2),r=Math.sqrt(r2);
-      dxTotal+=dx/(r||1)*stretch*r;dyTotal+=dy/(r||1)*stretch*r;
+  function spatialMetricGradient(x,y){
+    let psi=1,gx=0,gy=0;
+    if(gravityEnabled)for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
+      const m=fields[j],dx=x-m.x,dy=y-m.y;
+      const r=Math.sqrt(dx*dx+dy*dy+81),rs=.02*2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
+      psi+=rs/(4*r);gx-=rs*dx/(4*r*r*r);gy-=rs*dy/(4*r*r*r);
     }
-    const mag=Math.hypot(dxTotal,dyTotal),cap=mag>34?34/mag:1;
-    warpedX=x+dxTotal*cap;warpedY=y+dyTotal*cap;
+    return {x:2*gx/psi,y:2*gy/psi};
+  }
+  function geodesicDerivative(state){
+    const grad=spatialMetricGradient(state.x,state.y),v2=state.vx*state.vx+state.vy*state.vy,dot=state.vx*grad.x+state.vy*grad.y;
+    return {x:state.vx,y:state.vy,vx:-2*dot*state.vx+v2*grad.x,vy:-2*dot*state.vy+v2*grad.y};
+  }
+  function addState(a,b,k){return {x:a.x+k*b.x,y:a.y+k*b.y,vx:a.vx+k*b.vx,vy:a.vy+k*b.vy};}
+  function traceSpatialGeodesic(x,y,tx,ty,distance){
+    const length=Math.hypot(tx,ty)||1,state={x,y,vx:tx/length,vy:ty/length};
+    const h=distance/6;
+    for(let k=0;k<6;k++){
+      const a=geodesicDerivative(state),b=geodesicDerivative(addState(state,a,h*.5)),c=geodesicDerivative(addState(state,b,h*.5)),d=geodesicDerivative(addState(state,c,h));
+      state.x+=h*(a.x+2*b.x+2*c.x+d.x)/6;state.y+=h*(a.y+2*b.y+2*c.y+d.y)/6;
+      state.vx+=h*(a.vx+2*b.vx+2*c.vx+d.vx)/6;state.vy+=h*(a.vy+2*b.vy+2*c.vy+d.vy)/6;
+    }
+    return state;
+  }
+  function warpVertex(g,i,t,horizontal){
+    let lineStart=0,lineEnd=g.x.length;
+    for(let k=0;k<g.starts.length;k++){
+      const start=g.starts[k],end=k+1<g.starts.length?g.starts[k+1]:g.x.length;
+      if(i>=start&&i<end){lineStart=start;lineEnd=end;break;}
+    }
+    const neighbor=i+1<lineEnd?i+1:Math.max(lineStart,i-1);
+    const tx=g.x[neighbor]-g.x[i],ty=g.y[neighbor]-g.y[i],distance=Math.hypot(tx,ty);
+    const state=traceSpatialGeodesic(g.x[i],g.y[i],tx,ty,distance);
+    const speed=Math.hypot(state.vx,state.vy)||1,nx=-state.vy/speed,ny=state.vx/speed;
+    warpedX=state.x;warpedY=state.y;
   }
   // Bench-only CPU mirror of the GPU geodesic integrator. Measures shape change
   // relative to each particle's flat-space drift, so uniform translation is excluded.
