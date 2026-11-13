@@ -788,7 +788,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
 
   function render(now){
     const interacting=Array.from(pointers.values()).some(p=>p.down||p.hover);
-    const targetHz=benchMode?frameCap:(interacting?60:30),frameInterval=1000/targetHz;
+    const targetHz=benchMode?frameCap:60,frameInterval=1000/targetHz;
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
     if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();perf.frames++;if(perf.samples.length===30&&perf.baselineFrameMs===null)perf.baselineFrameMs=percentile(perf.samples,.5);else if(perf.baselineFrameMs!==null&&frameDelta>perf.baselineFrameMs*1.5)perf.dropped+=Math.max(1,Math.round(frameDelta/perf.baselineFrameMs)-1);perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);
