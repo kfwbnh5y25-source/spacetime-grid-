@@ -120,7 +120,8 @@ function groundFrameMathSelfTest(){
   const g=gravityToScreen(q.x*GRAVITY_G,q.y*GRAVITY_G,q.a);
   maxGravityAlignmentError=Math.max(maxGravityAlignmentError,Math.hypot(g.x,g.y-1));
  }
- return {pass:maxRoundTrip<1e-10&&maxGravityAlignmentError<1e-10,maxRoundTrip,maxGravityAlignmentError,angles:[0,37,90,-90,180,270],description:'shared rotation and inverse round-trip; portrait and landscape gravity points screen-down'};
+ const landscape=rotate2(0,1,-90),landscapeError=Math.hypot(landscape.x-1,landscape.y);
+ return {pass:maxRoundTrip<1e-10&&maxGravityAlignmentError<1e-10&&landscapeError<1e-10,maxRoundTrip,maxGravityAlignmentError,portraitVerticalToLandscapeHorizontal:landscape,landscapeError,angles:[0,37,90,-90,180,270],description:'shared rotation/inverse, portrait vertical becomes landscape horizontal, gravity stays screen-down'};
 }
 function gravityMathSelfTest(){
  const vector={x:3.25,y:-8.4};let maxRoundTripError=0,maxNormError=0;
