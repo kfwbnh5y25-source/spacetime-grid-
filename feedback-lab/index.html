@@ -38,7 +38,10 @@ button:disabled{opacity:.45}
 #workflow{margin-top:9px;padding:9px;border:1px solid rgba(157,200,255,.24);border-radius:10px;background:rgba(85,130,190,.07)}
 #workflow h3{font:700 10px/1.3 system-ui;letter-spacing:.1em;margin:0 0 6px;color:#c9e1ff}
 #workflow p{margin:5px 0;color:#b8c7dc;font:10px/1.45 system-ui}
-#workflowStatus{margin-top:7px;color:#e1edff;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}
+#workflowStatus,#gravityStatus{margin-top:7px;color:#e1edff;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}
+#gravityWorkflow{margin-top:9px;padding:9px;border:1px solid rgba(157,200,255,.34);border-radius:10px;background:rgba(55,105,160,.10)}
+#gravityWorkflow h3{font:700 10px/1.3 system-ui;letter-spacing:.1em;margin:0 0 6px;color:#d5e8ff}
+#gravityWorkflow p{margin:5px 0;color:#b8c7dc;font:10px/1.45 system-ui}
 
 html.orientation-changing *,html.orientation-changing *::before,html.orientation-changing *::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}
 @media(prefers-reduced-motion:reduce){.toolbar,button{transition:none}}
@@ -66,6 +69,12 @@ html.orientation-changing *,html.orientation-changing *::before,html.orientation
 <div class="metric"><b>WEB HAPTICS</b><span id="haptics">—</span></div>
 <div class="metric"><b>INDEXEDDB</b><span id="dbTime">—</span></div>
 </div>
+<div id="gravityWorkflow">
+<h3>GRAVITY SENSOR DIAGNOSTIC · RAW + TRANSFORMED DATA</h3>
+<p>Independent test of the iPhone accelerometer mapping. Keep the screen facing you and start upright in portrait. Turn Orientation Lock OFF. Follow each tilt instruction; the test records raw accelerometer axes, screen angle, transformed world gravity and the live filtered values. It does not change the simulation physics. The completed report uploads automatically to the database.</p>
+<button id="gravityStart" class="primary">START 62s GRAVITY TEST</button>
+<div id="gravityStatus">Ready · Upright portrait · Screen facing you · Orientation Lock OFF</div>
+</div>
 <div id="workflow">
 <h3>PHONE-LOCKED GRID · 4-WAY ROTATION TEST</h3>
 <p>Start upright in portrait, screen facing you, top edge up. Turn iOS Orientation Lock OFF. After you tap start, a 20-second setup countdown gives you time to get into position. The grid stays aligned with the phone screen. Rotate the phone left and right, then return to portrait; the test verifies iOS screen orientation and that gravity steering remains consistent. No ground-based grid rotation is applied. Upload is automatic.</p>
@@ -83,6 +92,7 @@ const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,s
 const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
 const initialScreenAngle=currentAngle();
 let orientationMotionTimer=0,gridRotation=0,scenePivot={x:0,y:0},raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=initialScreenAngle,motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+const gravityDiagnostic={active:false,stage:'idle',started:0,lastSample:0,samples:[],stageSummaries:[],lastReport:null};
 const orientationWorkflow={active:false,stage:'idle',stageStarted:0,started:0,lastSample:0,samples:[],events:[],verification:[],completed:new Set(),physical:'portrait_upright',lock:'off'};
 let latestDeviceOrientation={alpha:null,beta:null,gamma:null,absolute:null};
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
@@ -400,6 +410,11 @@ function onMotion(e){
   const sampleTime=now(),rr=e.rotationRate||{};
   if(Number.isFinite(rr.alpha)||Number.isFinite(rr.beta)||Number.isFinite(rr.gamma))groundFrame.gyroAvailable=true;
   groundFrame.lastUpdate=sampleTime;
+  if(gravityDiagnostic.active&&sampleTime-gravityDiagnostic.lastSample>=100){
+    const angle=currentAngle(),world=gravityToWorld(motionRawX,motionRawY,angle);
+    gravityDiagnostic.samples.push({t:+(sampleTime-gravityDiagnostic.started).toFixed(0),stage:gravityDiagnostic.stage,ax:+a.x.toFixed(3),ay:+a.y.toFixed(3),az:Number.isFinite(a.z)?+a.z.toFixed(3):null,lx:Number.isFinite(e.acceleration?.x)?+e.acceleration.x.toFixed(3):null,ly:Number.isFinite(e.acceleration?.y)?+e.acceleration.y.toFixed(3):null,lz:Number.isFinite(e.acceleration?.z)?+e.acceleration.z.toFixed(3):null,rx:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(1):null,ry:Number.isFinite(rr.beta)?+rr.beta.toFixed(1):null,rz:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(1):null,screenAngle:angle,legacyAngle:Number.isFinite(Number(window.orientation))?Number(window.orientation):null,modernAngle:Number.isFinite(Number(screen.orientation?.angle))?Number(screen.orientation.angle):null,screenType:screen.orientation?.type||'unsupported',rawX:+motionRawX.toFixed(3),rawY:+motionRawY.toFixed(3),worldX:+world.x.toFixed(3),worldY:+world.y.toFixed(3),filteredX:+motionFilteredX.toFixed(3),filteredY:+motionFilteredY.toFixed(3),filteredNorm:+Math.hypot(motionFilteredX,motionFilteredY).toFixed(3),deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
+    gravityDiagnostic.lastSample=sampleTime;
+  }
   if(orientationWorkflow.active&&sampleTime-orientationWorkflow.lastSample>=250){
     orientationWorkflow.samples.push({t:+(sampleTime-orientationWorkflow.started).toFixed(1),stage:orientationWorkflow.stage,ax:+a.x.toFixed(4),ay:+a.y.toFixed(4),az:Number.isFinite(a.z)?+a.z.toFixed(4):null,ra:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(2):null,rb:Number.isFinite(rr.beta)?+rr.beta.toFixed(2):null,rg:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(2):null,interval:Number.isFinite(e.interval)?+e.interval.toFixed(2):null,screenAngle:currentAngle(),screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceFiltered:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityFiltered:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],gravityNorm:+Math.hypot(motionFilteredX,motionFilteredY).toFixed(4),groundAngle:+groundFrame.angle.toFixed(3),groundGyroRawDeg:+groundFrame.gyroRawDeg.toFixed(3),groundCorrection:+groundFrame.correction.toFixed(3),deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
     orientationWorkflow.lastSample=sampleTime;
@@ -482,6 +497,71 @@ function evaluateGridOrientation(events){
  const complete=transitions.length===4;
  return {protocol:'mass-anchored-grid-v2',status:complete&&passed===4?'PASS':'INCOMPLETE_OR_FAIL',criteria:{requiredTransitions:4,observedTransitions:transitions.length,gridRotationToleranceDeg:0.1,massScreenPositionTolerancePx:3,viewportResizeWindowMs:2500},passed,total:checks.length,checks,notes:['On touch devices the grid rotates around the collective mass centre while mass screen positions are held fixed across viewport changes.',"Each transition must rotate the grid to the phone relative screen angle, retain mass screen positions within 3 px, and record a matching viewport resize within 2.5 seconds."]};
 }
+const gravityStages=[
+ {id:'upright',seconds:4,instruction:'HOLD UPRIGHT · portrait, screen facing you, top edge up. Keep still.'},
+ {id:'lean_left',seconds:4,instruction:'LEAN LEFT · keep screen facing you; tilt the top edge to your LEFT. Hold still.'},
+ {id:'upright_1',seconds:3,instruction:'RETURN UPRIGHT · portrait, top edge up. Hold still.'},
+ {id:'lean_right',seconds:4,instruction:'LEAN RIGHT · tilt the top edge to your RIGHT. Hold still.'},
+ {id:'upright_2',seconds:3,instruction:'RETURN UPRIGHT · portrait, top edge up. Hold still.'},
+ {id:'tilt_away',seconds:4,instruction:'TOP AWAY · tilt the top edge away from your face, keeping screen visible.'},
+ {id:'upright_3',seconds:3,instruction:'RETURN UPRIGHT · portrait, top edge up. Hold still.'},
+ {id:'tilt_toward',seconds:4,instruction:'TOP TOWARD YOU · tilt the top edge toward your face. Hold still.'},
+ {id:'upright_4',seconds:3,instruction:'RETURN UPRIGHT · portrait, top edge up. Hold still.'},
+ {id:'rotate_left',seconds:6,instruction:'ROTATE LEFT 90° · keep phone upright and screen facing you; top edge points LEFT.'},
+ {id:'landscape_left',seconds:4,instruction:'HOLD LANDSCAPE LEFT · keep phone vertical relative to the room.'},
+ {id:'return_left',seconds:5,instruction:'ROTATE BACK · return to upright portrait.'},
+ {id:'rotate_right',seconds:6,instruction:'ROTATE RIGHT 90° · from portrait, top edge points RIGHT.'},
+ {id:'landscape_right',seconds:4,instruction:'HOLD LANDSCAPE RIGHT · keep phone vertical relative to the room.'},
+ {id:'return_right',seconds:5,instruction:'FINAL PORTRAIT · return upright and hold still.'}
+];
+function medianValue(values){const a=values.filter(Number.isFinite).slice().sort((x,y)=>x-y);return a.length?a[Math.floor(a.length/2)]:null;}
+function summarizeGravityStage(id){
+ const a=gravityDiagnostic.samples.filter(s=>s.stage===id);
+ return {stage:id,n:a.length,screenAngle:medianValue(a.map(s=>s.screenAngle)),rawX:medianValue(a.map(s=>s.rawX)),rawY:medianValue(a.map(s=>s.rawY)),worldX:medianValue(a.map(s=>s.worldX)),worldY:medianValue(a.map(s=>s.worldY)),filteredX:medianValue(a.map(s=>s.filteredX)),filteredY:medianValue(a.map(s=>s.filteredY)),filteredNorm:medianValue(a.map(s=>s.filteredNorm)),deviceOrientation:[0,1,2].map(i=>medianValue(a.map(s=>s.deviceOrientation[i])))};
+}
+function evaluateGravityDiagnostic(stages){
+ const by=Object.fromEntries(stages.map(s=>[s.stage,s])),base=by.upright,landL=by.landscape_left,landR=by.landscape_right;
+ const pair=(a,b)=>a&&b&&Number.isFinite(a.worldX)&&Number.isFinite(b.worldX)?Math.hypot(a.worldX-b.worldX,a.worldY-b.worldY):null;
+ const opposite=(a,b,key)=>a&&b&&Number.isFinite(a[key])&&Number.isFinite(b[key])&&a[key]*b[key]<0&&Math.abs(a[key]-b[key])>.18;
+ const checks=[
+  {id:'sensor_samples',pass:stages.reduce((n,s)=>n+s.n,0)>=100,detail:'At least 100 accelerometer samples'},
+  {id:'upright_gravity_visible',pass:!!base&&base.n>=10&&Math.hypot(base.worldX||0,base.worldY||0)>.45,detail:'Upright pose has a measurable in-plane gravity vector'},
+  {id:'left_right_axis_reverses',pass:opposite(by.lean_left,by.lean_right,'worldX'),detail:'Left/right lean should reverse transformed X'},
+  {id:'forward_backward_axis_reverses',pass:opposite(by.tilt_away,by.tilt_toward,'worldY'),detail:'Top-away/top-toward should reverse transformed Y'},
+  {id:'landscape_left_invariant',errorG:pair(base,landL),pass:pair(base,landL)!==null&&pair(base,landL)<.35,detail:'Ground-frame gravity should match portrait after 90° left rotation'},
+  {id:'landscape_right_invariant',errorG:pair(base,landR),pass:pair(base,landR)!==null&&pair(base,landR)<.35,detail:'Ground-frame gravity should match portrait after 90° right rotation'},
+  {id:'orientation_data_changes',pass:!!landL&&!!landR&&landL.screenAngle!==base?.screenAngle&&landR.screenAngle!==base?.screenAngle,detail:'iOS reports distinct screen angles in landscape'}
+ ];
+ return {status:checks.every(x=>x.pass)?'PASS':'DIAGNOSTIC_FAILURE_OR_INCOMPLETE',checks,thresholds:{minSamples:100,minUprightNormG:.45,oppositeAxisDeltaG:.18,landscapeWorldVectorErrorG:.35},interpretation:'Failures distinguish missing samples, axis/sign mismatch, and screen-to-world orientation mismatch. Inspect stage medians and raw samples before changing gravity code.'};
+}
+async function runGravityDiagnostic(){
+ if(gravityDiagnostic.active)return;
+ if(!motionEnabled){await toggleMotion();if(!motionEnabled)return;}
+ gravityDiagnostic.active=true;gravityDiagnostic.started=now();gravityDiagnostic.lastSample=0;gravityDiagnostic.samples=[];gravityDiagnostic.stage='starting';
+ $('gravityStart').disabled=true;$('gravityStatus').textContent='Sensor enabled · starting in 2 seconds…';
+ if('wakeLock'in navigator){try{wakeSentinel=await navigator.wakeLock.request('screen');}catch(e){}}
+ await wait(2000);
+ for(let i=0;i<gravityStages.length;i++){
+  const stage=gravityStages[i];gravityDiagnostic.stage=stage.id;const end=now()+stage.seconds*1000;
+  while(now()<end){
+   const left=Math.max(0,(end-now())/1000);
+   $('gravityStatus').textContent=stage.id.toUpperCase().replaceAll('_',' ')+'\n'+stage.instruction+'\n'+left.toFixed(1)+' s · '+(i+1)+'/'+gravityStages.length+' · '+gravityDiagnostic.samples.length+' samples';
+   await wait(100);
+  }
+  gravityDiagnostic.stageSummaries.push(summarizeGravityStage(stage.id));
+ }
+ gravityDiagnostic.active=false;gravityDiagnostic.stage='complete';
+ const evaluation=evaluateGravityDiagnostic(gravityDiagnostic.stageSummaries);
+ const summary={protocol:'gravity-axis-diagnostic-v1',startedAt:new Date(Date.now()-(now()-gravityDiagnostic.started)).toISOString(),durationMs:+(now()-gravityDiagnostic.started).toFixed(0),sampleCount:gravityDiagnostic.samples.length,sampleIntervalTargetMs:100,device:{userAgent:navigator.userAgent,screen:[screen.width,screen.height],viewport:[window.innerWidth,window.innerHeight],standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},sensor:{event:'devicemotion',source:'accelerationIncludingGravity',gravityTransform:'rotate device x/y by negative reported screen angle; divide by 9.80665',rawAxisConvention:'rawX=accelerationIncludingGravity.x; rawY=-accelerationIncludingGravity.y',screenAngleSources:{windowOrientation:Number.isFinite(Number(window.orientation))?Number(window.orientation):null,screenOrientationAngle:Number.isFinite(Number(screen.orientation?.angle))?Number(screen.orientation.angle):null,screenOrientationType:screen.orientation?.type||'unsupported'}},stages:gravityDiagnostic.stageSummaries,evaluation,samples:gravityDiagnostic.samples};
+ gravityDiagnostic.lastReport=summary;orientationWorkflow.lastReport=null;
+ const report=resultObject();report.workflow={protocol:'gravity-axis-diagnostic-v1',gravityDiagnostic:summary};lastCompletedResult=report;
+ $('gravityStatus').textContent='COMPLETE · '+evaluation.status+' · '+summary.sampleCount+' samples · uploading…';
+ await uploadResult(report);
+ $('gravityStart').disabled=false;$('gravityStart').textContent='RUN AGAIN';
+ if(wakeSentinel){try{await wakeSentinel.release();}catch(e){}wakeSentinel=null;}
+}
+$('gravityStart').addEventListener('click',runGravityDiagnostic);
+
 async function runOrientationWorkflow(){
  if(orientationWorkflow.active)return;
  if(!motionEnabled){await toggleMotion();if(!motionEnabled)return;}
