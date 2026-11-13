@@ -97,13 +97,14 @@ function updateGroundFrame(dt,gx,gy){
  const error=shortestDegrees(groundFrame.targetAngle-groundFrame.angle);
  groundFrame.angle+=error*(1-Math.exp(-Math.max(0,dt)/160));
 }
+function screenCompensationFor(angle,reference){return shortestDegrees(angle-reference);}
 function groundViewAngle(){return groundFrame.angle+groundFrame.screenCompensation;}
 function gravityToScreen(gx,gy,angleDeg){
  const a=angleDeg*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
  return {x:(gx*c-gy*s)/GRAVITY_G,y:(gx*s+gy*c)/GRAVITY_G};
 }
 function groundFrameMathSelfTest(){
- let maxWorldRoundTrip=0,maxScreenRoundTrip=0,maxGravityAlignmentError=0;
+ let maxWorldRoundTrip=0,maxScreenRoundTrip=0,maxGravityAlignmentError=0,maxScreenCompensationError=0,maxScreenCompensationStep=0;
  for(const angle of [0,37,90,-90,180,270]){
   const a=angle*Math.PI/180,c=Math.cos(a),s=Math.sin(a),p={x:2.7,y:-4.1};
   const sx=c*p.x-s*p.y,sy=s*p.x+c*p.y,wx=c*sx+s*sy,wy=-s*sx+c*sy;
@@ -111,6 +112,8 @@ function groundFrameMathSelfTest(){
   const gx=.31,gy=-.82,wx2=c*gx-s*gy,wy2=s*gx+c*gy,sx2=c*wx2+s*wy2,sy2=-s*wx2+c*wy2;
   maxScreenRoundTrip=Math.max(maxScreenRoundTrip,Math.hypot(sx2-gx,sy2-gy));
  }
+ for(const q of [{angle:0,expected:0},{angle:90,expected:90},{angle:270,expected:-90}])maxScreenCompensationError=Math.max(maxScreenCompensationError,Math.abs(screenCompensationFor(q.angle,0)-q.expected));
+ let compensation=0;for(let i=0;i<90;i++){const before=compensation;compensation+=shortestDegrees(90-compensation)*(1-Math.exp(-(1000/60)/200));maxScreenCompensationStep=Math.max(maxScreenCompensationStep,Math.abs(compensation-before));}
  // DeviceMotionEvent.accelerationIncludingGravity reports +Y for gravity
  // with the iPhone upright in portrait. In landscape, the matching device
  // X component changes sign with the screen rotation.
@@ -120,7 +123,7 @@ function groundFrameMathSelfTest(){
  }
  let correction=0,maxCorrectionStep=0;
  for(let i=0;i<90;i++){const before=correction;correction+=shortestDegrees(90-correction)*(1-Math.exp(-(1000/60)/160));maxCorrectionStep=Math.max(maxCorrectionStep,Math.abs(correction-before));}
- return {pass:maxWorldRoundTrip<1e-10&&maxScreenRoundTrip<1e-10&&maxGravityAlignmentError<1e-10&&maxCorrectionStep<10,maxWorldRoundTrip,maxScreenRoundTrip,maxGravityAlignmentError,maxCorrectionStepDeg:maxCorrectionStep,angles:[0,37,90,-90,180,270],description:'gravity-derived world vertical is invariant across portrait and both landscape device frames; render/pointer/physics transforms round-trip'};
+ return {pass:maxWorldRoundTrip<1e-10&&maxScreenRoundTrip<1e-10&&maxGravityAlignmentError<1e-10&&maxCorrectionStep<10&&maxScreenCompensationError<1e-10&&maxScreenCompensationStep<8,maxWorldRoundTrip,maxScreenRoundTrip,maxGravityAlignmentError,maxScreenCompensationError,maxScreenCompensationStepDeg:maxScreenCompensationStep,maxCorrectionStepDeg:maxCorrectionStep,angles:[0,37,90,-90,180,270],description:'gravity-derived world vertical is invariant across portrait and both landscape device frames; render/pointer/physics transforms round-trip'};
 }
 function gravityMathSelfTest(){
  const vector={x:3.25,y:-8.4};let maxRoundTripError=0,maxNormError=0;
@@ -134,7 +137,7 @@ function gravityMathSelfTest(){
 }
 function syncScreenBasis(){
  const angle=currentAngle();
- groundFrame.targetScreenCompensation=shortestDegrees(angle-groundFrame.referenceScreenAngle);
+ groundFrame.targetScreenCompensation=screenCompensationFor(angle,groundFrame.referenceScreenAngle);
  if(angle!==lastScreenAngle){
   const before={...lastScreenGravity},after=gravityToScreen(motionSensorFilteredX,motionSensorFilteredY,angle);
   metrics.orientationChanges++;metrics.orientationChangeAt=now();
@@ -234,7 +237,7 @@ function screenToWorld(x,y){
   return {x:c*sx-s*sy,y:s*sx+c*sy};
 }
 function worldVectorFromScreen(x,y){
-  const a=(-state.camera.rotation+groundFrame.angle)*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+  const a=(-state.camera.rotation+groundViewAngle())*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
   return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
 }
 function buildStaticGrid(){
@@ -291,7 +294,7 @@ function frame(t){
   motionFilteredX=dead(screenGravity.x);motionFilteredY=dead(screenGravity.y);
   lastScreenGravity={x:motionFilteredX,y:motionFilteredY};
   updateGroundFrame(dt,motionFilteredX,motionFilteredY);
-  groundFrame.screenCompensation+=shortestDegrees(groundFrame.targetScreenCompensation-groundFrame.screenCompensation)*(1-Math.exp(-dt/115));
+  groundFrame.screenCompensation+=shortestDegrees(groundFrame.targetScreenCompensation-groundFrame.screenCompensation)*(1-Math.exp(-dt/200));
   state.camera.x+=(state.target.x-state.camera.x)*k;state.camera.y+=(state.target.y-state.camera.y)*k;state.camera.scale+=(state.target.scale-state.camera.scale)*k;
   if(Math.abs(state.target.x-state.camera.x)<.08)state.camera.x=state.target.x;
   if(Math.abs(state.target.y-state.camera.y)<.08)state.camera.y=state.target.y;
@@ -326,7 +329,7 @@ function onMotion(e){
   if(Number.isFinite(rr.alpha)||Number.isFinite(rr.beta)||Number.isFinite(rr.gamma))groundFrame.gyroAvailable=true;
   groundFrame.lastUpdate=sampleTime;
   if(orientationWorkflow.active&&sampleTime-orientationWorkflow.lastSample>=250){
-    orientationWorkflow.samples.push({t:+(sampleTime-orientationWorkflow.started).toFixed(1),stage:orientationWorkflow.stage,ax:+a.x.toFixed(4),ay:+a.y.toFixed(4),az:Number.isFinite(a.z)?+a.z.toFixed(4):null,ra:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(2):null,rb:Number.isFinite(rr.beta)?+rr.beta.toFixed(2):null,rg:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(2):null,interval:Number.isFinite(e.interval)?+e.interval.toFixed(2):null,screenAngle:currentAngle(),screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceFiltered:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityFiltered:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],gravityNorm:+Math.hypot(motionFilteredX,motionFilteredY).toFixed(4),groundAngle:+groundFrame.angle.toFixed(3),groundGyroRawDeg:+groundFrame.gyroRawDeg.toFixed(3),groundCorrection:+groundFrame.correction.toFixed(3),deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
+    orientationWorkflow.samples.push({t:+(sampleTime-orientationWorkflow.started).toFixed(1),stage:orientationWorkflow.stage,ax:+a.x.toFixed(4),ay:+a.y.toFixed(4),az:Number.isFinite(a.z)?+a.z.toFixed(4):null,ra:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(2):null,rb:Number.isFinite(rr.beta)?+rr.beta.toFixed(2):null,rg:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(2):null,interval:Number.isFinite(e.interval)?+e.interval.toFixed(2):null,screenAngle:currentAngle(),screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceFiltered:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityFiltered:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],gravityNorm:+Math.hypot(motionFilteredX,motionFilteredY).toFixed(4),groundAngle:+groundFrame.angle.toFixed(3),groundViewAngle:+groundViewAngle().toFixed(3),screenCompensation:+groundFrame.screenCompensation.toFixed(3),groundGyroRawDeg:+groundFrame.gyroRawDeg.toFixed(3),groundCorrection:+groundFrame.correction.toFixed(3),deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
     orientationWorkflow.lastSample=sampleTime;
   }
   metrics.motionCount++;
