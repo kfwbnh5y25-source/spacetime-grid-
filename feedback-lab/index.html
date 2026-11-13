@@ -349,7 +349,8 @@ $('sampleBtn').addEventListener('click',()=>{
     metrics.runActive=false;$('sampleBtn').disabled=false;
     const r=resultObject();lastCompletedResult=r;
     $('testResults').textContent='10 SECOND SAMPLE\nFPS: '+(r.render.fps?r.render.fps.toFixed(1):'—')+'\nFrame p95: '+r.render.p95FrameMs.toFixed(2)+' ms\nFrame max: '+r.render.maxFrameMs.toFixed(2)+' ms\nMotion sample rate: '+r.motion.sampleHz.toFixed(1)+' Hz\nOrientation changes during run: '+(metrics.orientationChanges-metrics.runOrientations)+'\nMass count: '+r.interaction.masses+'\nVibration API: '+(r.feedback.vibrationApi?'exposed (output unverified)':'not exposed')+'\nWake Lock API: '+(r.feedback.wakeLockApi?'exposed':'not exposed')+'\nTap SAVE RESULTS to upload, or Export JSON to keep it locally.';
-    $('runState').textContent='Measurement complete. Nothing has been uploaded yet; tap SAVE RESULTS to send this sample.';
+    $('runState').textContent='Measurement complete. Uploading this 10-second sample to the experiment server…';
+    await uploadResult(r);
   },10000);
 });
 function updateCameraFromGesture(){
