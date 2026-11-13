@@ -98,11 +98,14 @@ function updateGroundFrame(dt,gx,gy){
  const error=shortestDegrees(groundFrame.targetAngle-groundFrame.angle);
  groundFrame.angle+=error*(1-Math.exp(-Math.max(0,dt)/160));
 }
+// R(a) rotates a vector counter-clockwise in canvas coordinates (y points down).
 function rotate2(x,y,degrees){
  const a=degrees*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
  return {x:x*c-y*s,y:x*s+y*c};
 }
+// Phone scene rotation is the negative accumulated display rotation.
 function sceneAngle(){return matchMedia('(pointer:coarse)').matches?-gridRotation:state.camera.rotation;}
+// Device axes -> current screen axes; normalize acceleration to units of g.
 function gravityToScreen(x,y,screenAngle){
  const v=rotate2(x,y,-screenAngle);
  return {x:v.x/GRAVITY_G,y:v.y/GRAVITY_G};
@@ -129,6 +132,7 @@ function gravityMathSelfTest(){
  }
  return {pass:maxRoundTripError<1e-10&&maxNormError<1e-10,maxRoundTripError,maxNormError,angles:[0,37,90,180,270,359],method:'proper device-to-screen rotation; inverse uses negative screen angle'};
 }
+// World point -> screen point: C + scale * [p + R(sceneAngle) * (world - p)].
 function worldToScreen(x,y){
  const phoneMode=matchMedia('(pointer:coarse)').matches,p=phoneMode?massCentroidWorld():{x:0,y:0};
  const r=rotate2(x-p.x,y-p.y,sceneAngle()),s=state.camera.scale;
@@ -278,6 +282,7 @@ function massCentroidWorld(){
   let x=0,y=0;for(const m of state.masses){x+=m.x;y+=m.y;}
   return {x:x/state.masses.length,y:y/state.masses.length};
 }
+// Screen point -> world point: exact inverse of worldToScreen().
 function screenToWorld(x,y){
  const phoneMode=matchMedia('(pointer:coarse)').matches,p=phoneMode?massCentroidWorld():{x:0,y:0};
  const sx=(x-state.w/2-state.camera.x)/state.camera.scale-p.x;
@@ -285,6 +290,7 @@ function screenToWorld(x,y){
  const r=rotate2(sx,sy,-sceneAngle());
  return {x:p.x+r.x,y:p.y+r.y};
 }
+// Screen-space vector -> world-space vector: R(-sceneAngle) / scale.
 function worldVectorFromScreen(x,y){
  const r=rotate2(x,y,-sceneAngle()),s=state.camera.scale;
  return {x:r.x/s,y:r.y/s};
