@@ -328,7 +328,7 @@ function draw(){
  ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
  ctx.save();
  ctx.translate(w/2+state.camera.x+p.x*s,h/2+state.camera.y+p.y*s);
- ctx.rotate(sceneAngle());ctx.scale(s,s);ctx.translate(-p.x,-p.y);
+ ctx.rotate(sceneAngle()*Math.PI/180);ctx.scale(s,s);ctx.translate(-p.x,-p.y);
  if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
  for(const m of state.masses){
   ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
