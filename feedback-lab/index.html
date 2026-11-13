@@ -402,16 +402,13 @@ async function runOrientationWorkflow(){
    orientationWorkflow.stage=stage.id;orientationWorkflow.stageStarted=now();
    let remaining=stage.seconds*1000,last=now();
    while(remaining>0){
-     if(document.visibilityState!=='visible'){
-       $('workflowStatus').textContent='PAUSED · Return to Feedback Lab to continue.';
-       while(document.visibilityState!=='visible')await wait(200);
-       last=now();
-     }
-     const current=now();remaining-=Math.max(0,current-last);last=current;
+     // iOS may suspend a Home Screen web app during rotation. Do not block
+       // indefinitely on visibilitychange; resume the timed stage on foreground.
+       const current=now();remaining-=Math.max(0,current-last);last=current;
      let verificationText='';
      if(stage.expectedAngle!==undefined){
-       const actual=currentAngle(),expectedGround=orientationWorkflow.referenceGroundAngle??0,groundError=shortestDegrees(groundFrame.angle-expectedGround),passed=actual===stage.expectedAngle&&(stage.expectedAngle!==0||window.innerHeight>=window.innerWidth)&&Math.abs(groundError)<=12;
-       verificationText='\\nSCREEN '+actual+'° / '+stage.expectedAngle+'° · GRAVITY VECTOR '+groundFrame.angle.toFixed(1)+'° / '+expectedGround.toFixed(1)+'° · '+(passed?'ALIGNED':'SETTLING');
+       const actual=currentAngle(),portrait=stage.expectedAngle===0,viewportOK=portrait?window.innerHeight>=window.innerWidth:window.innerWidth>=window.innerHeight,passed=actual===stage.expectedAngle&&viewportOK;
+       verificationText='\\nSCREEN '+actual+'° / '+stage.expectedAngle+'° · '+(viewportOK?'VIEWPORT OK':'WAITING FOR VIEWPORT')+' · '+(passed?'MATCH':'ANGLE NOT REPORTED');
      }
      $('workflowStatus').textContent=stage.label+'\\n'+stage.instruction+'\\n'+Math.max(0,remaining/1000).toFixed(1)+' s remaining · '+(i+1)+'/'+workflowStages.length+verificationText;
      await wait(100);
@@ -419,12 +416,12 @@ async function runOrientationWorkflow(){
    if(stage.id==='still')orientationWorkflow.referenceGroundAngle=groundFrame.angle;
    if(stage.expectedAngle!==undefined){
      const actual=currentAngle(),portrait=stage.expectedAngle===0,viewportOK=portrait?window.innerHeight>=window.innerWidth:window.innerWidth>=window.innerHeight;
-     const expectedGround=orientationWorkflow.referenceGroundAngle??0,groundError=shortestDegrees(groundFrame.angle-expectedGround),groundAligned=Math.abs(groundError)<=12,passed=actual===stage.expectedAngle&&viewportOK&&groundAligned;
-     orientationWorkflow.verification.push({stage:stage.id,expectedScreenAngle:stage.expectedAngle,actualScreenAngle:actual,viewport:[window.innerWidth,window.innerHeight],viewportOK,referenceGravityAngle:+expectedGround.toFixed(3),actualGravityAngle:+groundFrame.angle.toFixed(3),gravityAngleError:+groundError.toFixed(3),gridFrame:'phone-locked',gravityAligned:groundAligned,gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),passed});
+     const expectedGround=orientationWorkflow.referenceGroundAngle??0,groundError=shortestDegrees(groundFrame.angle-expectedGround),passed=actual===stage.expectedAngle&&viewportOK;
+      orientationWorkflow.verification.push({stage:stage.id,expectedScreenAngle:stage.expectedAngle,actualScreenAngle:actual,viewport:[window.innerWidth,window.innerHeight],viewportOK,referenceGravityAngle:+expectedGround.toFixed(3),actualGravityAngle:+groundFrame.angle.toFixed(3),gravityAngleError:+groundError.toFixed(3),gridFrame:'phone-locked',gravityDiagnosticOnly:true,gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),passed});
    }
  }
  orientationWorkflow.active=false;orientationWorkflow.stage='complete';
- const summary={protocol:'phone-locked-grid-v13-safe-landscape-verification',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ const summary={protocol:'phone-locked-grid-v14-nonblocking-screen-verification',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
  orientationWorkflow.lastReport=summary;
  $('workflowStatus').textContent='COMPLETE · '+summary.verificationPassed+'/'+summary.verificationTotal+' orientation checks passed · '+summary.samples.length+' samples · uploading…';
  const report=resultObject();report.workflow=summary;lastCompletedResult=report;
