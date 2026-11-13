@@ -176,7 +176,7 @@
     const targetHz=hasTouch?120:60,frameInterval=1000/targetHz;
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
-    if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>1800)perf.samples.shift();if(frameDelta>frameInterval*1.5)perf.dropped++;perf.frames++;perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
+    if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();if(frameDelta>frameInterval*1.5)perf.dropped++;perf.frames++;perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
     const renderStart=performance.now();
     const dt=Math.min(40,now-(last||now));last=now;lastFrame=now;elapsed+=dt;
     if(perf.firstFrame===null)perf.firstFrame=now;
@@ -208,8 +208,8 @@
       glow.addColorStop(1,'rgba(190,215,255,0)');
       ctx.fillStyle=glow;ctx.fillRect(p.x-radius,p.y-radius,radius*2,radius*2);
     }
-    perf.renderMs.push(performance.now()-renderStart);if(perf.renderMs.length>1800)perf.renderMs.shift();
-    if(benchMode&&now-perf.lastReport>500){perf.lastReport=now;const r=report();reportText.textContent=
+    perf.renderMs.push(performance.now()-renderStart);if(perf.renderMs.length>18000)perf.renderMs.shift();
+    if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
       `Session ${r.session.seconds}s · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nDropped-frame estimate ${r.session.estimatedDroppedFrames}\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
