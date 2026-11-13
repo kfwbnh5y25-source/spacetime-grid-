@@ -81,12 +81,15 @@ const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:
 const $=id=>document.getElementById(id);
 const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
 const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
-let orientationMotionTimer=0,gridRotation=0,raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=currentAngle(),motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+let orientationMotionTimer=0,gridRotation=((currentAngle()+540)%360)-180,raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=currentAngle(),motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
 const orientationWorkflow={active:false,stage:'idle',stageStarted:0,started:0,lastSample:0,samples:[],events:[],verification:[],completed:new Set(),physical:'portrait_upright',lock:'off'};
 let latestDeviceOrientation={alpha:null,beta:null,gamma:null,absolute:null};
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
 function now(){return performance.now();}
-function currentAngle(){const a=Number.isFinite(screen.orientation&&screen.orientation.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);return ((a%360)+360)%360;}
+function currentAngle(){
+ const raw=Number.isFinite(screen.orientation?.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);
+ return ((Math.round(raw/90)*90%360)+360)%360;
+}
 const GRAVITY_G=9.80665;
 const shortestDegrees=d=>((d+540)%360)-180;
 const groundFrame={referenceScreenAngle:currentAngle(),gyroRawDeg:0,gyroSign:1,gyroCalibrated:false,gyroSamples:0,gyroAvailable:false,correction:0,correctionTarget:0,angle:0,lastUpdate:0};
@@ -105,8 +108,8 @@ function rotate2(x,y,degrees){
 }
 // Phone scene rotation is the negative accumulated display rotation.
 function sceneAngle(){return matchMedia('(pointer:coarse)').matches?-gridRotation:state.camera.rotation;}
-// Device axes -> current screen axes; normalize acceleration to units of g.
-function gravityToScreen(x,y,screenAngle){
+// Device axes -> fixed ground/world axes. Do not rotate this vector again.
+function gravityToWorld(x,y,screenAngle){
  const v=rotate2(x,y,-screenAngle);
  return {x:v.x/GRAVITY_G,y:v.y/GRAVITY_G};
 }
@@ -117,7 +120,7 @@ function groundFrameMathSelfTest(){
   maxRoundTrip=Math.max(maxRoundTrip,Math.hypot(world.x-p.x,world.y-p.y));
  }
  for(const q of [{a:0,x:0,y:1},{a:90,x:-1,y:0},{a:270,x:1,y:0}]){
-  const g=gravityToScreen(q.x*GRAVITY_G,q.y*GRAVITY_G,q.a);
+  const g=gravityToWorld(q.x*GRAVITY_G,q.y*GRAVITY_G,q.a);
   maxGravityAlignmentError=Math.max(maxGravityAlignmentError,Math.hypot(g.x,g.y-1));
  }
  const landscape=rotate2(0,1,-90),landscapeError=Math.hypot(landscape.x-1,landscape.y);
@@ -126,12 +129,12 @@ function groundFrameMathSelfTest(){
 function gravityMathSelfTest(){
  const vector={x:3.25,y:-8.4};let maxRoundTripError=0,maxNormError=0;
  for(const angle of [0,37,90,180,270,359]){
-  const screen=gravityToScreen(vector.x,vector.y,angle);
-  const back=gravityToScreen(screen.x*GRAVITY_G,screen.y*GRAVITY_G,-angle);
+  const world=gravityToWorld(vector.x,vector.y,angle);
+  const back=gravityToWorld(world.x*GRAVITY_G,world.y*GRAVITY_G,-angle);
   maxRoundTripError=Math.max(maxRoundTripError,Math.hypot(back.x-vector.x/GRAVITY_G,back.y-vector.y/GRAVITY_G));
   maxNormError=Math.max(maxNormError,Math.abs(Math.hypot(screen.x,screen.y)-Math.hypot(vector.x,vector.y)/GRAVITY_G));
  }
- return {pass:maxRoundTripError<1e-10&&maxNormError<1e-10,maxRoundTripError,maxNormError,angles:[0,37,90,180,270,359],method:'proper device-to-screen rotation; inverse uses negative screen angle'};
+ return {pass:maxRoundTripError<1e-10&&maxNormError<1e-10,maxRoundTripError,maxNormError,angles:[0,37,90,180,270,359],method:'device-to-ground rotation; do not apply scene inverse again'};
 }
 // World point -> screen point: C + scale * [p + R(sceneAngle) * (world - p)].
 function worldToScreen(x,y){
@@ -145,8 +148,8 @@ function massScreenPositions(){
 function syncScreenBasis(){
  const angle=currentAngle();
  if(angle!==lastScreenAngle){
-  const delta=((angle-lastScreenAngle+540)%360)-180;
-  if(matchMedia('(pointer:coarse)').matches)gridRotation=((gridRotation+delta+540)%360)-180;
+  // Set an absolute cardinal angle; never accumulate transient resize deltas.
+  if(matchMedia('(pointer:coarse)').matches)gridRotation=((angle+540)%360)-180;
   metrics.orientationChanges++;metrics.orientationChangeAt=now();
   if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],canvasPixels:[canvas.width,canvas.height],gridRotationDeg:+gridRotation.toFixed(3),massAnchorCount:state.masses.length});
   lastScreenAngle=angle;
@@ -327,8 +330,9 @@ function stepPhysics(dtMs){
   const phoneMode=matchMedia('(pointer:coarse)').matches;
   const viewAngle=(phoneMode?gridRotation:state.camera.rotation)*Math.PI/180;
   const force=110*state.sensitivity;
-  const gx=touchGravityEnabled&&touchGravityActive?touchGravityX:motionFilteredX,gy=touchGravityEnabled&&touchGravityActive?touchGravityY:motionFilteredY;
-  const worldG=worldVectorFromScreen(gx*force,gy*force);
+  const worldG=touchGravityEnabled&&touchGravityActive
+    ?worldVectorFromScreen(touchGravityX*force,touchGravityY*force)
+    :{x:motionFilteredX*force,y:motionFilteredY*force};
   const damp=Math.exp(-state.damping*dt),ca=Math.abs(Math.cos(viewAngle)),sa=Math.abs(Math.sin(viewAngle)),halfX=(ca*state.w+sa*state.h)/(2*state.camera.scale),halfY=(sa*state.w+ca*state.h)/(2*state.camera.scale),minX=-halfX+10,maxX=halfX-10,minY=-halfY+10,maxY=halfY-10;
   for(const m of state.masses){
     const edgeX=m.x<minX?Math.min(3,(minX-m.x)*.018):m.x>maxX?-Math.min(3,(m.x-maxX)*.018):0;
@@ -349,9 +353,9 @@ function frame(t){
   const sensorAlpha=1-Math.exp(-dt/90);
   motionSensorFilteredX+=(motionRawX-motionSensorFilteredX)*sensorAlpha;
   motionSensorFilteredY+=(motionRawY-motionSensorFilteredY)*sensorAlpha;
-  const measuredScreenGravity=gravityToScreen(motionSensorFilteredX,motionSensorFilteredY,angle);
+  const measuredWorldGravity=gravityToWorld(motionSensorFilteredX,motionSensorFilteredY,angle);
   const dead=v=>Math.abs(v)<.045?0:Math.sign(v)*Math.min(1,(Math.abs(v)-.045)/.955);
-  motionFilteredX=dead(measuredScreenGravity.x);motionFilteredY=dead(measuredScreenGravity.y);
+  motionFilteredX=dead(measuredWorldGravity.x);motionFilteredY=dead(measuredWorldGravity.y);
   updateGroundFrame(dt,motionFilteredX,motionFilteredY);
   state.camera.x+=(state.target.x-state.camera.x)*k;state.camera.y+=(state.target.y-state.camera.y)*k;state.camera.scale+=(state.target.scale-state.camera.scale)*k;
   if(Math.abs(state.target.x-state.camera.x)<.08)state.camera.x=state.target.x;
@@ -419,7 +423,7 @@ function resultObject(){
   const frames=metrics.runFrames.length?metrics.runFrames:metrics.frameTimes;
   const renderTimes=metrics.runRenderTimes.length?metrics.runRenderTimes:[];
   const medianFrame=percentile(frames,.5);
-  return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:medianFrame,p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:medianFrame?Math.min(120,1000/medianFrame):null,rawCallbackHz:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null,renderCpuMeanMs:renderTimes.length?renderTimes.reduce((s,v)=>s+v,0)/renderTimes.length:null,renderCpuP95Ms:percentile(renderTimes,.95),measurement:'unique RAF intervals; sub-4.1ms callback bursts excluded; display cadence bounded to 120Hz'},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,rawDevice:[+motionRawX.toFixed(3),+motionRawY.toFixed(3)],gravityScreen:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges,touchGravityEnabled,touchGravityActive,touchGravity:[+touchGravityX.toFixed(3),+touchGravityY.toFixed(3)]},workflow:orientationWorkflow.lastReport||null,interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
+  return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:medianFrame,p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:medianFrame?Math.min(120,1000/medianFrame):null,rawCallbackHz:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null,renderCpuMeanMs:renderTimes.length?renderTimes.reduce((s,v)=>s+v,0)/renderTimes.length:null,renderCpuP95Ms:percentile(renderTimes,.95),measurement:'unique RAF intervals; sub-4.1ms callback bursts excluded; display cadence bounded to 120Hz'},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,rawDevice:[+motionRawX.toFixed(3),+motionRawY.toFixed(3)],gravityWorld:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges,touchGravityEnabled,touchGravityActive,touchGravity:[+touchGravityX.toFixed(3),+touchGravityY.toFixed(3)]},workflow:orientationWorkflow.lastReport||null,interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
 }
 let lastCompletedResult=null;
 try{const saved=localStorage.getItem('spacetime-feedback-last-report-v1');if(saved)lastCompletedResult=JSON.parse(saved);}catch(e){}
