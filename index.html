@@ -59,13 +59,13 @@
   const planetCursor = document.getElementById('planetCursor');
   const gestureStatus=document.getElementById('gestureStatus');
   const persistentMasses=[];
-  let viewScale=1,viewX=0,viewY=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1.5:2,slowFrames=0,smoothFrames=0;
+  let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1.5:2,slowFrames=0,smoothFrames=0;
   const storageKey='spacetime-grid-state-v1';
-  function worldPoint(x,y){return {x:(x-width/2-viewX)/viewScale+width/2,y:(y-height/2-viewY)/viewScale+height/2};}
-  function applyView(){const v='translate('+viewX+'px,'+viewY+'px) scale('+viewScale+')';canvas.style.transform=v;gpuCanvas.style.transform=v;}
+  function worldPoint(x,y){const dx=x-width/2-viewX,dy=y-height/2-viewY,a=viewRotation*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);return {x:(dx*c+dy*sn)/viewScale+width/2,y:(-dx*sn+dy*c)/viewScale+height/2};}
+  function applyView(){const v='translate('+viewX+'px,'+viewY+'px) rotate('+viewRotation+'deg) scale('+viewScale+')';canvas.style.transform=v;gpuCanvas.style.transform=v;}
   function showStatus(m){gestureStatus.textContent=m;gestureStatus.classList.add('visible');clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>gestureStatus.classList.remove('visible'),1300);}
-  function saveState(){const state={viewScale,viewX,viewY};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
-  function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;}}catch(_){}}
+  function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
+  function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
   function resetView(){viewScale=1;viewX=0;viewY=0;persistentMasses.length=0;applyView();saveState();showStatus('VIEW RESET');}
   restoreState();
   const pointers = new Map();
@@ -261,7 +261,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   document.addEventListener('contextmenu',e=>e.preventDefault());
   document.addEventListener('selectstart',e=>e.preventDefault());
   document.addEventListener('dragstart',e=>e.preventDefault());
-  canvas.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+  let trackpadRotationBase=0;\n  canvas.addEventListener('gesturestart',e=>{e.preventDefault();trackpadRotationBase=viewRotation;},{passive:false});\n  canvas.addEventListener('gesturechange',e=>{if(typeof e.rotation==='number'&&Number.isFinite(e.rotation)){e.preventDefault();viewRotation=trackpadRotationBase+e.rotation;applyView();}},{passive:false});\n  canvas.addEventListener('gestureend',e=>{if(typeof e.rotation==='number'&&Number.isFinite(e.rotation)){viewRotation=trackpadRotationBase+e.rotation;applyView();saveState();showStatus('ROTATION SAVED');}},{passive:true});
   canvas.addEventListener('pointerdown',pointerDown,{passive:false});
   canvas.addEventListener('pointermove',pointerMove,{passive:true});
   canvas.addEventListener('pointerup',pointerEnd);
