@@ -466,26 +466,19 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   }
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
     if(persistentMasses.length>=24)persistentMasses.shift();
+    // Express only the incoming body's velocity relative to the existing
+    // system's mass-weighted mean velocity. Never rewrite old velocities,
+    // positions, or trail samples when a body is inserted.
+    if(phonePhysics&&persistentMasses.length){
+      let total=0,meanVx=0,meanVy=0;
+      for(const body of persistentMasses){
+        const weight=Math.max(0,body.mass??20);
+        total+=weight;meanVx+=weight*(body.vx||0);meanVy+=weight*(body.vy||0);
+      }
+      if(total>0){vx-=meanVx/total;vy-=meanVy/total;}
+    }
     persistentMasses.push({x,y,mass,vx,vy,trail:[{x,y}],trailClock:0,strength:1});
-    setCenterOfMassFrame();
     showStatus('PLANET ADDED · '+mass);
-  }
-  function setCenterOfMassFrame(){
-    if(!phonePhysics||persistentMasses.length<2)return;
-    let total=0,vx=0,vy=0;
-    for(const body of persistentMasses){
-      const mass=Math.max(0,body.mass??20);
-      total+=mass;vx+=mass*(body.vx||0);vy+=mass*(body.vy||0);
-    }
-    if(total<=0)return;
-    vx/=total;vy/=total;
-    // Change only the inertial frame's velocity origin. Keep every position
-    // and every recorded trail sample untouched, so insertion cannot jump
-    // existing planets or redraw their history at a new location.
-    for(const body of persistentMasses){
-      body.vx=(body.vx||0)-vx;
-      body.vy=(body.vy||0)-vy;
-    }
   }
   function massAccelerationAt(index){
     const body=persistentMasses[index];let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
