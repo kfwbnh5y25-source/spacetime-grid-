@@ -125,12 +125,13 @@
   canvas.addEventListener('lostpointercapture',pointerEnd);
   canvas.addEventListener('pointerleave',e=>{const p=pointers.get(e.pointerId);if(p&&p.hover)p.life=0;});
 
+  let warpedX=0, warpedY=0;
   function warpVertex(g,i,times){
     const x=g.x[i],y=g.y[i];let ox=x,oy=y;
     for(let j=0;j<fields.length;j++){
       const p=fields[j],dx=p.x-x,dy=p.y-y,r2=dx*dx+dy*dy+1;
-      const q=Math.min(1,r2*inv2Sigma2*gaussian.length/8);
-      const qi=q*(gaussian.length-1),lo=qi|0;
+      const q=Math.min(8,r2*inv2Sigma2);
+      const qi=q*(gaussian.length-1)/8,lo=qi|0;
       const influence=gaussian[lo]+(gaussian[Math.min(lo+1,gaussian.length-1)]-gaussian[lo])*(qi-lo);
       const bend=55*p.strength*p.life*influence, invR=1/Math.sqrt(r2);
       ox-=dx*invR*bend;oy-=dy*invR*bend;
@@ -139,7 +140,7 @@
     const waveX=2*(g.sinA[i]*c1+g.cosA[i]*s1)+(g.sinB[i]*c2-g.cosB[i]*s2);
     const waveY=2*(g.sinC[i]*c3-g.cosC[i]*s3)+(g.sinD[i]*c4+g.cosD[i]*s4);
     const breathe=.45*(g.sinE[i]*c5+g.cosE[i]*s5);
-    return [ox+waveX,oy+waveY+breathe];
+    warpedX=ox+waveX;warpedY=oy+waveY+breathe;
   }
   function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
   function report(){
@@ -171,7 +172,7 @@
   }
 
   function render(now){
-    const hasTouch=[...pointers.values()].some(p=>p.down);
+    let hasTouch=false;for(const p of pointers.values()){if(p.down){hasTouch=true;break;}}
     const targetHz=hasTouch?120:60,frameInterval=1000/targetHz;
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
@@ -196,8 +197,8 @@
     for(let line=0;line<g.starts.length;line++){
       const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;
       for(let i=from;i<to;i++){
-        const v=warpVertex(g,i,times);
-        if(i===from)ctx.moveTo(v[0],v[1]);else ctx.lineTo(v[0],v[1]);
+        warpVertex(g,i,times);
+        if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);
       }
     }
     ctx.stroke();
