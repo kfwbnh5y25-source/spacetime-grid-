@@ -472,8 +472,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       for(let i=0;i<n;i++){const a=massAccelerationAt(i);planetAx[i]=a.x;planetAy[i]=a.y;}
       for(let i=0;i<n;i++){
         const b=persistentMasses[i];b.vx=(b.vx||0)+.5*planetAx[i]*PLANET_DT;b.vy=(b.vy||0)+.5*planetAy[i]*PLANET_DT;
-        b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;
       }
+      subtractMeanMotion();
+      for(const b of persistentMasses){b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;}
       for(let i=0;i<n;i++){const a=massAccelerationAt(i),b=persistentMasses[i];b.vx+=.5*a.x*PLANET_DT;b.vy+=.5*a.y*PLANET_DT;}
       subtractMeanMotion();
       for(const b of persistentMasses){
