@@ -9,7 +9,12 @@
   * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
   body { touch-action: none; }
-  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  canvas {
+    display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; -webkit-user-drag: none;
+    -webkit-tap-highlight-color: transparent;
+  }
   #gpuCanvas { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
   .hint {
     position: fixed; z-index: 3; left: 50%; bottom: max(24px, env(safe-area-inset-bottom));
@@ -218,7 +223,10 @@ void main(){float coverage=1.0-smoothstep(.55,1.0,abs(v_edge));color=vec4(.92,.9
     else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
   }
   function pointerEnd(e){const p=pointers.get(e.pointerId);if(p){p.life=0;p.targetStrength=0;p.down=false;}}
-  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  document.addEventListener('contextmenu',e=>e.preventDefault());
+  document.addEventListener('selectstart',e=>e.preventDefault());
+  document.addEventListener('dragstart',e=>e.preventDefault());
+  canvas.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
   canvas.addEventListener('pointerdown',pointerDown,{passive:false});
   canvas.addEventListener('pointermove',pointerMove,{passive:true});
   canvas.addEventListener('pointerup',pointerEnd);
