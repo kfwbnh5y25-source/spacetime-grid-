@@ -77,7 +77,7 @@
     const sigma = Math.min(width, height) * .19;
     const influence = Math.exp(-r2 / (2*sigma*sigma));
     // A smooth radial lens: nearby grid points are pulled toward the mass.
-    const bend = 78 * strength * life * influence;
+    const bend = 55 * strength * life * influence;
     return { x: x - dx/r * bend, y: y - dy/r * bend };
   }
 
