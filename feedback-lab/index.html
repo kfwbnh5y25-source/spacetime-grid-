@@ -168,13 +168,10 @@ function handleViewportResize(){
 function resize(){
   const oldW=state.w,oldH=state.h;
   const viewport=window.visualViewport;state.w=viewport&&viewport.width>0?viewport.width:window.innerWidth;state.h=viewport&&viewport.height>0?viewport.height:window.innerHeight;
-  // Keep every mass at the same absolute screen coordinate when the viewport
-  // changes size. World coordinates stay fixed; only the camera origin shifts.
-  if(oldW&&oldH&&(oldW!==state.w||oldH!==state.h)){
-    const dx=(oldW-state.w)/2,dy=(oldH-state.h)/2;
-    state.camera.x+=dx;state.target.x+=dx;
-    state.camera.y+=dy;state.target.y+=dy;
-  }
+  // Keep the mass cluster anchored to the viewport centre across rotations.
+  // Do not compensate with camera translation: a portrait-to-landscape size
+  // swap would otherwise shift the whole cluster by half the dimension change.
+  // The grid's independent rotation is pivoted on the masses in draw().
   // Two physical pixels per CSS pixel is a good clarity/performance balance
   // on 3x iPhones. This does not cap requestAnimationFrame refresh rate.
   state.dpr=Math.min(window.devicePixelRatio||1,(matchMedia('(pointer:coarse)').matches?1.5:2));
