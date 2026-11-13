@@ -25,7 +25,7 @@
   .planet-cursor { position:fixed; z-index:4; left:0; top:0; width:18px; height:18px; border-radius:50%; pointer-events:none; opacity:0; will-change:transform; background:radial-gradient(circle at 32% 27%,#fff 0%,#b9d9ff 13%,#547da9 43%,#182d49 76%,#080f1b 100%); box-shadow:0 0 7px 2px rgba(154,202,255,.35),inset -3px -2px 5px rgba(0,0,0,.65); transition:opacity .12s ease; }
   .planet-cursor::after { content:""; position:absolute; width:27px; height:8px; left:-5px; top:5px; border:1px solid rgba(190,220,255,.8); border-radius:50%; transform:rotate(-24deg); box-shadow:0 0 4px rgba(150,200,255,.45); }
   .planet-cursor.visible { opacity:1; }
-  canvas { transform-origin:50% 50%; }
+  canvas { transform-origin:50% 50%; will-change:transform; backface-visibility:hidden; }
   #gestureStatus { position:fixed;z-index:4;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);padding:6px 10px;border:1px solid rgba(255,255,255,.14);border-radius:20px;background:rgba(0,0,0,.55);color:rgba(255,255,255,.72);font:10px/1.3 ui-monospace,monospace;letter-spacing:.08em;opacity:0;pointer-events:none;transition:opacity .2s; }
   #gestureStatus.visible { opacity:1; }
   @media (prefers-reduced-motion: reduce) { .planet-cursor,.hint,#gestureStatus { transition:none; } }
@@ -261,25 +261,44 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   document.addEventListener('contextmenu',e=>e.preventDefault());
   document.addEventListener('selectstart',e=>e.preventDefault());
   document.addEventListener('dragstart',e=>e.preventDefault());
-  let trackpadGestureBase=null;
+  let trackpadGestureBase=null,gestureBase=null,panBase=null,inertiaRaf=0;
+  let lastTouchSample=null,gestureVelocityX=0,gestureVelocityY=0,viewSaveTimer=0;
+  function scheduleViewSave(){clearTimeout(viewSaveTimer);viewSaveTimer=setTimeout(saveState,180);}
+  function stopInertia(){if(inertiaRaf)cancelAnimationFrame(inertiaRaf);inertiaRaf=0;gestureVelocityX=0;gestureVelocityY=0;}
   function applyGestureTransform(base,mx,my,scale,rotation){
     const ratio=scale/base.scale,angle=(rotation-base.rotation)*Math.PI/180,c=Math.cos(angle),sn=Math.sin(angle);
     const qx=base.x-width/2-base.viewX,qy=base.y-height/2-base.viewY;
     const rx=ratio*(c*qx-sn*qy),ry=ratio*(sn*qx+c*qy);
-    viewScale=scale;viewRotation=rotation;viewX=mx-width/2-rx;viewY=my-height/2-ry;applyView();
+    viewScale=scale;viewRotation=rotation;
+    viewX=mx-width/2-rx;viewY=my-height/2-ry;
+    applyView();
+  }
+  function startPanInertia(){
+    if(Math.hypot(gestureVelocityX,gestureVelocityY)<.035){scheduleViewSave();return;}
+    let previous=performance.now();
+    const step=now=>{
+      const dt=Math.min(32,now-previous);previous=now;
+      viewX+=gestureVelocityX*dt;viewY+=gestureVelocityY*dt;
+      const decay=Math.pow(.90,dt/16.67);
+      gestureVelocityX*=decay;gestureVelocityY*=decay;
+      applyView();
+      if(Math.hypot(gestureVelocityX,gestureVelocityY)>.018)inertiaRaf=requestAnimationFrame(step);
+      else{inertiaRaf=0;scheduleViewSave();}
+    };
+    inertiaRaf=requestAnimationFrame(step);
   }
   canvas.addEventListener('gesturestart',e=>{
-    e.preventDefault();trackpadGestureBase={scale:viewScale,rotation:viewRotation,x:width/2,y:height/2,viewX,viewY};
+    e.preventDefault();stopInertia();
+    trackpadGestureBase={scale:viewScale,rotation:viewRotation,x:width/2,y:height/2,viewX,viewY};
   },{passive:false});
   canvas.addEventListener('gesturechange',e=>{
     if(!trackpadGestureBase)return;e.preventDefault();
-    const factor=typeof e.scale==='number'&&Number.isFinite(e.scale)?e.scale:1;
-    const turn=typeof e.rotation==='number'&&Number.isFinite(e.rotation)?e.rotation:0;
+    const factor=Number.isFinite(e.scale)?e.scale:1,turn=Number.isFinite(e.rotation)?e.rotation:0;
     const nextScale=Math.max(.7,Math.min(2.5,trackpadGestureBase.scale*factor));
     applyGestureTransform(trackpadGestureBase,trackpadGestureBase.x,trackpadGestureBase.y,nextScale,trackpadGestureBase.rotation+turn);
   },{passive:false});
   canvas.addEventListener('gestureend',()=>{
-    if(trackpadGestureBase){trackpadGestureBase=null;saveState();showStatus('VIEW SAVED');}
+    if(trackpadGestureBase){trackpadGestureBase=null;scheduleViewSave();}
   },{passive:true});
   canvas.addEventListener('pointerdown',pointerDown,{passive:false});
   canvas.addEventListener('pointermove',pointerMove,{passive:true});
@@ -287,18 +306,61 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   canvas.addEventListener('pointercancel',pointerEnd);
   canvas.addEventListener('lostpointercapture',pointerEnd);
   canvas.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')planetCursor.classList.remove('visible');});
-  window.addEventListener('blur',()=>{for(const [id,p] of pointers){if(p.hover){p.life=0;p.targetStrength=0;}}planetCursor.classList.remove('visible');});
-  let gestureBase=null;
+  window.addEventListener('blur',()=>{stopInertia();for(const [id,p] of pointers){if(p.hover){p.life=0;p.targetStrength=0;}}planetCursor.classList.remove('visible');});
   function touchAngle(a,b){return Math.atan2(b.clientY-a.clientY,b.clientX-a.clientX);}
   function angleDelta(a,b){let d=a-b;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return d;}
+  function touchById(touches,id){for(let i=0;i<touches.length;i++)if(touches[i].identifier===id)return touches[i];return null;}
+  function sampleGestureMotion(x,y){
+    const now=performance.now();
+    if(lastTouchSample){const dt=Math.max(1,now-lastTouchSample.t),vx=(x-lastTouchSample.x)/dt,vy=(y-lastTouchSample.y)/dt;gestureVelocityX=gestureVelocityX*.55+vx*.45;gestureVelocityY=gestureVelocityY*.55+vy*.45;}
+    lastTouchSample={x,y,t:now};
+  }
   canvas.addEventListener('touchstart',e=>{
-    if(e.touches.length===2){const a=e.touches[0],b=e.touches[1];gestureBase={distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),angle:touchAngle(a,b),scale:viewScale,rotation:viewRotation,x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2,viewX,viewY};clearTimeout(longPressTimer);longPressPointer=null;}
+    stopInertia();lastTouchSample=null;
+    if(e.touches.length===2){
+      const a=e.touches[0],b=e.touches[1],x=(a.clientX+b.clientX)/2,y=(a.clientY+b.clientY)/2;
+      gestureBase={idA:a.identifier,idB:b.identifier,distance:Math.max(1,Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)),angle:touchAngle(a,b),scale:viewScale,rotation:viewRotation,x,y,viewX,viewY};
+      panBase=null;sampleGestureMotion(x,y);clearTimeout(longPressTimer);longPressPointer=null;
+    }
   },{passive:true});
   canvas.addEventListener('touchmove',e=>{
-    if(e.touches.length===2&&gestureBase){e.preventDefault();const a=e.touches[0],b=e.touches[1],dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2,nextScale=Math.max(.7,Math.min(2.5,gestureBase.scale*dist/Math.max(1,gestureBase.distance))),nextRotation=gestureBase.rotation+angleDelta(touchAngle(a,b),gestureBase.angle)*180/Math.PI;applyGestureTransform(gestureBase,mx,my,nextScale,nextRotation);}
+    if(e.touches.length===2&&gestureBase){
+      const a=touchById(e.touches,gestureBase.idA),b=touchById(e.touches,gestureBase.idB);
+      if(!a||!b)return;e.preventDefault();
+      const dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2;
+      const nextScale=Math.max(.7,Math.min(2.5,gestureBase.scale*dist/gestureBase.distance));
+      const nextRotation=gestureBase.rotation+angleDelta(touchAngle(a,b),gestureBase.angle)*180/Math.PI;
+      sampleGestureMotion(mx,my);applyGestureTransform(gestureBase,mx,my,nextScale,nextRotation);
+    }else if(e.touches.length===1&&panBase){
+      e.preventDefault();const t=e.touches[0],dx=t.clientX-panBase.x,dy=t.clientY-panBase.y;
+      sampleGestureMotion(t.clientX,t.clientY);viewX=panBase.viewX+dx;viewY=panBase.viewY+dy;applyView();
+    }
   },{passive:false});
-  canvas.addEventListener('touchend',e=>{if(e.touches.length<2&&gestureBase){gestureBase=null;saveState();showStatus('VIEW SAVED');}},{passive:true});
-  canvas.addEventListener('wheel',e=>{if(isNaN(e.deltaY))return;e.preventDefault();if(e.ctrlKey){if(trackpadGestureBase)return;const old=viewScale,next=Math.max(.7,Math.min(2.5,viewScale*Math.exp(-e.deltaY*.01))),ratio=next/old;viewScale=next;viewX=viewX*ratio+(1-ratio)*(e.clientX-width/2);viewY=viewY*ratio+(1-ratio)*(e.clientY-height/2);}else{viewX-=e.deltaX;viewY-=e.deltaY;if(trackpadGestureBase){trackpadGestureBase.viewX-=e.deltaX;trackpadGestureBase.viewY-=e.deltaY;}}applyView();saveState();},{passive:false});
+  canvas.addEventListener('touchend',e=>{
+    if(gestureBase&&e.touches.length===1){
+      gestureBase=null;const t=e.touches[0];panBase={x:t.clientX,y:t.clientY,viewX,viewY};lastTouchSample={x:t.clientX,y:t.clientY,t:performance.now()};
+    }else if(e.touches.length===0&&(gestureBase||panBase)){
+      gestureBase=null;panBase=null;startPanInertia();lastTouchSample=null;
+    }
+  },{passive:true});
+  canvas.addEventListener('touchcancel',()=>{
+    gestureBase=null;panBase=null;lastTouchSample=null;stopInertia();scheduleViewSave();
+  },{passive:true});
+  canvas.addEventListener('wheel',e=>{
+    if(!Number.isFinite(e.deltaY))return;e.preventDefault();stopInertia();
+    if(e.ctrlKey){
+      if(trackpadGestureBase)return;
+      const dy=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*height:e.deltaY;
+      const old=viewScale,next=Math.max(.7,Math.min(2.5,old*Math.exp(-dy*.002))),ratio=next/old;
+      viewScale=next;
+      viewX=viewX*ratio+(1-ratio)*(e.clientX-width/2);
+      viewY=viewY*ratio+(1-ratio)*(e.clientY-height/2);
+    }else{
+      viewX-=e.deltaX;viewY-=e.deltaY;
+      if(trackpadGestureBase){trackpadGestureBase.viewX-=e.deltaX;trackpadGestureBase.viewY-=e.deltaY;}
+    }
+    applyView();scheduleViewSave();
+  },{passive:false});
   window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||''))return;const k=e.key.toLowerCase(),step=36;if(e.code==='Space'){e.preventDefault();if(!paused)pauseTime=elapsed;paused=!paused;showStatus(paused?'PAUSED':'RESUMED');}else if(k==='r')resetView();else if(e.key==='+'||e.key==='='){viewScale=Math.min(2.5,viewScale*1.12);applyView();saveState();}else if(e.key==='-'){viewScale=Math.max(.7,viewScale/1.12);applyView();saveState();}else if(e.key.startsWith('Arrow')){e.preventDefault();viewX+=e.key==='ArrowLeft'?step:e.key==='ArrowRight'?-step:0;viewY+=e.key==='ArrowUp'?step:e.key==='ArrowDown'?-step:0;applyView();saveState();}else if(k==='s'){if(navigator.share)navigator.share({title:'Spacetime Grid',url:location.href}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(location.href).then(()=>showStatus('LINK COPIED'));}});
 
   let warpedX=0, warpedY=0;
