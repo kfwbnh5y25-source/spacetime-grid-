@@ -202,6 +202,8 @@ async function loadState(){
     if(!value)value=JSON.parse(sessionStorage.getItem('feedback-state')||'null');
     if(value){
       if(value.camera)Object.assign(state.camera,value.camera);
+      // The phone experiment's grid is always screen-aligned; never restore a rotated camera on touch devices.
+      if(matchMedia('(pointer:coarse)').matches)state.camera.rotation=0;
       if(value.masses&&Array.isArray(value.masses))state.masses=value.masses;
       if(Number.isFinite(value.sensitivity))state.sensitivity=value.sensitivity;
       if(Number.isFinite(value.damping))state.damping=value.damping;
