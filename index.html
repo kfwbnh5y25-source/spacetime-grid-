@@ -99,7 +99,7 @@ void main(){
  vec2 p1=warp(a_other,a_o0,a_o1,a_o2,a_o3,a_o4);
  vec2 tangent=normalize(p1-p0);
  vec2 normal=vec2(-tangent.y,tangent.x);
- vec2 p=mix(p0,p1,a_end)+tangent*(a_end*2.0-1.0)*1.0+normal*a_side*1.2;
+ vec2 p=mix(p0,p1,a_end)+tangent*(a_end*2.0-1.0)*2.5+normal*a_side*1.2;
  gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
  v_edge=a_side;
 }`;
