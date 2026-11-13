@@ -328,7 +328,7 @@ function updateMetrics(){
 }
 function onMotion(e){
   const a=e.accelerationIncludingGravity;if(!a||!Number.isFinite(a.x)||!Number.isFinite(a.y))return;
-  motionRawX=-a.x;motionRawY=-a.y;
+  motionRawX=a.x;motionRawY=-a.y;
   const sampleTime=now(),rr=e.rotationRate||{};
   if(Number.isFinite(rr.alpha)||Number.isFinite(rr.beta)||Number.isFinite(rr.gamma))groundFrame.gyroAvailable=true;
   groundFrame.lastUpdate=sampleTime;
