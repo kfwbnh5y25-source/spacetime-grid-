@@ -141,14 +141,14 @@ function syncScreenBasis(){
   const transitionStart=gravityToScreen(before.x,before.y,delta);
   gravityTransition={fromX:transitionStart.x,fromY:transitionStart.y,started:now(),duration:220};
   metrics.orientationChanges++;metrics.orientationChangeAt=now();
-  if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceGravity:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityScreenBefore:[+before.x.toFixed(4),+before.y.toFixed(4)],gravityScreenAfter:[+after.x.toFixed(4),+after.y.toFixed(4)],groundReference:{groundAngle:+groundFrame.angle.toFixed(2),gravityMagnitude:+groundFrame.gravityMagnitude.toFixed(3),confidence:+groundFrame.confidence.toFixed(2)},basisUpdate:'gravity-derived screen-space vertical'});
+  if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-basis-change',fromAngle:lastScreenAngle,toAngle:angle,screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],canvasPixels:[canvas.width,canvas.height],gridCameraRotationDeg:+state.camera.rotation.toFixed(3),renderRotationDeg:+(matchMedia('(pointer:coarse)').matches?0:state.camera.rotation).toFixed(3),deviceGravity:[+motionSensorFilteredX.toFixed(4),+motionSensorFilteredY.toFixed(4)],gravityScreenBefore:[+before.x.toFixed(4),+before.y.toFixed(4)],gravityScreenAfter:[+after.x.toFixed(4),+after.y.toFixed(4)],groundReference:{groundAngle:+groundFrame.angle.toFixed(2),gravityMagnitude:+groundFrame.gravityMagnitude.toFixed(3),confidence:+groundFrame.confidence.toFixed(2)},basisUpdate:'gravity-derived screen-space vertical'});
   lastScreenAngle=angle;
  }
  metrics.orientation=angle;return angle;
 }
 function resize(){
   const oldW=state.w,oldH=state.h;
-  state.w=window.innerWidth;state.h=window.innerHeight;
+  const viewport=window.visualViewport;state.w=viewport&&viewport.width>0?viewport.width:window.innerWidth;state.h=viewport&&viewport.height>0?viewport.height:window.innerHeight;
   // Two physical pixels per CSS pixel is a good clarity/performance balance
   // on 3x iPhones. This does not cap requestAnimationFrame refresh rate.
   state.dpr=Math.min(window.devicePixelRatio||1,(matchMedia('(pointer:coarse)').matches?1.5:2));
@@ -164,12 +164,13 @@ function scheduleResize(){
   resizeTimer=setTimeout(()=>{resize();},140);
 }
 window.addEventListener('resize',scheduleResize,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleResize,{passive:true});
+if('ResizeObserver'in window){const viewportObserver=new ResizeObserver(scheduleResize);viewportObserver.observe(document.documentElement);}
 function handleOrientationChange(){
-  // Keep the touch-device grid aligned with the display, not a stale saved camera angle.
-  if(matchMedia('(pointer:coarse)').matches){state.camera.rotation=0;state.target.rotation=0;}
+  // Orientation changes update the viewport and sensor basis only; they never rotate the scene camera.
   syncScreenBasis();
+  resize();
   scheduleResize();
-  if(matchMedia('(pointer:coarse)').matches)saveState();
 }
 window.addEventListener('orientationchange',handleOrientationChange,{passive:true});
 if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',handleOrientationChange);
@@ -235,6 +236,8 @@ $('haptics').textContent=typeof navigator.vibrate==='function'?'AVAILABLE (VERIF
 $('addBtn').addEventListener('click',addMass);
 $('resetBtn').addEventListener('click',reset);
 function cameraToTarget(patch){
+  // On touch devices the scene is locked to the display axes. Desktop keeps full camera controls.
+  if(matchMedia('(pointer:coarse)').matches){patch={...patch};delete patch.rotation;}
   Object.assign(state.target,patch);
 }
 function screenToWorld(x,y){
@@ -260,7 +263,8 @@ const massGlowCanvas=document.createElement('canvas');massGlowCanvas.width=192;m
 function draw(){
   const w=state.w,h=state.h;
   ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
-  ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(state.camera.rotation*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
+  const renderRotation=matchMedia('(pointer:coarse)').matches?0:state.camera.rotation;
+  ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(renderRotation*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
   if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
   for(const m of state.masses){
     ctx.drawImage(massGlowCanvas,m.x-96,m.y-96,192,192);
@@ -438,7 +442,7 @@ async function runOrientationWorkflow(){
    }
  }
  orientationWorkflow.active=false;orientationWorkflow.stage='complete';
- const summary={protocol:'phone-locked-grid-v16-screen-basis-and-display-lock-fix',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ const summary={protocol:'phone-locked-grid-v17-display-locked-render-and-viewport-observer',physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
  orientationWorkflow.lastReport=summary;
  $('workflowStatus').textContent='COMPLETE · '+summary.verificationPassed+'/'+summary.verificationTotal+' orientation checks passed · '+summary.samples.length+' samples · uploading…';
  const report=resultObject();report.workflow=summary;lastCompletedResult=report;
