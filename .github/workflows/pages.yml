@@ -32,21 +32,17 @@ jobs:
           python3 - <<'PY'
           import re
           from pathlib import Path
-          html = Path("index.html").read_text()
-          scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
-          if len(scripts) != 1:
-              raise SystemExit(f"Expected one inline script, found {len(scripts)}")
-          Path("/tmp/site.js").write_text(scripts[0])
-          PY
-          node --check /tmp/site.js
-          feedback = Path("feedback-lab/index.html")
-          if feedback.exists():
-              html = feedback.read_text()
+          for source, target in [
+              ("index.html", "/tmp/site.js"),
+              ("feedback-lab/index.html", "/tmp/feedback.js"),
+          ]:
+              html = Path(source).read_text()
               scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
               if len(scripts) != 1:
-                  raise SystemExit(f"Expected one feedback-lab inline script, found {len(scripts)}")
-              Path("/tmp/feedback.js").write_text(scripts[0])
+                  raise SystemExit(f"Expected one inline script in {source}, found {len(scripts)}")
+              Path(target).write_text(scripts[0])
           PY
+          node --check /tmp/site.js
           node --check /tmp/feedback.js
       - name: Configure Pages
         uses: actions/configure-pages@v6
