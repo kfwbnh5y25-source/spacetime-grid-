@@ -5,9 +5,9 @@ const webDir = new URL('../www/', import.meta.url);
 await rm(webDir, { recursive: true, force: true });
 await mkdir(webDir, { recursive: true });
 
-for (const file of ['index.html', 'sw.js']) {
-  await cp(new URL(file, root), new URL(file, webDir));
-}
+await cp(new URL('index.html', root), new URL('index.html', webDir));
+const serviceWorker = await readFile(new URL('sw.js', root), 'utf8');
+await writeFile(new URL('sw.js', webDir), serviceWorker.replaceAll('../icon.svg', './icon.svg'));
 
 const manifest = JSON.parse(await readFile(new URL('manifest.webmanifest', root), 'utf8'));
 manifest.icons = [{ src: './icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }];
