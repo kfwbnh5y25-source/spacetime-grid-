@@ -237,7 +237,7 @@ function registerInputFrame(){
   metrics.inputTimes.push({done:d});
 }
 function updateMetrics(){
-  const a=metrics.frameTimes,fps=a.length?1000/percentile(a,.5):0;
+  const a=metrics.frameTimes,fps=a.length?Math.min(120,1000/percentile(a,.5)):0;
   const latency=metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done);
   $('fps').textContent=fps.toFixed(1)+' fps';
   $('frameP95').textContent=percentile(a,.95).toFixed(1)+' ms';
