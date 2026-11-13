@@ -35,6 +35,14 @@ button:disabled{opacity:.45}
 #runState{margin-top:7px;color:#aabbd2;white-space:normal}
 #testResults{margin-top:6px;color:#cfe1fa;white-space:pre-wrap;overflow-wrap:anywhere}
 #installHint{color:var(--muted)}
+#workflow{margin-top:9px;padding:9px;border:1px solid rgba(157,200,255,.24);border-radius:10px;background:rgba(85,130,190,.07)}
+#workflow h3{font:700 10px/1.3 system-ui;letter-spacing:.1em;margin:0 0 6px;color:#c9e1ff}
+#workflow p{margin:5px 0;color:#b8c7dc;font:10px/1.45 system-ui}
+#workflow .wf-controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#workflow select{min-height:34px;max-width:48%;border:1px solid rgba(208,225,255,.22);border-radius:8px;background:#101a29;color:#eef4ff;padding:0 7px;font:11px system-ui}
+#workflowStatus{margin-top:7px;color:#e1edff;font:11px/1.4 ui-monospace,monospace;white-space:pre-wrap}
+#workflowMatrix{color:#91a6c3;font:9px/1.5 ui-monospace,monospace}
+
 @media(prefers-reduced-motion:reduce){.toolbar,button{transition:none}}
 </style>
 </head>
@@ -63,6 +71,18 @@ button:disabled{opacity:.45}
 <div class="metric"><b>WEB HAPTICS</b><span id="haptics">—</span></div>
 <div class="metric"><b>INDEXEDDB</b><span id="dbTime">—</span></div>
 </div>
+<div id="workflow">
+<h3>ORIENTATION × GRAVITY PROTOCOL</h3>
+<p>Run each physical orientation twice: once with iOS Orientation Lock OFF and once ON. Start with the phone in the selected physical orientation, screen facing you. Set the lock in Control Center before starting. iOS does not expose a reliable lock-state API, so the selected state is recorded as your declaration.</p>
+<div class="wf-controls">
+<select id="physicalOrientation" aria-label="Physical phone orientation"><option value="portrait_upright">Portrait · upright</option><option value="portrait_inverted">Portrait · upside down</option><option value="landscape_left">Landscape · left</option><option value="landscape_right">Landscape · right</option></select>
+<select id="rotationLock" aria-label="iOS orientation lock"><option value="off">Orientation Lock OFF</option><option value="on">Orientation Lock ON</option></select>
+<button id="workflowStart" class="primary">START 6-STEP RUN</button>
+</div>
+<div id="workflowStatus">Ready · 0/8 combinations completed this visit</div>
+<div id="workflowMatrix">Portrait upright × lock OFF/ON · Portrait inverted × OFF/ON · Landscape left × OFF/ON · Landscape right × OFF/ON</div>
+<p>Each run: hold still → tilt left → return neutral → tilt right → tilt top away → tilt top toward you. Move slowly for 4 seconds per step. Keep the app foregrounded.</p>
+</div>
 <div id="runState">Drop masses, enable gravity, rotate the phone, drag/pinch the scene. Measurements stay on this device until you tap SAVE RESULTS. No continuous telemetry or account identifier is sent.</div>
 <div id="testResults"></div>
 </section>
@@ -74,6 +94,8 @@ const $=id=>document.getElementById(id);
 const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
 const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
 let raf=0,lastSave=0,saveTimer=0,resizeTimer=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,screenAngleSmooth=currentAngle()*Math.PI/180,screenAngleTarget=currentAngle()*Math.PI/180,motionListener=null,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+const orientationWorkflow={active:false,stage:'idle',stageStarted:0,started:0,lastSample:0,samples:[],events:[],completed:new Set(),physical:'portrait_upright',lock:'off'};
+let latestDeviceOrientation={alpha:null,beta:null,gamma:null,absolute:null};
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
 function now(){return performance.now();}
 function currentAngle(){const a=Number.isFinite(screen.orientation&&screen.orientation.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);return ((a%360)+360)%360;}
@@ -97,7 +119,9 @@ function scheduleResize(){
 window.addEventListener('resize',scheduleResize,{passive:true});
 function handleOrientationChange(){
   const angle=currentAngle();
-  if(angle!==metrics.orientation){metrics.orientation=angle;metrics.orientationChanges++;metrics.orientationChangeAt=now();screenAngleTarget=angle*Math.PI/180;}
+  if(angle!==metrics.orientation){metrics.orientation=angle;metrics.orientationChanges++;metrics.orientationChangeAt=now();screenAngleTarget=angle*Math.PI/180;
+    if(orientationWorkflow.active)orientationWorkflow.events.push({t:+(now()-orientationWorkflow.started).toFixed(1),type:'screen-orientation-change',angle,viewport:[window.innerWidth,window.innerHeight]});
+  }
   scheduleResize();
 }
 window.addEventListener('orientationchange',handleOrientationChange,{passive:true});
@@ -257,11 +281,18 @@ function updateMetrics(){
 function onMotion(e){
   const a=e.accelerationIncludingGravity;if(!a||!Number.isFinite(a.x)||!Number.isFinite(a.y))return;
   motionRawX=-a.x;motionRawY=-a.y;
+  const sampleTime=now();
+  if(orientationWorkflow.active&&sampleTime-orientationWorkflow.lastSample>=100){
+    const rr=e.rotationRate||{};
+    orientationWorkflow.samples.push({t:+(sampleTime-orientationWorkflow.started).toFixed(1),stage:orientationWorkflow.stage,ax:+a.x.toFixed(4),ay:+a.y.toFixed(4),az:Number.isFinite(a.z)?+a.z.toFixed(4):null,ra:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(2):null,rb:Number.isFinite(rr.beta)?+rr.beta.toFixed(2):null,rg:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(2):null,interval:Number.isFinite(e.interval)?+e.interval.toFixed(2):null,screenAngle:currentAngle(),screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],gravityFiltered:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
+    orientationWorkflow.lastSample=sampleTime;
+  }
   metrics.motionCount++;
   const t=now();
   if(!metrics.lastMotion)metrics.lastMotion=t;
   if(t-metrics.lastMotion>=1000){metrics.motionRate=metrics.motionCount*1000/(t-metrics.lastMotion);metrics.motionCount=0;metrics.lastMotion=t;}
 }
+window.addEventListener('deviceorientation',e=>{latestDeviceOrientation={alpha:Number.isFinite(e.alpha)?+e.alpha.toFixed(2):null,beta:Number.isFinite(e.beta)?+e.beta.toFixed(2):null,gamma:Number.isFinite(e.gamma)?+e.gamma.toFixed(2):null,absolute:!!e.absolute};},{passive:true});
 async function toggleMotion(){
   if(motionEnabled){motionEnabled=false;motionRawX=motionRawY=motionFilteredX=motionFilteredY=0;if(motionListener)window.removeEventListener('devicemotion',motionListener);motionListener=null;$('motionBtn').classList.remove('active');$('motionBtn').textContent='ENABLE GRAVITY';$('runState').textContent='Motion sensor stopped.';return;}
   try{
@@ -292,9 +323,50 @@ function resultObject(){
   const frames=metrics.runFrames.length?metrics.runFrames:metrics.frameTimes;
   const renderTimes=metrics.runRenderTimes.length?metrics.runRenderTimes:[];
   const medianFrame=percentile(frames,.5);
-  return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:medianFrame,p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:medianFrame?Math.min(120,1000/medianFrame):null,rawCallbackHz:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null,renderCpuMeanMs:renderTimes.length?renderTimes.reduce((s,v)=>s+v,0)/renderTimes.length:null,renderCpuP95Ms:percentile(renderTimes,.95),measurement:'unique RAF intervals; sub-4.1ms callback bursts excluded; display cadence bounded to 120Hz'},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,gravityScreen:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges},interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
+  return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:medianFrame,p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:medianFrame?Math.min(120,1000/medianFrame):null,rawCallbackHz:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null,renderCpuMeanMs:renderTimes.length?renderTimes.reduce((s,v)=>s+v,0)/renderTimes.length:null,renderCpuP95Ms:percentile(renderTimes,.95),measurement:'unique RAF intervals; sub-4.1ms callback bursts excluded; display cadence bounded to 120Hz'},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,gravityScreen:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges},workflow:orientationWorkflow.lastReport||null,interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
 }
 let lastCompletedResult=null;
+const workflowStages=[
+ {id:'still',label:'HOLD STILL',instruction:'Hold the phone still in the selected orientation. Keep the screen facing you.'},
+ {id:'tilt_left',label:'TILT LEFT',instruction:'Slowly tilt the TOP of the phone toward your LEFT by about 20–30°, then hold.'},
+ {id:'return_center',label:'RETURN TO NEUTRAL',instruction:'Slowly return the phone to its starting neutral position.'},
+ {id:'tilt_right',label:'TILT RIGHT',instruction:'Slowly tilt the TOP of the phone toward your RIGHT by about 20–30°, then hold.'},
+ {id:'tilt_forward',label:'TILT TOP AWAY',instruction:'Slowly tilt the TOP edge away from you by about 20–30°, then hold.'},
+ {id:'tilt_backward',label:'TILT TOP TOWARD',instruction:'Slowly tilt the TOP edge toward you by about 20–30°, then hold.'}
+];
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function runOrientationWorkflow(){
+ if(orientationWorkflow.active)return;
+ if(!motionEnabled){await toggleMotion();if(!motionEnabled)return;}
+ const physical=$('physicalOrientation').value,lock=$('rotationLock').value,key=physical+'__'+lock;
+ orientationWorkflow.active=true;orientationWorkflow.physical=physical;orientationWorkflow.lock=lock;orientationWorkflow.stage='starting';orientationWorkflow.started=now();orientationWorkflow.lastSample=0;orientationWorkflow.samples=[];orientationWorkflow.events=[];
+ orientationWorkflow.events.push({t:0,type:'session-start',physical,declaredRotationLock:lock,screenAngle:currentAngle(),screenOrientation:screen.orientation?.type||'unsupported',viewport:[window.innerWidth,window.innerHeight],deviceOrientation:{...latestDeviceOrientation}});
+ $('workflowStart').disabled=true;$('physicalOrientation').disabled=true;$('rotationLock').disabled=true;
+ $('runState').textContent='Orientation protocol running. Keep the app visible; follow each instruction.';
+ for(let i=0;i<workflowStages.length;i++){
+   const stage=workflowStages[i];
+   if(document.visibilityState!=='visible'){ $('workflowStatus').textContent='Paused: return to the app to continue.';while(document.visibilityState!=='visible')await wait(250);}
+   orientationWorkflow.stage=stage.id;orientationWorkflow.stageStarted=now();
+   const end=now()+4000;
+   while(now()<end){
+     if(document.visibilityState!=='visible'){while(document.visibilityState!=='visible')await wait(250);}
+     $('workflowStatus').textContent=stage.label+'\n'+stage.instruction+'\n'+Math.max(0,(end-now())/1000).toFixed(1)+' s remaining · '+(i+1)+'/6';
+     await wait(120);
+   }
+ }
+ orientationWorkflow.active=false;orientationWorkflow.stage='complete';
+ const summary={protocol:'orientation-gravity-v1',physicalOrientation:physical,declaredRotationLock:lock,startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ orientationWorkflow.lastReport=summary;orientationWorkflow.completed.add(key);
+ $('workflowStart').disabled=false;$('physicalOrientation').disabled=false;$('rotationLock').disabled=false;
+ $('workflowStatus').textContent='COMPLETE · '+physical+' · lock '+lock.toUpperCase()+'\n'+summary.samples.length+' sensor samples · '+Object.keys(summary.stageCounts).map(k=>k+': '+summary.stageCounts[k]).join(' · ')+'\n'+orientationWorkflow.completed.size+'/8 combinations completed this visit. Uploading…';
+ const report=resultObject();report.workflow=summary;lastCompletedResult=report;
+ await uploadResult(report);
+ $('workflowStart').textContent='RUN AGAIN';
+}
+$('workflowStart').addEventListener('click',runOrientationWorkflow);
+$('physicalOrientation').addEventListener('change',()=>{$('workflowStart').textContent='START 6-STEP RUN';});
+$('rotationLock').addEventListener('change',()=>{$('workflowStart').textContent='START 6-STEP RUN';});
+
 function makeRunId(){
   if(window.crypto&&typeof crypto.randomUUID==='function')return crypto.randomUUID();
   const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
@@ -315,7 +387,7 @@ async function uploadResult(snapshot){
         'apikey':'sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz',
         'Prefer':'return=minimal'
       },
-      body:JSON.stringify({client_run_id:makeRunId(),app_version:'feedback-lab-v2',report})
+      body:JSON.stringify({client_run_id:makeRunId(),app_version:'feedback-lab-v3-orientation-protocol',report})
     });
     if(!response.ok){
       const detail=await response.text();
