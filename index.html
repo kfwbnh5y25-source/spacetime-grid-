@@ -33,6 +33,11 @@
     #resetViewButton { display:flex; position:fixed; z-index:6; top:max(14px,env(safe-area-inset-top)); right:max(14px,env(safe-area-inset-right)); align-items:center; justify-content:center; width:42px; height:42px; padding:0; border:1px solid rgba(255,255,255,.24); border-radius:50%; background:rgba(8,12,20,.62); color:rgba(245,248,255,.9); font:24px/1 system-ui,sans-serif; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
     #resetViewButton:active { background:rgba(120,150,195,.35); transform:scale(.94); }
   }
+  #gyroButton { display:none; }
+  @media (pointer:coarse) {
+    #gyroButton { display:flex; position:fixed; z-index:6; top:max(14px,env(safe-area-inset-top)); left:max(14px,env(safe-area-inset-left)); align-items:center; justify-content:center; min-width:42px; height:42px; padding:0 12px; border:1px solid rgba(255,255,255,.24); border-radius:22px; background:rgba(8,12,20,.62); color:rgba(245,248,255,.9); font:11px/1 system-ui,sans-serif; letter-spacing:.04em; -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    #gyroButton.active { border-color:rgba(160,205,255,.75); background:rgba(50,85,130,.58); }
+  }
   @media (prefers-reduced-motion: reduce) { .planet-cursor,.hint,#gestureStatus { transition:none; } }
   @media (hover:hover) and (pointer:fine) { canvas { cursor:none; } }
   .hint {
@@ -52,6 +57,7 @@
 <div class="planet-cursor" id="planetCursor" aria-hidden="true"></div>
 <div id="gestureStatus" aria-live="polite"></div>
 <button id="resetViewButton" type="button" aria-label="Reset view" title="Reset view">↺</button>
+<button id="gyroButton" type="button" aria-pressed="false">TILT MASSES</button>
 <script>
 (() => {
   'use strict';
@@ -73,6 +79,37 @@
   function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
   function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
   function resetView(){viewScale=1;viewX=0;viewY=0;viewRotation=0;persistentMasses.length=0;applyView();saveState();showStatus('VIEW RESET');}
+  const gyroButton=document.getElementById('gyroButton');
+  let gyroEnabled=false,gyroBaseline=null,gyroTargetX=0,gyroTargetY=0,gyroX=0,gyroY=0,gyroListener=null;
+  function handleDeviceOrientation(e){
+    if(!gyroEnabled||!Number.isFinite(e.beta)||!Number.isFinite(e.gamma))return;
+    if(!gyroBaseline){gyroBaseline={beta:e.beta,gamma:e.gamma};return;}
+    const db=Math.max(-35,Math.min(35,e.beta-gyroBaseline.beta));
+    const dg=Math.max(-35,Math.min(35,e.gamma-gyroBaseline.gamma));
+    gyroTargetX=dg*2.2;
+    gyroTargetY=db*2.2;
+  }
+  async function toggleGyro(){
+    if(gyroEnabled){
+      gyroEnabled=false;gyroBaseline=null;gyroTargetX=gyroTargetY=gyroX=gyroY=0;
+      if(gyroListener)window.removeEventListener('deviceorientation',gyroListener);
+      gyroListener=null;gyroButton.classList.remove('active');gyroButton.setAttribute('aria-pressed','false');gyroButton.textContent='TILT MASSES';showStatus('TILT CONTROL OFF');return;
+    }
+    try{
+      const Orientation=window.DeviceOrientationEvent;
+      if(!Orientation){showStatus('MOTION SENSOR UNAVAILABLE');return;}
+      if(typeof Orientation.requestPermission==='function'){
+        const permission=await Orientation.requestPermission();
+        if(permission!=='granted'){showStatus('MOTION PERMISSION DENIED');return;}
+      }
+      gyroEnabled=true;gyroBaseline=null;gyroTargetX=gyroTargetY=gyroX=gyroY=0;
+      gyroListener=handleDeviceOrientation;
+      window.addEventListener('deviceorientation',gyroListener,{passive:true});
+      gyroButton.classList.add('active');gyroButton.setAttribute('aria-pressed','true');gyroButton.textContent='TILT ON';
+      showStatus('HOLD STILL TO CALIBRATE');
+    }catch(_){showStatus('MOTION SENSOR UNAVAILABLE');}
+  }
+  gyroButton.addEventListener('click',toggleGyro);
   document.getElementById('resetViewButton').addEventListener('click',()=>{
     stopInertia();gestureBase=null;panBase=null;trackpadGestureBase=null;lastTouchSample=null;
     for(const [id,p] of pointers){if(p.pointerType==='touch'){p.life=0;p.targetStrength=0;p.down=false;}}
@@ -470,7 +507,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       if(p.life<=0&&p.strength<.012){pointers.delete(id);continue;}
       fields.push(p);
     }
-    for(const m of persistentMasses)fields.push(m);
+    gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
+    for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
     if(gpuEnabled)drawGpu(t);
     else {
       const g=geometry,times=[Math.sin(t*.00105),Math.cos(t*.00105),Math.sin(t*.00072),Math.cos(t*.00072),Math.sin(t*.00092),Math.cos(t*.00092),Math.sin(t*.00066),Math.cos(t*.00066),Math.sin(t*.00045),Math.cos(t*.00045)];
