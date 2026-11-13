@@ -435,7 +435,12 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
     const w=worldPoint(e.clientX,e.clientY),now=performance.now();
     const p={x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:1,life:1,down:true,pointerType:e.pointerType,
-      startX:w.x,startY:w.y,samples:[{t:now,x:w.x,y:w.y}],travel:0,massPlaced:false};
+      startX:w.x,startY:w.y,samples:[{t:now,x:w.x,y:w.y}],travel:0,massPlaced:false,multiTouch:false};
+    if(e.pointerType==='touch'){
+      for(const other of pointers.values()){
+        if(other.down&&other.pointerType==='touch'){other.multiTouch=true;p.multiTouch=true;}
+      }
+    }
     pointers.set(e.pointerId,p);
     if(e.pointerType==='touch'){clearTimeout(longPressTimer);longPressPointer=e.pointerId;longPressTimer=setTimeout(()=>{const active=pointers.get(e.pointerId);if(active&&active.down){if(persistentMasses.length>=8)persistentMasses.shift();persistentMasses.push({x:active.tx,y:active.ty,strength:1});active.massPlaced=true;saveState();showStatus('MASS PLACED · '+persistentMasses.length);}},560);}
     hint.classList.add('hidden');clearTimeout(hintTimer);
@@ -456,7 +461,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const p=pointers.get(e.pointerId);
     if(e.pointerType==='mouse'||p?.hover||p?.pointerType==='mouse'||!p?.down)return;
     if(longPressPointer===e.pointerId){clearTimeout(longPressTimer);longPressPointer=null;}
-    if(e.type==='pointerup'&&phonePhysics&&!p.massPlaced){
+    if(e.type==='pointerup'&&phonePhysics&&!p.massPlaced&&!p.multiTouch){
       const w=worldPoint(e.clientX,e.clientY);addFingerSample(p,w,performance.now());
       if(p.travel>14)launchNewtonProbe(p);
     }
