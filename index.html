@@ -261,10 +261,26 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   document.addEventListener('contextmenu',e=>e.preventDefault());
   document.addEventListener('selectstart',e=>e.preventDefault());
   document.addEventListener('dragstart',e=>e.preventDefault());
-  let trackpadRotationBase=0;
-  canvas.addEventListener('gesturestart',e=>{e.preventDefault();trackpadRotationBase=viewRotation;},{passive:false}); 
-  canvas.addEventListener('gesturechange',e=>{if(typeof e.rotation==='number'&&Number.isFinite(e.rotation)){e.preventDefault();viewRotation=trackpadRotationBase+e.rotation;applyView();}},{passive:false}); 
-  canvas.addEventListener('gestureend',e=>{if(typeof e.rotation==='number'&&Number.isFinite(e.rotation)){viewRotation=trackpadRotationBase+e.rotation;applyView();saveState();showStatus('ROTATION SAVED');}},{passive:true});
+  let trackpadGestureBase=null;
+  function applyGestureTransform(base,mx,my,scale,rotation){
+    const ratio=scale/base.scale,angle=(rotation-base.rotation)*Math.PI/180,c=Math.cos(angle),sn=Math.sin(angle);
+    const qx=base.x-width/2-base.viewX,qy=base.y-height/2-base.viewY;
+    const rx=ratio*(c*qx-sn*qy),ry=ratio*(sn*qx+c*qy);
+    viewScale=scale;viewRotation=rotation;viewX=mx-width/2-rx;viewY=my-height/2-ry;applyView();
+  }
+  canvas.addEventListener('gesturestart',e=>{
+    e.preventDefault();trackpadGestureBase={scale:viewScale,rotation:viewRotation,x:width/2,y:height/2,viewX,viewY};
+  },{passive:false});
+  canvas.addEventListener('gesturechange',e=>{
+    if(!trackpadGestureBase)return;e.preventDefault();
+    const factor=typeof e.scale==='number'&&Number.isFinite(e.scale)?e.scale:1;
+    const turn=typeof e.rotation==='number'&&Number.isFinite(e.rotation)?e.rotation:0;
+    const nextScale=Math.max(.7,Math.min(2.5,trackpadGestureBase.scale*factor));
+    applyGestureTransform(trackpadGestureBase,trackpadGestureBase.x,trackpadGestureBase.y,nextScale,trackpadGestureBase.rotation+turn);
+  },{passive:false});
+  canvas.addEventListener('gestureend',()=>{
+    if(trackpadGestureBase){trackpadGestureBase=null;saveState();showStatus('VIEW SAVED');}
+  },{passive:true});
   canvas.addEventListener('pointerdown',pointerDown,{passive:false});
   canvas.addEventListener('pointermove',pointerMove,{passive:true});
   canvas.addEventListener('pointerup',pointerEnd);
@@ -273,10 +289,16 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   canvas.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')planetCursor.classList.remove('visible');});
   window.addEventListener('blur',()=>{for(const [id,p] of pointers){if(p.hover){p.life=0;p.targetStrength=0;}}planetCursor.classList.remove('visible');});
   let gestureBase=null;
-  canvas.addEventListener('touchstart',e=>{if(e.touches.length===2){const a=e.touches[0],b=e.touches[1];gestureBase={distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),scale:viewScale,x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2,viewX,viewY};clearTimeout(longPressTimer);longPressPointer=null;}},{passive:true});
-  canvas.addEventListener('touchmove',e=>{if(e.touches.length===2&&gestureBase){e.preventDefault();const a=e.touches[0],b=e.touches[1],dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2,nextScale=Math.max(.7,Math.min(2.5,gestureBase.scale*dist/Math.max(1,gestureBase.distance))),ratio=nextScale/gestureBase.scale;viewScale=nextScale;viewX=gestureBase.viewX*ratio+(1-ratio)*(gestureBase.x-width/2)+mx-gestureBase.x;viewY=gestureBase.viewY*ratio+(1-ratio)*(gestureBase.y-height/2)+my-gestureBase.y;applyView();}},{passive:false});
+  function touchAngle(a,b){return Math.atan2(b.clientY-a.clientY,b.clientX-a.clientX);}
+  function angleDelta(a,b){let d=a-b;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return d;}
+  canvas.addEventListener('touchstart',e=>{
+    if(e.touches.length===2){const a=e.touches[0],b=e.touches[1];gestureBase={distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),angle:touchAngle(a,b),scale:viewScale,rotation:viewRotation,x:(a.clientX+b.clientX)/2,y:(a.clientY+b.clientY)/2,viewX,viewY};clearTimeout(longPressTimer);longPressPointer=null;}
+  },{passive:true});
+  canvas.addEventListener('touchmove',e=>{
+    if(e.touches.length===2&&gestureBase){e.preventDefault();const a=e.touches[0],b=e.touches[1],dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2,nextScale=Math.max(.7,Math.min(2.5,gestureBase.scale*dist/Math.max(1,gestureBase.distance))),nextRotation=gestureBase.rotation+angleDelta(touchAngle(a,b),gestureBase.angle)*180/Math.PI;applyGestureTransform(gestureBase,mx,my,nextScale,nextRotation);}
+  },{passive:false});
   canvas.addEventListener('touchend',e=>{if(e.touches.length<2&&gestureBase){gestureBase=null;saveState();showStatus('VIEW SAVED');}},{passive:true});
-  canvas.addEventListener('wheel',e=>{if(isNaN(e.deltaY))return;e.preventDefault();if(e.ctrlKey){const old=viewScale;viewScale=Math.max(.7,Math.min(2.5,viewScale*Math.exp(-e.deltaY*.01)));const ratio=viewScale/old;viewX=viewX*ratio+(1-ratio)*(e.clientX-width/2);viewY=viewY*ratio+(1-ratio)*(e.clientY-height/2);}else{viewX-=e.deltaX;viewY-=e.deltaY;}applyView();saveState();},{passive:false});
+  canvas.addEventListener('wheel',e=>{if(isNaN(e.deltaY))return;e.preventDefault();if(e.ctrlKey){if(trackpadGestureBase)return;const old=viewScale,next=Math.max(.7,Math.min(2.5,viewScale*Math.exp(-e.deltaY*.01))),ratio=next/old;viewScale=next;viewX=viewX*ratio+(1-ratio)*(e.clientX-width/2);viewY=viewY*ratio+(1-ratio)*(e.clientY-height/2);}else{viewX-=e.deltaX;viewY-=e.deltaY;}applyView();saveState();},{passive:false});
   window.addEventListener('keydown',e=>{if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||''))return;const k=e.key.toLowerCase(),step=36;if(e.code==='Space'){e.preventDefault();if(!paused)pauseTime=elapsed;paused=!paused;showStatus(paused?'PAUSED':'RESUMED');}else if(k==='r')resetView();else if(e.key==='+'||e.key==='='){viewScale=Math.min(2.5,viewScale*1.12);applyView();saveState();}else if(e.key==='-'){viewScale=Math.max(.7,viewScale/1.12);applyView();saveState();}else if(e.key.startsWith('Arrow')){e.preventDefault();viewX+=e.key==='ArrowLeft'?step:e.key==='ArrowRight'?-step:0;viewY+=e.key==='ArrowUp'?step:e.key==='ArrowDown'?-step:0;applyView();saveState();}else if(k==='s'){if(navigator.share)navigator.share({title:'Spacetime Grid',url:location.href}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(location.href).then(()=>showStatus('LINK COPIED'));}});
 
   let warpedX=0, warpedY=0;
