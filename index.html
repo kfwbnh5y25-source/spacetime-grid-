@@ -36,7 +36,7 @@
   const bgctx = background.getContext('2d', { alpha: false });
   const benchMode = new URLSearchParams(location.search).has('bench');
   const benchParams = new URLSearchParams(location.search);
-  let requestedDpr = [1,1.5,1.75].includes(Number(benchParams.get('dpr'))) ? Number(benchParams.get('dpr')) : 1.75;
+  let requestedDpr = [1,1.5,1.75,2,2.5,3].includes(Number(benchParams.get('dpr'))) ? Number(benchParams.get('dpr')) : 3;
   let frameCap = [60,120].includes(Number(benchParams.get('cap'))) ? Number(benchParams.get('cap')) : 120;
   let testLabel = benchParams.get('test') || 'unlabelled';
   const perf = {
@@ -101,7 +101,7 @@
     bgctx.globalAlpha=1;bgctx.fillStyle='rgba(0,0,0,.58)';bgctx.fillRect(0,0,width,height);
   }
   function resize(){
-    dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:1.75);
+    dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:3);
     width=window.innerWidth;height=window.innerHeight;
     const sigma=Math.min(width,height)*.19;inv2Sigma2=1/(2*sigma*sigma);
     canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
@@ -165,7 +165,7 @@
   if(benchMode){
     panel=document.createElement('section');
     panel.style.cssText='position:fixed;z-index:5;top:12px;left:12px;max-width:min(360px,calc(100vw - 24px));max-height:48vh;overflow:auto;padding:12px 14px;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.22);color:#e8edf7;font:11px/1.5 ui-monospace,monospace;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);touch-action:pan-y;user-select:text;-webkit-user-select:text';
-    panel.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>DEVICE BENCHMARK</b><span style="display:flex;gap:6px"><button id="uploadBench" style="background:#dce8ff;color:#07111f;border:0;padding:6px 9px;font:inherit">Save to server</button><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></span></div><div id="saveStatus" role="status" style="margin-top:5px;color:#aab4c5"></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><label>Test <select id="testLabel" style="font:inherit"><option value="idle">Idle</option><option value="drag">One-finger drag</option><option value="multitouch">Multitouch</option></select></label><label>DPR <select id="testDpr" style="font:inherit"><option>1</option><option>1.5</option><option selected>1.75</option></select></label><label>Cap <select id="testCap" style="font:inherit"><option>60</option><option selected>120</option></select></label><button id="startTest" style="background:#fff;color:#000;border:0;padding:5px 8px;font:inherit">Reset test</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Run separate 60–90 s tests: idle, continuous one-finger dragging, then 2–5 fingers. Keep the tab foregrounded and use the same duration for each. Change DPR and repeat to test GPU/fill-rate sensitivity.</p>`;
+    panel.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>DEVICE BENCHMARK</b><span style="display:flex;gap:6px"><button id="uploadBench" style="background:#dce8ff;color:#07111f;border:0;padding:6px 9px;font:inherit">Save to server</button><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></span></div><div id="saveStatus" role="status" style="margin-top:5px;color:#aab4c5"></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><label>Test <select id="testLabel" style="font:inherit"><option value="idle">Idle</option><option value="drag">One-finger drag</option><option value="multitouch">Multitouch</option></select></label><label>DPR <select id="testDpr" style="font:inherit"><option>1</option><option>1.5</option><option>1.75</option><option>2</option><option>2.5</option><option selected>3</option></select></label><label>Cap <select id="testCap" style="font:inherit"><option>60</option><option selected>120</option></select></label><button id="startTest" style="background:#fff;color:#000;border:0;padding:5px 8px;font:inherit">Reset test</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Run separate 60–90 s tests: idle, continuous one-finger dragging, then 2–5 fingers. Keep the tab foregrounded and use the same duration for each. Change DPR and repeat to test GPU/fill-rate sensitivity.</p>`;
     document.body.appendChild(panel);reportText=panel.querySelector('#benchText');
     panel.querySelector('#testLabel').value=testLabel;
     panel.querySelector('#testDpr').value=String(requestedDpr);
