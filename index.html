@@ -201,7 +201,7 @@ void main(){float coverage=1.0-smoothstep(.55,1.0,abs(v_edge));color=vec4(.92,.9
     bgctx.globalAlpha=1;bgctx.fillStyle='rgba(0,0,0,.58)';bgctx.fillRect(0,0,width,height);
   }
   function resize(){
-    dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:3);
+    dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:2);
     width=window.innerWidth;height=window.innerHeight;
     const sigma=Math.min(width,height)*.19;inv2Sigma2=1/(2*sigma*sigma);
     canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
@@ -307,7 +307,7 @@ void main(){float coverage=1.0-smoothstep(.55,1.0,abs(v_edge));color=vec4(.92,.9
   }
 
   function render(now){
-    const targetHz=benchMode?frameCap:60,frameInterval=1000/targetHz;
+    const interacting=Array.from(pointers.values()).some(p=>p.down||p.hover);\n    const targetHz=benchMode?frameCap:(interacting?60:30),frameInterval=1000/targetHz;
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
     if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();perf.frames++;if(perf.samples.length===30&&perf.baselineFrameMs===null)perf.baselineFrameMs=percentile(perf.samples,.5);else if(perf.baselineFrameMs!==null&&frameDelta>perf.baselineFrameMs*1.5)perf.dropped+=Math.max(1,Math.round(frameDelta/perf.baselineFrameMs)-1);perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
