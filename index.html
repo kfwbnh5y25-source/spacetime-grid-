@@ -207,7 +207,7 @@ vec2 geodesicAccel(vec2 p){
  return a;
 }
 vec2 traceTimelike(vec2 p,vec2 direction){
- vec2 v=direction*0.22;
+ vec2 v=direction*0.38;
  float total=mod(u_time,12000.0)*0.0015;
  float h=total/12.0;
  for(int k=0;k<12;k++){
@@ -271,10 +271,10 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gl.viewport(0,0,gpuCanvas.width,gpuCanvas.height);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(gpuProgram);
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
         gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_rayMargin'),rayMargin);
-    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),9.0);
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),6.0);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t);
     const xy=new Float32Array(20),rS=new Float32Array(10);let count=0;
-    for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;rS[count]=2.2*Math.max(0,Math.min(1,p.strength));count++;}
+    for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;rS[count]=12.0*Math.max(0,Math.min(1,p.strength));count++;}
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);
     gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_rS[0]'),rS);
@@ -502,13 +502,13 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   let warpedX=0, warpedY=0;
   function warpVertex(g,i,t,horizontal){
     let x=g.x[i],y=g.y[i];
-    let vx=horizontal?0.22:0,vy=horizontal?0:0.22;
+    let vx=horizontal?0.38:0,vy=horizontal?0:0.38;
     const total=(t%12000)*0.0015,h=total/12;
     const accel=(px,py)=>{
       let ax=0,ay=0;
       for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
-        const m=fields[j],dx=px-m.x,dy=py-m.y,r2=dx*dx+dy*dy+81;
-        const scale=-1.1*Math.max(0,Math.min(1,m.strength))/(r2*Math.sqrt(r2));
+        const m=fields[j],dx=px-m.x,dy=py-m.y,r2=dx*dx+dy*dy+36;
+        const scale=-6.0*Math.max(0,Math.min(1,m.strength))/(r2*Math.sqrt(r2));
         ax+=scale*dx;ay+=scale*dy;
       }
       return [ax,ay];
@@ -587,7 +587,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const renderStart=performance.now();
     const dt=Math.min(40,now-(last||now));last=now;lastFrame=now;if(!paused)elapsed+=dt;
     if(perf.firstFrame===null)perf.firstFrame=now;
-    const t=reducedMotion.matches?0:(paused?pauseTime:elapsed);
+    const t=paused?pauseTime:elapsed;
     ctx.drawImage(background,0,0,width,height);
     fields.length=0;
     for(const [id,p] of pointers){
