@@ -1,4 +1,4 @@
-const CACHE='spacetime-feedback-shell-v16';
+const CACHE='spacetime-feedback-shell-v17';
 const SHELL=['./','./index.html','./manifest.webmanifest','../icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()));
