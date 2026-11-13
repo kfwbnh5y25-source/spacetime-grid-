@@ -106,7 +106,9 @@ function groundFrameMathSelfTest(){
   const sx2=c*wx2+s*wy2,sy2=-s*wx2+c*wy2;
   maxScreenRoundTrip=Math.max(maxScreenRoundTrip,Math.hypot(sx2-gx,sy2-gy));
  }
- return {pass:maxWorldRoundTrip<1e-10&&maxScreenRoundTrip<1e-10,maxWorldRoundTrip,maxScreenRoundTrip,angles:[0,37,90,-90,180,270],description:'inverse render/pointer/physics transforms preserve the same world axes'};
+ let correction=0,maxCorrectionStep=0;
+ for(let i=0;i<90;i++){const before=correction;correction+=shortestDegrees(90-correction)*(1-Math.exp(-(1000/60)/180));maxCorrectionStep=Math.max(maxCorrectionStep,Math.abs(correction-before));}
+ return {pass:maxWorldRoundTrip<1e-10&&maxScreenRoundTrip<1e-10&&maxCorrectionStep<10,maxWorldRoundTrip,maxScreenRoundTrip,maxCorrectionStepDeg:maxCorrectionStep,angles:[0,37,90,-90,180,270],description:'inverse render/pointer/physics transforms preserve world axes; orientation correction is eased without a one-frame 90-degree jump'};
 }
 function gravityMathSelfTest(){
  const vector={x:3.25,y:-8.4};let maxRoundTripError=0,maxNormError=0;
@@ -278,11 +280,11 @@ function frame(t){
   const k=1-Math.exp(-dt/68);
   // Low-pass in the fixed device frame, then rotate into the current screen basis.
   // This prevents blending vectors expressed in different screen coordinate frames.
+  const angle=syncScreenBasis();
   updateGroundFrame(dt);
   const sensorAlpha=1-Math.exp(-dt/90);
   motionSensorFilteredX+=(motionRawX-motionSensorFilteredX)*sensorAlpha;
   motionSensorFilteredY+=(motionRawY-motionSensorFilteredY)*sensorAlpha;
-  const angle=syncScreenBasis();
   const screenGravity=gravityToScreen(motionSensorFilteredX,motionSensorFilteredY,angle);
   const dead=v=>Math.abs(v)<.045?0:Math.sign(v)*Math.min(1,(Math.abs(v)-.045)/.955);
   motionFilteredX=dead(screenGravity.x);
