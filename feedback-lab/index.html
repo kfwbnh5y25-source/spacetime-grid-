@@ -73,7 +73,7 @@ const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:
 const $=id=>document.getElementById(id);
 const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
 const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
-let raf=0,lastSave=0,saveTimer=0,resizeTimer=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionListener=null,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+let raf=0,lastSave=0,saveTimer=0,resizeTimer=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,screenAngleSmooth=currentAngle()*Math.PI/180,screenAngleTarget=currentAngle()*Math.PI/180,motionListener=null,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
 function now(){return performance.now();}
 function currentAngle(){const a=Number.isFinite(screen.orientation&&screen.orientation.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);return ((a%360)+360)%360;}
@@ -95,14 +95,13 @@ function scheduleResize(){
   resizeTimer=setTimeout(()=>{resize();},140);
 }
 window.addEventListener('resize',scheduleResize,{passive:true});
-window.addEventListener('orientationchange',()=>{
-  metrics.orientationChanges++;metrics.orientationChangeAt=now();
-  motionFilteredX=motionFilteredY=0;
+function handleOrientationChange(){
+  const angle=currentAngle();
+  if(angle!==metrics.orientation){metrics.orientation=angle;metrics.orientationChanges++;metrics.orientationChangeAt=now();screenAngleTarget=angle*Math.PI/180;}
   scheduleResize();
-},{passive:true});
-if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',()=>{
-  metrics.orientationChanges++;metrics.orientationChangeAt=now();motionFilteredX=motionFilteredY=0;scheduleResize();
-});
+}
+window.addEventListener('orientationchange',handleOrientationChange,{passive:true});
+if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',handleOrientationChange);
 resize();
 function saveState(){
   clearTimeout(saveTimer);
@@ -204,13 +203,13 @@ function draw(){
 function stepPhysics(dtMs){
   const dt=Math.min(.04,Math.max(0,dtMs/1000));if(!dt||!state.masses.length)return;
   const a=state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
-  const force=180*state.sensitivity;
+  const force=110*state.sensitivity;
   const worldG=worldVectorFromScreen(motionFilteredX*force,motionFilteredY*force);
   const damp=Math.exp(-state.damping*dt),minX=-state.w/(2*state.camera.scale)+10,maxX=state.w/(2*state.camera.scale)-10,minY=-state.h/(2*state.camera.scale)+10,maxY=state.h/(2*state.camera.scale)-10;
   for(const m of state.masses){
-    m.vx=(m.vx+worldG.x*dt)*damp;m.vy=(m.vy+worldG.y*dt)*damp;m.x+=m.vx*dt;m.y+=m.vy*dt;
-    if(m.x<minX){m.x=minX;m.vx=Math.abs(m.vx)*.22;}if(m.x>maxX){m.x=maxX;m.vx=-Math.abs(m.vx)*.22;}
-    if(m.y<minY){m.y=minY;m.vy=Math.abs(m.vy)*.22;}if(m.y>maxY){m.y=maxY;m.vy=-Math.abs(m.vy)*.22;}
+    const edgeX=m.x<minX?Math.min(3,(minX-m.x)*.018):m.x>maxX?-Math.min(3,(m.x-maxX)*.018):0;
+    const edgeY=m.y<minY?Math.min(3,(minY-m.y)*.018):m.y>maxY?-Math.min(3,(m.y-maxY)*.018):0;
+    m.vx=(m.vx+(worldG.x+edgeX)*dt)*damp;m.vy=(m.vy+(worldG.y+edgeY)*dt)*damp;m.x+=m.vx*dt;m.y+=m.vy*dt;
   }
 }
 function frame(t){
@@ -220,6 +219,14 @@ function frame(t){
   const dt=frame.last?Math.min(40,Math.max(0,t-frame.last)):16.67;frame.last=t;
   const renderStarted=now();
   const k=1-Math.exp(-dt/68);
+  let da=((screenAngleTarget-screenAngleSmooth+Math.PI*3)%(Math.PI*2))-Math.PI;
+  screenAngleSmooth+=da*(1-Math.exp(-dt/190));
+  const c=Math.cos(screenAngleSmooth),s=Math.sin(screenAngleSmooth),gx=motionRawX,gy=motionRawY;
+  const sx=(gx*c-gy*s)/9.80665,sy=(-gx*s-gy*c)/9.80665;
+  const dead=v=>Math.abs(v)<.045?0:Math.sign(v)*Math.min(1,(Math.abs(v)-.045)/.955);
+  const sensorAlpha=1-Math.exp(-dt/190);
+  motionFilteredX+=(dead(sx)-motionFilteredX)*sensorAlpha;
+  motionFilteredY+=(dead(sy)-motionFilteredY)*sensorAlpha;
   state.camera.x+=(state.target.x-state.camera.x)*k;state.camera.y+=(state.target.y-state.camera.y)*k;state.camera.scale+=(state.target.scale-state.camera.scale)*k;
   if(Math.abs(state.target.x-state.camera.x)<.08)state.camera.x=state.target.x;
   if(Math.abs(state.target.y-state.camera.y)<.08)state.camera.y=state.target.y;
@@ -249,27 +256,21 @@ function updateMetrics(){
 }
 function onMotion(e){
   const a=e.accelerationIncludingGravity;if(!a||!Number.isFinite(a.x)||!Number.isFinite(a.y))return;
-  const theta=currentAngle()*Math.PI/180,c=Math.cos(theta),s=Math.sin(theta);
-  const gx=-a.x,gy=-a.y;
-  const sx=(gx*c-gy*s)/9.80665,sy=(-gx*s-gy*c)/9.80665;
-  const dz=v=>Math.abs(v)<.035?0:Math.sign(v)*Math.min(1,(Math.abs(v)-.035)/.965);
-  motionFilteredX+= (dz(sx)-motionFilteredX)*.18;
-  motionFilteredY+= (dz(sy)-motionFilteredY)*.18;
-  metrics.gravityX=sx;metrics.gravityY=sy;
+  motionRawX=-a.x;motionRawY=-a.y;
   metrics.motionCount++;
   const t=now();
   if(!metrics.lastMotion)metrics.lastMotion=t;
   if(t-metrics.lastMotion>=1000){metrics.motionRate=metrics.motionCount*1000/(t-metrics.lastMotion);metrics.motionCount=0;metrics.lastMotion=t;}
 }
 async function toggleMotion(){
-  if(motionEnabled){motionEnabled=false;if(motionListener)window.removeEventListener('devicemotion',motionListener);motionListener=null;$('motionBtn').classList.remove('active');$('motionBtn').textContent='ENABLE GRAVITY';$('runState').textContent='Motion sensor stopped.';return;}
+  if(motionEnabled){motionEnabled=false;motionRawX=motionRawY=motionFilteredX=motionFilteredY=0;if(motionListener)window.removeEventListener('devicemotion',motionListener);motionListener=null;$('motionBtn').classList.remove('active');$('motionBtn').textContent='ENABLE GRAVITY';$('runState').textContent='Motion sensor stopped.';return;}
   try{
     if(!('DeviceMotionEvent'in window))throw new Error('DeviceMotion unavailable');
     if(typeof DeviceMotionEvent.requestPermission==='function'){
       const permission=await DeviceMotionEvent.requestPermission();
       if(permission!=='granted')throw new Error('Permission denied');
     }
-    motionGranted=true;motionEnabled=true;motionListener=onMotion;window.addEventListener('devicemotion',motionListener,{passive:true});
+    motionGranted=true;motionEnabled=true;motionRawX=motionRawY=motionFilteredX=motionFilteredY=0;screenAngleSmooth=screenAngleTarget=currentAngle()*Math.PI/180;motionListener=onMotion;window.addEventListener('devicemotion',motionListener,{passive:true});
     $('motionBtn').classList.add('active');$('motionBtn').textContent='GRAVITY ON';$('runState').textContent='Motion active. Rotate the phone: gravity is reprojected using the current screen angle; the mass coordinates are not reset.';
   }catch(e){$('runState').textContent='Motion unavailable: '+e.message;}
 }
