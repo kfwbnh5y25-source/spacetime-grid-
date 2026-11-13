@@ -80,7 +80,7 @@ const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:
 const $=id=>document.getElementById(id);
 const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
 const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runRenderTimes:[],runMotion:0,runInputs:[],runOrientations:0};
-let raf=0,lastSave=0,saveTimer=0,resizeTimer=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=currentAngle(),lastScreenGravity={x:0,y:0},gravityTransition=null,motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+let raf=0,lastSave=0,saveTimer=0,resizeRaf=0,gridCanvas=null,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionRawX=0,motionRawY=0,motionSensorFilteredX=0,motionSensorFilteredY=0,lastScreenAngle=currentAngle(),lastScreenGravity={x:0,y:0},gravityTransition=null,motionListener=null,touchGravityEnabled=false,touchGravityActive=false,touchGravityX=0,touchGravityY=0,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
 const orientationWorkflow={active:false,stage:'idle',stageStarted:0,started:0,lastSample:0,samples:[],events:[],verification:[],completed:new Set(),physical:'portrait_upright',lock:'off'};
 let latestDeviceOrientation={alpha:null,beta:null,gamma:null,absolute:null};
 const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
@@ -161,18 +161,20 @@ function resize(){
   if(oldW&&oldH){/* World coordinates are center-relative: changing viewport size never rescales or teleports masses. */}
 }
 function scheduleResize(){
-  clearTimeout(resizeTimer);
-  // iOS WebKit can deliver viewport resize updates during its native
-  // orientation animation. Keep the existing canvas backing store intact
-  // until the viewport has settled, then rebuild it once.
-  const settleDelay=matchMedia('(pointer:coarse)').matches?360:140;
-  resizeTimer=setTimeout(()=>{
+  // Resize on the next paint rather than waiting for a 360 ms settle timer.
+  // iOS Safari/PWA already animates the screen rotation; a delayed canvas
+  // backing-store resize makes the grid appear to lag and then snap into place.
+  // Coalesce duplicate resize/visualViewport/ResizeObserver events to one
+  // backing-store rebuild per animation frame.
+  if(resizeRaf)return;
+  resizeRaf=requestAnimationFrame(()=>{
+    resizeRaf=0;
     resize();
     if(orientationWorkflow.active&&metrics.orientationChangeAt){
       const last=orientationWorkflow.events[orientationWorkflow.events.length-1];
       if(last&&last.type==='screen-basis-change')last.resizeSettledAfterMs=+(now()-metrics.orientationChangeAt).toFixed(1);
     }
-  },settleDelay);
+  });
 }
 window.addEventListener('resize',scheduleResize,{passive:true});
 if(window.visualViewport)window.visualViewport.addEventListener('resize',scheduleResize,{passive:true});
@@ -469,7 +471,7 @@ async function runOrientationWorkflow(){
  }
  orientationWorkflow.active=false;orientationWorkflow.stage='complete';
  const gridEvaluation=evaluateGridOrientation(orientationWorkflow.events);
- const summary={protocol:'phone-locked-grid-v19-deferred-backing-store-resize',gridEvaluation,physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
+ const summary={protocol:'phone-locked-grid-v20-frame-synced-resize',gridEvaluation,physicalOrientation:physical,declaredRotationLock:lock,groundReference:{method:'screen-coordinate gravity projection; grid remains screen-aligned and gravity only steers masses',referenceScreenAngle:groundFrame.referenceScreenAngle,referenceGravityAngle:orientationWorkflow.referenceGroundAngle??null,groundAngleEnd:+groundFrame.angle.toFixed(3),gravityProjection:+groundFrame.gravityMagnitude.toFixed(3),gravityConfidence:+groundFrame.confidence.toFixed(2),gyroUsedForAlignment:false,gyroAvailable:groundFrame.gyroAvailable},startedAt:new Date(Date.now()-(now()-orientationWorkflow.started)).toISOString(),durationMs:+(now()-orientationWorkflow.started).toFixed(1),mathCheck,groundMathCheck,verification:orientationWorkflow.verification,verificationPassed:orientationWorkflow.verification.filter(v=>v.passed).length,verificationTotal:orientationWorkflow.verification.length,samples:orientationWorkflow.samples,events:orientationWorkflow.events,stageCounts:Object.fromEntries(workflowStages.map(s=>[s.id,orientationWorkflow.samples.filter(x=>x.stage===s.id).length])),screenAngleEnd:currentAngle(),screenOrientationEnd:screen.orientation?.type||'unsupported',viewportEnd:[window.innerWidth,window.innerHeight]};
  orientationWorkflow.lastReport=summary;
  $('workflowStatus').textContent='COMPLETE · GRID '+gridEvaluation.status+' ('+gridEvaluation.passed+'/'+gridEvaluation.total+') · uploading report and evaluation…';
  const report=resultObject();report.workflow=summary;lastCompletedResult=report;
