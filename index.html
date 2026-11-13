@@ -31,10 +31,13 @@
   const pointers = new Map();
   const fields = [];
   const starfield = new Image();
+  const background = document.createElement('canvas');
+  const bgctx = background.getContext('2d', { alpha: false });
   starfield.src = 'https://assets.science.nasa.gov/dynamicimage/assets/science/missions/hubble/releases/2012/11/STScI-01EVSKKXBHFJX27QM0284AZ7GZ.jpg?fit=crop&w=1600&h=900';
   let starfieldReady = false;
-  starfield.onload = () => { starfieldReady = true; };
-  let width = 0, height = 0, dpr = 1, last = 0, elapsed = 0, hintTimer;
+  starfield.onload = () => { starfieldReady = true; rebuildBackground(); };
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let width = 0, height = 0, dpr = 1, last = 0, elapsed = 0, hintTimer, raf = 0;
 
   const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width, height) / 17)));
   const smooth = (a, b, t) => a + (b - a) * t;
@@ -46,6 +49,22 @@
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    rebuildBackground();
+  }
+  function rebuildBackground() {
+    background.width = Math.max(1, Math.round(width * dpr));
+    background.height = Math.max(1, Math.round(height * dpr));
+    bgctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    bgctx.fillStyle = '#000';
+    bgctx.fillRect(0, 0, width, height);
+    if (!starfieldReady || !starfield.naturalWidth) return;
+    const scale = Math.max(width / starfield.naturalWidth, height / starfield.naturalHeight);
+    const sw = starfield.naturalWidth * scale, sh = starfield.naturalHeight * scale;
+    bgctx.globalAlpha = .34;
+    bgctx.drawImage(starfield, (width - sw) / 2, (height - sh) / 2, sw, sh);
+    bgctx.globalAlpha = 1;
+    bgctx.fillStyle = 'rgba(0,0,0,.58)';
+    bgctx.fillRect(0, 0, width, height);
   }
   window.addEventListener('resize', resize, { passive: true });
   resize();
@@ -74,6 +93,10 @@
   canvas.addEventListener('pointerup', pointerEnd);
   canvas.addEventListener('pointercancel', pointerEnd);
   canvas.addEventListener('lostpointercapture', pointerEnd);
+  canvas.addEventListener('pointerleave', e => {
+    const p = pointers.get(e.pointerId);
+    if (p && p.hover) p.life = 0;
+  });
 
   function drawField(x, y, strength, life, t, px, py) {
     const dx = px - x, dy = py - y;
@@ -92,28 +115,19 @@
       ox += q.x - x;
       oy += q.y - y;
     }
-    const waveX = Math.sin(y * .017 + t * .00105) * 2.0
-                + Math.sin((x + y) * .008 - t * .00072) * 1.0;
-    const waveY = Math.sin(x * .016 - t * .00092) * 2.0
-                + Math.sin((x - y) * .009 + t * .00066) * 1.0;
-    const breathe = Math.sin(t * .00045 + x * .002 + y * .0015) * .45;
+    const motionTime = reducedMotion.matches ? 0 : t;
+    const waveX = Math.sin(y * .017 + motionTime * .00105) * 2.0
+                + Math.sin((x + y) * .008 - motionTime * .00072) * 1.0;
+    const waveY = Math.sin(x * .016 - motionTime * .00092) * 2.0
+                + Math.sin((x - y) * .009 + motionTime * .00066) * 1.0;
+    const breathe = reducedMotion.matches ? 0 : Math.sin(motionTime * .00045 + x * .002 + y * .0015) * .45;
     return [ox + waveX, oy + waveY + breathe];
   }
 
   function render(now) {
     const dt = Math.min(40, now - (last || now));
     last = now; elapsed += dt;
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, width, height);
-    if (starfieldReady) {
-      const scale = Math.max(width / starfield.width, height / starfield.height);
-      const sw = starfield.width * scale, sh = starfield.height * scale;
-      ctx.globalAlpha = .34;
-      ctx.drawImage(starfield, (width - sw) / 2, (height - sh) / 2, sw, sh);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = 'rgba(0,0,0,.58)';
-      ctx.fillRect(0, 0, width, height);
-    }
+    ctx.drawImage(background, 0, 0, width, height);
 
     fields.length = 0;
     for (const [id,p] of pointers) {
@@ -154,9 +168,23 @@
       ctx.fillStyle = glow;
       ctx.fillRect(p.x-radius,p.y-radius,radius*2,radius*2);
     }
-    requestAnimationFrame(render);
+    raf = 0;
+    if (!document.hidden) raf = requestAnimationFrame(render);
   }
-  requestAnimationFrame(render);
+  function startRendering() {
+    if (!document.hidden && !raf) raf = requestAnimationFrame(render);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      last = 0;
+    } else {
+      startRendering();
+    }
+  });
+  reducedMotion.addEventListener?.('change', () => startRendering());
+  startRendering();
 
   hintTimer = setTimeout(() => hint.classList.add('hidden'), 6500);
 })();
