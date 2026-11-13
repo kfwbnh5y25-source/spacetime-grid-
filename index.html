@@ -674,7 +674,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const total=Math.min(Math.max(0,t)*0.0015,24.0);
     const active=fields.filter(m=>m.strength>.01).slice(0,MAX_GPU_POINTERS);
     if(total<1e-5||!active.length)return {sources:active.length,simTime:total,rmsPx:0,maxPx:0,samples:0};
-    const h=total/1200;
+    const h=total/2400;
     const accel=(px,py)=>{
       let ax=0,ay=0;
       for(const m of active){
@@ -687,7 +687,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     let sumSq=0,max=0,samples=0;
     const probe=(sx,sy,horizontal)=>{
       let x=sx,y=sy,vx=0,vy=0;
-      for(let k=0;k<1200;k++){
+      for(let k=0;k<2400;k++){
         const [ax,ay]=accel(x,y),mx=x+.5*h*vx,my=y+.5*h*vy;
         const [amx,amy]=accel(mx,my);
         x+=h*(vx+.5*h*ax);y+=h*(vy+.5*h*ay);
