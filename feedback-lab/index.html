@@ -315,7 +315,7 @@ async function uploadResult(snapshot){
         'apikey':'sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz',
         'Prefer':'return=minimal'
       },
-      body:JSON.stringify({client_run_id:makeRunId(),app_version:'feedback-lab-v1',report})
+      body:JSON.stringify({client_run_id:makeRunId(),app_version:'feedback-lab-v2',report})
     });
     if(!response.ok){
       const detail=await response.text();
