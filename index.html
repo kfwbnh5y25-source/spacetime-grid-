@@ -59,8 +59,8 @@
 
   function initGpu(){
     if(!gl)return false;
-    const vs="#version 300 es\nprecision highp float;\nlayout(location=0) in vec2 a_xy;\nlayout(location=1) in vec2 a_ab;\nlayout(location=2) in vec2 a_cd;\nlayout(location=3) in vec2 a_ef;\nlayout(location=4) in vec2 a_gh;\nlayout(location=5) in vec2 a_ij;\nuniform vec2 u_resolution;\nuniform float u_inv2Sigma2;\nuniform vec2 u_pointer[10];\nuniform float u_strength[10];\nuniform int u_pointerCount;\nuniform vec2 u_phase[5];\nvoid main(){\nvec2 p=a_xy;\nfor(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-a_xy;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p-=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}\nfloat wx=2.0*(a_ab.x*u_phase[0].y+a_ab.y*u_phase[0].x)+(a_cd.x*u_phase[1].y-a_cd.y*u_phase[1].x);\nfloat wy=2.0*(a_ef.x*u_phase[2].y-a_ef.y*u_phase[2].x)+(a_gh.x*u_phase[3].y+a_gh.y*u_phase[3].x);\nfloat br=0.45*(a_ij.x*u_phase[4].y+a_ij.y*u_phase[4].x);p+=vec2(wx,wy+br);\ngl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);\n}";
-    const fs='#version 300 es\nprecision mediump float;\nout vec4 color;\nvoid main(){color=vec4(0.92,0.95,1.0,0.29);}';
+    const vs="#version 300 es\nprecision highp float;\nlayout(location=0) in vec2 a_xy;\nlayout(location=1) in vec2 a_ab;\nlayout(location=2) in vec2 a_cd;\nlayout(location=3) in vec2 a_ef;\nlayout(location=4) in vec2 a_gh;\nlayout(location=5) in vec2 a_ij;\nuniform vec2 u_resolution;\nuniform vec2 u_offsetPx;\nuniform float u_inv2Sigma2;\nuniform vec2 u_pointer[10];\nuniform float u_strength[10];\nuniform int u_pointerCount;\nuniform vec2 u_phase[5];\nvoid main(){\nvec2 p=a_xy;\nfor(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-a_xy;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p-=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}\nfloat wx=2.0*(a_ab.x*u_phase[0].y+a_ab.y*u_phase[0].x)+(a_cd.x*u_phase[1].y-a_cd.y*u_phase[1].x);\nfloat wy=2.0*(a_ef.x*u_phase[2].y-a_ef.y*u_phase[2].x)+(a_gh.x*u_phase[3].y+a_gh.y*u_phase[3].x);\nfloat br=0.45*(a_ij.x*u_phase[4].y+a_ij.y*u_phase[4].x);p+=vec2(wx,wy+br);\ngl_Position=vec4(2.0*(p.x+u_offsetPx.x)/u_resolution.x-1.0,1.0-2.0*(p.y+u_offsetPx.y)/u_resolution.y,0.0,1.0);\n}";
+    const fs='#version 300 es\nprecision mediump float;\nout vec4 color;\nvoid main(){color=vec4(0.92,0.95,1.0,0.12);}';
     const compile=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
     try{const v=compile(gl.VERTEX_SHADER,vs),f=compile(gl.FRAGMENT_SHADER,fs);gpuProgram=gl.createProgram();gl.attachShader(gpuProgram,v);gl.attachShader(gpuProgram,f);gl.linkProgram(gpuProgram);gl.deleteShader(v);gl.deleteShader(f);if(!gl.getProgramParameter(gpuProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(gpuProgram));gpuVertexBuffer=gl.createBuffer();gpuIndexBuffer=gl.createBuffer();gl.useProgram(gpuProgram);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);return true;}
     catch(e){gpuError=String(e&&e.message||e);console.warn('WebGL2 unavailable; retaining Canvas 2D renderer:',e);gpuCanvas.style.display='none';return false;}
@@ -85,7 +85,7 @@
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_strength[0]'),strength);
     const rates=[.00105,.00072,.00092,.00066,.00045],phases=new Float32Array(10);for(let i=0;i<5;i++){phases[2*i]=Math.sin(t*rates[i]);phases[2*i+1]=Math.cos(t*rates[i]);}
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_phase[0]'),phases);
-    gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gpuIndexBuffer);gl.drawElements(gl.LINES,gpuIndexCount,gl.UNSIGNED_INT,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gpuIndexBuffer);\n    const offsetLoc=gl.getUniformLocation(gpuProgram,'u_offsetPx');\n    for(const offset of [[0,0],[.5,0],[-.5,0],[0,.5],[0,-.5]]){gl.uniform2f(offsetLoc,offset[0],offset[1]);gl.drawElements(gl.LINES,gpuIndexCount,gl.UNSIGNED_INT,0);}
   }
 
   const smooth = (a,b,t) => a+(b-a)*t;
@@ -243,7 +243,7 @@
   }
 
   function render(now){
-    const targetHz=benchMode?frameCap:120,frameInterval=1000/targetHz;
+    const targetHz=benchMode?frameCap:60,frameInterval=1000/targetHz;
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
     if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();perf.frames++;if(perf.samples.length===30&&perf.baselineFrameMs===null)perf.baselineFrameMs=percentile(perf.samples,.5);else if(perf.baselineFrameMs!==null&&frameDelta>perf.baselineFrameMs*1.5)perf.dropped+=Math.max(1,Math.round(frameDelta/perf.baselineFrameMs)-1);perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
@@ -262,7 +262,7 @@
     if(gpuEnabled)drawGpu(t);
     else {
       const g=geometry,times=[Math.sin(t*.00105),Math.cos(t*.00105),Math.sin(t*.00072),Math.cos(t*.00072),Math.sin(t*.00092),Math.cos(t*.00092),Math.sin(t*.00066),Math.cos(t*.00066),Math.sin(t*.00045),Math.cos(t*.00045)];
-      ctx.lineWidth=.75;ctx.strokeStyle='rgba(235,242,255,.29)';ctx.beginPath();
+      ctx.lineWidth=1.25;ctx.strokeStyle='rgba(235,242,255,.29)';ctx.beginPath();
       for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;for(let i=from;i<to;i++){warpVertex(g,i,times);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
       ctx.stroke();
     }
