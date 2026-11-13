@@ -135,7 +135,7 @@ function gravityMathSelfTest(){
  return {pass:maxRoundTripError<1e-10&&maxNormError<1e-10,maxRoundTripError,maxNormError,angles:[0,37,90,180,270,359],method:'proper device-to-screen rotation; inverse uses negative screen angle'};
 }
 function massScreenPositions(){
-  const phoneMode=matchMedia('(pointer:coarse)').matches,angle=(phoneMode?gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+  const phoneMode=matchMedia('(pointer:coarse)').matches,angle=(phoneMode?-gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
   const baseX=state.w/2+state.camera.x,baseY=state.h/2+state.camera.y,p=massCentroidWorld();
   return state.masses.map(m=>{const dx=(m.x-p.x)*state.camera.scale,dy=(m.y-p.y)*state.camera.scale;return {x:+(baseX+p.x*state.camera.scale+c*dx-s*dy).toFixed(2),y:+(baseY+p.y*state.camera.scale+s*dx+c*dy).toFixed(2)};});
 }
@@ -287,7 +287,7 @@ function massCentroidWorld(){
 }
 function screenToWorld(x,y){
   const phoneMode=matchMedia('(pointer:coarse)').matches;
-  const angle=(phoneMode?gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
+  const angle=(phoneMode?-gridRotation:state.camera.rotation)*Math.PI/180,c=Math.cos(angle),s=Math.sin(angle);
   const sx=(x-state.w/2-state.camera.x)/state.camera.scale,sy=(y-state.h/2-state.camera.y)/state.camera.scale;
   if(phoneMode){const p=massCentroidWorld(),dx=sx-p.x,dy=sy-p.y;return {x:p.x+c*dx+s*dy,y:p.y-s*dx+c*dy};}
   return {x:c*sx-s*sy,y:s*sx+c*sy};
@@ -326,7 +326,7 @@ function draw(){
     const baseX=w/2+state.camera.x,baseY=h/2+state.camera.y,scale=state.camera.scale;
     const pivotX=baseX+mx*scale,pivotY=baseY+my*scale;
     ctx.save();
-    ctx.translate(pivotX,pivotY);ctx.rotate(gridRotation*Math.PI/180);ctx.translate(-pivotX,-pivotY);
+    ctx.translate(pivotX,pivotY);ctx.rotate(-gridRotation*Math.PI/180);ctx.translate(-pivotX,-pivotY);
     ctx.translate(baseX,baseY);ctx.scale(scale,scale);
     if(gridCanvas)ctx.drawImage(gridCanvas,-w*1.5,-h*1.5,w*3,h*3);
     for(const m of state.masses){
