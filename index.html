@@ -191,7 +191,7 @@ uniform int u_pointerCount;
 uniform vec2 u_phase[5];
 out float v_edge;
 vec2 warp(vec2 p,vec2 t0,vec2 t1,vec2 t2,vec2 t3,vec2 t4){
- for(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-p;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p-=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}
+ for(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-p;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p+=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}
  float wx=5.5*(t0.x*u_phase[0].y+t0.y*u_phase[0].x)+2.8*(t1.x*u_phase[1].y-t1.y*u_phase[1].x);
  float wy=5.5*(t2.x*u_phase[2].y-t2.y*u_phase[2].x)+2.8*(t3.x*u_phase[3].y+t3.y*u_phase[3].x);
  float br=1.5*(t4.x*u_phase[4].y+t4.y*u_phase[4].x);
@@ -475,7 +475,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       const qi=q*(gaussian.length-1)/8,lo=qi|0;
       const influence=gaussian[lo]+(gaussian[Math.min(lo+1,gaussian.length-1)]-gaussian[lo])*(qi-lo);
       const bend=55*p.strength*influence, invR=1/Math.sqrt(r2);
-      ox-=dx*invR*bend;oy-=dy*invR*bend;
+      ox+=dx*invR*bend;oy+=dy*invR*bend;
     }
     const [s1,c1,s2,c2,s3,c3,s4,c4,s5,c5]=times;
     const waveX=5.5*(g.sinA[i]*c1+g.cosA[i]*s1)+2.8*(g.sinB[i]*c2-g.cosB[i]*s2);
