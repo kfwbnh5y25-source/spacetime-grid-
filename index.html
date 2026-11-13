@@ -59,8 +59,50 @@
 
   function initGpu(){
     if(!gl)return false;
-    const vs="#version 300 es\nprecision highp float;\nlayout(location=0) in vec2 a_xy;\nlayout(location=1) in vec2 a_ab;\nlayout(location=2) in vec2 a_cd;\nlayout(location=3) in vec2 a_ef;\nlayout(location=4) in vec2 a_gh;\nlayout(location=5) in vec2 a_ij;\nuniform vec2 u_resolution;\nuniform vec2 u_offsetPx;\nuniform float u_inv2Sigma2;\nuniform vec2 u_pointer[10];\nuniform float u_strength[10];\nuniform int u_pointerCount;\nuniform vec2 u_phase[5];\nvoid main(){\nvec2 p=a_xy;\nfor(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-a_xy;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p-=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}\nfloat wx=2.0*(a_ab.x*u_phase[0].y+a_ab.y*u_phase[0].x)+(a_cd.x*u_phase[1].y-a_cd.y*u_phase[1].x);\nfloat wy=2.0*(a_ef.x*u_phase[2].y-a_ef.y*u_phase[2].x)+(a_gh.x*u_phase[3].y+a_gh.y*u_phase[3].x);\nfloat br=0.45*(a_ij.x*u_phase[4].y+a_ij.y*u_phase[4].x);p+=vec2(wx,wy+br);\ngl_Position=vec4(2.0*(p.x+u_offsetPx.x)/u_resolution.x-1.0,1.0-2.0*(p.y+u_offsetPx.y)/u_resolution.y,0.0,1.0);\n}";
-    const fs='#version 300 es\nprecision mediump float;\nout vec4 color;\nvoid main(){color=vec4(0.92,0.95,1.0,0.12);}';
+    const vs=`#version 300 es
+precision highp float;
+layout(location=0) in vec2 a_xy;
+layout(location=1) in vec2 a_t0;
+layout(location=2) in vec2 a_t1;
+layout(location=3) in vec2 a_t2;
+layout(location=4) in vec2 a_t3;
+layout(location=5) in vec2 a_t4;
+layout(location=6) in vec2 a_other;
+layout(location=7) in vec2 a_o0;
+layout(location=8) in vec2 a_o1;
+layout(location=9) in vec2 a_o2;
+layout(location=10) in vec2 a_o3;
+layout(location=11) in vec2 a_o4;
+layout(location=12) in float a_side;
+layout(location=13) in float a_end;
+uniform vec2 u_resolution;
+uniform float u_inv2Sigma2;
+uniform vec2 u_pointer[10];
+uniform float u_strength[10];
+uniform int u_pointerCount;
+uniform vec2 u_phase[5];
+out float v_edge;
+vec2 warp(vec2 p,vec2 t0,vec2 t1,vec2 t2,vec2 t3,vec2 t4){
+ for(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-p;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p-=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}
+ float wx=2.0*(t0.x*u_phase[0].y+t0.y*u_phase[0].x)+(t1.x*u_phase[1].y-t1.y*u_phase[1].x);
+ float wy=2.0*(t2.x*u_phase[2].y-t2.y*u_phase[2].x)+(t3.x*u_phase[3].y+t3.y*u_phase[3].x);
+ float br=.45*(t4.x*u_phase[4].y+t4.y*u_phase[4].x);
+ return p+vec2(wx,wy+br);
+}
+void main(){
+ vec2 p0=warp(a_xy,a_t0,a_t1,a_t2,a_t3,a_t4);
+ vec2 p1=warp(a_other,a_o0,a_o1,a_o2,a_o3,a_o4);
+ vec2 tangent=normalize(p1-p0);
+ vec2 normal=vec2(-tangent.y,tangent.x);
+ vec2 p=mix(p0,p1,a_end)+normal*a_side*.9;
+ gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
+ v_edge=a_side;
+}`;
+    const fs=`#version 300 es
+precision mediump float;
+in float v_edge;
+out vec4 color;
+void main(){float coverage=1.0-smoothstep(.55,1.0,abs(v_edge));color=vec4(.92,.95,1.0,.58*coverage);}`;
     const compile=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
     try{const v=compile(gl.VERTEX_SHADER,vs),f=compile(gl.FRAGMENT_SHADER,fs);gpuProgram=gl.createProgram();gl.attachShader(gpuProgram,v);gl.attachShader(gpuProgram,f);gl.linkProgram(gpuProgram);gl.deleteShader(v);gl.deleteShader(f);if(!gl.getProgramParameter(gpuProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(gpuProgram));gpuVertexBuffer=gl.createBuffer();gpuIndexBuffer=gl.createBuffer();gl.useProgram(gpuProgram);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);return true;}
     catch(e){gpuError=String(e&&e.message||e);console.warn('WebGL2 unavailable; retaining Canvas 2D renderer:',e);gpuCanvas.style.display='none';return false;}
@@ -68,13 +110,26 @@
   const gpuEnabled=initGpu();
   function uploadGpuGeometry(g){
     if(!gpuEnabled)return;
-    const n=g.x.length,data=new Float32Array(n*12);
-    for(let i=0;i<n;i++){const o=i*12;data[o]=g.x[i];data[o+1]=g.y[i];data[o+2]=g.sinA[i];data[o+3]=g.cosA[i];data[o+4]=g.sinB[i];data[o+5]=g.cosB[i];data[o+6]=g.sinC[i];data[o+7]=g.cosC[i];data[o+8]=g.sinD[i];data[o+9]=g.cosD[i];data[o+10]=g.sinE[i];data[o+11]=g.cosE[i];}
-    const ids=[];for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:n;for(let i=from;i<to-1;i++)ids.push(i,i+1);}
-    const indices=new Uint32Array(ids);gpuIndexCount=indices.length;
+    const segments=[];
+    const pushVertex=(ia,ib,side,end)=>{
+      const a=ia*2,b=ib*2;
+      const vals=[g.x[ia],g.y[ia],g.sinA[ia],g.cosA[ia],g.sinB[ia],g.cosB[ia],g.sinC[ia],g.cosC[ia],g.sinD[ia],g.cosD[ia],g.sinE[ia],g.cosE[ia],
+        g.x[ib],g.y[ib],g.sinA[ib],g.cosA[ib],g.sinB[ib],g.cosB[ib],g.sinC[ib],g.cosC[ib],g.sinD[ib],g.cosD[ib],g.sinE[ib],g.cosE[ib],side,end];
+      for(let k=0;k<vals.length;k++)segments.push(vals[k]);
+    };
+    for(let line=0;line<g.starts.length;line++){
+      const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;
+      for(let i=from;i<to-1;i++){
+        pushVertex(i,i+1,-1,0);pushVertex(i,i+1,1,0);pushVertex(i,i+1,-1,1);
+        pushVertex(i,i+1,-1,1);pushVertex(i,i+1,1,0);pushVertex(i,i+1,1,1);
+      }
+    }
+    const data=new Float32Array(segments);
+    gpuIndexCount=data.length/26;
     gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gpuIndexBuffer);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,indices,gl.STATIC_DRAW);
-    for(let i=0;i<6;i++){gl.enableVertexAttribArray(i);gl.vertexAttribPointer(i,2,gl.FLOAT,false,48,i*8);}
+    const stride=26*4;
+    const attrs=[[0,2,0],[1,2,2],[2,2,4],[3,2,6],[4,2,8],[5,2,10],[6,2,12],[7,2,14],[8,2,16],[9,2,18],[10,2,20],[11,2,22],[12,1,24],[13,1,25]];
+    for(const [loc,size,offset] of attrs){gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,size,gl.FLOAT,false,stride,offset*4);}
   }
   function drawGpu(t){
     if(!gpuEnabled)return;
@@ -85,9 +140,8 @@
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_strength[0]'),strength);
     const rates=[.00105,.00072,.00092,.00066,.00045],phases=new Float32Array(10);for(let i=0;i<5;i++){phases[2*i]=Math.sin(t*rates[i]);phases[2*i+1]=Math.cos(t*rates[i]);}
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_phase[0]'),phases);
-    gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gpuIndexBuffer);
-    const offsetLoc=gl.getUniformLocation(gpuProgram,'u_offsetPx');
-    for(const offset of [[0,0],[.5,0],[-.5,0],[0,.5],[0,-.5]]){gl.uniform2f(offsetLoc,offset[0],offset[1]);gl.drawElements(gl.LINES,gpuIndexCount,gl.UNSIGNED_INT,0);}
+    gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);
+    gl.drawArrays(gl.TRIANGLES,0,gpuIndexCount);
   }
 
   const smooth = (a,b,t) => a+(b-a)*t;
