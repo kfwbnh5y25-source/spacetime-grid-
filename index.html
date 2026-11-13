@@ -51,7 +51,7 @@
 </style>
 </head>
 <body>
-<canvas id="universe" aria-label="Interactive curved spacetime grid. Move or touch to bend the grid."></canvas>
+<canvas id="universe" aria-label="Interactive spacetime grid showing freely falling timelike geodesics. Touch to place a gravitating mass."></canvas>
 <canvas id="gpuCanvas" aria-hidden="true"></canvas>
 <div class="hint" id="hint">move · touch · explore</div>
 <div class="planet-cursor" id="planetCursor" aria-hidden="true"></div>
@@ -190,36 +190,39 @@ uniform float u_softening;
 uniform vec2 u_phase[5];
 out float v_edge;
 
-// Weak-field GR in isotropic coordinates: n_opt ~= 1 - 2 Phi/c^2.
-// For Phi=-GM/sqrt(r^2+eps^2), a null ray obeys
-// d^2 x_perp/ds^2 ~= r_s * b / ((s-q)^2+b^2+eps^2)^(3/2),
-// where r_s=2GM/c^2. This is its analytic first-order (Born) integral.
-float lensIntegral(float s,float q,float b2){
- float v1=s-q,v0=-q;
- float root1=sqrt(v1*v1+b2),root0=sqrt(v0*v0+b2);
- float f1=v1/(b2*root1),f0=v0/(b2*root0);
- return max(0.0,(s-q)*(f1-f0)+(1.0/root1-1.0/root0));
+// Timelike geodesics in the weak-field, slow-motion limit of the
+// isotropic Schwarzschild metric. In dimensionless screen units:
+// d²x/dτ² = -(r_s/2) (x-X)/(|x-X|²+eps²)^(3/2).
+// Each grid sample is a freely-falling test particle with initial
+// velocity tangent to its grid line. Midpoint integration advances it.
+uniform float u_time;
+vec2 geodesicAccel(vec2 p){
+ vec2 a=vec2(0.0);
+ for(int i=0;i<10;i++){
+  if(i>=u_pointerCount)break;
+  vec2 d=p-u_pointer[i];
+  float r2=dot(d,d)+u_softening*u_softening;
+  a-=0.5*u_rS[i]*d/(r2*sqrt(r2));
+ }
+ return a;
+}
+vec2 traceTimelike(vec2 p,vec2 direction){
+ vec2 v=direction*0.22;
+ float total=mod(u_time,12000.0)*0.0015;
+ float h=total/12.0;
+ for(int k=0;k<12;k++){
+  vec2 a0=geodesicAccel(p);
+  vec2 vm=v+0.5*h*a0;
+  vec2 pm=p+0.5*h*v;
+  vec2 am=geodesicAccel(pm);
+  p+=h*vm;
+  v+=h*am;
+ }
+ return p;
 }
 vec2 warp(vec2 pA,vec2 pB,float endpoint,vec2 t0,vec2 t1,vec2 t2,vec2 t3,vec2 t4){
  vec2 p=mix(pA,pB,endpoint);
- vec2 direction=normalize(pB-pA);
- bool horizontal=abs(direction.x)>abs(direction.y);
- vec2 origin=horizontal?vec2(-u_rayMargin,p.y):vec2(p.x,-u_rayMargin);
- float s=max(0.0,dot(p-origin,direction));
- vec2 normal=vec2(-direction.y,direction.x);
- vec2 displacement=vec2(0.0);
- for(int i=0;i<10;i++){
-  if(i>=u_pointerCount)break;
-  vec2 rel=u_pointer[i]-origin;
-  float q=dot(rel,direction),b=dot(rel,normal);
-  float b2=b*b+u_softening*u_softening;
-  displacement+=normal*(u_rS[i]*b*lensIntegral(s,q,b2));
- }
- p+=displacement;
- float wx=5.5*(t0.x*u_phase[0].y+t0.y*u_phase[0].x)+2.8*(t1.x*u_phase[1].y-t1.y*u_phase[1].x);
- float wy=5.5*(t2.x*u_phase[2].y-t2.y*u_phase[2].x)+2.8*(t3.x*u_phase[3].y+t3.y*u_phase[3].x);
- float br=1.5*(t4.x*u_phase[4].y+t4.y*u_phase[4].x);
- return p+vec2(wx,wy+br);
+ return traceTimelike(p,normalize(pB-pA));
 }
 void main(){
  vec2 p0=warp(a_xy,a_other,0.0,a_t0,a_t1,a_t2,a_t3,a_t4);
@@ -269,6 +272,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
         gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_rayMargin'),rayMargin);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),9.0);
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t);
     const xy=new Float32Array(20),rS=new Float32Array(10);let count=0;
     for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x;xy[count*2+1]=p.y;rS[count]=2.2*Math.max(0,Math.min(1,p.strength));count++;}
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
@@ -496,28 +500,26 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   });
 
   let warpedX=0, warpedY=0;
-  function lensIntegral(s,q,b2){
-    const v1=s-q,v0=-q,root1=Math.sqrt(v1*v1+b2),root0=Math.sqrt(v0*v0+b2);
-    const f1=v1/(b2*root1),f0=v0/(b2*root0);
-    return Math.max(0,(s-q)*(f1-f0)+(1/root1-1/root0));
-  }
-  function warpVertex(g,i,times,horizontal){
-    const x=g.x[i],y=g.y[i];
-    const originX=horizontal?-rayMargin:x,originY=horizontal?y:-rayMargin;
-    const s=horizontal?x-originX:y-originY;
-    const normalX=horizontal?0:-1,normalY=horizontal?1:0;
-    let displacement=0;
-    for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
-      const mass=fields[j],rx=mass.x-originX,ry=mass.y-originY;
-      const q=horizontal?rx:ry,b=horizontal?ry:-rx;
-      displacement+=2.2*Math.max(0,Math.min(1,mass.strength))*b*lensIntegral(s,q,b*b+81);
+  function warpVertex(g,i,t,horizontal){
+    let x=g.x[i],y=g.y[i];
+    let vx=horizontal?0.22:0,vy=horizontal?0:0.22;
+    const total=(t%12000)*0.0015,h=total/12;
+    const accel=(px,py)=>{
+      let ax=0,ay=0;
+      for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
+        const m=fields[j],dx=px-m.x,dy=py-m.y,r2=dx*dx+dy*dy+81;
+        const scale=-1.1*Math.max(0,Math.min(1,m.strength))/(r2*Math.sqrt(r2));
+        ax+=scale*dx;ay+=scale*dy;
+      }
+      return [ax,ay];
+    };
+    for(let k=0;k<12;k++){
+      const [ax,ay]=accel(x,y),mx=x+0.5*h*vx,my=y+0.5*h*vy;
+      const [amx,amy]=accel(mx,my);
+      x+=h*(vx+0.5*h*ax);y+=h*(vy+0.5*h*ay);
+      vx+=h*amx;vy+=h*amy;
     }
-    const ox=x+normalX*displacement,oy=y+normalY*displacement;
-    const [s1,c1,s2,c2,s3,c3,s4,c4,s5,c5]=times;
-    const waveX=5.5*(g.sinA[i]*c1+g.cosA[i]*s1)+2.8*(g.sinB[i]*c2-g.cosB[i]*s2);
-    const waveY=5.5*(g.sinC[i]*c3-g.cosC[i]*s3)+2.8*(g.sinD[i]*c4+g.cosD[i]*s4);
-    const breathe=1.5*(g.sinE[i]*c5+g.cosE[i]*s5);
-    warpedX=ox+waveX;warpedY=oy+waveY+breathe;
+    warpedX=x;warpedY=y;
   }
   function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
   function report(){
@@ -598,9 +600,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
     if(gpuEnabled)drawGpu(t);
     else {
-      const g=geometry,times=[Math.sin(t*.00105),Math.cos(t*.00105),Math.sin(t*.00072),Math.cos(t*.00072),Math.sin(t*.00092),Math.cos(t*.00092),Math.sin(t*.00066),Math.cos(t*.00066),Math.sin(t*.00045),Math.cos(t*.00045)];
+      const g=geometry;
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
-      for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line>=g.verticalLineCount;for(let i=from;i<to;i++){warpVertex(g,i,times,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
+      for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line>=g.verticalLineCount;for(let i=from;i<to;i++){warpVertex(g,i,t,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
       ctx.stroke();
     }
     for(const p of fields){
