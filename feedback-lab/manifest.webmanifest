@@ -1,0 +1,15 @@
+{
+  "name": "Spacetime Feedback Lab",
+  "short_name": "Spacetime Lab",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#05070c",
+  "theme_color": "#05070c",
+  "orientation": "any",
+  "description": "Standalone sensor, gesture, haptics, and performance experiment.",
+  "icons": [
+    {"src":"../icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

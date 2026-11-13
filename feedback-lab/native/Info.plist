@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSMotionUsageDescription</key>
+  <string>Spacetime Feedback Lab uses motion sensors to measure screen-relative gravity and move test masses.</string>
+</dict>
+</plist>

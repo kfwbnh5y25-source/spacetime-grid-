@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spacetime Lab">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icon.svg">
+<title>Spacetime — Feedback Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#05070c;--panel:rgba(13,18,28,.88);--line:rgba(186,207,244,.17);--muted:#8795aa;--text:#eef4ff;--accent:#9dc8ff}
+*{box-sizing:border-box;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}
+body{overscroll-behavior:none;touch-action:none}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.toolbar{position:fixed;z-index:5;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));display:flex;flex-wrap:wrap;gap:7px;align-items:center;transition:top .32s cubic-bezier(.2,.7,.2,1),bottom .32s cubic-bezier(.2,.7,.2,1)}
+@media(orientation:landscape){.toolbar{top:auto;bottom:max(10px,env(safe-area-inset-bottom))}}
+button{min-height:38px;border:1px solid rgba(208,225,255,.22);border-radius:20px;padding:0 13px;background:rgba(13,20,32,.82);color:#edf4ff;font:600 11px/1 system-ui;letter-spacing:.035em;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);touch-action:manipulation}
+button:active{transform:scale(.96);background:rgba(55,78,112,.9)}
+button.primary{background:rgba(64,104,154,.5);border-color:rgba(157,200,255,.55)}
+button.active{background:rgba(65,113,164,.7);border-color:rgba(172,213,255,.8)}
+button:disabled{opacity:.45}
+#metrics{position:fixed;z-index:4;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));max-height:36vh;overflow:auto;padding:11px 13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:10px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#dfe9f8;touch-action:pan-y}
+@media(orientation:landscape){#metrics{max-width:390px;max-height:29vh;left:10px;right:auto;bottom:max(10px,env(safe-area-inset-bottom))}}
+#metrics header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px}
+#metrics strong{font:700 10px/1.2 system-ui;letter-spacing:.12em}
+#status{color:#9fcaff}
+.metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.metric{min-width:0;padding:5px 7px;border:1px solid rgba(190,210,245,.1);border-radius:8px;background:rgba(255,255,255,.025)}
+.metric b{display:block;font-size:9px;color:var(--muted);font-weight:500}
+.metric span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-variant-numeric:tabular-nums}
+#runState{margin-top:7px;color:#aabbd2;white-space:normal}
+#testResults{margin-top:6px;color:#cfe1fa;white-space:pre-wrap;overflow-wrap:anywhere}
+#installHint{color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.toolbar,button{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-label="Interactive spacetime feedback experiment"></canvas>
+<nav class="toolbar" aria-label="Experiment controls">
+<button id="motionBtn" class="primary">ENABLE GRAVITY</button>
+<button id="addBtn">ADD MASS</button>
+<button id="resetBtn">RESET</button>
+<button id="hapticBtn">WEB HAPTIC TEST</button>
+<button id="wakeBtn">KEEP AWAKE</button>
+<button id="shareBtn">SHARE RESULTS</button>
+<button id="exportBtn">EXPORT JSON</button>
+<button id="sampleBtn">10s MEASURE</button>
+</nav>
+<section id="metrics" aria-live="polite">
+<header><strong>SPACETIME FEEDBACK LAB · PWA</strong><span id="status">INITIALISING</span></header>
+<div class="metric-grid">
+<div class="metric"><b>FRAME RATE</b><span id="fps">—</span></div>
+<div class="metric"><b>FRAME P95</b><span id="frameP95">—</span></div>
+<div class="metric"><b>INPUT → FRAME</b><span id="inputLatency">—</span></div>
+<div class="metric"><b>MOTION RATE</b><span id="motionRate">—</span></div>
+<div class="metric"><b>SCREEN GRAVITY</b><span id="gravity">—</span></div>
+<div class="metric"><b>ORIENTATION</b><span id="orientation">—</span></div>
+<div class="metric"><b>WAKE LOCK</b><span id="wake">—</span></div>
+<div class="metric"><b>WEB HAPTICS</b><span id="haptics">—</span></div>
+<div class="metric"><b>INDEXEDDB</b><span id="dbTime">—</span></div>
+</div>
+<div id="runState">Drop masses, enable gravity, rotate the phone, drag/pinch the scene. The scene remains center-anchored; only this toolbar changes edge.</div>
+<div id="testResults"></div>
+</section>
+<script>
+(function(){
+'use strict';
+const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:false,desynchronized:true});
+const $=id=>document.getElementById(id);
+const state={w:0,h:0,dpr:1,camera:{x:0,y:0,scale:1,rotation:0},target:{x:0,y:0,scale:1},masses:[],sensitivity:1,damping:2.2};
+const metrics={frames:0,lastFrame:0,frameTimes:[],inputTimes:[],motionCount:0,motionRate:0,lastMotion:0,gravityX:0,gravityY:0,orientation:0,orientationChanges:0,orientationChangeAt:0,dbWriteMs:null,hapticDispatchMs:null,runStart:0,runActive:false,runFrames:[],runMotion:0,runInputs:[],runOrientations:0};
+let raf=0,lastSave=0,saveTimer=0,resizeTimer=0,motionEnabled=false,motionGranted=false,motionFilteredX=0,motionFilteredY=0,motionListener=null,wakeSentinel=null,db=null,controllerReloading=false,serviceWorkerRegistration=null;
+const pointers=new Map();let gesture=null,panInertia={x:0,y:0},lastPointerFrame=0;
+function now(){return performance.now();}
+function currentAngle(){const a=Number.isFinite(screen.orientation&&screen.orientation.angle)?screen.orientation.angle:(Number.isFinite(window.orientation)?window.orientation:0);return ((a%360)+360)%360;}
+function resize(){
+  const oldW=state.w,oldH=state.h;
+  state.w=window.innerWidth;state.h=window.innerHeight;
+  state.dpr=Math.min(window.devicePixelRatio||1,2.5);
+  canvas.width=Math.round(state.w*state.dpr);canvas.height=Math.round(state.h*state.dpr);
+  ctx.setTransform(state.dpr,0,0,state.dpr,0,0);
+  metrics.orientation=currentAngle();
+  $('orientation').textContent=state.w>=state.h?'LANDSCAPE '+metrics.orientation+'°':'PORTRAIT '+metrics.orientation+'°';
+  if(oldW&&oldH){/* World coordinates are center-relative: changing viewport size never rescales or teleports masses. */}
+}
+function scheduleResize(){
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{resize();},140);
+}
+window.addEventListener('resize',scheduleResize,{passive:true});
+window.addEventListener('orientationchange',()=>{
+  metrics.orientationChanges++;metrics.orientationChangeAt=now();
+  motionFilteredX=motionFilteredY=0;
+  scheduleResize();
+},{passive:true});
+if(screen.orientation&&screen.orientation.addEventListener)screen.orientation.addEventListener('change',()=>{
+  metrics.orientationChanges++;metrics.orientationChangeAt=now();motionFilteredX=motionFilteredY=0;scheduleResize();
+});
+resize();
+function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    const record={camera:state.camera,masses:state.masses,sensitivity:state.sensitivity,damping:state.damping,savedAt:new Date().toISOString()};
+    const t=now();
+    try{
+      if(db){const tx=db.transaction('state','readwrite');tx.objectStore('state').put(record,'current');await new Promise((resolve,reject)=>{tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
+      else sessionStorage.setItem('feedback-state',JSON.stringify(record));
+      metrics.dbWriteMs=now()-t;$('dbTime').textContent=metrics.dbWriteMs.toFixed(1)+' ms';$('dbTime').style.color='#d8f6e4';
+    }catch(e){$('dbTime').textContent='WRITE ERROR';$('dbTime').style.color='#ffb6a6';}
+  },160);
+}
+function openDatabase(){
+  return new Promise((resolve,reject)=>{
+    if(!('indexedDB'in window)){resolve(null);return;}
+    const request=indexedDB.open('spacetime-feedback-lab',1);
+    request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains('state'))request.result.createObjectStore('state');};
+    request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+  });
+}
+async function loadState(){
+  try{
+    db=await openDatabase();
+    let value=null;
+    if(db)value=await new Promise((resolve,reject)=>{const r=db.transaction('state').objectStore('state').get('current');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+    if(!value)value=JSON.parse(sessionStorage.getItem('feedback-state')||'null');
+    if(value){
+      if(value.camera)Object.assign(state.camera,value.camera);
+      if(value.masses&&Array.isArray(value.masses))state.masses=value.masses;
+      if(Number.isFinite(value.sensitivity))state.sensitivity=value.sensitivity;
+      if(Number.isFinite(value.damping))state.damping=value.damping;
+    }
+    $('dbTime').textContent=db?'READY':'SESSION FALLBACK';
+  }catch(e){$('dbTime').textContent='UNAVAILABLE';}
+}
+function addMass(){
+  const n=state.masses.length,angle=n*2.399963,rad=n===0?0:Math.min(105,24+n*7);
+  state.masses.push({x:Math.cos(angle)*rad,y:Math.sin(angle)*rad,vx:0,vy:0,strength:1});
+  $('runState').textContent='Masses: '+state.masses.length+' · gravity moves particles in the active screen frame.';
+  pulse([18]);saveState();recordInputStart(now());
+}
+function reset(){
+  state.masses=[];state.camera={x:0,y:0,scale:1,rotation:0};state.target={x:0,y:0,scale:1};
+  motionFilteredX=motionFilteredY=0;panInertia={x:0,y:0};render();saveState();pulse([12,35,12]);
+  $('runState').textContent='Experiment reset. Camera and masses returned to baseline.';
+}
+function pulse(pattern){
+  if(typeof navigator.vibrate!=='function')return false;
+  const t=now();let ok=false;
+  try{ok=navigator.vibrate(pattern)===true;}catch(e){}
+  metrics.hapticDispatchMs=now()-t;
+  $('haptics').textContent=ok?'DISPATCHED':'API PRESENT / NO CONFIRM';
+  $('haptics').style.color=ok?'#b9f4d0':'#ffd19b';
+  return ok;
+}
+$('haptics').textContent=typeof navigator.vibrate==='function'?'AVAILABLE (VERIFY)':'NOT EXPOSED';
+$('hapticBtn').addEventListener('click',e=>{
+  const t=now();recordInputStart(t);
+  const ok=pulse([18,45,18]);
+  $('runState').textContent=ok?'Browser accepted the vibration pattern. Physical actuator output still needs user verification.':'No Web Vibration API on this browser. iOS PWA cannot access Core Haptics; use the native companion for actuator tests.';
+});
+$('addBtn').addEventListener('click',addMass);
+$('resetBtn').addEventListener('click',reset);
+function cameraToTarget(patch){
+  Object.assign(state.target,patch);
+}
+function screenToWorld(x,y){
+  const a=-state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a),sx=(x-state.w/2-state.camera.x)/state.camera.scale,sy=(y-state.h/2-state.camera.y)/state.camera.scale;
+  return {x:c*sx-s*sy,y:s*sx+c*sy};
+}
+function worldVectorFromScreen(x,y){
+  const a=-state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+  return {x:(c*x-s*y)/state.camera.scale,y:(s*x+c*y)/state.camera.scale};
+}
+function draw(){
+  const w=state.w,h=state.h;
+  ctx.fillStyle='#05070c';ctx.fillRect(0,0,w,h);
+  ctx.save();ctx.translate(w/2+state.camera.x,h/2+state.camera.y);ctx.rotate(state.camera.rotation*Math.PI/180);ctx.scale(state.camera.scale,state.camera.scale);
+  const step=38,extent=Math.max(w,h)*1.25;
+  ctx.lineWidth=1;ctx.strokeStyle='rgba(185,211,255,.42)';
+  for(let x=-extent;x<=extent;x+=step){ctx.beginPath();for(let y=-extent;y<=extent;y+=5){const bend=0;const px=x+Math.sin(y*.012)*bend,py=y+Math.sin(x*.01)*bend;if(y===-extent)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
+  for(let y=-extent;y<=extent;y+=step){ctx.beginPath();for(let x=-extent;x<=extent;x+=5){const bend=0;const px=x+Math.sin(y*.012)*bend,py=y+Math.sin(x*.01)*bend;if(x===-extent)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();}
+  for(const m of state.masses){
+    const r=95,g=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,r);
+    g.addColorStop(0,'rgba(175,211,255,.22)');g.addColorStop(.3,'rgba(90,145,205,.09)');g.addColorStop(1,'rgba(65,110,170,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(m.x,m.y,r,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#d9eaff';ctx.beginPath();ctx.arc(m.x,m.y,4.5,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+}
+function stepPhysics(dtMs){
+  const dt=Math.min(.04,Math.max(0,dtMs/1000));if(!dt||!state.masses.length)return;
+  const a=state.camera.rotation*Math.PI/180,c=Math.cos(a),s=Math.sin(a);
+  const force=180*state.sensitivity;
+  const worldG=worldVectorFromScreen(motionFilteredX*force,motionFilteredY*force);
+  const damp=Math.exp(-state.damping*dt),minX=-state.w/(2*state.camera.scale)+10,maxX=state.w/(2*state.camera.scale)-10,minY=-state.h/(2*state.camera.scale)+10,maxY=state.h/(2*state.camera.scale)-10;
+  for(const m of state.masses){
+    m.vx=(m.vx+worldG.x*dt)*damp;m.vy=(m.vy+worldG.y*dt)*damp;m.x+=m.vx*dt;m.y+=m.vy*dt;
+    if(m.x<minX){m.x=minX;m.vx=Math.abs(m.vx)*.22;}if(m.x>maxX){m.x=maxX;m.vx=-Math.abs(m.vx)*.22;}
+    if(m.y<minY){m.y=minY;m.vy=Math.abs(m.vy)*.22;}if(m.y>maxY){m.y=maxY;m.vy=-Math.abs(m.vy)*.22;}
+  }
+}
+function frame(t){
+  if(metrics.lastFrame){const d=t-metrics.lastFrame;metrics.frameTimes.push(d);if(metrics.frameTimes.length>900)metrics.frameTimes.shift();}
+  metrics.lastFrame=t;metrics.frames++;
+  const dt=frame.last?Math.min(40,t-frame.last):16.67;frame.last=t;
+  const k=1-Math.exp(-dt/68);
+  state.camera.x+=(state.target.x-state.camera.x)*k;state.camera.y+=(state.target.y-state.camera.y)*k;state.camera.scale+=(state.target.scale-state.camera.scale)*k;
+  if(Math.abs(state.target.x-state.camera.x)<.08)state.camera.x=state.target.x;
+  if(Math.abs(state.target.y-state.camera.y)<.08)state.camera.y=state.target.y;
+  if(Math.abs(state.target.scale-state.camera.scale)<.0005)state.camera.scale=state.target.scale;
+  stepPhysics(dt);draw();
+  if(metrics.runActive)metrics.runFrames.push(dt);
+  if(metrics.frameTimes.length&&t-lastSave>500){lastSave=t;updateMetrics();}
+  raf=requestAnimationFrame(frame);
+}
+function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
+function recordInputStart(t){metrics.inputTimes.push(t);if(metrics.inputTimes.length>80)metrics.inputTimes.shift();if(metrics.runActive)metrics.runInputs.push(t);}
+function registerInputFrame(){
+  if(!metrics.inputTimes.length)return;
+  const t=metrics.inputTimes.shift(),d=Math.max(0,now()-t);
+  metrics.inputTimes.push({done:d});
+}
+function updateMetrics(){
+  const a=metrics.frameTimes,fps= a.length?1000/(a.reduce((s,v)=>s+v,0)/a.length):0;
+  const latency=metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done);
+  $('fps').textContent=fps.toFixed(1)+' fps';
+  $('frameP95').textContent=percentile(a,.95).toFixed(1)+' ms';
+  $('inputLatency').textContent=latency.length?percentile(latency,.5).toFixed(1)+' ms':'—';
+  $('motionRate').textContent=metrics.motionRate.toFixed(1)+' Hz';
+  $('gravity').textContent=motionEnabled?(motionFilteredX.toFixed(2)+', '+motionFilteredY.toFixed(2)):'OFF';
+  $('orientation').textContent=(state.w>=state.h?'LANDSCAPE ':'PORTRAIT ')+metrics.orientation+'° · '+metrics.orientationChanges+' changes';
+  $('wake').textContent=wakeSentinel&&!wakeSentinel.releasedState?'HELD':('wakeLock' in navigator?'AVAILABLE':'UNAVAILABLE');
+}
+function onMotion(e){
+  const a=e.accelerationIncludingGravity;if(!a||!Number.isFinite(a.x)||!Number.isFinite(a.y))return;
+  const theta=currentAngle()*Math.PI/180,c=Math.cos(theta),s=Math.sin(theta);
+  const gx=-a.x,gy=-a.y;
+  const sx=(gx*c-gy*s)/9.80665,sy=(-gx*s-gy*c)/9.80665;
+  const dz=v=>Math.abs(v)<.035?0:Math.sign(v)*Math.min(1,(Math.abs(v)-.035)/.965);
+  motionFilteredX+= (dz(sx)-motionFilteredX)*.18;
+  motionFilteredY+= (dz(sy)-motionFilteredY)*.18;
+  metrics.gravityX=sx;metrics.gravityY=sy;
+  metrics.motionCount++;
+  const t=now();
+  if(!metrics.lastMotion)metrics.lastMotion=t;
+  if(t-metrics.lastMotion>=1000){metrics.motionRate=metrics.motionCount*1000/(t-metrics.lastMotion);metrics.motionCount=0;metrics.lastMotion=t;}
+}
+async function toggleMotion(){
+  if(motionEnabled){motionEnabled=false;if(motionListener)window.removeEventListener('devicemotion',motionListener);motionListener=null;$('motionBtn').classList.remove('active');$('motionBtn').textContent='ENABLE GRAVITY';$('runState').textContent='Motion sensor stopped.';return;}
+  try{
+    if(!('DeviceMotionEvent'in window))throw new Error('DeviceMotion unavailable');
+    if(typeof DeviceMotionEvent.requestPermission==='function'){
+      const permission=await DeviceMotionEvent.requestPermission();
+      if(permission!=='granted')throw new Error('Permission denied');
+    }
+    motionGranted=true;motionEnabled=true;motionListener=onMotion;window.addEventListener('devicemotion',motionListener,{passive:true});
+    $('motionBtn').classList.add('active');$('motionBtn').textContent='GRAVITY ON';$('runState').textContent='Motion active. Rotate the phone: gravity is reprojected using the current screen angle; the mass coordinates are not reset.';
+  }catch(e){$('runState').textContent='Motion unavailable: '+e.message;}
+}
+$('motionBtn').addEventListener('click',()=>{recordInputStart(now());toggleMotion();});
+async function toggleWake(){
+  if(wakeSentinel){try{await wakeSentinel.release();}catch(e){}wakeSentinel=null;$('wakeBtn').classList.remove('active');$('wakeBtn').textContent='KEEP AWAKE';updateMetrics();return;}
+  if(!('wakeLock'in navigator)){ $('runState').textContent='Screen Wake Lock not exposed in this browser.';return;}
+  try{wakeSentinel=await navigator.wakeLock.request('screen');wakeSentinel.addEventListener('release',()=>{if(wakeSentinel&&wakeSentinel.releasedState){wakeSentinel=null;$('wakeBtn').classList.remove('active');$('wakeBtn').textContent='KEEP AWAKE';updateMetrics();}});$('wakeBtn').classList.add('active');$('wakeBtn').textContent='AWAKE';updateMetrics();}
+  catch(e){$('runState').textContent='Wake lock denied: '+e.message;}
+}
+$('wakeBtn').addEventListener('click',toggleWake);
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState==='visible'){
+    if(wakeSentinel===null&&$('wakeBtn').classList.contains('active'))toggleWake();
+    if(serviceWorkerRegistration)serviceWorkerRegistration.update().catch(()=>{});
+  }else if(wakeSentinel){try{await wakeSentinel.release();}catch(e){}wakeSentinel=null;}
+});
+function resultObject(){
+  const frames=metrics.runFrames.length?metrics.runFrames:metrics.frameTimes;
+  return {app:'Spacetime Feedback Lab PWA',capturedAt:new Date().toISOString(),device:{userAgent:navigator.userAgent,screen:screen.width+'x'+screen.height,viewport:state.w+'x'+state.h,dpr:state.dpr,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone===true},render:{samples:frames.length,meanFrameMs:frames.length?frames.reduce((s,v)=>s+v,0)/frames.length:null,p50FrameMs:percentile(frames,.5),p95FrameMs:percentile(frames,.95),maxFrameMs:frames.length?Math.max(...frames):null,fps:frames.length?1000/(frames.reduce((s,v)=>s+v,0)/frames.length):null},motion:{enabled:motionEnabled,sampleHz:metrics.motionRate,gravityScreen:[+motionFilteredX.toFixed(4),+motionFilteredY.toFixed(4)],orientationAngle:metrics.orientation,orientationChanges:metrics.orientationChanges},interaction:{inputToFrameMs:metrics.inputTimes.filter(x=>typeof x==='object').map(x=>x.done),masses:state.masses.length,camera:state.camera},feedback:{vibrationApi:typeof navigator.vibrate==='function',hapticDispatchMs:metrics.hapticDispatchMs,wakeLockApi:'wakeLock'in navigator,wakeLockActive:!!wakeSentinel,shareApi:!!navigator.share},storage:{indexedDB:!!db,lastWriteMs:metrics.dbWriteMs},offline:{serviceWorker:!!serviceWorkerRegistration,online:navigator.onLine}};
+}
+$('exportBtn').addEventListener('click',()=>{
+  const data=resultObject(),blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download='spacetime-feedback-pwa-'+Date.now()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+$('shareBtn').addEventListener('click',async()=>{
+  const data=resultObject(),text=JSON.stringify(data,null,2);
+  try{if(navigator.share)await navigator.share({title:'Spacetime Feedback Lab results',text});else if(navigator.clipboard){await navigator.clipboard.writeText(text);$('runState').textContent='Results copied to clipboard.';}else $('runState').textContent='Use Export JSON to save results.';}catch(e){if(e.name!=='AbortError')$('runState').textContent='Share unavailable: '+e.message;}
+});
+$('sampleBtn').addEventListener('click',()=>{
+  metrics.runActive=true;metrics.runStart=now();metrics.runFrames=[];metrics.runInputs=[];metrics.runOrientations=metrics.orientationChanges;
+  $('sampleBtn').disabled=true;$('testResults').textContent='Measuring 10 seconds… keep the app foregrounded; move the phone and use the controls.';
+  setTimeout(()=>{
+    metrics.runActive=false;$('sampleBtn').disabled=false;
+    const r=resultObject();
+    $('testResults').textContent='10 SECOND SAMPLE\nFPS: '+(r.render.fps?r.render.fps.toFixed(1):'—')+'\nFrame p95: '+r.render.p95FrameMs.toFixed(2)+' ms\nFrame max: '+r.render.maxFrameMs.toFixed(2)+' ms\nMotion sample rate: '+r.motion.sampleHz.toFixed(1)+' Hz\nOrientation changes during run: '+(metrics.orientationChanges-metrics.runOrientations)+'\nMass count: '+r.interaction.masses+'\nVibration API: '+(r.feedback.vibrationApi?'exposed (output unverified)':'not exposed')+'\nWake Lock API: '+(r.feedback.wakeLockApi?'exposed':'not exposed')+'\nExport JSON for full measurements.';
+  },10000);
+});
+function updateCameraFromGesture(){
+  const ps=Array.from(pointers.values());
+  if(ps.length===0){gesture=null;return;}
+  if(ps.length===1){const p=ps[0];gesture={type:'pan',id:p.id,x:p.x,y:p.y,cx:state.camera.x,cy:state.camera.y};return;}
+  const a=ps[0],b=ps[1],cx=(a.x+b.x)/2,cy=(a.y+b.y)/2;
+  gesture={type:'multi',ids:[a.id,b.id],cx,cy,dist:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),angle:Math.atan2(b.y-a.y,b.x-a.x),camera:{...state.camera}};
+}
+function pointerDown(e){
+  e.preventDefault();canvas.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{id:e.pointerId,x:e.clientX,y:e.clientY});
+  recordInputStart(e.timeStamp||now());updateCameraFromGesture();pulse([7]);
+}
+function pointerMove(e){
+  const p=pointers.get(e.pointerId);if(!p)return;
+  p.x=e.clientX;p.y=e.clientY;
+  if(!gesture){updateCameraFromGesture();return;}
+  if(gesture.type==='pan'&&pointers.size===1){
+    cameraToTarget({x:gesture.cx+e.clientX-gesture.x,y:gesture.cy+e.clientY-gesture.y});panInertia={x:(e.movementX||0)*.015,y:(e.movementY||0)*.015};
+  }else if(gesture.type==='multi'&&pointers.size>=2){
+    const a=pointers.get(gesture.ids[0]),b=pointers.get(gesture.ids[1]);if(!a||!b)return;
+    const cx=(a.x+b.x)/2,cy=(a.y+b.y)/2,dist=Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),angle=Math.atan2(b.y-a.y,b.x-a.x);
+    const ratio=dist/gesture.dist,delta=angle-gesture.angle,base=gesture.camera;
+    cameraToTarget({scale:Math.max(.55,Math.min(3.5,base.scale*ratio)),rotation:base.rotation+delta*180/Math.PI,x:base.x+(cx-gesture.cx),y:base.y+(cy-gesture.cy)});
+  }
+}
+function pointerEnd(e){
+  pointers.delete(e.pointerId);updateCameraFromGesture();saveState();
+}
+canvas.addEventListener('pointerdown',pointerDown,{passive:false});
+canvas.addEventListener('pointermove',pointerMove,{passive:true});
+canvas.addEventListener('pointerup',pointerEnd,{passive:true});
+canvas.addEventListener('pointercancel',pointerEnd,{passive:true});
+canvas.addEventListener('lostpointercapture',pointerEnd,{passive:true});
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();recordInputStart(e.timeStamp||now());
+  if(e.ctrlKey||e.metaKey){const factor=Math.exp(-e.deltaY*.002);cameraToTarget({scale:Math.max(.55,Math.min(3.5,state.target.scale*factor)});}
+  else cameraToTarget({x:state.target.x-e.deltaX,y:state.target.y-e.deltaY});
+},{passive:false});
+if(matchMedia('(hover:hover) and (pointer:fine)').matches){
+  let macGesture=null;
+  canvas.addEventListener('gesturestart',e=>{e.preventDefault();macGesture={camera:{...state.camera},scale:state.camera.scale,rotation:state.camera.rotation};},{passive:false});
+  canvas.addEventListener('gesturechange',e=>{
+    if(!macGesture)return;e.preventDefault();cameraToTarget({scale:Math.max(.55,Math.min(3.5,macGesture.scale*e.scale)),rotation:macGesture.rotation+e.rotation});
+  },{passive:false});
+  canvas.addEventListener('gestureend',()=>{macGesture=null;saveState();},{passive:true});
+}
+let keySaveTimer=0;
+window.addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA|SELECT/.test(document.activeElement&&document.activeElement.tagName||''))return;
+  const k=e.key;
+  if(k.startsWith('Arrow')){e.preventDefault();const d=36;cameraToTarget({x:state.target.x+(k==='ArrowLeft'?d:k==='ArrowRight'?-d:0),y:state.target.y+(k==='ArrowUp'?d:k==='ArrowDown'?-d:0)});recordInputStart(e.timeStamp||now());}
+  else if(k==='+'||k==='='){e.preventDefault();cameraToTarget({scale:Math.min(3.5,state.target.scale*1.12)});recordInputStart(e.timeStamp||now());}
+  else if(k==='-'){e.preventDefault();cameraToTarget({scale:Math.max(.55,state.target.scale/1.12)});recordInputStart(e.timeStamp||now());}
+  clearTimeout(keySaveTimer);keySaveTimer=setTimeout(saveState,250);
+});
+function registerFrameLatency(){
+  if(!metrics.inputTimes.length)return;
+  for(let i=0;i<metrics.inputTimes.length;i++){
+    const v=metrics.inputTimes[i];
+    if(typeof v==='number'){metrics.inputTimes[i]={done:Math.max(0,now()-v)};break;}
+  }
+}
+function renderTick(){
+  registerFrameLatency();
+  frame(now());
+  raf=requestAnimationFrame(renderTick);
+}
+(async function boot(){
+  await loadState();
+  $('status').textContent='READY';
+  if('serviceWorker'in navigator){
+    try{
+      serviceWorkerRegistration=await navigator.serviceWorker.register('./sw.js');
+      serviceWorkerRegistration.addEventListener('updatefound',()=>{
+        const w=serviceWorkerRegistration.installing;if(!w)return;
+        w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller){w.postMessage({type:'SKIP_WAITING'});}});
+      });
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{if(controllerReloading)return;controllerReloading=true;location.reload();});
+      serviceWorkerRegistration.update().catch(()=>{});
+    }catch(e){$('status').textContent='NO SERVICE WORKER';}
+  }
+  raf=requestAnimationFrame(renderTick);
+})();
+window.addEventListener('online',()=>{$('status').textContent='ONLINE';});
+window.addEventListener('offline',()=>{$('status').textContent='OFFLINE · CACHED SHELL';});
+})();
+</script>
+</body>
+</html>
