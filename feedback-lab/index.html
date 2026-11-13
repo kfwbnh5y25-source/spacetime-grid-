@@ -410,7 +410,7 @@ function onMotion(e){
   const sampleTime=now(),rr=e.rotationRate||{};
   if(Number.isFinite(rr.alpha)||Number.isFinite(rr.beta)||Number.isFinite(rr.gamma))groundFrame.gyroAvailable=true;
   groundFrame.lastUpdate=sampleTime;
-  if(gravityDiagnostic.active&&sampleTime-gravityDiagnostic.lastSample>=100){
+  if(gravityDiagnostic.active&&sampleTime-gravityDiagnostic.lastSample>=150){
     const angle=currentAngle(),world=gravityToWorld(motionRawX,motionRawY,angle);
     gravityDiagnostic.samples.push({t:+(sampleTime-gravityDiagnostic.started).toFixed(0),stage:gravityDiagnostic.stage,ax:+a.x.toFixed(3),ay:+a.y.toFixed(3),az:Number.isFinite(a.z)?+a.z.toFixed(3):null,lx:Number.isFinite(e.acceleration?.x)?+e.acceleration.x.toFixed(3):null,ly:Number.isFinite(e.acceleration?.y)?+e.acceleration.y.toFixed(3):null,lz:Number.isFinite(e.acceleration?.z)?+e.acceleration.z.toFixed(3):null,rx:Number.isFinite(rr.alpha)?+rr.alpha.toFixed(1):null,ry:Number.isFinite(rr.beta)?+rr.beta.toFixed(1):null,rz:Number.isFinite(rr.gamma)?+rr.gamma.toFixed(1):null,screenAngle:angle,legacyAngle:Number.isFinite(Number(window.orientation))?Number(window.orientation):null,modernAngle:Number.isFinite(Number(screen.orientation?.angle))?Number(screen.orientation.angle):null,screenType:screen.orientation?.type||'unsupported',rawX:+motionRawX.toFixed(3),rawY:+motionRawY.toFixed(3),worldX:+world.x.toFixed(3),worldY:+world.y.toFixed(3),filteredX:+motionFilteredX.toFixed(3),filteredY:+motionFilteredY.toFixed(3),filteredNorm:+Math.hypot(motionFilteredX,motionFilteredY).toFixed(3),deviceOrientation:[latestDeviceOrientation.alpha,latestDeviceOrientation.beta,latestDeviceOrientation.gamma]});
     gravityDiagnostic.lastSample=sampleTime;
@@ -537,7 +537,7 @@ function evaluateGravityDiagnostic(stages){
 async function runGravityDiagnostic(){
  if(gravityDiagnostic.active)return;
  if(!motionEnabled){await toggleMotion();if(!motionEnabled)return;}
- gravityDiagnostic.active=true;gravityDiagnostic.started=now();gravityDiagnostic.lastSample=0;gravityDiagnostic.samples=[];gravityDiagnostic.stage='starting';
+ gravityDiagnostic.active=true;gravityDiagnostic.started=now();gravityDiagnostic.lastSample=0;gravityDiagnostic.samples=[];gravityDiagnostic.stageSummaries=[];gravityDiagnostic.stage='starting';
  $('gravityStart').disabled=true;$('gravityStatus').textContent='Sensor enabled · starting in 2 seconds…';
  if('wakeLock'in navigator){try{wakeSentinel=await navigator.wakeLock.request('screen');}catch(e){}}
  await wait(2000);
