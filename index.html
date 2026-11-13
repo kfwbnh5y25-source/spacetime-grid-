@@ -38,14 +38,21 @@
   starfield.onload = () => { starfieldReady = true; rebuildBackground(); };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let width = 0, height = 0, dpr = 1, last = 0, elapsed = 0, hintTimer, raf = 0;
+  let inverseTwoSigmaSquared = 0;
+  let outputX = 0, outputY = 0;
+  let lastFrame = 0;
 
   const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width, height) / 17)));
   const smooth = (a, b, t) => a + (b - a) * t;
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // The grid is vector artwork; 1.75× is a deliberate quality/performance
+    // compromise on 3× iPhone displays.
+    dpr = Math.min(window.devicePixelRatio || 1, 1.75);
     width = window.innerWidth;
     height = window.innerHeight;
+    const sigma = Math.min(width, height) * .19;
+    inverseTwoSigmaSquared = 1 / (2 * sigma * sigma);
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -98,35 +105,47 @@
     if (p && p.hover) p.life = 0;
   });
 
-  function drawField(x, y, strength, life, t, px, py) {
-    const dx = px - x, dy = py - y;
-    const r2 = dx*dx + dy*dy + 1;
-    const r = Math.sqrt(r2);
-    const sigma = Math.min(width, height) * .19;
-    const influence = Math.exp(-r2 / (2*sigma*sigma));
-    const bend = 55 * strength * life * influence;
-    return { x: x - dx/r * bend, y: y - dy/r * bend };
-  }
-
-  function warped(x, y, t) {
+  // Writes into scalar scratch variables to avoid allocating an array/object
+  // for every grid vertex (thousands of vertices are evaluated per frame).
+  function warp(x, y, motionTime) {
     let ox = x, oy = y;
-    for (const p of fields) {
-      const q = drawField(x, y, p.strength, p.life, t, p.x, p.y);
-      ox += q.x - x;
-      oy += q.y - y;
+
+    for (let i = 0; i < fields.length; i++) {
+      const p = fields[i];
+      const dx = p.x - x;
+      const dy = p.y - y;
+      const r2 = dx * dx + dy * dy + 1;
+      const inverseR = 1 / Math.sqrt(r2);
+      const influence = Math.exp(-r2 * inverseTwoSigmaSquared);
+      const bend = 55 * p.strength * p.life * influence;
+      ox -= dx * inverseR * bend;
+      oy -= dy * inverseR * bend;
     }
-    const motionTime = reducedMotion.matches ? 0 : t;
-    const waveX = Math.sin(y * .017 + motionTime * .00105) * 2.0
-                + Math.sin((x + y) * .008 - motionTime * .00072) * 1.0;
-    const waveY = Math.sin(x * .016 - motionTime * .00092) * 2.0
-                + Math.sin((x - y) * .009 + motionTime * .00066) * 1.0;
-    const breathe = reducedMotion.matches ? 0 : Math.sin(motionTime * .00045 + x * .002 + y * .0015) * .45;
-    return [ox + waveX, oy + waveY + breathe];
+
+    const waveX = Math.sin(y * .017 + motionTime * .00105) * 2
+                + Math.sin((x + y) * .008 - motionTime * .00072);
+    const waveY = Math.sin(x * .016 - motionTime * .00092) * 2
+                + Math.sin((x - y) * .009 + motionTime * .00066);
+    const breathe = motionTime === 0
+      ? 0
+      : Math.sin(motionTime * .00045 + x * .002 + y * .0015) * .45;
+
+    outputX = ox + waveX;
+    outputY = oy + waveY + breathe;
   }
 
   function render(now) {
+    const active = pointers.size > 0;
+    const frameInterval = active ? 1000 / 120 : 1000 / 60;
+    if (lastFrame && now - lastFrame < frameInterval - 1) {
+      raf = requestAnimationFrame(render);
+      return;
+    }
     const dt = Math.min(40, now - (last || now));
-    last = now; elapsed += dt;
+    last = now;
+    lastFrame = now;
+    elapsed += dt;
+    const motionTime = reducedMotion.matches ? 0 : elapsed;
     ctx.drawImage(background, 0, 0, width, height);
 
     fields.length = 0;
@@ -147,15 +166,17 @@
     for (let x = -margin; x <= width + margin; x += step) {
       let first = true;
       for (let y = -margin; y <= height + margin; y += 8) {
-        const [wx,wy] = warped(x,y,elapsed);
-        if (first) { ctx.moveTo(wx,wy); first = false; } else ctx.lineTo(wx,wy);
+        warp(x, y, motionTime);
+        if (first) { ctx.moveTo(outputX, outputY); first = false; }
+        else ctx.lineTo(outputX, outputY);
       }
     }
     for (let y = -margin; y <= height + margin; y += step) {
       let first = true;
       for (let x = -margin; x <= width + margin; x += 8) {
-        const [wx,wy] = warped(x,y,elapsed);
-        if (first) { ctx.moveTo(wx,wy); first = false; } else ctx.lineTo(wx,wy);
+        warp(x, y, motionTime);
+        if (first) { ctx.moveTo(outputX, outputY); first = false; }
+        else ctx.lineTo(outputX, outputY);
       }
     }
     ctx.stroke();
