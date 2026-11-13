@@ -109,7 +109,7 @@ in float v_edge;
 out vec4 color;
 void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float coverage=1.0-smoothstep(1.0-aa,1.0+aa,edge);color=vec4(.94,.97,1.0,.64*coverage);}`;
     const compile=(type,source)=>{const s=gl.createShader(type);gl.shaderSource(s,source);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;};
-    try{const v=compile(gl.VERTEX_SHADER,vs),f=compile(gl.FRAGMENT_SHADER,fs);gpuProgram=gl.createProgram();gl.attachShader(gpuProgram,v);gl.attachShader(gpuProgram,f);gl.linkProgram(gpuProgram);gl.deleteShader(v);gl.deleteShader(f);if(!gl.getProgramParameter(gpuProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(gpuProgram));gpuVertexBuffer=gl.createBuffer();gpuIndexBuffer=gl.createBuffer();gl.useProgram(gpuProgram);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.clearColor(0,0,0,0);return true;}
+    try{const v=compile(gl.VERTEX_SHADER,vs),f=compile(gl.FRAGMENT_SHADER,fs);gpuProgram=gl.createProgram();gl.attachShader(gpuProgram,v);gl.attachShader(gpuProgram,f);gl.linkProgram(gpuProgram);gl.deleteShader(v);gl.deleteShader(f);if(!gl.getProgramParameter(gpuProgram,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(gpuProgram));gpuVertexBuffer=gl.createBuffer();gpuIndexBuffer=gl.createBuffer();gl.useProgram(gpuProgram);gl.enable(gl.BLEND);gl.blendEquation(gl.MAX);gl.blendFunc(gl.ONE,gl.ONE);gl.clearColor(0,0,0,0);return true;}
     catch(e){gpuError=String(e&&e.message||e);console.warn('WebGL2 unavailable; retaining Canvas 2D renderer:',e);gpuCanvas.style.display='none';return false;}
   }
   const gpuEnabled=initGpu();
