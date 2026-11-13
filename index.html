@@ -25,189 +25,199 @@
 <div class="hint" id="hint">move · touch · explore</div>
 <script>
 (() => {
+  'use strict';
   const canvas = document.getElementById('universe');
-  const ctx = canvas.getContext('2d', { alpha: false });
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
   const hint = document.getElementById('hint');
   const pointers = new Map();
   const fields = [];
   const starfield = new Image();
   const background = document.createElement('canvas');
   const bgctx = background.getContext('2d', { alpha: false });
-  starfield.src = 'https://assets.science.nasa.gov/dynamicimage/assets/science/missions/hubble/releases/2012/11/STScI-01EVSKKXBHFJX27QM0284AZ7GZ.jpg?fit=crop&w=1600&h=900';
-  let starfieldReady = false;
-  starfield.onload = () => { starfieldReady = true; rebuildBackground(); };
+  const benchMode = new URLSearchParams(location.search).has('bench');
+  const perf = {
+    started: performance.now(), firstFrame: null, imageStart: performance.now(),
+    imageLoad: null, imageBytes: null, samples: [], dropped: 0, frames: 0,
+    renderMs: [], lastReport: 0, longTasks: 0, maxFrameMs: 0
+  };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let width = 0, height = 0, dpr = 1, last = 0, elapsed = 0, hintTimer, raf = 0;
-  let inverseTwoSigmaSquared = 0;
-  let outputX = 0, outputY = 0;
-  let lastFrame = 0;
+  const gaussian = new Float32Array(2049);
+  for (let i = 0; i < gaussian.length; i++) gaussian[i] = Math.exp(-i * 8 / (gaussian.length - 1));
+  let width=0, height=0, dpr=1, last=0, elapsed=0, hintTimer, raf=0, lastFrame=0;
+  let inv2Sigma2=0, geometry=null, imageStatus='loading';
+  const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width,height)/17)));
+  const smooth = (a,b,t) => a+(b-a)*t;
 
-  const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width, height) / 17)));
-  const smooth = (a, b, t) => a + (b - a) * t;
-
-  function resize() {
-    // The grid is vector artwork; 1.75× is a deliberate quality/performance
-    // compromise on 3× iPhone displays.
-    dpr = Math.min(window.devicePixelRatio || 1, 1.75);
-    width = window.innerWidth;
-    height = window.innerHeight;
-    const sigma = Math.min(width, height) * .19;
-    inverseTwoSigmaSquared = 1 / (2 * sigma * sigma);
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  starfield.decoding = 'async';
+  starfield.fetchPriority = 'low';
+  starfield.src = 'https://assets.science.nasa.gov/dynamicimage/assets/science/missions/hubble/releases/2012/11/STScI-01EVSKKXBHFJX27QM0284AZ7GZ.jpg?fit=crop&w=1600&h=900';
+  starfield.onload = () => {
+    imageStatus='loaded'; perf.imageLoad=performance.now()-perf.imageStart;
+    const entry=performance.getEntriesByName(starfield.currentSrc || starfield.src).at(-1);
+    perf.imageBytes=entry && entry.transferSize ? entry.transferSize : null;
     rebuildBackground();
-  }
-  function rebuildBackground() {
-    background.width = Math.max(1, Math.round(width * dpr));
-    background.height = Math.max(1, Math.round(height * dpr));
-    bgctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    bgctx.fillStyle = '#000';
-    bgctx.fillRect(0, 0, width, height);
-    if (!starfieldReady || !starfield.naturalWidth) return;
-    const scale = Math.max(width / starfield.naturalWidth, height / starfield.naturalHeight);
-    const sw = starfield.naturalWidth * scale, sh = starfield.naturalHeight * scale;
-    bgctx.globalAlpha = .34;
-    bgctx.drawImage(starfield, (width - sw) / 2, (height - sh) / 2, sw, sh);
-    bgctx.globalAlpha = 1;
-    bgctx.fillStyle = 'rgba(0,0,0,.58)';
-    bgctx.fillRect(0, 0, width, height);
-  }
-  window.addEventListener('resize', resize, { passive: true });
-  resize();
+  };
+  starfield.onerror = () => { imageStatus='failed'; perf.imageLoad=performance.now()-perf.imageStart; };
 
-  function pointerDown(e) {
-    e.preventDefault();
-    canvas.setPointerCapture?.(e.pointerId);
-    pointers.set(e.pointerId, { x:e.clientX, y:e.clientY, tx:e.clientX, ty:e.clientY, strength:1, life:1 });
-    hint.classList.add('hidden');
-    clearTimeout(hintTimer);
+  function buildGeometry() {
+    const step=spacing(), margin=step*2, xs=[], ys=[], starts=[];
+    for(let x=-margin;x<=width+margin;x+=step){
+      starts.push(xs.length);
+      for(let y=-margin;y<=height+margin;y+=8){xs.push(x);ys.push(y);}
+    }
+    for(let y=-margin;y<=height+margin;y+=step){
+      starts.push(xs.length);
+      for(let x=-margin;x<=width+margin;x+=8){xs.push(x);ys.push(y);}
+    }
+    const n=xs.length, x=new Float32Array(xs), y=new Float32Array(ys);
+    const sinA=new Float32Array(n),cosA=new Float32Array(n);
+    const sinB=new Float32Array(n),cosB=new Float32Array(n);
+    const sinC=new Float32Array(n),cosC=new Float32Array(n);
+    const sinD=new Float32Array(n),cosD=new Float32Array(n);
+    const sinE=new Float32Array(n),cosE=new Float32Array(n);
+    for(let i=0;i<n;i++){
+      let a=y[i]*.017,b=(x[i]+y[i])*.008,c=x[i]*.016,d=(x[i]-y[i])*.009,e=x[i]*.002+y[i]*.0015;
+      sinA[i]=Math.sin(a);cosA[i]=Math.cos(a);
+      sinB[i]=Math.sin(b);cosB[i]=Math.cos(b);
+      sinC[i]=Math.sin(c);cosC[i]=Math.cos(c);
+      sinD[i]=Math.sin(d);cosD[i]=Math.cos(d);
+      sinE[i]=Math.sin(e);cosE[i]=Math.cos(e);
+    }
+    geometry={x,y,starts:new Uint32Array(starts),sinA,cosA,sinB,cosB,sinC,cosC,sinD,cosD,sinE,cosE};
   }
-  function pointerMove(e) {
-    const p = pointers.get(e.pointerId);
-    if (p) { p.tx = e.clientX; p.ty = e.clientY; }
-    else if (e.pointerType === 'mouse') {
-      pointers.set(e.pointerId, { x:e.clientX, y:e.clientY, tx:e.clientX, ty:e.clientY, strength:.72, life:1, hover:true });
+  function rebuildBackground(){
+    background.width=Math.max(1,Math.round(width*dpr));
+    background.height=Math.max(1,Math.round(height*dpr));
+    bgctx.setTransform(dpr,0,0,dpr,0,0);
+    bgctx.fillStyle='#000';bgctx.fillRect(0,0,width,height);
+    if(imageStatus!=='loaded'||!starfield.naturalWidth)return;
+    const scale=Math.max(width/starfield.naturalWidth,height/starfield.naturalHeight);
+    const sw=starfield.naturalWidth*scale,sh=starfield.naturalHeight*scale;
+    bgctx.globalAlpha=.34;bgctx.drawImage(starfield,(width-sw)/2,(height-sh)/2,sw,sh);
+    bgctx.globalAlpha=1;bgctx.fillStyle='rgba(0,0,0,.58)';bgctx.fillRect(0,0,width,height);
+  }
+  function resize(){
+    dpr=Math.min(window.devicePixelRatio||1,1.75);
+    width=window.innerWidth;height=window.innerHeight;
+    const sigma=Math.min(width,height)*.19;inv2Sigma2=1/(2*sigma*sigma);
+    canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    buildGeometry();rebuildBackground();
+  }
+  window.addEventListener('resize',resize,{passive:true});resize();
+
+  function pointerDown(e){
+    e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
+    pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:1,life:1,down:true});
+    hint.classList.add('hidden');clearTimeout(hintTimer);
+  }
+  function pointerMove(e){
+    const p=pointers.get(e.pointerId);
+    if(p){p.tx=e.clientX;p.ty=e.clientY;}
+    else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,tx:e.clientX,ty:e.clientY,strength:.72,life:1,hover:true});
+  }
+  function pointerEnd(e){const p=pointers.get(e.pointerId);if(p){p.life=0;p.down=false;}}
+  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  canvas.addEventListener('pointerdown',pointerDown,{passive:false});
+  canvas.addEventListener('pointermove',pointerMove,{passive:true});
+  canvas.addEventListener('pointerup',pointerEnd);
+  canvas.addEventListener('pointercancel',pointerEnd);
+  canvas.addEventListener('lostpointercapture',pointerEnd);
+  canvas.addEventListener('pointerleave',e=>{const p=pointers.get(e.pointerId);if(p&&p.hover)p.life=0;});
+
+  function warpVertex(g,i,times){
+    const x=g.x[i],y=g.y[i];let ox=x,oy=y;
+    for(let j=0;j<fields.length;j++){
+      const p=fields[j],dx=p.x-x,dy=p.y-y,r2=dx*dx+dy*dy+1;
+      const q=Math.min(1,r2*inv2Sigma2*gaussian.length/8);
+      const qi=q*(gaussian.length-1),lo=qi|0;
+      const influence=gaussian[lo]+(gaussian[Math.min(lo+1,gaussian.length-1)]-gaussian[lo])*(qi-lo);
+      const bend=55*p.strength*p.life*influence, invR=1/Math.sqrt(r2);
+      ox-=dx*invR*bend;oy-=dy*invR*bend;
+    }
+    const [s1,c1,s2,c2,s3,c3,s4,c4,s5,c5]=times;
+    const waveX=2*(g.sinA[i]*c1+g.cosA[i]*s1)+(g.sinB[i]*c2-g.cosB[i]*s2);
+    const waveY=2*(g.sinC[i]*c3-g.cosC[i]*s3)+(g.sinD[i]*c4+g.cosD[i]*s4);
+    const breathe=.45*(g.sinE[i]*c5+g.cosE[i]*s5);
+    return [ox+waveX,oy+waveY+breathe];
+  }
+  function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
+  function report(){
+    const samples=perf.samples, frames=perf.frames, avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
+    const data={
+      device:{userAgent:navigator.userAgent,screen:`${screen.width}x${screen.height}`,viewport:`${innerWidth}x${innerHeight}`,dpr:devicePixelRatio,effectiveDpr:dpr,hardwareConcurrency:navigator.hardwareConcurrency||null},
+      session:{seconds:Math.round((performance.now()-perf.started)/1000),frames,estimatedDroppedFrames:perf.dropped,longTasks:perf.longTasks},
+      frameIntervalMs:{p50:+percentile(samples,.5).toFixed(2),p95:+percentile(samples,.95).toFixed(2),p99:+percentile(samples,.99).toFixed(2),max:+perf.maxFrameMs.toFixed(2)},
+      renderCpuMs:{mean:+avg(perf.renderMs).toFixed(2),p95:+percentile(perf.renderMs,.95).toFixed(2)},
+      startup:{firstFrameMs:perf.firstFrame===null?null:+(perf.firstFrame-perf.started).toFixed(1),backgroundImage:imageStatus,imageLoadMs:perf.imageLoad===null?null:+perf.imageLoad.toFixed(1),imageTransferBytes:perf.imageBytes},
+      interaction:{activePointers:pointers.size,gridVertices:geometry?geometry.x.length:0,reducedMotion:reducedMotion.matches},
+      note:'Browser-side estimates only. Safari does not expose device thermal state or exact compositor/GPU dropped-frame counts.'
+    };
+    return data;
+  }
+  let panel,reportText;
+  if(benchMode){
+    panel=document.createElement('section');
+    panel.style.cssText='position:fixed;z-index:5;top:12px;left:12px;max-width:min(360px,calc(100vw - 24px));max-height:48vh;overflow:auto;padding:12px 14px;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.22);color:#e8edf7;font:11px/1.5 ui-monospace,monospace;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);touch-action:pan-y;user-select:text;-webkit-user-select:text';
+    panel.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><b>DEVICE BENCHMARK</b><button id="saveBench" style="background:#fff;color:#000;border:0;padding:6px 9px;font:inherit">Export JSON</button></div><pre id="benchText" style="white-space:pre-wrap;margin:8px 0 0"></pre><p style="color:#aab4c5;margin:8px 0 0">Run 2 min idle, 2 min continuous dragging, then 30 s with 2–5 fingers. Keep this tab foregrounded. Thermal state is not exposed by Safari.</p>';
+    document.body.appendChild(panel);reportText=panel.querySelector('#benchText');
+    panel.querySelector('#saveBench').addEventListener('click',()=>{
+      const blob=new Blob([JSON.stringify(report(),null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='spacetime-iphone-benchmark.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    });
+    if('PerformanceObserver'in window){
+      try{new PerformanceObserver(list=>{perf.longTasks+=list.getEntries().length;}).observe({type:'longtask',buffered:true});}catch(_){}
     }
   }
-  function pointerEnd(e) {
-    const p = pointers.get(e.pointerId);
-    if (p) p.life = 0;
-  }
-  canvas.addEventListener('contextmenu', e => e.preventDefault());
-  canvas.addEventListener('pointerdown', pointerDown, { passive:false });
-  canvas.addEventListener('pointermove', pointerMove, { passive:false });
-  canvas.addEventListener('pointerup', pointerEnd);
-  canvas.addEventListener('pointercancel', pointerEnd);
-  canvas.addEventListener('lostpointercapture', pointerEnd);
-  canvas.addEventListener('pointerleave', e => {
-    const p = pointers.get(e.pointerId);
-    if (p && p.hover) p.life = 0;
-  });
 
-  // Writes into scalar scratch variables to avoid allocating an array/object
-  // for every grid vertex (thousands of vertices are evaluated per frame).
-  function warp(x, y, motionTime) {
-    let ox = x, oy = y;
-
-    for (let i = 0; i < fields.length; i++) {
-      const p = fields[i];
-      const dx = p.x - x;
-      const dy = p.y - y;
-      const r2 = dx * dx + dy * dy + 1;
-      const inverseR = 1 / Math.sqrt(r2);
-      const influence = Math.exp(-r2 * inverseTwoSigmaSquared);
-      const bend = 55 * p.strength * p.life * influence;
-      ox -= dx * inverseR * bend;
-      oy -= dy * inverseR * bend;
-    }
-
-    const waveX = Math.sin(y * .017 + motionTime * .00105) * 2
-                + Math.sin((x + y) * .008 - motionTime * .00072);
-    const waveY = Math.sin(x * .016 - motionTime * .00092) * 2
-                + Math.sin((x - y) * .009 + motionTime * .00066);
-    const breathe = motionTime === 0
-      ? 0
-      : Math.sin(motionTime * .00045 + x * .002 + y * .0015) * .45;
-
-    outputX = ox + waveX;
-    outputY = oy + waveY + breathe;
-  }
-
-  function render(now) {
-    const active = pointers.size > 0;
-    const frameInterval = active ? 1000 / 120 : 1000 / 60;
-    if (lastFrame && now - lastFrame < frameInterval - 1) {
-      raf = requestAnimationFrame(render);
-      return;
-    }
-    const dt = Math.min(40, now - (last || now));
-    last = now;
-    lastFrame = now;
-    elapsed += dt;
-    const motionTime = reducedMotion.matches ? 0 : elapsed;
-    ctx.drawImage(background, 0, 0, width, height);
-
-    fields.length = 0;
-    for (const [id,p] of pointers) {
-      p.x = smooth(p.x, p.tx, .22);
-      p.y = smooth(p.y, p.ty, .22);
-      if (p.life <= 0) p.strength *= .985;
-      if (p.life <= 0 && p.strength < .025) { pointers.delete(id); continue; }
+  function render(now){
+    const hasTouch=[...pointers.values()].some(p=>p.down);
+    const targetHz=hasTouch?120:60,frameInterval=1000/targetHz;
+    if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
+    const frameDelta=lastFrame?now-lastFrame:0;
+    if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>1800)perf.samples.shift();if(frameDelta>frameInterval*1.5)perf.dropped++;perf.frames++;perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);}
+    const renderStart=performance.now();
+    const dt=Math.min(40,now-(last||now));last=now;lastFrame=now;elapsed+=dt;
+    if(perf.firstFrame===null)perf.firstFrame=now;
+    const t=reducedMotion.matches?0:elapsed;
+    ctx.drawImage(background,0,0,width,height);
+    fields.length=0;
+    for(const [id,p] of pointers){
+      p.x=smooth(p.x,p.tx,.22);p.y=smooth(p.y,p.ty,.22);
+      if(p.life<=0)p.strength*=.985;
+      if(p.life<=0&&p.strength<.025){pointers.delete(id);continue;}
       fields.push(p);
     }
-
-    const step = spacing();
-    const margin = step * 2;
-    ctx.lineWidth = .75;
-    ctx.strokeStyle = 'rgba(235,242,255,.29)';
-    ctx.beginPath();
-
-    for (let x = -margin; x <= width + margin; x += step) {
-      let first = true;
-      for (let y = -margin; y <= height + margin; y += 8) {
-        warp(x, y, motionTime);
-        if (first) { ctx.moveTo(outputX, outputY); first = false; }
-        else ctx.lineTo(outputX, outputY);
-      }
-    }
-    for (let y = -margin; y <= height + margin; y += step) {
-      let first = true;
-      for (let x = -margin; x <= width + margin; x += 8) {
-        warp(x, y, motionTime);
-        if (first) { ctx.moveTo(outputX, outputY); first = false; }
-        else ctx.lineTo(outputX, outputY);
+    const g=geometry;
+    const times=[Math.sin(t*.00105),Math.cos(t*.00105),Math.sin(t*.00072),Math.cos(t*.00072),
+      Math.sin(t*.00092),Math.cos(t*.00092),Math.sin(t*.00066),Math.cos(t*.00066),
+      Math.sin(t*.00045),Math.cos(t*.00045)];
+    ctx.lineWidth=.75;ctx.strokeStyle='rgba(235,242,255,.29)';ctx.beginPath();
+    for(let line=0;line<g.starts.length;line++){
+      const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;
+      for(let i=from;i<to;i++){
+        const v=warpVertex(g,i,times);
+        if(i===from)ctx.moveTo(v[0],v[1]);else ctx.lineTo(v[0],v[1]);
       }
     }
     ctx.stroke();
-
-    for (const p of fields) {
-      const radius = 110;
-      const glow = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,radius);
-      glow.addColorStop(0, 'rgba(190,215,255,' + (.075*p.strength) + ')');
-      glow.addColorStop(1, 'rgba(190,215,255,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(p.x-radius,p.y-radius,radius*2,radius*2);
+    for(const p of fields){
+      const radius=110,glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,radius);
+      glow.addColorStop(0,'rgba(190,215,255,'+(.075*p.strength)+')');
+      glow.addColorStop(1,'rgba(190,215,255,0)');
+      ctx.fillStyle=glow;ctx.fillRect(p.x-radius,p.y-radius,radius*2,radius*2);
     }
-    raf = 0;
-    if (!document.hidden) raf = requestAnimationFrame(render);
-  }
-  function startRendering() {
-    if (!document.hidden && !raf) raf = requestAnimationFrame(render);
-  }
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      if (raf) cancelAnimationFrame(raf);
-      raf = 0;
-      last = 0;
-    } else {
-      startRendering();
+    perf.renderMs.push(performance.now()-renderStart);if(perf.renderMs.length>1800)perf.renderMs.shift();
+    if(benchMode&&now-perf.lastReport>500){perf.lastReport=now;const r=report();reportText.textContent=
+      `Session ${r.session.seconds}s · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nDropped-frame estimate ${r.session.estimatedDroppedFrames}\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
-  });
-  reducedMotion.addEventListener?.('change', () => startRendering());
-  startRendering();
-
-  hintTimer = setTimeout(() => hint.classList.add('hidden'), 6500);
+    raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
+  }
+  function start(){if(!document.hidden&&!raf)raf=requestAnimationFrame(render);}
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;last=0;lastFrame=0;}else start();});
+  reducedMotion.addEventListener?.('change',start);
+  start();
+  hintTimer=setTimeout(()=>hint.classList.add('hidden'),6500);
 })();
 </script>
 </body>
