@@ -23,7 +23,7 @@ button:active{transform:scale(.96);background:rgba(55,78,112,.9)}
 button.primary{background:rgba(64,104,154,.5);border-color:rgba(157,200,255,.55)}
 button.active{background:rgba(65,113,164,.7);border-color:rgba(172,213,255,.8)}
 button:disabled{opacity:.45}
-#guidePanel{position:fixed;z-index:8;left:12px;right:12px;top:max(62px,calc(env(safe-area-inset-top) + 58px));max-height:52vh;overflow:auto;padding:14px;border:1px solid var(--line);border-radius:16px;background:rgba(8,13,22,.96);backdrop-filter:blur(16px);font:12px/1.5 system-ui;color:var(--text)}
+#guidePanel{position:fixed;z-index:8;left:12px;right:auto;width:min(340px,calc(100vw - 24px));top:max(62px,calc(env(safe-area-inset-top) + 58px));max-height:34vh;overflow:auto;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(8,13,22,.86);backdrop-filter:blur(16px);font:12px/1.5 system-ui;color:var(--text);pointer-events:none}#guidePanel button{pointer-events:auto}
 #guidePanel header{display:flex;align-items:center;justify-content:space-between;gap:10px}#guidePanel p{margin:10px 0;color:#d9e7fa}#guideProgress{color:#9fcaff;font:11px ui-monospace,monospace;margin-top:10px}
 #metrics{position:fixed;z-index:4;left:10px;right:10px;bottom:max(10px,env(safe-area-inset-bottom));max-height:36vh;overflow:auto;padding:11px 13px;border:1px solid var(--line);border-radius:15px;background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font:10px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:#dfe9f8;touch-action:pan-y}
 @media(orientation:landscape){#metrics{max-width:390px;max-height:29vh;left:10px;right:auto;bottom:max(10px,env(safe-area-inset-bottom))}}
@@ -62,7 +62,7 @@ button:disabled{opacity:.45}
 <button id="exportBtn">EXPORT JSON</button>
 <button id="sampleBtn">10s MEASURE + SAVE</button><button id="saveBtn">SAVE RESULTS</button>
 </nav>
-<section id="guidePanel" hidden><header><strong>5-MINUTE ORIENTATION TEST</strong><button id="guideClose">CLOSE</button></header><div id="guideProgress">Step 1 of 8</div><p id="guideInstruction"></p><p id="guideHint"></p><button id="guideNext" class="primary">START STEP</button></section>
+<section id="guidePanel" hidden><header><strong>5-MINUTE ORIENTATION TEST</strong><button id="guideClose">CLOSE</button></header><div id="guideProgress">Step 1 of 10 · 5-minute guided test</div><p id="guideInstruction"></p><p id="guideHint"></p><button id="guideNext" class="primary">START STEP</button></section>
 <section id="metrics" aria-live="polite">
 <header><strong>SPACETIME FEEDBACK LAB · PWA</strong><span id="status">INITIALISING</span></header>
 <div class="metric-grid">
@@ -77,16 +77,16 @@ button:disabled{opacity:.45}
 <div class="metric"><b>INDEXEDDB</b><span id="dbTime">—</span></div>
 </div>
 <div id="workflow">
-<h3>ORIENTATION × GRAVITY PROTOCOL</h3>
-<p>Run each physical orientation twice: once with iOS Orientation Lock OFF and once ON. Start with the phone in the selected physical orientation, screen facing you. Set the lock in Control Center before starting. iOS does not expose a reliable lock-state API, so the selected state is recorded as your declaration.</p>
+<h3>ADVANCED SENSOR CHECK · 24 SECONDS</h3>
+<p>This is a separate short diagnostic: one selected physical orientation, six movements × 4 seconds (24 seconds total). Repeat it for all four orientations with Orientation Lock OFF and ON to complete the 8-condition matrix. For the full guided sequence, use the 5 MIN GUIDE above.</p>
 <div class="wf-controls">
 <select id="physicalOrientation" aria-label="Physical phone orientation"><option value="portrait_upright">Portrait · upright</option><option value="portrait_inverted">Portrait · upside down</option><option value="landscape_left">Landscape · left</option><option value="landscape_right">Landscape · right</option></select>
 <select id="rotationLock" aria-label="iOS orientation lock"><option value="off">Orientation Lock OFF</option><option value="on">Orientation Lock ON</option></select>
-<button id="workflowStart" class="primary">START 6-STEP RUN</button>
+<button id="workflowStart" class="primary">START 24s SENSOR CHECK</button>
 </div>
 <div id="workflowStatus">Ready · 0/8 combinations completed this visit</div>
 <div id="workflowMatrix">Portrait upright × lock OFF/ON · Portrait inverted × OFF/ON · Landscape left × OFF/ON · Landscape right × OFF/ON</div>
-<p>Each run: hold still → tilt left → return neutral → tilt right → tilt top away → tilt top toward you. Move slowly for 4 seconds per step. Keep the app foregrounded.</p>
+<p>Each 24-second check records six motion stages. It does not include touch-gravity testing.</p>
 </div>
 <div id="runState">Drop masses, enable gravity, rotate the phone, drag/pinch the scene. Measurements stay on this device until you tap SAVE RESULTS. No continuous telemetry or account identifier is sent.</div>
 <div id="testResults"></div>
@@ -441,13 +441,13 @@ const guideSteps=[
  {title:'Portrait upright · lock ON',seconds:30,instruction:'Return upright portrait. Open Control Center and turn Orientation Lock ON. Return to the lab and hold still for 5 seconds, then tilt left and right.',hint:'This is the locked-screen baseline.'},
  {title:'Landscape left · lock ON',seconds:30,instruction:'Keep Orientation Lock ON. Turn the physical phone to landscape-left and hold it there for 10 seconds, even if the display remains portrait. Then tilt gently toward the left and right edges.',hint:'The physical gravity direction should still be correct even if the display does not rotate.'},
  {title:'Landscape right · lock ON',seconds:30,instruction:'Still locked, turn the physical phone to landscape-right and hold for 10 seconds. Repeat the gentle edge tilts. Then turn Orientation Lock OFF again.',hint:'Compare raw device axes and screen gravity with the previous locked landscape position.'},
- {title:'Touch gravity · sensor bypass',seconds:30,instruction:'Tap TOUCH GRAVITY: ON. Drag one finger from the centre slowly left, right, up, then down. Release between directions. Masses should accelerate in the drag direction. Turn TOUCH GRAVITY OFF.',hint:'This isolates touch handling from the motion sensor. Two-finger gestures remain camera controls.'},
- {title:'Final baseline · portrait upright',seconds:30,instruction:'Return to upright portrait with Orientation Lock OFF. Hold still for 10 seconds. Tap FINISH & SAVE.',hint:'The upload contains ten checkpoints, raw sensor axes, screen gravity, orientation changes, and touch-gravity state.'}
+ {title:'Touch gravity · sensor bypass',seconds:30,instruction:'First tap ENABLE SENSOR GRAVITY to turn sensor gravity OFF. Then tap TOUCH GRAVITY: ON. Drag one finger across the centre of the canvas left, right, up, and down; release between directions. The masses should accelerate in the drag direction. Turn TOUCH GRAVITY OFF when finished.',hint:'The guide card is now touch-transparent: your finger should reach the simulation even beneath the instructions. Two-finger gestures remain camera controls.'},
+ {title:'Final baseline · portrait upright',seconds:30,instruction:'Turn TOUCH GRAVITY OFF if it is still enabled. Turn ENABLE SENSOR GRAVITY back ON. Return to upright portrait with Orientation Lock OFF. Hold still for 10 seconds, then tap FINISH & SAVE.',hint:'The upload contains ten checkpoints, raw sensor axes, screen gravity, orientation changes, and touch-gravity state.'}
 ];
 function renderGuide(){const step=guideSteps[guideIndex];$('guideProgress').textContent='STEP '+(guideIndex+1)+' / '+guideSteps.length+' · '+step.title+' · '+step.seconds+' s';$('guideInstruction').textContent=step.instruction;$('guideHint').textContent=step.hint;$('guideNext').textContent=guideIndex===guideSteps.length-1?'FINISH & SAVE':'NEXT STEP';}
 $('guideBtn').addEventListener('click',()=>{$('guidePanel').hidden=!$('guidePanel').hidden;if(!$('guidePanel').hidden&&guideIndex<0){guideIndex=0;renderGuide();}});
 $('guideClose').addEventListener('click',()=>{$('guidePanel').hidden=true;});
-$('guideNext').addEventListener('click',async()=>{const t=now();if(guideIndex>=0){guideLog.push({step:guideIndex+1,title:guideSteps[guideIndex].title,recordedAt:new Date().toISOString(),screenAngle:currentAngle(),viewport:state.w+'x'+state.h,orientationLockHint:guideIndex===5?'ON':guideIndex===0?'OFF':'manual',motionEnabled,motionRate:metrics.motionRate,rawDevice:[motionRawX,motionRawY],gravityScreen:[motionFilteredX,motionFilteredY],touchGravityEnabled});}if(guideIndex===guideSteps.length-1){$('guidePanel').hidden=true;const r=resultObject();lastCompletedResult=r;$('testResults').textContent='GUIDED ORIENTATION WORKFLOW COMPLETE · '+guideLog.length+' checkpoints captured.';await uploadResult(r);guideIndex=-1;return;}guideIndex=Math.min(guideSteps.length-1,guideIndex+1);renderGuide();});
+$('guideNext').addEventListener('click',async()=>{const t=now();if(guideIndex>=0){guideLog.push({step:guideIndex+1,title:guideSteps[guideIndex].title,recordedAt:new Date().toISOString(),screenAngle:currentAngle(),viewport:state.w+'x'+state.h,orientationLockHint:guideIndex<=4?'OFF':guideIndex<=7?'ON':'OFF',motionEnabled,motionRate:metrics.motionRate,rawDevice:[motionRawX,motionRawY],gravityScreen:[motionFilteredX,motionFilteredY],touchGravityEnabled});}if(guideIndex===guideSteps.length-1){$('guidePanel').hidden=true;const r=resultObject();lastCompletedResult=r;$('testResults').textContent='GUIDED ORIENTATION WORKFLOW COMPLETE · '+guideLog.length+' checkpoints captured.';await uploadResult(r);guideIndex=-1;return;}guideIndex=Math.min(guideSteps.length-1,guideIndex+1);renderGuide();});
 $('touchGravityBtn').addEventListener('click',()=>{touchGravityEnabled=!touchGravityEnabled;touchGravityActive=false;touchGravityX=touchGravityY=0;$('touchGravityBtn').textContent='TOUCH GRAVITY: '+(touchGravityEnabled?'ON':'OFF');$('touchGravityBtn').classList.toggle('active',touchGravityEnabled);$('runState').textContent=touchGravityEnabled?'Touch gravity active: drag one finger to apply a temporary gravity vector. Two-finger camera gestures remain available.':'Touch gravity disabled; sensor gravity remains active.';});
 
 function updateCameraFromGesture(){
