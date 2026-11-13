@@ -84,9 +84,9 @@ uniform vec2 u_phase[5];
 out float v_edge;
 vec2 warp(vec2 p,vec2 t0,vec2 t1,vec2 t2,vec2 t3,vec2 t4){
  for(int i=0;i<10;i++){if(i>=u_pointerCount)break;vec2 d=u_pointer[i]-p;float r2=dot(d,d)+1.0;float influence=exp(-min(8.0,r2*u_inv2Sigma2));p-=d*inversesqrt(r2)*(55.0*u_strength[i]*influence);}
- float wx=2.0*(t0.x*u_phase[0].y+t0.y*u_phase[0].x)+(t1.x*u_phase[1].y-t1.y*u_phase[1].x);
- float wy=2.0*(t2.x*u_phase[2].y-t2.y*u_phase[2].x)+(t3.x*u_phase[3].y+t3.y*u_phase[3].x);
- float br=.45*(t4.x*u_phase[4].y+t4.y*u_phase[4].x);
+ float wx=5.5*(t0.x*u_phase[0].y+t0.y*u_phase[0].x)+2.8*(t1.x*u_phase[1].y-t1.y*u_phase[1].x);
+ float wy=5.5*(t2.x*u_phase[2].y-t2.y*u_phase[2].x)+2.8*(t3.x*u_phase[3].y+t3.y*u_phase[3].x);
+ float br=1.5*(t4.x*u_phase[4].y+t4.y*u_phase[4].x);
  return p+vec2(wx,wy+br);
 }
 void main(){
@@ -238,9 +238,9 @@ void main(){float coverage=1.0-smoothstep(.55,1.0,abs(v_edge));color=vec4(.92,.9
       ox-=dx*invR*bend;oy-=dy*invR*bend;
     }
     const [s1,c1,s2,c2,s3,c3,s4,c4,s5,c5]=times;
-    const waveX=2*(g.sinA[i]*c1+g.cosA[i]*s1)+(g.sinB[i]*c2-g.cosB[i]*s2);
-    const waveY=2*(g.sinC[i]*c3-g.cosC[i]*s3)+(g.sinD[i]*c4+g.cosD[i]*s4);
-    const breathe=.45*(g.sinE[i]*c5+g.cosE[i]*s5);
+    const waveX=5.5*(g.sinA[i]*c1+g.cosA[i]*s1)+2.8*(g.sinB[i]*c2-g.cosB[i]*s2);
+    const waveY=5.5*(g.sinC[i]*c3-g.cosC[i]*s3)+2.8*(g.sinD[i]*c4+g.cosD[i]*s4);
+    const breathe=1.5*(g.sinE[i]*c5+g.cosE[i]*s5);
     warpedX=ox+waveX;warpedY=oy+waveY+breathe;
   }
   function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
