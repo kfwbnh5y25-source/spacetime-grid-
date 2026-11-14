@@ -337,14 +337,15 @@ test('I. Orbital tutorial: elliptical, parabolic (with snap), hyperbolic classif
   assert.ok(physics.predictLaunchArc(r, 0, 0, 0.72 * vEsc, m) > 20, 'Predicted launch arc should sample trajectory points');
 });
 
-function loadSpinWavesContext() {
+function loadSpinWavesContext(seedStorage = {}) {
   const noop = () => {};
   const makeCtx = () => new Proxy({
     createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) })
   }, {
     get(target, prop) { return prop in target ? target[prop] : noop; }
   });
-  const makeEl = () => ({
+  const makeEl = (id = '') => ({
+    id,
     style: {},
     classList: { add: noop, remove: noop, toggle: noop },
     setAttribute: noop,
@@ -357,7 +358,7 @@ function loadSpinWavesContext() {
     remove: noop,
     contains: () => false,
     dataset: {},
-    hidden: false,
+    hidden: id === 'whatsNewModal' || id === 'verifyModal' || id === 'vmTabHandout' || id === 'vmTabLive' || id === 'vmTabDb',
     textContent: '',
     innerHTML: '',
     value: 0,
@@ -365,7 +366,12 @@ function loadSpinWavesContext() {
     width: 290,
     height: 68
   });
-  const lsStore = new Map();
+  const elsById = new Map();
+  const getEl = id => {
+    if (!elsById.has(id)) elsById.set(id, makeEl(id));
+    return elsById.get(id);
+  };
+  const lsStore = new Map(Object.entries(seedStorage).map(([k, v]) => [k, String(v)]));
   const sandbox = {
     console,
     Math,
@@ -394,7 +400,7 @@ function loadSpinWavesContext() {
     addEventListener: noop,
     atob: s => Buffer.from(s, 'base64').toString('binary'),
     document: {
-      getElementById: () => makeEl(),
+      getElementById: id => getEl(id),
       createElement: () => makeEl(),
       querySelectorAll: () => [],
       addEventListener: noop
@@ -424,6 +430,8 @@ function loadSpinWavesContext() {
     applyPreset, swapTonesAction, SPEED_FRAME_STEPS,
     swLog, recordLogEvent, recordTelemetrySample, buildEvaluationReport,
     getDbConfig, saveDbConfig, resetDbConfig, formatDbDiagText,
+    APP_RELEASE_VERSION, WHATS_NEW_KEY, shouldShowWhatsNew, openWhatsNew, dismissWhatsNew, openVerifyModal,
+    getElHidden: id => !!document.getElementById(id).hidden,
     VERIFY_STAGES, runVerificationStage, runFullVerificationProtocol, runThroughputBenchmark,
     inspectLiveCalibration, probe4Avs4BCrossPump,
     drawModeTimePlot, updatePlotWindow, recordPlotSample,
@@ -972,7 +980,7 @@ test('S. Arnold 29-mode distinct thresholds, 4A/4B physics, 300K nonrecip, smoot
     `4096-pt FFT must resolve m13 (${spin.modeFreqGHz(13).toFixed(4)}G, pk=${p13.toFixed(2)}) and m16 (${spin.modeFreqGHz(16).toFixed(4)}G, pk=${p16.toFixed(2)}) above valley=${valley.toFixed(2)}`);
 });
 
-test('T. Interactive 7-Stage Benchmark, Calibration & Verification Protocol + DB Config', async () => {
+test('T. Interactive 8-Stage Benchmark, Calibration & Verification Protocol + DB Config', async () => {
   spin.resetDbConfig();
   const cfg0 = spin.getDbConfig();
   assert.ok(cfg0.url.includes('spacetime_feedback_runs'));
@@ -984,8 +992,8 @@ test('T. Interactive 7-Stage Benchmark, Calibration & Verification Protocol + DB
   assert.ok(cal && Array.isArray(cal.activeModes) && cal.arnoldCeilingMT > 0);
 
   const ver = await spin.runFullVerificationProtocol();
-  assert.equal(ver.stagesCompleted, 7, 'All 7 verification stages must execute');
-  assert.ok(ver.totalChecks >= 18, `Expected >=18 protocol checks, got ${ver.totalChecks}`);
+  assert.equal(ver.stagesCompleted, 8, 'All 8 verification stages must execute');
+  assert.ok(ver.totalChecks >= 21, `Expected >=21 protocol checks, got ${ver.totalChecks}`);
   assert.equal(ver.passedChecks, ver.totalChecks,
     `Verification protocol had failing checks: ${JSON.stringify(ver.stages.filter(s => !s.pass), null, 2)}`);
 
@@ -1124,8 +1132,61 @@ test('W. FAST->SS smooth frame pacing & high-amplitude adaptive RK4 stability', 
     `High-amp m0 must remain bounded & stable (got a0=${a0})`);
 });
 
+test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch What's New Summary", async () => {
+  // 1. Stage 8 verification + Handout tab wiring
+  assert.equal(spin.VERIFY_STAGES.length, 8);
+  assert.equal(spin.VERIFY_STAGES[7].id, 'bench_longterm_steadystate');
+  const stage8 = await spin.runVerificationStage(7, false);
+  assert.equal(stage8.pass, true, `Stage 8 failed: ${JSON.stringify(stage8)}`);
+  assert.equal(stage8.checks.length, 3);
 
+  spin.openVerifyModal('handout');
+  assert.equal(spin.getElHidden('verifyModal'), false);
+  assert.equal(spin.getElHidden('vmTabHandout'), false);
+  assert.equal(spin.getElHidden('vmTabProtocol'), true);
+  assert.equal(spin.getElHidden('vmTabLive'), true);
+  assert.equal(spin.getElHidden('vmTabDb'), true);
 
+  // 2. Launch "What's New" gating (shows once per release version)
+  const freshCtx = loadSpinWavesContext();
+  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v79');
+  assert.equal(freshCtx.shouldShowWhatsNew(), true);
+  assert.equal(freshCtx.getElHidden('whatsNewModal'), false, 'Fresh launch must auto-open #whatsNewModal');
+  freshCtx.dismissWhatsNew(true);
+  assert.equal(freshCtx.getElHidden('whatsNewModal'), true);
+  assert.equal(freshCtx.shouldShowWhatsNew(), false);
 
+  const seenCtx = loadSpinWavesContext({ [freshCtx.WHATS_NEW_KEY]: freshCtx.APP_RELEASE_VERSION });
+  assert.equal(seenCtx.shouldShowWhatsNew(), false);
+  assert.equal(seenCtx.getElHidden('whatsNewModal'), true, 'Seen launch must keep #whatsNewModal hidden');
+  seenCtx.openWhatsNew();
+  assert.equal(seenCtx.getElHidden('whatsNewModal'), false, 'WHAT\'S NEW button must reopen #whatsNewModal');
 
+  // 3. Service Worker v79 + precached BENCHMARK_HANDOUT.md
+  const swSrc = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
+  assert.ok(swSrc.includes("'spacetime-shell-v79'"), 'sw.js must use spacetime-shell-v79');
+  assert.ok(swSrc.includes('./spin-waves/BENCHMARK_HANDOUT.md'), 'sw.js must precache BENCHMARK_HANDOUT.md');
+
+  // 4. Saved 10-12 us benchmark JSON & BENCHMARK_HANDOUT.md prints
+  const benchJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'benchmarks/longterm-results.json'), 'utf8'));
+  assert.equal(benchJson.singleMode10us.length, 29);
+  assert.equal(benchJson.pairMatrix10us.length, 406);
+  assert.equal(benchJson.nonrecip12us.length, 14);
+  assert.equal(benchJson.phaseDual0K.length, 25);
+  assert.equal(benchJson.phase4bTransient0K.length, 25);
+  assert.equal(benchJson.sustained4bPhase.length, 11);
+  assert.equal(benchJson.thresholdCurve.length, 24);
+  const p0 = benchJson.phase4bTransient0K.find(r => r.deg === 0);
+  const p180 = benchJson.phase4bTransient0K.find(r => Math.abs(r.deg) === 180);
+  assert.ok(p0 && p180 && p0.peak15 > p180.peak15 * 8,
+    `4B transient phase gate expected >=8x contrast: 0deg=${p0?.peak15}, 180deg=${p180?.peak15}`);
+  const th88Off = benchJson.thresholdCurve.find(r => Math.abs(r.mult - 0.88) < 1e-6 && r.t4B === false);
+  const th88On = benchJson.thresholdCurve.find(r => Math.abs(r.mult - 0.88) < 1e-6 && r.t4B === true && r.deg === 0);
+  assert.ok(th88On && th88Off && th88On.meanTailH > 0.008 && th88Off.meanTailH < 0.0005,
+    `10 us continuous 4B expected ON>0.008 vs OFF<0.0005 at 0.88x: ON=${JSON.stringify(th88On)} OFF=${JSON.stringify(th88Off)}`);
+
+  const handoutMd = fs.readFileSync(path.join(rootDir, 'spin-waves/BENCHMARK_HANDOUT.md'), 'utf8');
+  assert.ok(handoutMd.includes('3.09911309e+10') && handoutMd.includes('4.7543e-7') && handoutMd.includes('tukey(128,1)[:64]'));
+  assert.ok(handoutMd.includes('Verbatim Physical Prints'));
+});
 

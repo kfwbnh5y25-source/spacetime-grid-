@@ -13,6 +13,9 @@
   .hudPill { padding: 5px 11px; border: 1px solid rgba(190,220,255,.2); border-radius: 99px; background: rgba(4,9,18,.76); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .07em; color: rgba(235,245,255,.88); white-space: nowrap; }
   .hudPill.warn { border-color: rgba(255,200,95,.55); color: #ffd479; }
   .hudPill.active { border-color: rgba(110,225,175,.55); color: #8af0c4; }
+  .hudPill.cedric { pointer-events: auto; cursor: pointer; border-color: rgba(244,114,182,.65); background: linear-gradient(135deg, rgba(64,16,42,.88), rgba(32,18,58,.86)); color: #fbcfe8; animation: cedricPulse 2.4s ease-in-out infinite; }
+  .hudPill.cedric.on { border-color: #f9a8d4; box-shadow: 0 0 18px rgba(244,114,182,.65); color: #fff; }
+  @keyframes cedricPulse { 0%, 100% { box-shadow: 0 0 6px rgba(244,114,182,.25); } 50% { box-shadow: 0 0 16px rgba(244,114,182,.62); } }
   #controlsPanel { position: fixed; z-index: 8; top: max(54px,calc(env(safe-area-inset-top) + 42px)); right: max(14px,env(safe-area-inset-right)); width: min(344px,calc(100vw - 28px)); max-height: calc(100vh - 122px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(190,220,255,.2); border-radius: 14px; background: rgba(5,10,20,.86); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
   #controlsPanel summary { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: grab; touch-action: none; padding: 10px 12px; background: rgba(5,10,20,.96); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .10em; color: rgba(225,238,255,.92); }
   #controlsPanel summary:active { cursor: grabbing; }
@@ -115,6 +118,11 @@
   #dbDiagBanner.ok { border-color: rgba(52,211,153,.45); color: #a7f3d0; background: rgba(12,60,45,.32); }
   #verifyModal { position: fixed; z-index: 12; left: 50%; top: max(56px, calc(env(safe-area-inset-top) + 46px)); transform: translateX(-50%); width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 82px); display: flex; flex-direction: column; border: 1px solid rgba(175,215,255,.30); border-radius: 15px; background: rgba(5,11,22,.95); color: #ebf3ff; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 18px 48px rgba(0,0,0,.72); overflow: hidden; }
   #verifyModal[hidden] { display: none; }
+  #whatsNewModal { position: fixed; z-index: 15; left: 50%; top: max(56px, calc(env(safe-area-inset-top) + 46px)); transform: translateX(-50%); width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 82px); display: flex; flex-direction: column; border: 1px solid rgba(130,220,255,.38); border-radius: 15px; background: rgba(5,11,22,.96); color: #ebf3ff; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 20px 52px rgba(0,0,0,.78); overflow: hidden; }
+  #whatsNewModal[hidden] { display: none; }
+  .wnGrid { display: grid; gap: 6px; }
+  .wnCard { padding: 7px 9px; border-radius: 9px; border: 1px solid rgba(190,220,255,.16); background: rgba(14,26,46,.65); font: 11px/1.38 system-ui,-apple-system,sans-serif; color: rgba(220,235,255,.88); }
+  .wnCard b { color: #9ad8ff; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: 10px; }
   .vmHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 13px; border-bottom: 1px solid rgba(190,220,255,.15); background: rgba(9,18,34,.96); cursor: grab; touch-action: none; }
   .vmHeader:active { cursor: grabbing; }
   .vmTitle { font: 700 10.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: #9ad8ff; }
@@ -187,9 +195,11 @@
   <div class="hudPill" id="modeBadge">d'AQUINO NMM · UNIFORM H</div>
   <div class="hudPill" id="threshBadge">h_p / h_th: 1.00</div>
   <div class="hudPill active" id="domModeBadge">MODE: m13 (1.9739G)</div>
+  <button class="hudPill cedric" id="cedricEggBtn" type="button" title="Click for a special spin-wave surprise">♥ FOR CÉDRIC</button>
 </div>
 <div id="quickLaunchBar">
   <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves step-by-step guide">GUIDE ?</button>
+  <button class="quickPill accent" id="quickWhatsNewBtn" type="button" title="Summary of recent physics, controls & 10+ µs benchmark updates">WHAT'S NEW</button>
   <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
   <button class="quickPill accent" id="quickCoexBtn" type="button" title="Scenario 1 (S_det > 0): coupled c++ coexistence between m13 (+2.99 GHz) & m23 (+0.38 GHz)">COEX c++</button>
   <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Scenario 2 (S_det < 0): 2-Tone 3.0µs Delayed Nonreciprocity on (m13, m16)">3µs NONRECIP</button>
@@ -358,7 +368,7 @@
         <span id="logStatusBadge" style="color:#6ee7b7;">REC · 0 ev</span>
       </div>
       <div class="btnRow">
-        <button class="btn tiny active" id="btnOpenVerify" type="button" title="Open interactive 7-stage Benchmark, Calibration & Verification Protocol">Verify &amp; Cal</button>
+        <button class="btn tiny active" id="btnOpenVerify" type="button" title="Open interactive 8-stage Benchmark, Calibration & Verification Protocol">Verify &amp; Cal</button>
         <button class="btn tiny" id="btnSaveLogDb" type="button" title="Upload complete physics, verification & UI trace to Supabase DB + local IndexedDB">Save → DB</button>
         <button class="btn tiny" id="btnExportLog" type="button" title="Download full JSON log for inspection">JSON</button>
       </div>
@@ -434,8 +444,9 @@
   </div>
   <div class="vmBody">
     <div class="vmTabs" id="vmTabs">
-      <button class="vmTab active" data-tab="protocol" type="button">PROTOCOL (7 STAGES)</button>
+      <button class="vmTab active" data-tab="protocol" type="button">PROTOCOL (8 STAGES)</button>
       <button class="vmTab" data-tab="live" type="button">LIVE CALIBRATION &amp; 4B</button>
+      <button class="vmTab" data-tab="handout" type="button">BENCHMARK HANDOUT</button>
       <button class="vmTab" data-tab="db" type="button">DB VAULT &amp; CONFIG</button>
     </div>
     <div id="vmTabProtocol">
@@ -447,7 +458,7 @@
       </div>
       <div class="vmProgressWrap"><div class="vmProgressBar" id="vmProgressBar"></div></div>
       <div class="vmSummaryRow" style="margin:6px 0 8px;">
-        <span id="vmStatusText">Ready — run all 7 stages or test individual calibration/physics stages below.</span>
+        <span id="vmStatusText">Ready — run all 8 stages or test individual calibration/physics stages below.</span>
         <span id="vmScoreBadge" class="vmBadge idle">IDLE</span>
       </div>
       <div class="vmStageList" id="vmStageList"></div>
@@ -465,6 +476,37 @@
       </div>
       <div id="vmLiveOut" class="vmCodeBox" style="white-space:pre-wrap;min-height:110px;">Click "Inspect Live State vs Theory" to compare current simulation amplitudes against d'Aquino Eqs. (31)–(34) / (55)–(57), check 4A frequency shifts vs 4B parametric cross-pumping (P_hk a_k² a_h*), and log the calibration snapshot.</div>
     </div>
+    <div id="vmTabHandout" hidden>
+      <div class="btnRow" style="margin-bottom:7px;justify-content:space-between;align-items:center;">
+        <span class="sectionLabel">d'Aquino (2026) Long-Term 10–12 µs Physical Handout</span>
+        <a class="btn tiny active" href="./BENCHMARK_HANDOUT.md" target="_blank" rel="noopener">Open Full BENCHMARK_HANDOUT.md ↗</a>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="vmTable">
+          <thead><tr><th>Parameter / Suite</th><th>Exact Physical Specification</th><th>Verified 10–12 µs Measurement</th></tr></thead>
+          <tbody>
+            <tr><td>YIG Disk &amp; Field</td><td>3.0 µm × 50 nm (V = 3.5343e-19 m³, 2032 cells) · B_DC = 27.0 mT</td><td>μ₀M_s = 176.0 mT · ω_M = 3.099113e10 rad/s · f_M = 4.932392 GHz</td></tr>
+            <tr><td>Modes &amp; Thermal Bath</td><td>M = 29 modes (1.7033–2.0689 GHz) · Brown Θ(300K) = 4.7543e-7</td><td>a_rms(300K) = 6.8951e-4 · 1 ns Tukey(128,1)[:64] AWG · dt₀ = 0.65 τ</td></tr>
+            <tr><td>Single-Mode 10 µs</td><td>All 29/29 modes @ 1.6× h_th + 10 @ 3.0× + 4 Full NMM</td><td>21/29 isolated modes ≤1.06% Eq.(33) err, drift ≤4.15e-4, ||m|−1| ≤3.94e-8</td></tr>
+            <tr><td>406-Pair 10 µs &amp; Nonrecip</td><td>All 406 pairs @ 10 µs + 12 µs Nonrecip (0K/300K + Swap)</td><td>304/390 (77.9%) separated Table-I match · 0K &amp; 300K Swap memory intact</td></tr>
+            <tr><td>360° Phase &amp; 4B Δh_th</td><td>Δφ (−180°..+180°) + 4B φ₁ gate + 0.65×..1.08× 4A-vs-4B</td><td>Δφ 46323× · 4B φ₁ transient 11.00× (0.48µs) · 10µs 4B ON 0.0124 vs OFF 4.1e-5</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sectionLabel" style="margin-top:8px;margin-bottom:4px;">VERBATIM SOLVER TELEMETRY PRINTS (benchmarks/longterm-results.json)</div>
+      <pre class="vmCodeBox" style="margin:0;white-space:pre-wrap;max-height:190px;overflow:auto;">[SIM_ENV] d'Aquino (2026) NMM | M=29 modes (f=1.7033..2.0689 GHz) | B_DC=27 mT | mu0*Ms=176 mT
+[SIM_ENV] omega_M=3.099113e+10 rad/s | f_M=4.932392 GHz | 1 us=30991.13 tau | Theta(300K)=4.7543e-7
+[SINGLE_10US] 21/29 isolated modes max Eq33 err=1.06%, max drift=4.15e-4, max |m|-1=3.94e-8
+[SINGLE_10US] m0  (Edge, +207.43G) h=0.735 mT -> t=1us:0.005596 5us:0.005553 10us:0.005416 (Eq33=0.005468)
+[SINGLE_10US] m13 (Bulk,   +2.99G) h=0.623 mT -> t=1us:0.052718 5us:0.052124 10us:0.052173 (Eq33=0.052428)
+[SINGLE_10US] m27 (Kitt,   -2.38G) h=0.629 mT -> t=1us:0.060126 5us:0.060171 10us:0.060170 (Eq33=0.060617)
+[PAIR_MATRIX] Tested 406 pairs @ 10.0 us: separated Table-I match=304/390 (77.9%) | S1=71/290, S2=110/116
+[NONRECIP_12US_0K] T1->T2 (m13,m16): t=1us:(0.03698,0) 6us:(0.04895,0.00003) 12us:(0.036,0.00003)
+[NONRECIP_12US_0K] SWAP T2->T1     : t=1us:(0,0.05811) 6us:(0.00005,0.05815) 12us:(0.00001,0.06419)
+[PHASE_DUAL_10US] m13 @ 0.75*h_th each: Δφ=0deg -> a13(10us)=0.046323 vs Δφ=180deg -> a13(10us)=0
+[4B_TRANSIENT] (m16->m15, 0.90*h_th) φ1=0deg -> peak(0.48us)=0.015582 vs φ1=180deg -> peak=0.001416
+[4B_SUSTAINED_10US] (m15@0.88x + m16@2.0x) 4B_OFF tailMean=0.000041 vs 4B_ON(0deg) tailMean=0.012372</pre>
+    </div>
     <div id="vmTabDb" hidden>
       <div class="vmInputGrid">
         <div class="vmInputRow"><label for="dbUrlInput">REST URL</label><input id="dbUrlInput" type="text" spellcheck="false"></div>
@@ -479,6 +521,26 @@
       <div id="dbModalStatus" class="vmCodeBox" style="margin-bottom:7px;white-space:pre-wrap;">Checking database config...</div>
       <div class="sectionLabel" style="margin-bottom:4px;">LOCAL INDEXEDDB SESSION VAULT (OFFLINE-SAFE HISTORY)</div>
       <div id="idbSessionsList" style="display:grid;gap:5px;"></div>
+    </div>
+  </div>
+</section>
+<section id="whatsNewModal" hidden aria-label="What's New in Spin Waves v79">
+  <div class="vmHeader">
+    <span class="vmTitle">WHAT'S NEW · SPIN WAVES v79 (d'AQUINO 2026 NMM)</span>
+    <button class="tutClose" id="wnCloseBtn" type="button" aria-label="Close what's new summary">×</button>
+  </div>
+  <div class="vmBody">
+    <div class="wnGrid">
+      <div class="wnCard"><b>1 · 4B Downward Arnold &amp; φ₁ Phase Gate</b><br>New <code>4B Down+φ</code> preset &amp; Tone 1 Phase <code>φ₁</code> slider show unmodified <code>P_hk a_h* a_k²</code> cross-pumping: sub-threshold <code>m15</code> ignites below <code>h_th</code> (<code>11.00×</code> transient <code>0°/180°</code> contrast; continuous dual-tone sustains down to <code>0.65× h_th</code> for <code>10 µs</code>).</div>
+      <div class="wnCard"><b>2 · Arnold Viewport (AUTO / PAN / FIT / Zoom / f_c / h₀)</b><br>Auto-follow keeps <code>4A</code>-shifted tongues in frame; pinch-to-zoom, two-finger trackpad scroll, <code>PAN</code> / <code>Alt+drag</code>, and sliders zoom <code>1×–8×</code> across all 29 modes.</div>
+      <div class="wnCard"><b>3 · Smooth FAST→SS &amp; Adaptive High-Amp RK4</b><br>Animated <code>FAST→SS</code> stepping (<code>49 τ/frame</code>) plus adaptive RK4 step control stay bounded at <code>3.0–3.5× h_th</code> and reveal multi-µs dense-mode competition.</div>
+      <div class="wnCard"><b>4 · 8-Stage Verify &amp; 10–12 µs Benchmark Handout</b><br>Added Stage 8 long-term verification, embedded <code>BENCHMARK HANDOUT</code> tab, exact SI/NMM telemetry, and full <a href="./BENCHMARK_HANDOUT.md" target="_blank" rel="noopener" style="color:#9ad8ff;">BENCHMARK_HANDOUT.md</a>.</div>
+    </div>
+    <div class="btnRow" style="justify-content:flex-end;">
+      <button class="btn" id="wnOpenGuideBtn" type="button">Open Guide</button>
+      <button class="btn" id="wnOpenVerifyBtn" type="button">Run 8-Stage Verify</button>
+      <button class="btn" id="wnOpenHandoutBtn" type="button">View Handout</button>
+      <button class="btn active" id="wnGotItBtn" type="button">Got it</button>
     </div>
   </div>
 </section>
@@ -2533,6 +2595,62 @@
     drawArnoldTongues();
   }, { passive: false });
 
+  let cedricHeartMode = false;
+  function drawCedricOverlay(cxD, cyD, rD) {
+    const tNow = nowWallMs() * 0.001;
+    const pulse = 1 + 0.06 * Math.sin(tNow * 3.4);
+    const sc = (rD * 0.028) * pulse;
+    ctx.save();
+    ctx.beginPath();
+    for (let k = 0; k <= 80; k++) {
+      const a = (k / 80) * Math.PI * 2;
+      const hx = 16 * Math.pow(Math.sin(a), 3);
+      const hy = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a));
+      const px = cxD + hx * sc, py = cyD + hy * sc;
+      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(244, 114, 182, 0.16)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(249, 168, 212, 0.92)';
+    ctx.lineWidth = 2.2;
+    ctx.shadowColor = 'rgba(244, 114, 182, 0.85)';
+    ctx.shadowBlur = 14;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    for (let j = 0; j < 8; j++) {
+      const ang = tNow * 0.9 + (j * Math.PI) / 4;
+      const orbR = rD * (0.76 + 0.05 * Math.sin(tNow * 2 + j));
+      ctx.fillStyle = j % 2 === 0 ? 'rgba(251, 191, 36, 0.85)' : 'rgba(249, 168, 212, 0.9)';
+      ctx.font = '13px system-ui,sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('♥', cxD + Math.cos(ang) * orbR, cyD + Math.sin(ang) * orbR);
+    }
+    ctx.fillStyle = '#fdf2f8';
+    ctx.font = '700 13px ui-monospace,SFMono-Regular,Menlo,monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('FOR CÉDRIC ♥', cxD, cyD - 4);
+    ctx.fillStyle = '#fde68a';
+    ctx.font = '600 9.5px ui-monospace,SFMono-Regular,Menlo,monospace';
+    ctx.fillText('Δφ = 0° CONSTRUCTIVE COHERENCE ∞', cxD, cyD + 14);
+    ctx.restore();
+  }
+  function toggleCedricHeartMode(forceOn = null) {
+    cedricHeartMode = forceOn === null ? !cedricHeartMode : !!forceOn;
+    const btn = document.getElementById('cedricEggBtn');
+    if (btn && btn.classList) {
+      btn.classList.toggle('on', cedricHeartMode);
+      btn.textContent = cedricHeartMode ? '♥ CÉDRIC · Δφ=0° ON' : '♥ FOR CÉDRIC';
+    }
+    if (cedricHeartMode) {
+      exciteEigenmode(13, 0.04);
+      showLogToast('♥ FOR CÉDRIC', 'Phase-locked at Δφ = 0°: constructive resonance forever, Cédric ♥');
+    } else {
+      showLogToast('♥ HEART MODE OFF', 'Returned to standard YIG spatial profile.');
+    }
+    drawScene();
+  }
+
   function drawScene() {
     reconstructSpatialSpins();
     const data = imgData.data;
@@ -2586,6 +2704,7 @@
       }
     }
     ctx.stroke(); ctx.restore();
+    if (cedricHeartMode && ctx && typeof ctx.save === 'function') drawCedricOverlay(width * 0.5, height * 0.5, size * 0.495);
 
     const meanAmp = ampSum / NACT;
     lastMeanDynAmp = meanAmp; lastPeakDyn = peakDyn;
@@ -3782,7 +3901,7 @@
   const verifyModalEl = document.getElementById('verifyModal');
   let verifyAbort = false;
   let verifyRunning = false;
-  const verifyStageResults = new Array(7).fill(null);
+  const verifyStageResults = new Array(8).fill(null);
 
   function saveSimSnapshot() {
     return {
@@ -4245,6 +4364,81 @@
         });
         return checks;
       }
+    },
+    {
+      id: 'bench_longterm_steadystate',
+      name: 'Ver 8 · Long-Term Steady States, Phase & 4B Δh_th',
+      desc: 'Verifies multi-µs m13 drift vs Eq.(33), 0°/180° phase gate stability, and sustained sub-threshold 4B ignition',
+      run() {
+        const checks = [];
+        setNmmMode(false);
+        temperatureK = 0; damping = 0.0020; driveMode = 'parallel';
+        // 1. Long-term m13 2.5 µs steady-state drift vs Eq.(33)
+        const f13 = 2 * fGhzArr[13] + 0.002;
+        const h13 = 1.6 * parametricThreshold(13);
+        dualTone = false; driveAmp2 = 0; drivePhase1 = 0; drivePhase2 = 0;
+        driveFreq = f13; driveAmp = h13; simTime = 0;
+        seedSpins(0.005, [13]);
+        const dt = 0.65;
+        const steps1 = Math.round(usToTau(1.0) / dt), steps25 = Math.round(usToTau(2.5) / dt);
+        for (let s = 1; s <= steps1; s++) stepLlg(dt, true);
+        const a1us = cycleAvgModeAmp(13);
+        for (let s = steps1 + 1; s <= steps25; s++) stepLlg(dt, true);
+        const a25us = cycleAvgModeAmp(13);
+        const eq33 = steadyStateAmp(13, f13, h13, 0, true);
+        const errEq33 = Math.abs(a25us - eq33) / Math.max(1e-6, eq33);
+        const drift = Math.abs(a25us - a1us);
+        checks.push({
+          label: 'm13 long-term 2.5µs Eq.(33) & drift',
+          expected: '<2% err, <2e-3 drift',
+          measured: `${(errEq33 * 100).toFixed(2)}% err, Δ=${drift.toExponential(2)}`,
+          pass: errEq33 < 0.02 && drift < 0.002
+        });
+
+        // 2. Dual-tone Δφ 0° vs 180° sustained over 2.0 µs
+        const hSub = 0.75 * parametricThreshold(13);
+        const steps2 = Math.round(usToTau(2.0) / dt);
+        dualTone = true; tone2WaitSS = false; tone2DelayNs = 0;
+        driveFreq = 2 * fGhzArr[13]; driveAmp = hSub;
+        driveFreq2 = driveFreq; driveAmp2 = hSub;
+        drivePhase1 = 0; drivePhase2 = 0; simTime = 0; seedSpins(0.005, [13]);
+        for (let s = 0; s < steps2; s++) stepLlg(dt, true);
+        const aPhi0 = cycleAvgModeAmp(13);
+        drivePhase2 = Math.PI; simTime = 0; seedSpins(0.005, [13]);
+        for (let s = 0; s < steps2; s++) stepLlg(dt, true);
+        const aPhi180 = cycleAvgModeAmp(13);
+        checks.push({
+          label: 'Long-term 2.0µs Δφ gate (0° vs 180°)',
+          expected: '>0.040 / <0.0005',
+          measured: `${aPhi0.toFixed(4)} / ${aPhi180.toFixed(5)}`,
+          pass: aPhi0 > 0.040 && aPhi180 < 0.0005
+        });
+
+        // 3. Continuous 4B sustained sub-threshold maintenance (m15 @ 0.88× + m16 @ 2.0×)
+        const run4BCtrl = (enable4B) => {
+          terms.t4A = true; terms.t4B = enable4B;
+          driveFreq = 2 * fGhzArr[15] + 0.002; driveAmp = 0.88 * parametricThreshold(15); drivePhase1 = 0;
+          driveFreq2 = 2 * fGhzArr[16] + 0.002; driveAmp2 = 2.0 * parametricThreshold(16); drivePhase2 = 0;
+          simTime = 0; seedSpins(0.004, [15, 16]);
+          const tot = Math.round(usToTau(2.5) / dt), tailStart = Math.round(usToTau(1.5) / dt);
+          let sum = 0, cnt = 0;
+          for (let s = 1; s <= tot; s++) {
+            stepLlg(dt, true);
+            if (s >= tailStart && s % 200 === 0) { sum += cycleAvgModeAmp(15); cnt++; }
+          }
+          return sum / Math.max(1, cnt);
+        };
+        const mean4BOff = run4BCtrl(false);
+        const mean4BOn = run4BCtrl(true);
+        terms.t4B = false;
+        checks.push({
+          label: 'Continuous 4B sub-threshold m15 (0.88×)',
+          expected: 'ON > 0.008 / OFF < 0.001',
+          measured: `ON=${mean4BOn.toFixed(4)} vs OFF=${mean4BOff.toFixed(5)}`,
+          pass: mean4BOn > 0.008 && mean4BOff < 0.001
+        });
+        return checks;
+      }
     }
   ];
 
@@ -4274,8 +4468,8 @@
     }
     if (statusEl && !verifyRunning) {
       statusEl.textContent = doneStages === 0
-        ? 'Ready — run all 7 stages or test individual calibration/physics stages below.'
-        : `Completed ${doneStages}/7 stages: ${passedChecks}/${totalChecks} assertions passed.`;
+        ? `Ready — run all ${VERIFY_STAGES.length} stages or test individual calibration/physics stages below.`
+        : `Completed ${doneStages}/${VERIFY_STAGES.length} stages: ${passedChecks}/${totalChecks} assertions passed.`;
     }
     if (listEl) {
       listEl.innerHTML = VERIFY_STAGES.map((st, idx) => {
@@ -4334,7 +4528,7 @@
     try {
       for (let i = 0; i < VERIFY_STAGES.length; i++) {
         if (verifyAbort) break;
-        if (statusEl) statusEl.textContent = `Running stage ${i + 1}/7: ${VERIFY_STAGES[i].name}...`;
+        if (statusEl) statusEl.textContent = `Running stage ${i + 1}/${VERIFY_STAGES.length}: ${VERIFY_STAGES[i].name}...`;
         await yieldFrame();
         runVerificationStage(i, false);
       }
@@ -4499,14 +4693,43 @@
     });
     const tP = document.getElementById('vmTabProtocol');
     const tL = document.getElementById('vmTabLive');
+    const tH = document.getElementById('vmTabHandout');
     const tD = document.getElementById('vmTabDb');
     if (tP) tP.hidden = tabName !== 'protocol';
     if (tL) tL.hidden = tabName !== 'live';
+    if (tH) tH.hidden = tabName !== 'handout';
     if (tD) tD.hidden = tabName !== 'db';
     renderVerifyUi();
     renderDbModalStatus();
     if (tabName === 'db') refreshIdbVault();
   }
+
+  const APP_RELEASE_VERSION = 'spacetime-shell-v79';
+  const WHATS_NEW_KEY = 'spin-waves-whatsnew-seen-version';
+  const whatsNewModalEl = document.getElementById('whatsNewModal');
+  function shouldShowWhatsNew() {
+    try { return localStorage.getItem(WHATS_NEW_KEY) !== APP_RELEASE_VERSION; } catch (_) { return true; }
+  }
+  function openWhatsNew() {
+    if (whatsNewModalEl) whatsNewModalEl.hidden = false;
+  }
+  function dismissWhatsNew(markSeen = true) {
+    if (whatsNewModalEl) whatsNewModalEl.hidden = true;
+    if (markSeen) { try { localStorage.setItem(WHATS_NEW_KEY, APP_RELEASE_VERSION); } catch (_) {} }
+  }
+  const quickWhatsNewBtn = document.getElementById('quickWhatsNewBtn');
+  if (quickWhatsNewBtn) quickWhatsNewBtn.addEventListener('click', () => openWhatsNew());
+  const wnCloseBtn = document.getElementById('wnCloseBtn');
+  if (wnCloseBtn) wnCloseBtn.addEventListener('click', () => dismissWhatsNew(true));
+  const wnGotItBtn = document.getElementById('wnGotItBtn');
+  if (wnGotItBtn) wnGotItBtn.addEventListener('click', () => dismissWhatsNew(true));
+  const wnOpenGuideBtn = document.getElementById('wnOpenGuideBtn');
+  if (wnOpenGuideBtn) wnOpenGuideBtn.addEventListener('click', () => { dismissWhatsNew(true); openSwTut(); });
+  const wnOpenVerifyBtn = document.getElementById('wnOpenVerifyBtn');
+  if (wnOpenVerifyBtn) wnOpenVerifyBtn.addEventListener('click', () => { dismissWhatsNew(true); openVerifyModal('protocol'); });
+  const wnOpenHandoutBtn = document.getElementById('wnOpenHandoutBtn');
+  if (wnOpenHandoutBtn) wnOpenHandoutBtn.addEventListener('click', () => { dismissWhatsNew(true); openVerifyModal('handout'); });
+  if (shouldShowWhatsNew()) openWhatsNew();
 
   const quickVerifyBtn = document.getElementById('quickVerifyBtn');
   if (quickVerifyBtn) quickVerifyBtn.addEventListener('click', () => openVerifyModal('protocol'));
@@ -4590,6 +4813,20 @@
       refreshIdbVault();
     }
   });
+
+  const cedricEggBtnEl = document.getElementById('cedricEggBtn');
+  if (cedricEggBtnEl && cedricEggBtnEl.addEventListener) {
+    cedricEggBtnEl.addEventListener('click', () => toggleCedricHeartMode());
+  }
+  let cedricKeyBuf = '';
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('keydown', e => {
+      const tag = e && e.target && e.target.tagName ? String(e.target.tagName).toLowerCase() : '';
+      if (tag === 'input' || tag === 'textarea' || !e || !e.key || e.key.length !== 1) return;
+      cedricKeyBuf = (cedricKeyBuf + e.key.toLowerCase()).slice(-6);
+      if (cedricKeyBuf === 'cedric') toggleCedricHeartMode(true);
+    });
+  }
 
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('error', e => {
