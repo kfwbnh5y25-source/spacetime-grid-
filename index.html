@@ -250,16 +250,27 @@ vec4 geodesicDerivative(vec4 state){
  vec2 acceleration=-2.0*dot(v,grad)*v+dot(v,v)*grad;
  return vec4(v,acceleration);
 }
+vec4 rk4GeodesicStep(vec4 s,float h){
+ vec4 k1=geodesicDerivative(s);
+ vec4 k2=geodesicDerivative(s+0.5*h*k1);
+ vec4 k3=geodesicDerivative(s+0.5*h*k2);
+ vec4 k4=geodesicDerivative(s+h*k3);
+ return s+(h/6.0)*(k1+2.0*k2+2.0*k3+k4);
+}
 vec4 traceGeodesic(vec2 p,vec2 direction,float distanceAlong){
  vec4 state=vec4(p,normalize(direction));
  if(distanceAlong<=0.0001)return state;
- float h=distanceAlong/6.0;
- for(int k=0;k<6;k++){
-  vec4 k1=geodesicDerivative(state);
-  vec4 k2=geodesicDerivative(state+0.5*h*k1);
-  vec4 k3=geodesicDerivative(state+0.5*h*k2);
-  vec4 k4=geodesicDerivative(state+h*k3);
-  state+=(h/6.0)*(k1+2.0*k2+2.0*k3+k4);
+ float travelled=0.0,h=min(12.0,distanceAlong);
+ for(int iteration=0;iteration<256;iteration++){
+  if(travelled>=distanceAlong-0.00001)break;
+  h=min(h,distanceAlong-travelled);
+  vec4 full=rk4GeodesicStep(state,h);
+  vec4 half=rk4GeodesicStep(state,0.5*h);
+  half=rk4GeodesicStep(half,0.5*h);
+  float error=max(length(half.xy-full.xy),h*length(half.zw-full.zw));
+  float factor=error<0.0000001?2.0:clamp(0.9*pow(0.02/error,0.2),0.5,2.0);
+  if(error<=0.02||h<=0.25){state=half;travelled+=h;}
+  h=clamp(h*factor,0.25,12.0);
  }
  return state;
 }
@@ -729,30 +740,65 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   });
 
   let warpedX=0, warpedY=0;
-  function spatialMetricGradient(x,y){
+  function spatialMetricGradient(x,y,sourceList=fields,softening=9){
     let psi=1,gx=0,gy=0;
-    if(gravityEnabled)for(let j=0;j<Math.min(fields.length,MAX_GPU_POINTERS);j++){
-      const m=fields[j],dx=x-m.x,dy=y-m.y;
-      const r=Math.sqrt(dx*dx+dy*dy+81),rs=.02*2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
+    for(let j=0;j<Math.min(sourceList.length,MAX_GPU_POINTERS);j++){
+      const m=sourceList[j],dx=x-m.x,dy=y-m.y,r=Math.sqrt(dx*dx+dy*dy+softening*softening);
+      const rs=Number.isFinite(m.rS)?m.rS:.02*2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
       psi+=rs/(4*r);gx-=rs*dx/(4*r*r*r);gy-=rs*dy/(4*r*r*r);
     }
     return {x:2*gx/psi,y:2*gy/psi};
   }
-  function geodesicDerivative(state){
-    const grad=spatialMetricGradient(state.x,state.y),v2=state.vx*state.vx+state.vy*state.vy,dot=state.vx*grad.x+state.vy*grad.y;
+  function geodesicDerivative(state,sourceList=fields,softening=9){
+    const grad=spatialMetricGradient(state.x,state.y,sourceList,softening),v2=state.vx*state.vx+state.vy*state.vy,dot=state.vx*grad.x+state.vy*grad.y;
     return {x:state.vx,y:state.vy,vx:-2*dot*state.vx+v2*grad.x,vy:-2*dot*state.vy+v2*grad.y};
   }
   function addState(a,b,k){return {x:a.x+k*b.x,y:a.y+k*b.y,vx:a.vx+k*b.vx,vy:a.vy+k*b.vy};}
-  function traceSpatialGeodesic(x,y,tx,ty,distance){
-    const length=Math.hypot(tx,ty)||1,state={x,y,vx:tx/length,vy:ty/length};
-    const h=distance/6;
-    for(let k=0;k<6;k++){
-      const a=geodesicDerivative(state),b=geodesicDerivative(addState(state,a,h*.5)),c=geodesicDerivative(addState(state,b,h*.5)),d=geodesicDerivative(addState(state,c,h));
-      state.x+=h*(a.x+2*b.x+2*c.x+d.x)/6;state.y+=h*(a.y+2*b.y+2*c.y+d.y)/6;
-      state.vx+=h*(a.vx+2*b.vx+2*c.vx+d.vx)/6;state.vy+=h*(a.vy+2*b.vy+2*c.vy+d.vy)/6;
-    }
-    return state;
+  function rk4GeodesicStep(state,h,sourceList=fields,softening=9){
+    const a=geodesicDerivative(state,sourceList,softening),b=geodesicDerivative(addState(state,a,h*.5),sourceList,softening);
+    const c=geodesicDerivative(addState(state,b,h*.5),sourceList,softening),d=geodesicDerivative(addState(state,c,h),sourceList,softening);
+    return {x:state.x+h*(a.x+2*b.x+2*c.x+d.x)/6,y:state.y+h*(a.y+2*b.y+2*c.y+d.y)/6,
+      vx:state.vx+h*(a.vx+2*b.vx+2*c.vx+d.vx)/6,vy:state.vy+h*(a.vy+2*b.vy+2*c.vy+d.vy)/6};
   }
+  function traceSpatialGeodesic(x,y,tx,ty,distance,options={}){
+    const sourceList=options.sources??fields,softening=options.softening??9,tolerance=options.tolerance??.02,maxStep=options.maxStep??12,minStep=options.minStep??.25;
+    const length=Math.hypot(tx,ty)||1,state={x,y,vx:tx/length,vy:ty/length};
+    let travelled=0,h=Math.min(maxStep,Math.max(minStep,distance)),steps=0,maxError=0;
+    while(travelled<distance-1e-7&&steps<4096){
+      h=Math.min(h,distance-travelled);
+      const full=rk4GeodesicStep(state,h,sourceList,softening);
+      let half=rk4GeodesicStep(state,h*.5,sourceList,softening);half=rk4GeodesicStep(half,h*.5,sourceList,softening);
+      const error=Math.max(Math.hypot(half.x-full.x,half.y-full.y),h*Math.hypot(half.vx-full.vx,half.vy-full.vy));
+      maxError=Math.max(maxError,error);
+      const factor=error<1e-7?2:Math.max(.5,Math.min(2,.9*Math.pow(tolerance/error,.2)));
+      if(error<=tolerance||h<=minStep+1e-9){state.x=half.x;state.y=half.y;state.vx=half.vx;state.vy=half.vy;travelled+=h;}
+      h=Math.max(minStep,Math.min(maxStep,h*factor));steps++;
+    }
+    state.steps=steps;state.maxLocalError=maxError;state.completed=travelled>=distance-1e-6;return state;
+  }
+  function schwarzschildPsi(x,y,source){return 1+source.rS/(4*Math.hypot(x-source.x,y-source.y));}
+  function geodesicInvariant(state,source){
+    const factor=schwarzschildPsi(state.x,state.y,source)**4;
+    return {energy:factor*(state.vx*state.vx+state.vy*state.vy),angularMomentum:factor*(state.x*state.vy-state.y*state.vx)};
+  }
+  function runGeodesicValidation(){
+    const source={x:0,y:0,rS:40},radial=traceSpatialGeodesic(100,0,1,0,180,{sources:[source],softening:0,tolerance:.002,maxStep:8});
+    const start={x:-180,y:90,vx:1,vy:0},initial=geodesicInvariant(start,source);
+    const orbit=traceSpatialGeodesic(start.x,start.y,start.vx,start.vy,320,{sources:[source],softening:0,tolerance:.002,maxStep:8}),final=geodesicInvariant(orbit,source);
+    const rel=(a,b)=>Math.abs(a-b)/Math.max(1e-12,Math.abs(a)),weakSource={x:0,y:0,rS:.5},impact=100,range=1000;
+    const weak=traceSpatialGeodesic(-range,impact,1,0,2*range,{sources:[weakSource],softening:0,tolerance:.0005,maxStep:8});
+    const measured=Math.atan2(weak.vy,weak.vx),expected=-weakSource.rS/impact;
+    const reference=traceSpatialGeodesic(start.x,start.y,start.vx,start.vy,320,{sources:[source],softening:0,tolerance:.0001,maxStep:2});
+    const convergence=[.1,.025,.00625].map(tol=>{
+      const q=traceSpatialGeodesic(start.x,start.y,start.vx,start.vy,320,{sources:[source],softening:0,tolerance:tol,maxStep:12});
+      return {tolerance:tol,endpointError:Math.hypot(q.x-reference.x,q.y-reference.y),steps:q.steps,completed:q.completed};
+    });
+    return {model:"unsoftened single-mass Schwarzschild spatial slice; isotropic coordinates",radialStraightLineMaxY:Math.abs(radial.y),radialSteps:radial.steps,
+      relativeMetricSpeedDrift:rel(initial.energy,final.energy),relativeAngularMomentumDrift:rel(initial.angularMomentum,final.angularMomentum),
+      weakFieldDeflectionRad:measured,weakFieldLeadingOrderRad:expected,weakFieldRelativeError:rel(expected,measured),convergence,referenceSteps:reference.steps,
+      note:"Weak-field reference is leading-order spatial-geodesic deflection rS/b, not 4-D light bending 2rS/b. Validation is unsoftened; live renderer uses 9 px softening."};
+  }
+  const geodesicValidation=runGeodesicValidation();
   function warpVertex(g,i,t,horizontal){
     let lineStart=0,lineEnd=g.x.length;
     for(let k=0;k<g.starts.length;k++){
@@ -821,6 +867,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       startup:{firstFrameMs:perf.firstFrame===null?null:+(perf.firstFrame-perf.started).toFixed(1),backgroundImage:imageStatus,imageLoadMs:perf.imageLoad===null?null:+perf.imageLoad.toFixed(1),imageTransferBytes:perf.imageBytes},
       interaction:{activePointers:pointers.size,persistentMasses:persistentMasses.length,activeFields:fields.filter(m=>m.strength>.01).length,gridVertices:geometry?geometry.x.length:0,reducedMotion:reducedMotion.matches},
       geodesic:measureGeodesicMotion(paused?pauseTime:elapsed),
+      geodesicValidation,
       note:'Missed-frame estimate uses the median cadence of the first 30 animation frames as baseline; it is a browser-side estimate, not an exact compositor/GPU count. Safari does not expose device thermal state.'
     };
     return data;
@@ -907,7 +954,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode){let touchPointers=0,downPointers=0;for(const p of pointers.values()){if(p.down){downPointers++;if(p.pointerType==='touch')touchPointers++;}}perf.frameLog.push({t:+(now-perf.started).toFixed(1),intervalMs:+frameDelta.toFixed(2),renderCpuMs:+renderCost.toFixed(2),activePointers:pointers.size,downPointers,touchPointers,dpr,frameCapHz:frameCap});if(perf.frameLog.length>18000)perf.frameLog.shift();}
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nGeodesic sources ${r.geodesic.sources} · persistent masses ${r.interaction.persistentMasses}\nShape deformation RMS/max ${r.geodesic.rmsPx.toFixed(3)}/${r.geodesic.maxPx.toFixed(3)} px\nSimulation ${r.geodesic.simTime.toFixed(2)} units · ${r.geodesic.samples} probes\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nGeodesic sources ${r.geodesic.sources} · persistent masses ${r.interaction.persistentMasses}\nShape deformation RMS/max ${r.geodesic.rmsPx.toFixed(3)}/${r.geodesic.maxPx.toFixed(3)} px\nAdaptive Schwarzschild checks: radial y ${r.geodesicValidation.radialStraightLineMaxY.toExponential(2)} px\nInvariant drift E/L ${r.geodesicValidation.relativeMetricSpeedDrift.toExponential(2)} / ${r.geodesicValidation.relativeAngularMomentumDrift.toExponential(2)}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nConvergence endpoint errors ${r.geodesicValidation.convergence.map(x=>x.endpointError.toExponential(1)).join(' / ')} px\nSimulation ${r.geodesic.simTime.toFixed(2)} units · ${r.geodesic.samples} probes\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
