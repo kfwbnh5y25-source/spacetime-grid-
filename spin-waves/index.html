@@ -36,11 +36,11 @@
   .specTitle { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .08em; color: rgba(215,232,255,.78); margin-bottom: 5px; cursor: grab; touch-action: none; gap: 4px; }
   .specTitle:active { cursor: grabbing; }
   canvas#specCanvas { display: block; width: 100%; height: 52px; }
-  .modeBars { display: grid; gap: 3px; max-height: 124px; overflow-y: auto; padding-right: 2px; }
-  .modeRow { display: grid; grid-template-columns: 112px 1fr 40px; gap: 6px; align-items: center; font: 8.5px/1.05 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.82); cursor: pointer; padding: 1px 2px; border-radius: 4px; }
-  .modeRow:hover { background: rgba(120,175,255,.12); }
-  .modeTrack { height: 5px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
-  .modeFill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg,#68b5ff,#9cf0ff); transition: width .08s linear; }
+  canvas#modeTimeCanvas { display: block; width: 100%; height: 106px; border-radius: 5px; background: rgba(3,7,15,.65); }
+  .modeLegend { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; min-height: 15px; }
+  .modeChip { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(190,220,255,.18); background: rgba(15,28,50,.65); font: 8px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(230,242,255,.92); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .modeChip:hover { background: rgba(120,175,255,.18); border-color: rgba(165,215,255,.5); }
+  .modeChipDot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
   .magnonGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(190,220,255,.12); font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,226,255,.78); }
   .magnonGrid b { color: #9ad8ff; font-weight: 600; }
   #backBtn { position: fixed; z-index: 9; right: max(14px,env(safe-area-inset-right)); bottom: max(16px,env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 13px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.78); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
@@ -122,7 +122,8 @@
     .readoutCard { padding: 6px 8px; }
     #hInputBox { padding: 4px 7px; }
     canvas#hInputCanvas { height: 22px; }
-    .modeRow { grid-template-columns: 92px 1fr 34px; font-size: 8px; }
+    canvas#modeTimeCanvas { height: 78px; }
+    .modeChip { font-size: 7.5px; padding: 1px 4px; }
     #spectrumBox { display: none; }
     #arnoldBox { display: none; position: fixed; left: 10px; width: min(344px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); z-index: 9; }
     #arnoldBox.mobileOpen { display: block; }
@@ -328,8 +329,9 @@
     <canvas id="hInputCanvas" width="290" height="28"></canvas>
   </div>
   <div class="readoutCard" id="modesBox">
-    <div class="specTitle"><span>29 NORMAL MODES (&gt;1.6G)</span><span id="ampTotal">⟨|δm|⟩: 0.000</span></div>
-    <div class="modeBars" id="modeBars"></div>
+    <div class="specTitle"><span>NONZERO MODES |a(t)|</span><span id="modeWinSpan" style="color:#8ec5ff;">0.35ns</span><span id="ampTotal">⟨|δm|⟩: 0.000</span></div>
+    <canvas id="modeTimeCanvas" width="290" height="106"></canvas>
+    <div class="modeLegend" id="modeLegend"></div>
     <div class="magnonGrid" id="magnonTerms">
       <div><b>1M</b> Direct: <span id="m1Val">0.00</span></div>
       <div><b>2M</b> h/h_th: <span id="m2Val">0.00</span></div>
@@ -582,6 +584,20 @@
     prevSpecVal = val;
   }
 
+  const SPEED_FRAME_STEPS = {
+    0.25: [1, 0.025],
+    1: [1, 0.06],
+    5: [1, 0.30],
+    25: [3, 0.50],
+    150: [18, 0.50]
+  };
+  const TONGUE_COLORS = { 10: '#38bdf8', 13: '#6ee7b7', 16: '#fbbf24', 20: '#f472b6', 23: '#a78bfa', 27: '#fb7185' };
+  function modeColor(m) {
+    if (TONGUE_COLORS[m]) return TONGUE_COLORS[m];
+    const hue = Math.round((m * 137.508) % 360);
+    return `hsl(${hue}, 82%, 68%)`;
+  }
+
   const MODE_HIST_LEN = 48;
   const modeHistSq = Array.from({ length: M }, () => new Float32Array(MODE_HIST_LEN));
   const modeHistTime = new Float32Array(MODE_HIST_LEN);
@@ -591,11 +607,57 @@
   let modeHistHead = 0, modeHistCount = 0, lastModeSampleT = -1;
   let visualPeakDyn = 0, lastMeanDynAmp = 0, lastPeakDyn = 0, lastSpecPeakGHz = 0;
 
+  const PLOT_HIST_CAP = 512;
+  const plotHistTau = new Float64Array(PLOT_HIST_CAP);
+  const plotHistAmps = new Float32Array(PLOT_HIST_CAP * M);
+  let plotHistHead = 0, plotHistCount = 0, lastPlotTau = -1, plotOriginTau = 0;
+  let plotWinTau = 10.8, plotYScale = 0.02, holdPlotWin = false;
+
+  function defaultPlotWinTau() {
+    const sp = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
+    return Math.max(0.5, sp[0] * sp[1] * 180);
+  }
+
+  function recordPlotSample() {
+    const minDt = plotWinTau / 360;
+    if (plotHistCount > 0 && simTime < lastPlotTau - 1e-9) {
+      plotHistHead = 0; plotHistCount = 0; plotOriginTau = simTime;
+    }
+    if (plotHistCount > 0 && (simTime - lastPlotTau) < minDt) {
+      const slot = (plotHistHead - 1 + PLOT_HIST_CAP) % PLOT_HIST_CAP;
+      plotHistTau[slot] = simTime;
+      const off = slot * M;
+      for (let m = 0; m < M; m++) plotHistAmps[off + m] = Math.hypot(aRe[m], aIm[m]);
+      lastPlotTau = simTime;
+      return;
+    }
+    plotHistTau[plotHistHead] = simTime;
+    const off = plotHistHead * M;
+    for (let m = 0; m < M; m++) plotHistAmps[off + m] = Math.hypot(aRe[m], aIm[m]);
+    plotHistHead = (plotHistHead + 1) % PLOT_HIST_CAP;
+    if (plotHistCount < PLOT_HIST_CAP) plotHistCount++;
+    lastPlotTau = simTime;
+  }
+
+  function updatePlotWindow(stepTau) {
+    if (fastForwarding) {
+      holdPlotWin = false;
+      const ffSpan = Math.max(stepTau * 140, (simTime - plotOriginTau) * 1.04);
+      plotWinTau = Math.min(usToTau(8.0), Math.max(plotWinTau, ffSpan));
+    } else if (!holdPlotWin) {
+      const targetWin = Math.max(0.5, stepTau * 180);
+      if (targetWin > plotWinTau * 1.35) plotWinTau += 0.25 * (targetWin - plotWinTau);
+      else plotWinTau += 0.04 * (targetWin - plotWinTau);
+    }
+  }
+
   function resetModeHistory() {
     modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime; lastSpecSampleT = -1; prevSpecT = -1; prevSpecVal = 0;
     probeSeries.fill(0); probeHead = 0;
     tone2Released = false; tone2ReleaseT = Infinity; t1WaitStable = 0; lastWaitCheckT = simTime;
     t1WaitPrev.fill(0); visualPeakDyn = 0;
+    plotHistHead = 0; plotHistCount = 0; lastPlotTau = -1; plotOriginTau = simTime;
+    holdPlotWin = false; plotWinTau = defaultPlotWinTau(); plotYScale = 0.02;
   }
 
   function recordModeSample() {
@@ -604,6 +666,7 @@
     modeHistHead = (modeHistHead + 1) % MODE_HIST_LEN;
     if (modeHistCount < MODE_HIST_LEN) modeHistCount++;
     lastModeSampleT = simTime;
+    recordPlotSample();
   }
 
   function cycleAvgModeAmp(mIdx) {
@@ -1172,22 +1235,177 @@
   fieldCanvas.addEventListener('pointermove', e => { if (pluckDown) pluckAt(e.clientX, e.clientY); });
   window.addEventListener('pointerup', () => { pluckDown = false; });
 
-  function buildModeBars() {
-    const barsEl = document.getElementById('modeBars');
-    if (!barsEl) return;
-    barsEl.innerHTML = MODE_SPECS.map((s, m) => {
-      const bulkTag = s.edgeFrac < 0.25 ? '' : '·E';
-      return `<div class="modeRow" data-m="${m}" title="m${m}: f=${s.fGHz.toFixed(4)}GHz, N=${s.nSelfGHz.toFixed(2)}GHz, edge=${(s.edgeFrac*100).toFixed(0)}%"><span id="ml${m}">m${m} ${s.fGHz.toFixed(3)}G${bulkTag}</span><div class="modeTrack"><div class="modeFill" id="mf${m}"></div></div><span id="mv${m}">0.000</span></div>`;
-    }).join('');
+  const modeTimeCanvas = document.getElementById('modeTimeCanvas');
+  const modeTimeCtx = modeTimeCanvas && modeTimeCanvas.getContext ? modeTimeCanvas.getContext('2d') : null;
+  const modeLegendEl = document.getElementById('modeLegend');
+  let lastLegendKey = '';
+
+  function fmtTauTime(tau) {
+    const ns = (tau * FREQ_TO_RAD) / (2 * Math.PI);
+    if (Math.abs(ns) >= 900) return `${(ns * 1e-3).toFixed(2)}µs`;
+    if (Math.abs(ns) >= 10) return `${ns.toFixed(1)}ns`;
+    return `${ns.toFixed(2)}ns`;
   }
-  const modeBarsEl = document.getElementById('modeBars');
-  if (modeBarsEl) modeBarsEl.addEventListener('click', e => {
-    const row = e.target && e.target.closest ? e.target.closest('.modeRow[data-m]') : null;
-    if (row) {
-      const mIdx = Number(row.dataset.m);
-      exciteEigenmode(mIdx);
-      announcePress(`Mode Row m${mIdx}`, `Excited normal mode m${mIdx} (${fGhzArr[mIdx].toFixed(4)} GHz, N_mm = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz) cleanly on the disk.`, `m${mIdx}`);
+
+  function drawModeTimePlot() {
+    if (!modeTimeCtx || !modeTimeCanvas) return;
+    const w = modeTimeCanvas.width, h = modeTimeCanvas.height;
+    modeTimeCtx.clearRect(0, 0, w, h);
+    modeTimeCtx.fillStyle = 'rgba(5, 11, 22, 0.88)';
+    modeTimeCtx.fillRect(0, 0, w, h);
+
+    const padL = 30, padR = 7, padT = 8, padB = 14;
+    const pw = Math.max(20, w - padL - padR), ph = Math.max(16, h - padT - padB);
+    const tEnd = Math.max(simTime, lastPlotTau >= 0 ? lastPlotTau : simTime);
+    const winTau = Math.max(0.5, plotWinTau);
+    const isScrolling = (tEnd - plotOriginTau) > winTau;
+    const tStart = isScrolling ? (tEnd - winTau) : plotOriginTau;
+    const tRight = isScrolling ? tEnd : (plotOriginTau + winTau);
+    const spanTau = Math.max(1e-6, tRight - tStart);
+
+    const winEl = document.getElementById('modeWinSpan');
+    if (winEl) winEl.textContent = `win ${fmtTauTime(winTau)}`;
+
+    // Collect sample indices inside [tStart, tEnd] plus 1 prior anchor for smooth left entry
+    const visSlots = [];
+    let anchorSlot = -1;
+    for (let k = 0; k < plotHistCount; k++) {
+      const slot = (plotHistHead - plotHistCount + k + PLOT_HIST_CAP) % PLOT_HIST_CAP;
+      const tau = plotHistTau[slot];
+      if (tau < tStart - 1e-9) { anchorSlot = slot; continue; }
+      if (tau <= tRight + 1e-9) visSlots.push(slot);
     }
+    if (anchorSlot >= 0 && visSlots.length > 0) visSlots.unshift(anchorSlot);
+
+    // Find all nonzero modes inside the window (or right now)
+    const peakM = new Float32Array(M);
+    for (let m = 0; m < M; m++) peakM[m] = modeAmps[m];
+    for (let s = 0; s < visSlots.length; s++) {
+      const off = visSlots[s] * M;
+      for (let m = 0; m < M; m++) {
+        const v = plotHistAmps[off + m];
+        if (v > peakM[m]) peakM[m] = v;
+      }
+    }
+    const activeModes = [];
+    for (let m = 0; m < M; m++) {
+      if (peakM[m] > 1e-4) activeModes.push(m);
+    }
+    activeModes.sort((a, b) => peakM[a] - peakM[b]);
+    const rawPeak = activeModes.length ? peakM[activeModes[activeModes.length - 1]] : 0;
+    const targetY = Math.max(0.01, rawPeak * 1.15);
+    if (targetY > plotYScale) plotYScale = targetY;
+    else plotYScale += 0.12 * (targetY - plotYScale);
+
+    const toX = tau => padL + ((tau - tStart) / spanTau) * pw;
+    const toY = amp => padT + ph - Math.min(1, Math.max(0, amp / plotYScale)) * ph;
+
+    // Grid & axes
+    modeTimeCtx.strokeStyle = 'rgba(190,220,255,0.12)';
+    modeTimeCtx.lineWidth = 1;
+    modeTimeCtx.beginPath();
+    modeTimeCtx.moveTo(padL, padT); modeTimeCtx.lineTo(padL, padT + ph); modeTimeCtx.lineTo(padL + pw, padT + ph);
+    modeTimeCtx.moveTo(padL, padT + ph * 0.5); modeTimeCtx.lineTo(padL + pw, padT + ph * 0.5);
+    modeTimeCtx.moveTo(padL, padT); modeTimeCtx.lineTo(padL + pw, padT);
+    modeTimeCtx.stroke();
+
+    // Tone 2 release / delay marker if visible inside moving window
+    if (dualTone && driveAmp2 > 1e-6) {
+      const t2Tau = tone2WaitSS ? (tone2Released ? tone2ReleaseT : -1) : usToTau(tone2DelayNs);
+      if (t2Tau > 0 && t2Tau >= tStart && t2Tau <= tRight) {
+        const xT2 = toX(t2Tau);
+        modeTimeCtx.save();
+        modeTimeCtx.strokeStyle = 'rgba(52,211,153,0.62)';
+        modeTimeCtx.setLineDash([2, 2]);
+        modeTimeCtx.beginPath(); modeTimeCtx.moveTo(xT2, padT); modeTimeCtx.lineTo(xT2, padT + ph); modeTimeCtx.stroke();
+        modeTimeCtx.setLineDash([]);
+        modeTimeCtx.fillStyle = '#6ee7b7';
+        modeTimeCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
+        modeTimeCtx.fillText('T2 ON', Math.min(padL + pw - 26, xT2 + 2), padT + 8);
+        modeTimeCtx.restore();
+      }
+    }
+
+    // Plot curves for every nonzero mode
+    if (visSlots.length >= 1) {
+      for (const m of activeModes) {
+        const faint = activeModes.length > 8 && peakM[m] < Math.max(0.002, rawPeak * 0.06);
+        const col = modeColor(m);
+        modeTimeCtx.save();
+        modeTimeCtx.strokeStyle = col;
+        modeTimeCtx.globalAlpha = faint ? 0.28 : 0.94;
+        modeTimeCtx.lineWidth = faint ? 0.9 : 1.55;
+        modeTimeCtx.beginPath();
+        let lastX = padL, lastY = padT + ph;
+        for (let s = 0; s < visSlots.length; s++) {
+          const slot = visSlots[s];
+          const x = Math.max(padL, Math.min(padL + pw, toX(plotHistTau[slot])));
+          const y = toY(plotHistAmps[slot * M + m]);
+          if (s === 0) modeTimeCtx.moveTo(x, y); else modeTimeCtx.lineTo(x, y);
+          lastX = x; lastY = y;
+        }
+        if (simTime >= lastPlotTau && simTime <= tRight + 1e-9) {
+          lastX = Math.max(padL, Math.min(padL + pw, toX(simTime)));
+          lastY = toY(modeAmps[m]);
+          modeTimeCtx.lineTo(lastX, lastY);
+        }
+        modeTimeCtx.stroke();
+        if (!faint) {
+          modeTimeCtx.fillStyle = col;
+          modeTimeCtx.beginPath(); modeTimeCtx.arc(lastX, lastY, 2.3, 0, Math.PI * 2); modeTimeCtx.fill();
+        }
+        modeTimeCtx.restore();
+      }
+    }
+
+    // Axis labels
+    modeTimeCtx.fillStyle = 'rgba(195,220,250,0.68)';
+    modeTimeCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
+    modeTimeCtx.textBaseline = 'top';
+    modeTimeCtx.fillText(plotYScale.toFixed(plotYScale >= 0.1 ? 2 : 3), 2, padT);
+    modeTimeCtx.textBaseline = 'middle';
+    modeTimeCtx.fillText((plotYScale * 0.5).toFixed(plotYScale >= 0.1 ? 2 : 3), 2, padT + ph * 0.5);
+    modeTimeCtx.textBaseline = 'bottom';
+    modeTimeCtx.fillText('0', 14, padT + ph);
+    modeTimeCtx.fillText(fmtTauTime(tStart), padL, h - 1);
+    const midLabel = fmtTauTime(0.5 * (tStart + tRight));
+    modeTimeCtx.fillText(midLabel, padL + pw * 0.5 - 12, h - 1);
+    const endLabel = fmtTauTime(tRight);
+    modeTimeCtx.fillText(endLabel, Math.max(padL + pw * 0.7, padL + pw - endLabel.length * 4.7), h - 1);
+    if (!activeModes.length) {
+      modeTimeCtx.fillStyle = 'rgba(185,212,245,0.45)';
+      modeTimeCtx.textBaseline = 'middle';
+      modeTimeCtx.fillText('all a_h = 0 (equilibrium)', padL + 16, padT + ph * 0.5);
+    }
+
+    // Update compact clickable legend for top active nonzero modes without DOM thrashing
+    if (modeLegendEl) {
+      const descModes = activeModes.slice().reverse().filter(m => peakM[m] >= Math.max(0.0005, rawPeak * 0.04)).slice(0, 6);
+      const key = descModes.join(',');
+      if (key !== lastLegendKey) {
+        lastLegendKey = key;
+        if (!descModes.length) {
+          modeLegendEl.innerHTML = '<span style="font:8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(185,212,245,.52);">No active nonzero modes yet</span>';
+        } else {
+          modeLegendEl.innerHTML = descModes.map(m =>
+            `<button class="modeChip" type="button" data-m="${m}" title="m${m}: f=${fGhzArr[m].toFixed(4)} GHz, N=${mutualNfsCoeffGHz(m, m).toFixed(2)} GHz — click to excite"><span class="modeChipDot" style="background:${modeColor(m)}"></span><span>m${m}</span><span id="mcVal_${m}">${modeAmps[m].toFixed(3)}</span></button>`
+          ).join('');
+        }
+      } else {
+        for (const m of descModes) {
+          const vEl = document.getElementById('mcVal_' + m);
+          if (vEl) vEl.textContent = modeAmps[m].toFixed(3);
+        }
+      }
+    }
+  }
+
+  if (modeLegendEl) modeLegendEl.addEventListener('click', e => {
+    const chip = e.target && e.target.closest ? e.target.closest('.modeChip[data-m]') : null;
+    if (!chip) return;
+    const mIdx = Number(chip.dataset.m);
+    exciteEigenmode(mIdx);
+    announcePress(`Mode Trace m${mIdx}`, `Excited normal mode m${mIdx} (${fGhzArr[mIdx].toFixed(4)} GHz, N_mm = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz) from time-trace legend.`, `m${mIdx}`);
   });
 
   function updateSpectrum() {
@@ -1263,10 +1481,6 @@
       modeAmps[m] = amp;
       if (amp > domVal) { secVal = domVal; secIdx = domIdx; domVal = amp; domIdx = m; }
       else if (amp > secVal) { secVal = amp; secIdx = m; }
-      const fill = document.getElementById('mf' + m);
-      const val = document.getElementById('mv' + m);
-      if (fill) fill.style.width = Math.min(100, (amp / 0.12) * 100).toFixed(0) + '%';
-      if (val) val.textContent = amp.toFixed(3);
     }
     const domEl = document.getElementById('domModeBadge');
     if (domEl) {
@@ -1286,6 +1500,7 @@
     const m2El = document.getElementById('m2Val'); if (m2El) m2El.textContent = `${m2.toFixed(2)}x`;
     const m3El = document.getElementById('m3Val'); if (m3El) m3El.textContent = `${shiftMHz >= 0 ? '+' : ''}${shiftMHz.toFixed(2)}M`;
     const m4El = document.getElementById('m4Val'); if (m4El) m4El.textContent = `${nSelf >= 0 ? '+' : ''}${nSelf.toFixed(2)}G`;
+    drawModeTimePlot();
   }
 
   // Matrix inspector (Exact d'Aquino N_hk, P_hk, K+_hk, S_det)
@@ -1421,7 +1636,6 @@
   const arnoldCanvas = document.getElementById('arnoldCanvas');
   const arnoldCtx = arnoldCanvas.getContext('2d');
   const ARNOLD_F_MIN = 3.88, ARNOLD_F_MAX = 4.15, ARNOLD_H_MAX_MT = 1.40;
-  const TONGUE_COLORS = { 10: '#38bdf8', 13: '#6ee7b7', 16: '#fbbf24', 20: '#f472b6', 23: '#a78bfa', 27: '#fb7185' };
 
   function drawArnoldTongues() {
     if (!arnoldCtx) return;
@@ -1869,7 +2083,7 @@
       title: 'Coupled 2-Mode Coexistence (COEX c++)',
       body: 'Modes m13 (+2.99G) & m23 (+0.38G) have <b>S_det = +1.08 > 0</b>: both modes coexist simultaneously at shifted steady-state amplitudes. Watch slowly, or tap <b>25×</b> / <b>FAST→SS</b> to jump ahead.',
       formula: 'COEX c++ · (m13, m23) stable fixed point',
-      prompt: '<b>Press now:</b> Click <b>COEX c++</b> in the top bar (or <b>Coex (13,23)</b>), then watch the m13 & m23 bars rise.',
+      prompt: '<b>Press now:</b> Click <b>COEX c++</b> in the top bar (or <b>Coex (13,23)</b>), then watch the m13 & m23 time traces climb.',
       targets: ['#quickCoexBtn', '#presetCoex'],
       actions: ['preset:coex', 'coex'],
       openControls: false
@@ -2264,7 +2478,7 @@
       announcePress('Run Step 4 (Δφ = 0° In-Phase)', 'Two sub-threshold tones (0.75·h_th each) overlap at Δφ = 0° → constructive sum 1.50·h_th excites m13! Now slide Δφ to 180° to cancel.', 'dualTone');
     } else if (step === 4) {
       playbackSpeed = 25; applyPreset('coex');
-      announcePress('Run Step 5 (COEX c++ at 25×)', 'Scenario 1 (S_det = +1.08 > 0): pumping m13 & m23 simultaneously. Speed set to 25× so both bars climb steadily.', 'preset:coex');
+      announcePress('Run Step 5 (COEX c++ at 25×)', 'Scenario 1 (S_det = +1.08 > 0): pumping m13 & m23 simultaneously. Speed set to 25× so both time traces climb steadily.', 'preset:coex');
     } else if (step === 5) {
       playbackSpeed = 150; applyPreset('nonrecip');
       announcePress('Run Step 6 (3µs NONRECIP at 150×)', 'Scenario 2 (S_det = −12.84 < 0): m13 starts first while m16 waits (WAIT T1 SS). Click FAST→SS to jump right to release!', 'preset:nonrecip');
@@ -2481,7 +2695,7 @@
   });
   document.getElementById('btnPause').addEventListener('click', e => {
     paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause';
-    announcePress(paused ? 'Pause' : 'Resume', paused ? 'Froze spin-wave time evolution so you can inspect spin arrows & mode bars.' : 'Resumed spin-wave precession.');
+    announcePress(paused ? 'Pause' : 'Resume', paused ? 'Froze spin-wave time evolution so you can inspect spin arrows & time traces.' : 'Resumed spin-wave precession.');
   });
   document.getElementById('btnSeed').addEventListener('click', () => {
     seedSpins('thermal');
@@ -2498,6 +2712,7 @@
     if (!b) return;
     playbackSpeed = Number(b.dataset.speed) || 1;
     fastForwarding = false;
+    holdPlotWin = false;
     syncUi();
     const desc = playbackSpeed <= 1
       ? `Set gentle visual speed (${playbackSpeed}×) — spin-wave crests and arrows rotate slowly enough to trace by eye.`
@@ -2517,6 +2732,7 @@
     const diffTol = temperatureK > 0 ? Math.max(6e-5, 0.8 * thermalRmsAmp()) : 5e-5;
     for (let k = 0; k < maxSteps; k += chunk) {
       for (let s = 0; s < chunk; s++) stepLlg(dt, true);
+      recordPlotSample();
       const cur = MODE_SPECS.map((_, m) => modeRmsAmp(m));
       let maxDiff = 0, maxRel = 0;
       for (let m = 0; m < M; m++) {
@@ -2535,7 +2751,7 @@
   function toggleFastForward() {
     fastForwarding = !fastForwarding;
     if (fastForwarding) {
-      paused = false; document.getElementById('btnPause').textContent = 'Pause';
+      paused = false; holdPlotWin = false; document.getElementById('btnPause').textContent = 'Pause';
       let maxA = 0; for (let m = 0; m < M; m++) maxA = Math.max(maxA, cycleAvgModeAmp(m));
       if (maxA < 1e-4 && temperatureK === 0 && (driveAmp > 0 || (dualTone && driveAmp2 > 0))) seedSpins(0.004);
       ffStable = 0; ffFrames = 0; for (let m = 0; m < M; m++) ffPrev[m] = cycleAvgModeAmp(m);
@@ -2622,7 +2838,6 @@
     });
   }
 
-  buildModeBars();
   buildNikMatrix();
   applyPreset('param');
   drawScene();
@@ -2632,13 +2847,6 @@
   recordTelemetrySample(true);
   updateLogUiBadges();
 
-  const SPEED_FRAME_STEPS = {
-    0.25: [1, 0.025],
-    1: [1, 0.06],
-    5: [1, 0.30],
-    25: [3, 0.50],
-    150: [18, 0.50]
-  };
   let fpsWindowFrames = 0;
   function frame() {
     const t0 = nowWallMs();
@@ -2664,8 +2872,10 @@
     if (!paused) {
       const wasReleased = tone2Released;
       const wasFast = fastForwarding;
+      let frameStepTau = 0;
       if (fastForwarding) {
         const steps = fastForwardStepsPerFrame();
+        frameStepTau = steps * 0.65;
         for (let s = 0; s < steps; s++) stepLlg(0.65, true);
         reconstructSpatialSpins();
         ffFrames++;
@@ -2686,6 +2896,7 @@
         if (fastForwarding && ffFrames >= 360) { fastForwarding = false; syncUi(); }
       } else {
         const [nSub, hSub] = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
+        frameStepTau = nSub * hSub;
         for (let s = 0; s < nSub; s++) stepLlg(hSub, true);
         reconstructSpatialSpins();
       }
@@ -2695,9 +2906,12 @@
         recordTelemetrySample(true);
       }
       if (wasFast && !fastForwarding) {
+        holdPlotWin = true;
         recordLogEvent('physics', 'Fast-Forward Settled', { ffFrames, simTimeUs: +simTimeUs().toFixed(4) });
         recordTelemetrySample(true);
       }
+      updatePlotWindow(frameStepTau);
+      recordPlotSample();
       updateSpectrum();
     }
     drawScene();
