@@ -77,7 +77,7 @@
 <div id="gestureStatus" hidden aria-live="polite"></div>
 <button id="gyroButton" hidden type="button" aria-pressed="false"></button>
 <button id="resetViewButton" type="button" aria-label="Reset simulation" title="Reset simulation">↺</button>
-<div id="simHud" aria-live="polite">EMPTY SPACE · TAP TO PLACE ONE STATIONARY MASS</div>
+<div id="simHud" aria-live="polite">EMPTY SPACE · TAP TO CREATE A MASS</div>
 <script>
 (() => {
   'use strict';
@@ -129,7 +129,7 @@
   function showStatus(m){gestureStatus.textContent=m;gestureStatus.classList.add('visible');clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>gestureStatus.classList.remove('visible'),1300);}
   function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
   function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
-  function resetView(){persistentMasses.length=0;document.getElementById('simHud').textContent='EMPTY SPACE · TAP TO PLACE ONE STATIONARY MASS';updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
+  function resetView(){persistentMasses.length=0;document.getElementById('simHud').textContent='EMPTY SPACE · TAP TO CREATE A MASS';updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
   const gyroButton=document.getElementById('gyroButton');
   let gyroEnabled=false,gyroBaseline=null,gyroTargetX=0,gyroTargetY=0,gyroX=0,gyroY=0,gyroListener=null;
   function handleDeviceOrientation(e){
@@ -200,6 +200,9 @@ uniform vec2 u_resolution;
 uniform vec2 u_frameOffset;
 uniform vec2 u_pointer[24];
 uniform float u_rS[24];
+uniform float u_createdAt[24];
+uniform float u_time;
+uniform float u_c;
 uniform int u_pointerCount;
 uniform float u_softening;
 out float v_edge;
@@ -216,10 +219,13 @@ vec2 gradLogConformal(vec2 p){
   if(i>=u_pointerCount)break;
   vec2 d=p-u_pointer[i];
   float r=sqrt(dot(d,d)+u_softening*u_softening);
-  float rs=u_rS[i];
+  // Retarded activation: the source contributes only inside its future
+  // light cone on this displayed time slice, t - t0 >= |x-x0|/c.
+  float age=u_time-u_createdAt[i];
+  float reached=step(length(d)/u_c,age);
+  float rs=u_rS[i]*reached;
   psi+=rs/(4.0*r);
   gradPsi-=rs*d/(4.0*r*r*r);
-  // The pulse is centred on the same source position as the static mass.
  }
  return 2.0*gradPsi/psi; // grad(log(psi²))
 }
@@ -300,11 +306,16 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_frameOffset'),geodesicFrameOffsetX,geodesicFrameOffsetY);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),1.0);
-    const xy=new Float32Array(48),rS=new Float32Array(24);let count=0;
-    for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x+geodesicFrameOffsetX;xy[count*2+1]=p.y+geodesicFrameOffsetY;const mass=p.mass??(p.strength*.25);rS[count]=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);count++;}
+    // Display-space calibration: one pixel represents c/180 metres, so the
+    // causal front advances at c (180 CSS px/s) in this visualization.
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t*.001);
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_c'),180.0);
+    const xy=new Float32Array(48),rS=new Float32Array(24),created=new Float32Array(24);let count=0;
+    for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x+geodesicFrameOffsetX;xy[count*2+1]=p.y+geodesicFrameOffsetY;const mass=p.mass??(p.strength*.25);rS[count]=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);created[count]=p.createdAt??0;count++;}
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
     gl.uniform2fv(gl.getUniformLocation(gpuProgram,'u_pointer[0]'),xy);
     gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_rS[0]'),rS);
+    gl.uniform1fv(gl.getUniformLocation(gpuProgram,'u_createdAt[0]'),created);
     gl.bindBuffer(gl.ARRAY_BUFFER,gpuVertexBuffer);
     gl.drawArrays(gl.TRIANGLES,0,gpuIndexCount);
   }
@@ -367,10 +378,22 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     while(p.samples.length>2&&(p.samples.length>8||now-p.samples[0].t>120))p.samples.shift();
     p.travel=Math.max(p.travel,Math.hypot(w.x-p.startX,w.y-p.startY));
   }
-  function drawMassOverlay(){
+  function drawMassOverlay(t){
     trajectoryCtx.clearRect(0,0,width,height);
     for(const body of persistentMasses){
       const pos={x:body.x,y:body.y};
+      const age=Math.max(0,t*.001-(body.createdAt??0));
+      const frontRadius=180*age;
+      if(frontRadius>0){
+        trajectoryCtx.save();
+        trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,frontRadius,0,Math.PI*2);
+        trajectoryCtx.strokeStyle='rgba(120,190,255,.9)';trajectoryCtx.lineWidth=1.6;
+        trajectoryCtx.shadowColor='rgba(100,175,255,.95)';trajectoryCtx.shadowBlur=13;
+        trajectoryCtx.stroke();trajectoryCtx.shadowBlur=0;
+        trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,Math.max(0,frontRadius-3),0,Math.PI*2);
+        trajectoryCtx.strokeStyle='rgba(190,225,255,.28)';trajectoryCtx.lineWidth=1;trajectoryCtx.stroke();
+        trajectoryCtx.restore();
+      }
       const radius=Math.max(4,Math.min(22,3+Math.sqrt(Math.max(0,body.mass??20))*1.45));
       const glow=trajectoryCtx.createRadialGradient(pos.x-radius*.28,pos.y-radius*.3,1,pos.x,pos.y,radius*2.2);
       glow.addColorStop(0,'rgba(255,255,255,.98)');glow.addColorStop(.22,'rgba(188,220,255,.98)');
@@ -390,9 +413,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     // without changing their world positions or erasing their blue tails.
     if(persistentMasses.length)return;
     // One fixed source: the first tap creates the only mass and it never moves.
-    persistentMasses.push({x,y,mass,fixed:true,strength:1});
-    document.getElementById('simHud').textContent='ONE STATIONARY MASS · STATIC SCHWARZSCHILD CURVATURE';
-    showStatus('STATIONARY MASS · STATIC CURVATURE');
+    persistentMasses.push({x,y,mass,fixed:true,strength:1,createdAt:elapsed*.001});
+    document.getElementById('simHud').textContent='CAUSAL FIELD FRONT · c · RETARDED SOURCE';
+    showStatus('MASS CREATED · FIELD FRONT PROPAGATING');
   }
   function pointerDown(e){
     if(e.pointerType==="mouse"){
@@ -750,7 +773,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     geodesicFrameOffsetY=0;
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
     if(gpuEnabled)drawGpu(t);
-    drawMassOverlay();
+    drawMassOverlay(t);
     if(!gpuEnabled){
       const g=geometry;
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
