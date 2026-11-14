@@ -1151,13 +1151,31 @@
     specCtx.fillRect(0, 0, sw, sh);
 
     const maxFreq = 6.5;
+    const plotBottom = sh - 11;
+    const plotSpan = Math.max(12, plotBottom - 5);
+    specCtx.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+    specCtx.textBaseline = 'bottom';
+    for (let fg = 1; fg <= 6; fg++) {
+      const gx = (fg / maxFreq) * sw;
+      specCtx.strokeStyle = 'rgba(190,220,255,0.11)';
+      specCtx.lineWidth = 1;
+      specCtx.beginPath(); specCtx.moveTo(gx, 2); specCtx.lineTo(gx, plotBottom); specCtx.stroke();
+      specCtx.fillStyle = 'rgba(190,220,255,0.48)';
+      specCtx.fillText(fg + 'G', gx - 6, sh - 1);
+    }
+
     const xHalf = ((driveFreq * 0.5) / maxFreq) * sw;
     const xFp = (driveFreq / maxFreq) * sw;
+    const xThreeHalf = ((driveFreq * 1.5) / maxFreq) * sw;
     specCtx.strokeStyle = 'rgba(255,205,95,0.55)';
     specCtx.setLineDash([3, 3]);
-    specCtx.beginPath(); specCtx.moveTo(xHalf, 0); specCtx.lineTo(xHalf, sh); specCtx.stroke();
+    specCtx.beginPath(); specCtx.moveTo(xHalf, 2); specCtx.lineTo(xHalf, plotBottom); specCtx.stroke();
     specCtx.strokeStyle = 'rgba(255,130,175,0.45)';
-    specCtx.beginPath(); specCtx.moveTo(xFp, 0); specCtx.lineTo(xFp, sh); specCtx.stroke();
+    specCtx.beginPath(); specCtx.moveTo(xFp, 2); specCtx.lineTo(xFp, plotBottom); specCtx.stroke();
+    if (xThreeHalf < sw - 4) {
+      specCtx.strokeStyle = 'rgba(167,243,208,0.32)';
+      specCtx.beginPath(); specCtx.moveTo(xThreeHalf, 2); specCtx.lineTo(xThreeHalf, plotBottom); specCtx.stroke();
+    }
     specCtx.setLineDash([]);
 
     specCtx.strokeStyle = '#7cd4ff';
@@ -1167,7 +1185,7 @@
       const f = (k / SPEC_LEN) * fsGHz;
       if (f > maxFreq) break;
       const x = (f / maxFreq) * sw;
-      const y = sh - 4 - (spectrum[k] / maxVal) * (sh - 10);
+      const y = plotBottom - (spectrum[k] / maxVal) * plotSpan;
       if (k === 1) specCtx.moveTo(x, y); else specCtx.lineTo(x, y);
     }
     specCtx.stroke();
@@ -1690,8 +1708,8 @@
   const swTutSteps = [
     { tag: 'STEP 1 OF 4 · 29 NORMAL MODES', title: 'Exact YIG 3µm Eigenmodes (>1.6 GHz)', body: 'Modes m0..m28 solve d\'Aquino Eq. (2) on the 150×150 YIG disk at B_DC=27mT. Click m27 (Kittel, softening N=-2.38G) or m13 (bulk, hardening N=+2.99G).', formula: 'a_h = ω̄_h (φ_h, B_0 δm)' },
     { tag: 'STEP 2 OF 4 · SCENARIO 1 (S_det > 0)', title: 'Coupled Coexistence (Eqs. 55–56)', body: 'Modes m13 (+2.99G) and m23 (+0.38G) have S_det=+1.08>0: c++ coexistence shifts both amplitudes relative to uncoupled Eq. (33).', formula: 'COEX c++ · f_23=2.04G (4.08G AWG)' },
-    { tag: 'STEP 3 OF 4 · SCENARIO 2 (S_det < 0)', title: '2-Tone 3.0µs Delayed Nonreciprocity', body: 'Modes m13 & m16 have S_det=-12.84<0 (c++ unstable). Under 3.0µs delay, whichever tone arrives first locks out the other — click SWAP T1↔T2!', formula: 'T1→T2: (m13, 0) vs T2→T1: (0, m16)' },
-    { tag: 'STEP 4 OF 4 · RWA vs FULL NMM', title: 'Inspect Non-RWA & 3-Wave Terms', body: 'Toggle RWA Fast (1+2A+4A) vs Full NMM (G3+4B+4C+4D) or pluck the disk directly to watch 0–6 GHz harmonics.', formula: 'Eq. (9): G1 + G2 + G3 + G4' }
+    { tag: 'STEP 3 OF 4 · SCENARIO 2 (S_det < 0)', title: '1ns Tukey · 3.0µs Delay & 300K Stochasticity', body: 'Modes m13 & m16 have S_det=-12.84<0 (c++ unstable). Under 64GS/s 1ns Tukey pulses, 3.0µs delay locks out the late tone — click SWAP T1↔T2 or vary Δφ & T=300K!', formula: 'T1→T2: (m13, 0) vs T2→T1: (0, m16) · FDT' },
+    { tag: 'STEP 4 OF 4 · RWA vs FULL NMM', title: 'Inspect Non-RWA, 3-Wave & FDT Harmonics', body: 'Toggle RWA Fast (1+2A+4A) vs Full NMM (G3+4B+4C+4D) or pluck the disk to watch 0–6 GHz harmonics (f, 2f, 3f) above the 300K FDT floor.', formula: 'Eq. (9): G1+G2+G3+G4 · ⟨|a|²⟩_eq = k_BT / μ₀M_s²V' }
   ];
   let swTutState = { step: 0, done: [false, false, false, false], dismissed: false };
   try { const s = JSON.parse(localStorage.getItem(swTutKey) || 'null'); if (s && typeof s === 'object') swTutState = { ...swTutState, ...s }; } catch (_) {}
