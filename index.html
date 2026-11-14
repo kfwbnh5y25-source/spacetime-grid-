@@ -93,7 +93,7 @@
   const planetCursor = document.getElementById('planetCursor');
   const gestureStatus=document.getElementById('gestureStatus');
   const persistentMasses=[];
-  let gravityG=3,newMassValue=0.01,gravityEnabled=true,trailsEnabled=true;
+  let gravityG=3,newMassValue=0.002,gravityEnabled=true,trailsEnabled=true;
   let mouseWorld={x:innerWidth/2,y:innerHeight/2},mousePan=null;
   let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1:1.5,slowFrames=0,smoothFrames=0;
   const storageKey='spacetime-grid-state-v1';
@@ -226,11 +226,12 @@ vec2 gradLogConformal(vec2 p){
   float radialDistance=length(d);
   float q=clamp(0.5+(u_c*age-radialDistance)/(2.0*u_frontWidth),0.0,1.0);
   float activation=q*q*(3.0-2.0*q);
-  float dActivationDr=(q>0.0&&q<1.0)?-3.0*q*(1.0-q)/u_frontWidth:0.0;
   float rs=u_rS[i];
-  vec2 gradActivation=dActivationDr*d/max(radialDistance,0.0001);
+  // Keep the front as a smooth turn-on of the source field. Do not
+  // differentiate the display envelope: that creates a fictitious
+  // ring-shaped curvature shell at the wavefront.
   psi+=activation*rs/(4.0*r);
-  gradPsi+=activation*(-rs*d/(4.0*r*r*r))+(rs/(4.0*r))*gradActivation;
+  gradPsi+=activation*(-rs*d/(4.0*r*r*r));
  }
  return 2.0*gradPsi/psi; // grad(log(psi²))
 }
@@ -603,19 +604,18 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     for(let j=0;j<Math.min(sourceList.length,MAX_GPU_POINTERS);j++){
       const m=sourceList[j],dx=x-(m.x+geodesicFrameOffsetX),dy=y-(m.y+geodesicFrameOffsetY);
       const radialDistance=Math.hypot(dx,dy),r=Math.sqrt(dx*dx+dy*dy+softening*softening);
-      // A finite-width retarded front avoids a discontinuous metric. The
-      // spatial derivative includes the front's radial gradient as well.
-      let activation=1,dActivationDr=0;
+      // The causal envelope smoothly turns on the source field. Its
+      // derivative is intentionally excluded: that display-only term would
+      // behave like a fictitious thin shell of curvature at the front.
+      let activation=1;
       if(Number.isFinite(m.createdAt)){
         const age=elapsed*.001-m.createdAt,q=Math.max(0,Math.min(1,.5+(180*age-radialDistance)/(2*8)));
         activation=q*q*(3-2*q);
-        if(q>0&&q<1)dActivationDr=-3*q*(1-q)/8;
       }
       const rs=Number.isFinite(m.rS)?m.rS:2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
-      const invRadial=1/Math.max(radialDistance,1e-4),gradActivationX=dActivationDr*dx*invRadial,gradActivationY=dActivationDr*dy*invRadial;
       psi+=activation*rs/(4*r);
-      gx+=activation*(-rs*dx/(4*r*r*r))+(rs/(4*r))*gradActivationX;
-      gy+=activation*(-rs*dy/(4*r*r*r))+(rs/(4*r))*gradActivationY;
+      gx+=activation*(-rs*dx/(4*r*r*r));
+      gy+=activation*(-rs*dy/(4*r*r*r));
     }
     return {x:2*gx/psi,y:2*gy/psi};
   }
