@@ -389,20 +389,26 @@ function loadSpinWavesContext() {
     NX, NY, N, J_EX, DEMAG_NZ, FREQ_TO_RAD, SPEC_LEN, SPEC_DT,
     mx, my, mz, activeMask, modeTemplates, MODE_SPECS, spectrum,
     buildMaskAndModes, seedSpins, exciteEigenmode, stepLlg, updateSpectrum,
-    modeFreqGHz, parametricThreshold, arnoldThreshold, cycleAvgModeAmp, besselJ,
+    modeFreqGHz, parametricThreshold, effectiveParametricThreshold, muCrossGain, arnoldThreshold, cycleAvgModeAmp, besselJ,
     selfNfsCoeff, mutualNfsCoeff, llgMutualNfsCoeff, modeNfsShiftGHz, modeMutualNfsShiftGHz,
-    modeGamma, steadyStateAmp, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
+    modeGamma, steadyStateAmp, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame, applyPreset,
     mutualPumpOverlap, mutualPumpThreshold, mutualArnoldThreshold,
+    muMat, setMuSymmetric, refreshHasCustomMu,
     pair4, tri4, scat4, xmod4, refreshHasCustomMat4, zeroMutualNfs,
     setNikCustom(i, j, val) { setNikSymmetric(i, j, val); },
     resetNikCustom() { for (const r of nikCustom) r.fill(null); refreshHasCustomNik(); },
     setMat4(kind, i, j, val) {
+      if (kind === 'm') { setMuSymmetric(i, j, val); return; }
       const m = kind === 'p' ? pair4 : kind === 't' ? tri4 : kind === 'x' ? xmod4 : scat4;
       m[i][j] = val;
       refreshHasCustomMat4();
     },
     resetMat4() {
-      for (let i = 0; i < MODE_SPECS.length; i++) { pair4[i].fill(0); tri4[i].fill(0); scat4[i].fill(0); xmod4[i].fill(0); }
+      for (let i = 0; i < MODE_SPECS.length; i++) {
+        muMat[i].fill(0); pair4[i].fill(0); tri4[i].fill(0); scat4[i].fill(0); xmod4[i].fill(0);
+      }
+      twoModeIsolate = false;
+      refreshHasCustomMu();
       refreshHasCustomMat4();
     },
     setState(patch) {
@@ -415,6 +421,7 @@ function loadSpinWavesContext() {
       if ('chi4m' in patch) chi4m = patch.chi4m;
       if ('chi4nr' in patch) chi4nr = patch.chi4nr;
       if ('mutualPump' in patch) mutualPump = patch.mutualPump;
+      if ('twoModeIsolate' in patch) twoModeIsolate = patch.twoModeIsolate;
       if ('dualTone' in patch) dualTone = patch.dualTone;
       if ('driveFreq2' in patch) driveFreq2 = patch.driveFreq2;
       if ('driveAmp2' in patch) driveAmp2 = patch.driveAmp2;
@@ -430,7 +437,7 @@ function loadSpinWavesContext() {
     getState() {
       return {
         geometryMode, driveMode, driveFreq, driveAmp, biasH0, damping,
-        chi4m, chi4nr, mutualPump, simTime, dualTone, driveFreq2, driveAmp2,
+        chi4m, chi4nr, mutualPump, twoModeIsolate, simTime, dualTone, driveFreq2, driveAmp2,
         tone2DelayNs, tone2WaitSS, tone2Released, tone2ReleaseT
       };
     },
@@ -805,6 +812,15 @@ test('Q. Spin-wave Stage 3: symmetric n_ij, Mut n=0, P/T/S 4M matrices (2f1-f2, 
   for (let s = 0; s < 2500; s++) spin.stepLlg(0.012);
   const a1PairOn = spin.cycleAvgModeAmp(1);
   assert.ok(a1PairOff < 0.03 && a1PairOn > 0.12, `Pair matrix P_10 (2f_0-f_1) must pump nearby Mode 1 from Mode 0: off=${a1PairOff.toFixed(4)} vs on=${a1PairOn.toFixed(4)}`);
+  // Symplectic B_0⊥ = -i m_0 × (·) projection: instantaneous symplectic norm is time-invariant during elliptical precession
+  spin.resetMat4();
+  spin.setState({ driveMode: 'parallel', driveAmp: 0, damping: 0.0, biasH0: 0.29, dualTone: false, simTime: 0 });
+  spin.exciteEigenmode(0);
+  const sympAmp0 = spin.cycleAvgModeAmp(0);
+  for (let s = 0; s < 35; s++) spin.stepLlg(0.01);
+  const sympAmpQuarter = spin.cycleAvgModeAmp(0);
+  assert.ok(Math.abs(sympAmpQuarter - sympAmp0) / sympAmp0 < 0.015, `Symplectic B_0⊥ projection must be free of 2ω_0 ellipticity ripple: t=0 ${sympAmp0.toFixed(4)} vs quarter-cycle ${sympAmpQuarter.toFixed(4)}`);
+
   // X_ij (|a_i|^2 a_j -> f_j & 2f_i-f_j host-intensity 4M): zero when Mode i is unexcited, active when Mode i is populated
   const f1 = spin.modeFreqGHz(1);
   spin.resetMat4();
@@ -862,7 +878,76 @@ test('Q. Spin-wave Stage 3: symmetric n_ij, Mut n=0, P/T/S 4M matrices (2f1-f2, 
   assert.match(spinWavesHtml, /id="btnWaitT1SS"/, 'Wait T1 SS toggle button must exist in HTML');
   assert.match(spinWavesHtml, /id="nikBtnZeroMut"/, 'Mut n=0 button must exist in HTML');
   assert.match(spinWavesHtml, /data-mat="x"/, 'X_ij (|a_i|^2 a_j) 4M matrix tab must exist in HTML');
+  assert.match(spinWavesHtml, /data-mat="m"/, 'μ_ij (Pump) matrix tab must exist in HTML');
+  assert.match(spinWavesHtml, /function makeDraggablePanel/, 'iOS/pointer draggable panel support must exist in HTML');
   spin.setState({ dualTone: false, driveAmp2: 0, tone2WaitSS: false, chi4m: 0.0 });
+});
+
+test("R. Spin-wave Stage 5: configurable mu_ij matrix, entire Arnold tongue downward shift & 2-Tone Delayed Nonreciprocity verified with d'Aquino", () => {
+  spin.resetMat4();
+  spin.resetNikCustom();
+
+  // 1. Applying 'mutual' preset configures the clean 2-Tone Delayed Nonreciprocity example
+  spin.applyPreset('mutual');
+  const stInit = spin.getState();
+  assert.equal(stInit.twoModeIsolate, true, '2-Tone Nonrecip preset must enable 2-mode isolation (Modes 0 and 1)');
+  assert.equal(stInit.dualTone, true, '2-Tone Nonrecip preset must enable dual-tone pumping');
+  assert.equal(stInit.tone2WaitSS, true, '2-Tone Nonrecip preset must enable Wait T1 SS delayed release');
+  assert.equal(stInit.tone2DelayNs, 2.0, '2-Tone Nonrecip preset must set 2.0 µs delay');
+  assert.ok(Math.abs(spin.muMat[0][1] - 1.20) < 1e-6 && Math.abs(spin.muMat[1][0] - 1.20) < 1e-6, 'Symmetric mu_01 = mu_10 = 1.20 must be set');
+  const hTh0Bare = spin.parametricThreshold(0), hTh1Bare = spin.parametricThreshold(1);
+  assert.ok(stInit.driveAmp > 1.8 * hTh0Bare, `Tone 1 amplitude (${stInit.driveAmp.toFixed(3)}) must be above Mode 0 bare threshold (${hTh0Bare.toFixed(3)})`);
+  assert.ok(stInit.driveAmp2 < 0.90 * hTh1Bare, `Tone 2 amplitude (${stInit.driveAmp2.toFixed(3)}) must be strictly below Mode 1 bare threshold (${hTh1Bare.toFixed(3)})`);
+
+  // Extra sum-frequency tongue threshold from mu_01 > 0
+  const hThSum01 = spin.mutualPumpThreshold(0, 1);
+  assert.ok(Number.isFinite(hThSum01) && hThSum01 < 0.45, `mu_01 = 1.20 must create finite sum-frequency f_0+f_1 Arnold tongue (h_th=${hThSum01.toFixed(3)})`);
+
+  // 2. Sequence T1 -> T2: Tone 1 excites Mode 0, moving Mode 1's entire Arnold tongue down below Tone 2's sub-threshold amplitude
+  for (let s = 0; s < 3600; s++) spin.stepLlg(0.012);
+  const hTh1EffMid = spin.effectiveParametricThreshold(1);
+  assert.ok(hTh1EffMid < stInit.driveAmp2, `Populated Mode 0 must move Mode 1's Arnold tongue apex (${hTh1EffMid.toFixed(4)}) below Tone 2 amplitude (${stInit.driveAmp2.toFixed(4)})`);
+  for (const df of [-0.25, 0.0, 0.04, 0.25]) {
+    const fpTest = 2 * spin.modeFreqGHz(1) + df;
+    const hLowered = spin.arnoldThreshold(1, fpTest, 0, true);
+    const hBare = spin.arnoldThreshold(1, fpTest, 0, false);
+    assert.ok(hLowered < hBare * 0.75, `Entire Mode 1 Arnold tongue at df=${df} GHz must move vertically down: ${hLowered.toFixed(4)} < ${hBare.toFixed(4)}`);
+  }
+
+  // Fast-forward to steady state after delayed Tone 2 releases: verify against d'Aquino steadyState2Mode & steadyStateAmp
+  spin.fastForwardSteadyState(36000);
+  const a0Seq1 = spin.cycleAvgModeAmp(0);
+  const a1Seq1 = spin.cycleAvgModeAmp(1);
+  for (let m = 2; m < spin.MODE_SPECS.length; m++) {
+    assert.ok(spin.cycleAvgModeAmp(m) < 1e-4, `Only 2 modes (0 and 1) may be populated; Mode ${m} had ${spin.cycleAvgModeAmp(m)}`);
+  }
+  const [th0Seq1, th1Seq1] = spin.steadyState2Mode(0, 1, stInit.driveFreq, stInit.driveAmp, stInit.driveFreq2, stInit.driveAmp2);
+  const th0Live = spin.steadyStateAmp(0, stInit.driveFreq, stInit.driveAmp, spin.modeMutualNfsShiftGHz(0));
+  const th1Live = spin.steadyStateAmp(1, stInit.driveFreq2, stInit.driveAmp2, spin.modeMutualNfsShiftGHz(1));
+  assert.ok(a0Seq1 > 0.20 && a1Seq1 > 0.12, `Sequence T1->T2 must excite both Mode 0 (${a0Seq1.toFixed(4)}) and Mode 1 (${a1Seq1.toFixed(4)})`);
+  assert.ok(Math.abs(a0Seq1 - th0Seq1) / th0Seq1 < 0.06, `Seq T1->T2 Mode 0 sim (${a0Seq1.toFixed(4)}) must match d'Aquino steadyState2Mode (${th0Seq1.toFixed(4)})`);
+  assert.ok(Math.abs(a1Seq1 - th1Seq1) / th1Seq1 < 0.06, `Seq T1->T2 Mode 1 sim (${a1Seq1.toFixed(4)}) must match d'Aquino steadyState2Mode (${th1Seq1.toFixed(4)})`);
+  assert.ok(Math.abs(a0Seq1 - th0Live) / th0Live < 0.05 && Math.abs(a1Seq1 - th1Live) / th1Live < 0.05, `Live steadyStateAmp must match simulated steady state`);
+
+  // 3. Sequence T2 -> T1 (Swap T1 <-> T2): sub-threshold Mode 1 tone goes first while Mode 0 is off -> Mode 1 stays unexcited (0), only Mode 0 is excited!
+  spin.applyPreset('mutual');
+  const stSwap = spin.getState();
+  spin.setState({
+    driveFreq: stSwap.driveFreq2, driveAmp: stSwap.driveAmp2,
+    driveFreq2: stSwap.driveFreq, driveAmp2: stSwap.driveAmp,
+    tone2WaitSS: true, simTime: 0
+  });
+  spin.seedSpins(0.03);
+  spin.fastForwardSteadyState(36000);
+  const a0Seq2 = spin.cycleAvgModeAmp(0);
+  const a1Seq2 = spin.cycleAvgModeAmp(1);
+  const [th1Seq2, th0Seq2] = spin.steadyState2Mode(1, 0, stSwap.driveFreq2, stSwap.driveAmp2, stSwap.driveFreq, stSwap.driveAmp);
+  assert.equal(th1Seq2, 0, `d'Aquino steadyState2Mode in swapped sequence T2->T1 must predict Mode 1 = 0`);
+  assert.ok(a1Seq2 < 0.005, `In swapped sequence T2->T1, sub-threshold Mode 1 must not be excited: got ${a1Seq2.toFixed(5)}`);
+  assert.ok(Math.abs(a0Seq2 - th0Seq2) / th0Seq2 < 0.06, `In swapped sequence T2->T1, Mode 0 (${a0Seq2.toFixed(4)}) must match d'Aquino single-mode steady state (${th0Seq2.toFixed(4)})`);
+
+  spin.resetMat4();
+  spin.resetNikCustom();
 });
 
 
