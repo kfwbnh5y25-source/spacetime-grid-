@@ -13,10 +13,11 @@
   .hudPill { padding: 6px 11px; border: 1px solid rgba(190,220,255,.2); border-radius: 99px; background: rgba(4,9,18,.74); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: rgba(235,245,255,.88); white-space: nowrap; }
   .hudPill.warn { border-color: rgba(255,200,95,.55); color: #ffd479; }
   .hudPill.active { border-color: rgba(110,225,175,.55); color: #8af0c4; }
-  #controlsPanel { position: fixed; z-index: 8; top: max(54px,calc(env(safe-area-inset-top) + 42px)); right: max(14px,env(safe-area-inset-right)); width: min(316px,calc(100vw - 28px)); max-height: calc(100vh - 130px); overflow-y: auto; border: 1px solid rgba(190,220,255,.2); border-radius: 14px; background: rgba(5,10,20,.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-  #controlsPanel summary { list-style: none; cursor: pointer; padding: 10px 12px; font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .14em; color: rgba(225,238,255,.85); }
+  #controlsPanel { position: fixed; z-index: 8; top: max(54px,calc(env(safe-area-inset-top) + 42px)); right: max(14px,env(safe-area-inset-right)); width: min(326px,calc(100vw - 28px)); max-height: calc(100vh - 130px); overflow-y: auto; border: 1px solid rgba(190,220,255,.2); border-radius: 14px; background: rgba(5,10,20,.84); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  #controlsPanel summary { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; padding: 10px 12px; background: rgba(5,10,20,.95); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: rgba(225,238,255,.9); }
   #controlsPanel summary::-webkit-details-marker { display: none; }
-  #controlsPanel[open] summary { border-bottom: 1px solid rgba(190,220,255,.12); }
+  #controlsPanel[open] summary { border-bottom: 1px solid rgba(190,220,255,.14); }
+  .ctrlToggleHint { font-size: 11px; opacity: .75; }
   .ctrlBody { padding: 11px 12px 12px; display: grid; gap: 10px; }
   .sectionLabel { font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: rgba(185,212,245,.62); text-transform: uppercase; }
   .btnRow { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -25,19 +26,21 @@
   .sliderRow { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; align-items: center; font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.78); }
   .sliderRow output { color: #fff; font-variant-numeric: tabular-nums; }
   .sliderRow input { grid-column: 1 / -1; width: 100%; accent-color: #8ec5ff; margin: 0; }
-  #readoutsDock { position: fixed; z-index: 7; left: max(14px,env(safe-area-inset-left)); bottom: max(16px,env(safe-area-inset-bottom)); display: grid; gap: 8px; width: min(310px,calc(100vw - 145px)); pointer-events: none; }
+  #readoutsDock { position: fixed; z-index: 7; left: max(14px,env(safe-area-inset-left)); bottom: max(16px,env(safe-area-inset-bottom)); display: grid; gap: 8px; width: min(326px,calc(100vw - 145px)); pointer-events: none; }
   .readoutCard { padding: 8px 10px; border: 1px solid rgba(190,220,255,.2); border-radius: 12px; background: rgba(5,10,20,.78); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-  .specTitle { display: flex; justify-content: space-between; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .1em; color: rgba(215,232,255,.75); margin-bottom: 5px; }
-  canvas#specCanvas { display: block; width: 100%; height: 54px; }
+  .specTitle { display: flex; justify-content: space-between; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: rgba(215,232,255,.75); margin-bottom: 5px; }
+  canvas#specCanvas { display: block; width: 100%; height: 50px; }
   .modeBars { display: grid; gap: 4px; }
-  .modeRow { display: grid; grid-template-columns: 74px 1fr 38px; gap: 6px; align-items: center; font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.8); }
+  .modeRow { display: grid; grid-template-columns: 102px 1fr 38px; gap: 6px; align-items: center; font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.82); }
   .modeTrack { height: 6px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
   .modeFill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg,#68b5ff,#9cf0ff); transition: width .08s linear; }
+  .magnonGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(190,220,255,.12); font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,226,255,.78); }
+  .magnonGrid b { color: #9ad8ff; font-weight: 600; }
   #backBtn, #swTutorialBtn { position: fixed; z-index: 9; right: max(14px,env(safe-area-inset-right)); bottom: max(16px,env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 13px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.76); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
   #swTutorialBtn { right: auto; left: max(14px,env(safe-area-inset-left)); bottom: auto; top: max(54px,calc(env(safe-area-inset-top) + 42px)); }
   #swTutorialBtn.hidden { opacity: 0; pointer-events: none; }
   #backBtn:hover, #swTutorialBtn:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
-  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(54px,calc(env(safe-area-inset-top) + 42px)); width: min(330px,calc(100vw - 28px)); padding: 13px 14px; border: 1px solid rgba(185,218,255,.24); border-radius: 15px; background: rgba(5,10,20,.86); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(54px,calc(env(safe-area-inset-top) + 42px)); width: min(330px,calc(100vw - 28px)); padding: 13px 14px; border: 1px solid rgba(185,218,255,.24); border-radius: 15px; background: rgba(5,10,20,.88); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
   #swTutorial[hidden] { display: none; }
   .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
   .tutStepTag { font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: #8ec5ff; text-transform: uppercase; }
@@ -51,10 +54,19 @@
   .tutFormula { display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 6px; background: rgba(130,185,255,.12); border: 1px solid rgba(130,185,255,.22); font: 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color: #b9dcff; }
   .tutActions { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
   .tutBtnGroup { display: flex; gap: 6px; }
-  @media (pointer:coarse) {
-    #controlsPanel { top: auto; bottom: max(62px,calc(env(safe-area-inset-bottom) + 52px)); max-height: 40vh; }
-    #readoutsDock { width: min(230px,calc(100vw - 140px)); }
-    .modeRow { grid-template-columns: 60px 1fr 34px; }
+  @media (pointer:coarse), (max-width: 760px) {
+    #topHud { gap: 4px; width: calc(100vw - 16px); }
+    .hudPill { padding: 4px 8px; font-size: 9px; letter-spacing: .05em; }
+    #controlsPanel { top: auto; left: 10px; right: 10px; width: auto; bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); max-height: 46vh; }
+    #controlsPanel:not([open]) { left: auto; width: auto; }
+    #readoutsDock { left: 10px; bottom: max(12px,env(safe-area-inset-bottom)); width: min(215px,calc(100vw - 135px)); gap: 5px; }
+    .readoutCard { padding: 6px 8px; }
+    .modeRow { grid-template-columns: 82px 1fr 34px; font-size: 8.5px; }
+    #spectrumBox { display: none; }
+    .magnonGrid { grid-template-columns: 1fr; gap: 2px; font-size: 8.5px; }
+    #swTutorial { left: 10px; right: 10px; width: auto; top: max(64px,calc(env(safe-area-inset-top) + 52px)); padding: 10px 12px; }
+    #swTutorialBtn { left: 10px; top: max(64px,calc(env(safe-area-inset-top) + 52px)); min-height: 30px; padding: 0 10px; font-size: 9px; }
+    #backBtn { right: 10px; bottom: max(12px,env(safe-area-inset-bottom)); min-height: 32px; padding: 0 11px; font-size: 9px; }
   }
 </style>
 </head>
@@ -90,7 +102,7 @@
   </div>
 </section>
 <details id="controlsPanel" open>
-  <summary>SPIN WAVE &amp; EIGENMODE CONTROLS ▾</summary>
+  <summary><span>CONTROLS · YIG 1µm DISK</span><span class="ctrlToggleHint" id="ctrlToggleHint">✕</span></summary>
   <div class="ctrlBody">
     <div class="sectionLabel">Excitation Regimes</div>
     <div class="btnRow">
@@ -117,20 +129,28 @@
       <button class="btn" id="driveTransverse" type="button">Transverse RF (y)</button>
     </div>
     <label class="sliderRow">
-      <span>Drive Frequency f</span><output id="outFreq">6.74 GHz</output>
-      <input id="slFreq" type="range" min="1.5" max="11.0" step="0.05" value="6.74">
+      <span>Drive Frequency f</span><output id="outFreq">9.72 GHz</output>
+      <input id="slFreq" type="range" min="1.5" max="18.0" step="0.05" value="9.72">
     </label>
     <label class="sliderRow">
-      <span>Drive Amplitude h_p</span><output id="outAmp">0.430</output>
-      <input id="slAmp" type="range" min="0" max="0.60" step="0.005" value="0.430">
+      <span>Drive Amplitude μ₀h_p</span><output id="outAmp">0.210 (36.8 mT)</output>
+      <input id="slAmp" type="range" min="0" max="0.60" step="0.005" value="0.210">
     </label>
     <label class="sliderRow">
-      <span>Bias Field H_0 (x)</span><output id="outField">0.45</output>
-      <input id="slField" type="range" min="0.15" max="1.20" step="0.01" value="0.45">
+      <span>Bias Field μ₀H_0 (x)</span><output id="outField">50.0 mT (0.29)</output>
+      <input id="slField" type="range" min="0.14" max="1.20" step="0.01" value="0.29">
     </label>
     <label class="sliderRow">
       <span>Gilbert Damping α</span><output id="outDamp">0.040</output>
       <input id="slDamp" type="range" min="0.008" max="0.120" step="0.002" value="0.040">
+    </label>
+    <label class="sliderRow">
+      <span>3-Magnon Dipolar χ₃</span><output id="outChi3">0.16</output>
+      <input id="slChi3" type="range" min="0.00" max="0.45" step="0.01" value="0.16">
+    </label>
+    <label class="sliderRow">
+      <span>4-Magnon Kerr NFS χ₄</span><output id="outChi4">-0.35</output>
+      <input id="slChi4" type="range" min="-1.00" max="1.00" step="0.05" value="-0.35">
     </label>
     <div class="btnRow">
       <button class="btn" id="btnPause" type="button">Pause</button>
@@ -143,10 +163,16 @@
   <div class="readoutCard" id="modesBox">
     <div class="specTitle"><span>LIVE EIGENMODES</span><span id="ampTotal">⟨|m_⊥|⟩: 0.000</span></div>
     <div class="modeBars" id="modeBars"></div>
+    <div class="magnonGrid" id="magnonTerms">
+      <div><b>1M</b> Direct: <span id="m1Val">0.00</span></div>
+      <div><b>2M</b> Pump: <span id="m2Val">0.00</span></div>
+      <div><b>3M</b> Split: <span id="m3Val">0.00</span></div>
+      <div><b>4M</b> Kerr Δf: <span id="m4Val">0 MHz</span></div>
+    </div>
   </div>
   <div class="readoutCard" id="spectrumBox">
     <div class="specTitle"><span>MAGNON SPECTRUM</span><span id="specPeak">f_peak: —</span></div>
-    <canvas id="specCanvas" width="280" height="54"></canvas>
+    <canvas id="specCanvas" width="280" height="50"></canvas>
   </div>
 </div>
 <a id="backBtn" href="../">← SPACETIME</a>
@@ -170,18 +196,23 @@
   const specCanvas = document.getElementById('specCanvas');
   const specCtx = specCanvas.getContext('2d');
 
+  // Physical YIG microdisk parameters (d'Aquino NMM: 1 um diameter, 52 nm thick)
+  const MU0_MS_MT = 175.0; // mu0 * M_s = 175 mT
+  const GAMMA_GHZ_T = 28.0; // gamma / (2*pi) = 28 GHz/T
+  const J_EX = 7.5; // exchange stiffness scaling for distinct quantized eigenmodes
+  const DEMAG_NZ = 0.92; // thin-film out-of-plane demagnetizing factor (1 - pi*d/4R)
+  const FREQ_TO_RAD = 1 / (GAMMA_GHZ_T * MU0_MS_MT * 1e-3); // 1 / 4.90 GHz
+
   let geometryMode = 'disk';
   let driveMode = 'parallel';
-  let driveFreq = 6.74;
-  let driveAmp = 0.43;
-  let biasH0 = 0.45;
+  let driveFreq = 8.95;
+  let driveAmp = 0.21;
+  let biasH0 = 0.29; // ~50.8 mT
   let damping = 0.040;
+  let chi3m = 0.16; // 3-magnon cubic dipolar coupling
+  let chi4m = -0.35; // 4-magnon Kerr nonlinear frequency shift (s-NFS / m-NFS)
   let paused = false;
   let simTime = 0;
-
-  const J_EX = 6.0;
-  const DEMAG_NZ = 1.60;
-  const FREQ_TO_RAD = 0.355; // f_kittel(H0=0.45) ≈ 2.71 GHz, 2*f_k ≈ 5.42 GHz
 
   // Exact free-boundary (Neumann J_m'(alpha)=0) disk modes and rectangular modes
   const MODE_SPECS = [
@@ -251,11 +282,18 @@
     }
     const barsEl = document.getElementById('modeBars');
     barsEl.innerHTML = MODE_SPECS.map((s, idx) => {
-      const name = geometryMode === 'disk' ? s.label : s.rectLabel;
-      return `<div class="modeRow"><span>${name}</span><div class="modeTrack"><div class="modeFill" id="mf${idx}"></div></div><span id="mv${idx}">0.00</span></div>`;
+      return `<div class="modeRow"><span id="ml${idx}"></span><div class="modeTrack"><div class="modeFill" id="mf${idx}"></div></div><span id="mv${idx}">0.000</span></div>`;
     }).join('');
+    refreshModeLabels();
+  }
+
+  function refreshModeLabels() {
     document.querySelectorAll('#eigenButtons button').forEach((btn, idx) => {
-      btn.textContent = geometryMode === 'disk' ? MODE_SPECS[idx].label : MODE_SPECS[idx].rectLabel;
+      const f = modeFreqGHz(idx).toFixed(2);
+      const short = (geometryMode === 'disk' ? MODE_SPECS[idx].label : MODE_SPECS[idx].rectLabel).split(' ')[0];
+      btn.textContent = `${short} ${f}G`;
+      const ml = document.getElementById('ml' + idx);
+      if (ml) ml.textContent = `${short} ${f}G`;
     });
   }
 
@@ -306,6 +344,7 @@
   function computeLlgDerivatives(sx, sy, sz, outX, outY, outZ, t) {
     const omega = driveFreq * FREQ_TO_RAD;
     const driveVal = driveAmp * Math.cos(omega * t);
+    // 1M: direct transverse RF (y); 2M: parallel parametric pumping (x)
     const hxExt = biasH0 + (driveMode === 'parallel' ? driveVal : 0);
     const hyExt = driveMode === 'transverse' ? driveVal : 0;
     const invNorm = 1 / (1 + damping * damping);
@@ -325,9 +364,11 @@
         if (activeMask[nU]) { lx += sx[nU] - mxi; ly += sy[nU] - myi; lz += sz[nU] - mzi; }
         if (activeMask[nD]) { lx += sx[nD] - mxi; ly += sy[nD] - myi; lz += sz[nD] - mzi; }
 
+        // 1M linear + 2M pump + 3M cubic dipolar (E_3m = -chi3m*my*mz^2) + 4M Kerr NFS (E_4m = -0.25*chi4m*m_perp^4)
+        const mPerp2 = myi * myi + mzi * mzi;
         const hx = hxExt + J_EX * lx;
-        const hy = hyExt + J_EX * ly;
-        const hz = -DEMAG_NZ * mzi + J_EX * lz;
+        const hy = hyExt + J_EX * ly + chi3m * mzi * mzi + chi4m * mPerp2 * myi;
+        const hz = -DEMAG_NZ * mzi + J_EX * lz + 2 * chi3m * myi * mzi + chi4m * mPerp2 * mzi;
 
         const cx = myi * hz - mzi * hy;
         const cy = mzi * hx - mxi * hz;
@@ -345,28 +386,38 @@
   }
 
   function stepLlg(dt) {
-    computeLlgDerivatives(mx, my, mz, kx1, ky1, kz1, simTime);
-    for (let i = 0; i < N; i++) {
-      if (!activeMask[i]) continue;
-      let tx = mx[i] + kx1[i] * dt, ty = my[i] + ky1[i] * dt, tz = mz[i] + kz1[i] * dt;
-      const inv = 1 / (Math.hypot(tx, ty, tz) || 1);
-      mxT[i] = tx * inv; myT[i] = ty * inv; mzT[i] = tz * inv;
+    const sub = Math.max(1, Math.ceil(dt / 0.004));
+    const h = dt / sub;
+    for (let s = 0; s < sub; s++) {
+      computeLlgDerivatives(mx, my, mz, kx1, ky1, kz1, simTime);
+      for (let i = 0; i < N; i++) {
+        if (!activeMask[i]) continue;
+        const tx = mx[i] + kx1[i] * h, ty = my[i] + ky1[i] * h, tz = mz[i] + kz1[i] * h;
+        const inv = 1 / (Math.hypot(tx, ty, tz) || 1);
+        mxT[i] = tx * inv; myT[i] = ty * inv; mzT[i] = tz * inv;
+      }
+      computeLlgDerivatives(mxT, myT, mzT, kx2, ky2, kz2, simTime + h);
+      for (let i = 0; i < N; i++) {
+        if (!activeMask[i]) continue;
+        const nx = mx[i] + 0.5 * (kx1[i] + kx2[i]) * h;
+        const ny = my[i] + 0.5 * (ky1[i] + ky2[i]) * h;
+        const nz = mz[i] + 0.5 * (kz1[i] + kz2[i]) * h;
+        const inv = 1 / (Math.hypot(nx, ny, nz) || 1);
+        mx[i] = nx * inv; my[i] = ny * inv; mz[i] = nz * inv;
+      }
+      simTime += h;
     }
-    computeLlgDerivatives(mxT, myT, mzT, kx2, ky2, kz2, simTime + dt);
-    for (let i = 0; i < N; i++) {
-      if (!activeMask[i]) continue;
-      let nx = mx[i] + 0.5 * (kx1[i] + kx2[i]) * dt;
-      let ny = my[i] + 0.5 * (ky1[i] + ky2[i]) * dt;
-      let nz = mz[i] + 0.5 * (kz1[i] + kz2[i]) * dt;
-      const inv = 1 / (Math.hypot(nx, ny, nz) || 1);
-      mx[i] = nx * inv; my[i] = ny * inv; mz[i] = nz * inv;
-    }
-    simTime += dt;
   }
 
-  function parametricThreshold() {
-    const omegaK = Math.sqrt(biasH0 * (biasH0 + DEMAG_NZ));
-    return Math.max(0.005, (4 * damping * omegaK * (biasH0 + 0.5 * DEMAG_NZ)) / DEMAG_NZ);
+  function parametricThreshold(mIdx = 0) {
+    const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
+    const R = NX * 0.45;
+    const k2 = geometryMode === 'disk'
+      ? (spec.alpha / R) * (spec.alpha / R)
+      : Math.pow((spec.nx * Math.PI) / NX, 2) + Math.pow((spec.ny * Math.PI) / NY, 2);
+    const hEff = biasH0 + J_EX * k2;
+    const omegaK = Math.sqrt(hEff * (hEff + DEMAG_NZ));
+    return Math.max(0.005, (4 * damping * omegaK * (hEff + 0.5 * DEMAG_NZ)) / DEMAG_NZ);
   }
 
   function pluckAt(clientX, clientY) {
@@ -459,8 +510,9 @@
     document.getElementById('specPeak').textContent = 'f_peak: ' + fPeak.toFixed(2) + ' GHz';
   }
 
-  function updateEigenmodeReadout(meanAmp) {
-    let domIdx = 0, domVal = -1, totalModeSq = 0;
+  function updateEigenmodeReadout(meanAmp, activeCount) {
+    let domIdx = 0, domVal = -1;
+    const invSqrtN = 1 / Math.sqrt(Math.max(1, activeCount));
     for (let m = 0; m < MODE_SPECS.length; m++) {
       const tpl = modeTemplates[m];
       let dotY = 0, dotZ = 0;
@@ -469,22 +521,32 @@
         dotY += my[i] * tpl[i];
         dotZ += mz[i] * tpl[i];
       }
-      const amp = Math.hypot(dotY, dotZ);
+      const amp = Math.hypot(dotY, dotZ) * invSqrtN;
       modeAmps[m] = amp;
-      totalModeSq += amp * amp;
       if (amp > domVal) { domVal = amp; domIdx = m; }
     }
-    const norm = Math.sqrt(Math.max(1e-8, totalModeSq));
+    const FULL_SCALE = 0.20;
     for (let m = 0; m < MODE_SPECS.length; m++) {
-      const frac = Math.min(1, modeAmps[m] / norm);
+      const amp = modeAmps[m];
+      const frac = Math.min(1, amp / FULL_SCALE);
       const fill = document.getElementById('mf' + m);
       const val = document.getElementById('mv' + m);
       if (fill) fill.style.width = (frac * 100).toFixed(0) + '%';
-      if (val) val.textContent = frac.toFixed(2);
+      if (val) val.textContent = amp.toFixed(3);
     }
     const domName = geometryMode === 'disk' ? MODE_SPECS[domIdx].label : MODE_SPECS[domIdx].rectLabel;
-    document.getElementById('domModeBadge').textContent = `MODE: ${domName}`;
+    document.getElementById('domModeBadge').textContent = domVal > 0.002 ? `MODE: ${domName}` : 'MODE: — (EQUILIBRIUM)';
     document.getElementById('ampTotal').textContent = `⟨|m_⊥|⟩: ${meanAmp.toFixed(3)}`;
+
+    const hTh = parametricThreshold();
+    const m1 = driveMode === 'transverse' ? driveAmp * Math.max(0.05, meanAmp * 5) : 0;
+    const m2 = driveMode === 'parallel' ? driveAmp / hTh : 0;
+    const m3 = chi3m * meanAmp * meanAmp * 10;
+    const kerrShiftMHz = (-0.5 * DEMAG_NZ - chi4m) * (modeFreqGHz(domIdx) * 1000 / (biasH0 + 0.5 * DEMAG_NZ)) * meanAmp * meanAmp;
+    document.getElementById('m1Val').textContent = m1.toFixed(3);
+    document.getElementById('m2Val').textContent = m2.toFixed(2) + 'x';
+    document.getElementById('m3Val').textContent = m3.toFixed(3);
+    document.getElementById('m4Val').textContent = (kerrShiftMHz >= 0 ? '+' : '') + kerrShiftMHz.toFixed(0) + ' MHz';
   }
 
   function drawScene() {
@@ -555,19 +617,33 @@
     updateEigenmodeReadout(meanAmp, activeCount);
   }
 
+  const controlsPanel = document.getElementById('controlsPanel');
+  const ctrlToggleHint = document.getElementById('ctrlToggleHint');
+  const isCompactViewport = () => !!(window.matchMedia && window.matchMedia('(pointer:coarse), (max-width: 760px)').matches);
+  if (isCompactViewport()) controlsPanel.open = false;
+  function syncCtrlHint() { ctrlToggleHint.textContent = controlsPanel.open ? '✕' : '▾'; }
+  syncCtrlHint();
+  controlsPanel.addEventListener('toggle', () => {
+    syncCtrlHint();
+    if (controlsPanel.open && isCompactViewport() && !swTutEl.hidden) closeSwTut();
+  });
+
   function syncUi() {
     document.getElementById('slFreq').value = driveFreq;
     document.getElementById('outFreq').textContent = driveFreq.toFixed(2) + ' GHz';
     document.getElementById('slAmp').value = driveAmp;
-    document.getElementById('outAmp').textContent = driveAmp.toFixed(3);
+    document.getElementById('outAmp').textContent = `${driveAmp.toFixed(3)} (${(driveAmp * MU0_MS_MT).toFixed(1)} mT)`;
     document.getElementById('slField').value = biasH0;
-    document.getElementById('outField').textContent = biasH0.toFixed(2);
+    document.getElementById('outField').textContent = `${(biasH0 * MU0_MS_MT).toFixed(1)} mT (${biasH0.toFixed(2)})`;
     document.getElementById('slDamp').value = damping;
     document.getElementById('outDamp').textContent = damping.toFixed(3);
+    document.getElementById('slChi3').value = chi3m;
+    document.getElementById('outChi3').textContent = chi3m.toFixed(2);
     document.getElementById('geomDisk').classList.toggle('active', geometryMode === 'disk');
     document.getElementById('geomRect').classList.toggle('active', geometryMode === 'rect');
     document.getElementById('driveParallel').classList.toggle('active', driveMode === 'parallel');
     document.getElementById('driveTransverse').classList.toggle('active', driveMode === 'transverse');
+    refreshModeLabels();
   }
 
   // Interactive 4-step tutorial
@@ -575,10 +651,10 @@
   const swTutEl = document.getElementById('swTutorial');
   const swTutBtn = document.getElementById('swTutorialBtn');
   const swTutSteps = [
-    { tag: 'STEP 1 OF 4 · EIGENMODES', title: 'Excite a Standing Eigenmode', body: 'Click any eigenmode button like (1,0) Radial or (0,2) Quad to excite an exact Bessel standing wave at its resonant frequency.', formula: 'J_m(α_nm r/R) cos(mθ)' },
+    { tag: 'STEP 1 OF 4 · EIGENMODES', title: 'Excite a Standing Eigenmode', body: 'Click any eigenmode button like (1,0) Radial or (0,2) Quad to excite an exact Bessel standing wave at its distinct eigenfrequency.', formula: 'J_m(α_nm r/R) cos(mθ)' },
     { tag: 'STEP 2 OF 4 · DAMPING', title: 'Remove Drive & Watch Decay', body: 'Click Zero Drive (or set h_p = 0). Gilbert damping α dissipates precession energy until the film settles back to equilibrium.', formula: 'Γ ≈ α(H_0 + N_z/2)' },
-    { tag: 'STEP 3 OF 4 · PARAMETRIC', title: 'Parametric Instability (f_p = 2f_k)', body: 'Pump parallel to H_0 at twice a mode frequency. Above threshold h_p > h_th, magnons amplify at f_p / 2!', formula: 'h_p > h_th · f_magnon = f_p/2' },
-    { tag: 'STEP 4 OF 4 · PLUCK & SPECTRUM', title: 'Pluck & Read the Spectrum', body: 'Tap or drag directly on the magnetic disk to launch local spin waves and watch Live Eigenmodes & Magnon Spectrum react.', formula: 'tap/drag film → live FFT' }
+    { tag: 'STEP 3 OF 4 · PARAMETRIC', title: 'Parametric Instability (f_p = 2f_k)', body: 'Pump parallel to H_0 at twice a mode frequency. Above threshold h_p > h_th, 2-magnon pumping amplifies modes while 3M/4M terms saturate them.', formula: 'h_p > h_th · f_magnon = f_p/2' },
+    { tag: 'STEP 4 OF 4 · PLUCK & SPECTRUM', title: 'Pluck & Read the Spectrum', body: 'Tap or drag directly on the magnetic disk to launch local spin waves and watch Live Eigenmodes & 1–4 Magnon terms react.', formula: 'tap/drag film → live modes' }
   ];
   let swTutState = { step: 0, done: [false, false, false, false], dismissed: false };
   try { const s = JSON.parse(localStorage.getItem(swTutKey) || 'null'); if (s && typeof s === 'object') swTutState = { ...swTutState, ...s }; } catch (_) {}
@@ -595,7 +671,10 @@
     document.getElementById('swTutPrev').disabled = swTutState.step === 0;
     document.getElementById('swTutNext').textContent = swTutState.step === swTutSteps.length - 1 ? 'Done' : 'Next';
   }
-  function openSwTut() { swTutState.dismissed = false; swTutEl.hidden = false; swTutBtn.classList.add('hidden'); renderSwTut(); saveSwTut(); }
+  function openSwTut() {
+    if (isCompactViewport()) controlsPanel.open = false;
+    swTutState.dismissed = false; swTutEl.hidden = false; swTutBtn.classList.add('hidden'); renderSwTut(); saveSwTut();
+  }
   function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); saveSwTut(); }
   function notifySwTutorial(action) {
     const idx = action === 'eigen' ? 0 : action === 'zero' ? 1 : action === 'param' ? 2 : action === 'pluck' ? 3 : -1;
@@ -622,16 +701,16 @@
     document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
-      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.040; driveFreq = 2 * modeFreqGHz(3); driveAmp = 2.5 * parametricThreshold();
+      driveMode = 'parallel'; biasH0 = 0.29; damping = 0.040; driveFreq = 2 * modeFreqGHz(3); driveAmp = 2.2 * parametricThreshold(3);
       seedSpins(0.03);
       notifySwTutorial('param');
     } else if (name === 'sub') {
       document.getElementById('presetSub').classList.add('active');
-      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.040; driveFreq = 2 * modeFreqGHz(3); driveAmp = 0.25 * parametricThreshold();
+      driveMode = 'parallel'; biasH0 = 0.29; damping = 0.040; driveFreq = 2 * modeFreqGHz(3); driveAmp = 0.25 * parametricThreshold(3);
       seedSpins(0.03);
     } else if (name === 'direct') {
       document.getElementById('presetDirect').classList.add('active');
-      driveMode = 'transverse'; biasH0 = 0.45; damping = 0.040; driveFreq = modeFreqGHz(0); driveAmp = 0.055;
+      driveMode = 'transverse'; biasH0 = 0.29; damping = 0.040; driveFreq = modeFreqGHz(0); driveAmp = 0.045;
       seedSpins(0.006);
     }
     syncUi();
@@ -662,6 +741,8 @@
   });
   document.getElementById('slField').addEventListener('input', e => { biasH0 = +e.target.value; syncUi(); });
   document.getElementById('slDamp').addEventListener('input', e => { damping = +e.target.value; syncUi(); });
+  document.getElementById('slChi3').addEventListener('input', e => { chi3m = +e.target.value; syncUi(); });
+  document.getElementById('slChi4').addEventListener('input', e => { chi4m = +e.target.value; syncUi(); });
   document.getElementById('btnPause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; });
   document.getElementById('btnSeed').addEventListener('click', () => seedSpins(0.035));
   document.getElementById('btnClear').addEventListener('click', () => seedSpins(0.0));
@@ -671,7 +752,7 @@
 
   function frame() {
     if (!paused) {
-      for (let s = 0; s < 18; s++) stepLlg(0.010);
+      for (let s = 0; s < 15; s++) stepLlg(0.012);
       updateSpectrum();
     }
     drawScene();

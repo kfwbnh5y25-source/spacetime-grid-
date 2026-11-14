@@ -514,7 +514,7 @@ test('L. Spin-wave model: Gilbert damping energy dissipation when drive is remov
 test('M. Spin-wave model: parametric excitation threshold (decay below h_th, exponential growth above h_th)', () => {
   spin.setState({ geometryMode: 'disk', driveMode: 'parallel', biasH0: 0.45, damping: 0.040 });
   spin.buildMaskAndModes();
-  const hTh = spin.parametricThreshold();
+  const hTh = spin.parametricThreshold(3);
   const fPump = 2 * spin.modeFreqGHz(3);
 
   // Below threshold: h_p = 0.25 * h_th -> resonant mode 3 must decay
