@@ -157,8 +157,8 @@
       <input id="slChi3" type="range" min="0.00" max="0.45" step="0.01" value="0.16">
     </label>
     <label class="sliderRow">
-      <span>4-Magnon Kerr NFS χ₄</span><output id="outChi4">-0.35</output>
-      <input id="slChi4" type="range" min="-1.00" max="1.00" step="0.05" value="-0.35">
+      <span>4-Magnon Kerr NFS χ₄</span><output id="outChi4">0.00</output>
+      <input id="slChi4" type="range" min="-1.00" max="1.00" step="0.05" value="0.00">
     </label>
     <div class="btnRow">
       <button class="btn" id="btnPause" type="button">Pause</button>
@@ -222,7 +222,7 @@
   let biasH0 = 0.29; // ~50.8 mT
   let damping = 0.040;
   let chi3m = 0.16; // 3-magnon cubic dipolar coupling
-  let chi4m = -0.35; // 4-magnon Kerr nonlinear frequency shift (s-NFS / m-NFS)
+  let chi4m = 0.0; // 4-magnon extra Kerr parameter (0 = pure physical LLG softening)
   let paused = false;
   let simTime = 0;
 
@@ -237,6 +237,7 @@
   ];
   const modeTemplates = MODE_SPECS.map(() => new Float32Array(N));
   const modeAmps = new Float32Array(MODE_SPECS.length);
+  const modeOverlap = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
 
   function besselJ(n, x) {
     let sum = 0, factK = 1, factNK = 1;
@@ -291,6 +292,16 @@
       }
       const inv = 1 / Math.sqrt(Math.max(1e-8, normSq));
       for (let i = 0; i < N; i++) tpl[i] *= inv;
+    }
+    let activeCount = 0;
+    for (let i = 0; i < N; i++) if (activeMask[i]) activeCount++;
+    for (let a = 0; a < MODE_SPECS.length; a++) {
+      for (let b = a; b < MODE_SPECS.length; b++) {
+        let sum4 = 0;
+        const ta = modeTemplates[a], tb = modeTemplates[b];
+        for (let i = 0; i < N; i++) if (activeMask[i]) sum4 += ta[i] * ta[i] * tb[i] * tb[i];
+        modeOverlap[a][b] = modeOverlap[b][a] = activeCount * sum4;
+      }
     }
     const barsEl = document.getElementById('modeBars');
     barsEl.innerHTML = MODE_SPECS.map((s, idx) => {
@@ -489,9 +500,9 @@
     return Math.max(0.005, (4 * damping * omegaK * (hEff + 0.5 * DEMAG_NZ)) / DEMAG_NZ);
   }
 
-  function arnoldThreshold(mIdx, fPumpGHz) {
+  function arnoldThreshold(mIdx, fPumpGHz, fShiftGHz = 0) {
     const hTh = parametricThreshold(mIdx);
-    const delta = 0.5 * (fPumpGHz - 2 * modeFreqGHz(mIdx)) * FREQ_TO_RAD;
+    const delta = 0.5 * (fPumpGHz - 2 * (modeFreqGHz(mIdx) + fShiftGHz)) * FREQ_TO_RAD;
     const gamma = Math.max(1e-5, modeGamma(mIdx));
     return hTh * Math.hypot(1, delta / gamma);
   }
@@ -610,7 +621,7 @@
     const m1 = driveMode === 'transverse' ? driveAmp * Math.max(0.05, meanAmp * 5) : 0;
     const m2 = driveMode === 'parallel' ? driveAmp / hTh : 0;
     const m3 = chi3m * meanAmp * meanAmp * 10;
-    const kerrShiftMHz = (-0.5 * DEMAG_NZ - chi4m) * (modeFreqGHz(domIdx) * 1000 / (biasH0 + 0.5 * DEMAG_NZ)) * meanAmp * meanAmp;
+    const kerrShiftMHz = modeNfsShiftGHz(domIdx) * 1000;
     document.getElementById('m1Val').textContent = m1.toFixed(3);
     document.getElementById('m2Val').textContent = m2.toFixed(2) + 'x';
     document.getElementById('m3Val').textContent = m3.toFixed(3);
@@ -622,7 +633,9 @@
   const ARNOLD_F_MIN = 4.5, ARNOLD_F_MAX = 16.5, ARNOLD_H_MAX = 0.60;
   const TONGUE_COLORS = ['#6cb8ff', '#6ee7b7', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
 
-  function selfNfsCoeff(mIdx = 0) {
+  // Exact 4-magnon NFS coefficient d(omega_m)/d(A_j^2) derived from LLG:
+  // dw = -[0.5*hEff*N_z + (2*hEff + N_z)*chi4m] / (2*omega_k) * overlap(m,j)
+  function mutualNfsCoeff(mIdx = 0, jIdx = mIdx) {
     const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
     const R = NX * 0.45;
     const k2 = geometryMode === 'disk'
@@ -630,8 +643,22 @@
       : Math.pow((spec.nx * Math.PI) / NX, 2) + Math.pow((spec.ny * Math.PI) / NY, 2);
     const hEff = biasH0 + J_EX * k2;
     const omegaK = Math.sqrt(hEff * (hEff + DEMAG_NZ));
-    const shapeFactor = mIdx === 0 ? 1.0 : 1.55;
-    return (-0.5 * DEMAG_NZ - chi4m) * (omegaK / (hEff + 0.5 * DEMAG_NZ)) * shapeFactor;
+    const base = -(0.5 * hEff * DEMAG_NZ + (2 * hEff + DEMAG_NZ) * chi4m) / (2 * omegaK);
+    const overlap = (modeOverlap[mIdx] && modeOverlap[mIdx][jIdx]) ? modeOverlap[mIdx][jIdx] : 1.0;
+    return base * overlap;
+  }
+
+  function selfNfsCoeff(mIdx = 0) {
+    return mutualNfsCoeff(mIdx, mIdx);
+  }
+
+  function modeNfsShiftGHz(mIdx = 0) {
+    let dOmega = 0;
+    for (let j = 0; j < MODE_SPECS.length; j++) {
+      const a = cycleAvgModeAmp(j);
+      if (a > 0) dOmega += mutualNfsCoeff(mIdx, j) * a * a;
+    }
+    return dOmega / FREQ_TO_RAD;
   }
 
   function steadyStateAmp(mIdx, fPumpGHz, hPump) {
@@ -642,7 +669,10 @@
     const rad = Math.sqrt(Math.max(0, (vk * hPump) ** 2 - gamma * gamma));
     const delta = 0.5 * (fPumpGHz - 2 * modeFreqGHz(mIdx)) * FREQ_TO_RAD;
     const nkk = selfNfsCoeff(mIdx);
-    if (Math.abs(nkk) < 1e-6) return 0;
+    if (Math.abs(nkk) < 1e-4) {
+      // At zero Kerr NFS (exact cancellation), saturation comes from higher-order damping/ellipticity
+      return Math.abs(delta) <= rad ? 0.12 * Math.sqrt((hPump / hTh) - 1) : 0;
+    }
     const sgn = nkk >= 0 ? 1 : -1;
     // Stable branch inside tilted detuning cone (d'Aquino et al. 2026)
     if (sgn * delta < -rad) return 0;
@@ -662,17 +692,33 @@
 
     let closestMode = 0, bestDist = 1e9;
     for (let m = 0; m < MODE_SPECS.length; m++) {
-      const f2 = 2 * modeFreqGHz(m);
+      const fShift = modeNfsShiftGHz(m);
+      const f2Lin = 2 * modeFreqGHz(m);
+      const f2 = 2 * (modeFreqGHz(m) + fShift);
       const d = Math.abs(driveFreq - f2);
       if (d < bestDist) { bestDist = d; closestMode = m; }
       if (f2 < ARNOLD_F_MIN - 1 || f2 > ARNOLD_F_MAX + 1) continue;
       const col = TONGUE_COLORS[m % TONGUE_COLORS.length];
       arnoldCtx.save();
+
+      // Faint unshifted linear reference tip when NFS shifts the tongue
+      if (Math.abs(fShift) > 0.015) {
+        const xLin = toX(f2Lin), yTip = toY(parametricThreshold(m));
+        if (xLin > 4 && xLin < w - 4) {
+          arnoldCtx.strokeStyle = col;
+          arnoldCtx.globalAlpha = 0.25;
+          arnoldCtx.setLineDash([2, 3]);
+          arnoldCtx.beginPath(); arnoldCtx.moveTo(xLin, 0); arnoldCtx.lineTo(xLin, yTip); arnoldCtx.stroke();
+          arnoldCtx.setLineDash([]);
+        }
+      }
+
+      // Dynamically shifted Arnold tongue centered at 2*(f_m + dF_NFS)
       arnoldCtx.beginPath();
       let started = false;
       for (let px = 0; px <= w; px += 3) {
         const fp = ARNOLD_F_MIN + (px / w) * (ARNOLD_F_MAX - ARNOLD_F_MIN);
-        const hT = arnoldThreshold(m, fp);
+        const hT = arnoldThreshold(m, fp, fShift);
         if (hT <= ARNOLD_H_MAX * 1.15) {
           const y = Math.max(0, toY(hT));
           if (!started) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); started = true; }
@@ -706,7 +752,7 @@
       let foldStarted = false;
       for (let hp = hTh; hp <= ARNOLD_H_MAX; hp += 0.025) {
         const rad = Math.sqrt(Math.max(0, ((gamma / hTh) * hp) ** 2 - gamma * gamma));
-        const fFold = f2 + (2 * sgn * rad) / FREQ_TO_RAD;
+        const fFold = f2Lin + (2 * sgn * rad) / FREQ_TO_RAD;
         if (fFold >= ARNOLD_F_MIN && fFold <= ARNOLD_F_MAX) {
           const xF = toX(fFold), yF = toY(hp);
           if (!foldStarted) { arnoldCtx.moveTo(xF, yF); foldStarted = true; }

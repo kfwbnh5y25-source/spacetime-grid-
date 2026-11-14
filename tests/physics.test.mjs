@@ -388,6 +388,7 @@ function loadSpinWavesContext() {
     mx, my, mz, activeMask, modeTemplates, MODE_SPECS,
     buildMaskAndModes, seedSpins, exciteEigenmode, stepLlg,
     modeFreqGHz, parametricThreshold, arnoldThreshold, cycleAvgModeAmp, besselJ,
+    selfNfsCoeff, mutualNfsCoeff, modeNfsShiftGHz,
     setState(patch) {
       if ('geometryMode' in patch) geometryMode = patch.geometryMode;
       if ('driveMode' in patch) driveMode = patch.driveMode;
@@ -536,14 +537,35 @@ test('M. Spin-wave model: parametric excitation threshold (decay below h_th, exp
   assert.ok(supEnd > supStart * 2.2, `Above threshold (h_p=${(2.5 * hTh).toFixed(3)} > h_th=${hTh.toFixed(3)}), mode 3 should grow: ${supStart.toFixed(4)} -> ${supEnd.toFixed(4)}`);
 });
 
-test("N. Spin-wave model: d'Aquino single-mode steady-state saturation, Arnold tongue & 1-cycle averaging", () => {
-  spin.setState({ geometryMode: 'disk', driveMode: 'parallel', biasH0: 0.29, damping: 0.040, chi3m: 0.16, chi4m: -0.35 });
+test("N. Spin-wave model: d'Aquino single-mode steady-state, LLG NFS sign, dynamic Arnold tongue & 1-cycle averaging", () => {
+  spin.setState({ geometryMode: 'disk', driveMode: 'parallel', biasH0: 0.29, damping: 0.040, chi3m: 0.16, chi4m: 0.0 });
   spin.buildMaskAndModes();
   const f0 = spin.modeFreqGHz(0);
+
+  // Pure LLG (chi4m = 0) has negative (softening) nonlinear frequency shift
+  const n0 = spin.selfNfsCoeff(0);
+  assert.ok(n0 < 0, `Pure LLG (chi4m=0) must soften (negative NFS): got ${n0.toFixed(4)}`);
+
+  // Negative chi4m (-0.35) reverses to hardening (positive NFS); positive chi4m (+0.35) strengthens softening
+  spin.setState({ chi4m: -0.35 });
+  const nHard = spin.selfNfsCoeff(0);
+  assert.ok(nHard > 0, `chi4m=-0.35 must harden (positive NFS): got ${nHard.toFixed(4)}`);
+  spin.setState({ chi4m: 0.35 });
+  const nSoft = spin.selfNfsCoeff(0);
+  assert.ok(nSoft < n0, `chi4m=+0.35 must soften more than chi4m=0: got ${nSoft.toFixed(4)} vs ${n0.toFixed(4)}`);
+
+  // Dynamic Arnold tongue tip shifts from 2*f0 to 2*(f0 + fShift)
+  spin.setState({ chi4m: -0.35 });
   const hTip = spin.arnoldThreshold(0, 2 * f0);
   const hDetuned = spin.arnoldThreshold(0, 2 * f0 + 0.6);
   assert.ok(Math.abs(hTip - spin.parametricThreshold(0)) < 1e-6, 'Arnold tongue tip must equal parametricThreshold');
   assert.ok(hDetuned > hTip * 1.4, `Detuned Arnold tongue boundary should rise: tip=${hTip.toFixed(3)} vs detuned=${hDetuned.toFixed(3)}`);
+
+  const fShift = 0.25;
+  const hShiftedTip = spin.arnoldThreshold(0, 2 * (f0 + fShift), fShift);
+  const hUnshiftedAtShiftedTip = spin.arnoldThreshold(0, 2 * (f0 + fShift), 0);
+  assert.ok(Math.abs(hShiftedTip - hTip) < 1e-6, 'Shifted Arnold tongue tip must stay at parametricThreshold');
+  assert.ok(hUnshiftedAtShiftedTip > hShiftedTip * 1.2, 'Unshifted tongue at shifted tip must be higher than shifted tip');
 
   // Outside detuned tongue -> must decay toward trivial steady state (0)
   spin.setState({ driveFreq: 2 * f0 + 1.2, driveAmp: 1.5 * hTip, simTime: 0 });
@@ -556,6 +578,8 @@ test("N. Spin-wave model: d'Aquino single-mode steady-state saturation, Arnold t
   spin.setState({ driveFreq: 2 * f0 - 0.15, driveAmp: 3.2 * hTip, simTime: 0 });
   spin.seedSpins(0.03);
   for (let s = 0; s < 8000; s++) spin.stepLlg(0.012);
+  const shiftDuringDrive = spin.modeNfsShiftGHz(0);
+  assert.ok(shiftDuringDrive > 0.01, `Hardening chi4m=-0.35 at finite steady state should produce positive NFS shift, got ${shiftDuringDrive.toFixed(4)} GHz`);
   const samples = [];
   for (let k = 0; k < 12; k++) {
     for (let s = 0; s < 100; s++) spin.stepLlg(0.012);
