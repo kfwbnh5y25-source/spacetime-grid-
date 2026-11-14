@@ -393,16 +393,16 @@ function loadSpinWavesContext() {
     selfNfsCoeff, mutualNfsCoeff, llgMutualNfsCoeff, modeNfsShiftGHz, modeMutualNfsShiftGHz,
     modeGamma, steadyStateAmp, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
     mutualPumpOverlap, mutualPumpThreshold, mutualArnoldThreshold,
-    pair4, tri4, scat4, refreshHasCustomMat4, zeroMutualNfs,
+    pair4, tri4, scat4, xmod4, refreshHasCustomMat4, zeroMutualNfs,
     setNikCustom(i, j, val) { setNikSymmetric(i, j, val); },
     resetNikCustom() { for (const r of nikCustom) r.fill(null); refreshHasCustomNik(); },
     setMat4(kind, i, j, val) {
-      const m = kind === 'p' ? pair4 : kind === 't' ? tri4 : scat4;
+      const m = kind === 'p' ? pair4 : kind === 't' ? tri4 : kind === 'x' ? xmod4 : scat4;
       m[i][j] = val;
       refreshHasCustomMat4();
     },
     resetMat4() {
-      for (let i = 0; i < MODE_SPECS.length; i++) { pair4[i].fill(0); tri4[i].fill(0); scat4[i].fill(0); }
+      for (let i = 0; i < MODE_SPECS.length; i++) { pair4[i].fill(0); tri4[i].fill(0); scat4[i].fill(0); xmod4[i].fill(0); }
       refreshHasCustomMat4();
     },
     setState(patch) {
@@ -425,7 +425,7 @@ function loadSpinWavesContext() {
       }
       if ('drivePhase2' in patch) drivePhase2 = patch.drivePhase2;
       if ('arnoldTarget' in patch) arnoldTarget = patch.arnoldTarget;
-      if ('simTime' in patch) simTime = patch.simTime;
+      if ('simTime' in patch) { simTime = patch.simTime; resetModeHistory(); recordModeSample(); }
     },
     getState() {
       return {
@@ -472,7 +472,7 @@ test('J. Spin-wave model: unit spin norm conservation and eigenmode orthonormali
       for (let b = a + 1; b < spin.MODE_SPECS.length; b++) {
         let dot = 0;
         for (let i = 0; i < spin.N; i++) dot += spin.modeTemplates[a][i] * spin.modeTemplates[b][i];
-        assert.ok(Math.abs(dot) < 0.06, `${geom} modes ${a},${b} not orthogonal: dot=${dot.toFixed(4)}`);
+        assert.ok(Math.abs(dot) < 1e-5, `${geom} modes ${a},${b} not Gram-Schmidt orthogonal: dot=${dot.toExponential(2)}`);
       }
     }
   }
@@ -805,12 +805,36 @@ test('Q. Spin-wave Stage 3: symmetric n_ij, Mut n=0, P/T/S 4M matrices (2f1-f2, 
   for (let s = 0; s < 2500; s++) spin.stepLlg(0.012);
   const a1PairOn = spin.cycleAvgModeAmp(1);
   assert.ok(a1PairOff < 0.03 && a1PairOn > 0.12, `Pair matrix P_10 (2f_0-f_1) must pump nearby Mode 1 from Mode 0: off=${a1PairOff.toFixed(4)} vs on=${a1PairOn.toFixed(4)}`);
+  // X_ij (|a_i|^2 a_j -> f_j & 2f_i-f_j host-intensity 4M): zero when Mode i is unexcited, active when Mode i is populated
+  const f1 = spin.modeFreqGHz(1);
+  spin.resetMat4();
+  spin.exciteEigenmode(0); // Only Mode 0 is populated; Mode 1 (m=1) has 0 overlap with uniform drive and starts at a_1 = 0
+  spin.setState({ driveMode: 'transverse', damping: 0.015, biasH0: 0.29, driveFreq: f0, driveAmp: 0.11, dualTone: false, simTime: 0 });
+  spin.setMat4('x', 1, 0, 2.5);
+  for (let s = 0; s < 600; s++) spin.stepLlg(0.012);
+  const a1UnseededX = spin.cycleAvgModeAmp(1);
+  assert.ok(a1UnseededX < 1e-4, `Host-gated X_10 (|a_1|^2 a_0) must remain 0 when Mode 1 is unpopulated: got ${a1UnseededX.toExponential(2)}`);
+
+  // Now populate Mode 1 (exciteEigenmode(1)) while driving Mode 0 resonantly at f_0: X_10 couples Mode 0 into populated Mode 1
+  spin.resetMat4();
+  spin.exciteEigenmode(1);
+  spin.setState({ driveMode: 'transverse', damping: 0.015, biasH0: 0.29, driveFreq: f0, driveAmp: 0.11, dualTone: false, simTime: 0 });
+  for (let s = 0; s < 1200; s++) spin.stepLlg(0.012);
+  const a1NoX = spin.cycleAvgModeAmp(1);
+
+  spin.setMat4('x', 1, 0, 2.5);
+  spin.exciteEigenmode(1);
+  spin.setState({ driveMode: 'transverse', damping: 0.015, biasH0: 0.29, driveFreq: f0, driveAmp: 0.11, dualTone: false, simTime: 0 });
+  for (let s = 0; s < 1200; s++) spin.stepLlg(0.012);
+  const a1WithX = spin.cycleAvgModeAmp(1);
+  assert.ok(Math.abs(a1WithX - a1NoX) > 0.015, `Active X_10 (|a_1|^2 a_0) must modify populated Mode 1 amplitude: off=${a1NoX.toFixed(4)} vs on=${a1WithX.toFixed(4)}`);
+
   for (let i = 0; i < spin.N; i++) {
     if (!spin.activeMask[i]) continue;
-    assert.ok(Math.hypot(spin.mx[i], spin.my[i], spin.mz[i]) - 1 < 1e-5, 'Unit spin norm must hold under P/T/S 4M matrices');
+    assert.ok(Math.hypot(spin.mx[i], spin.my[i], spin.mz[i]) - 1 < 1e-5, 'Unit spin norm must hold under P/T/S/X 4M matrices');
   }
   spin.resetMat4();
-  const h0 = spin.parametricThreshold(0), h1 = spin.parametricThreshold(1), f1 = spin.modeFreqGHz(1);
+  const h0 = spin.parametricThreshold(0), h1 = spin.parametricThreshold(1);
 
   // 4. Wait T1 SS option holds Tone 2 off until Tone 1 reaches steady state, then releases automatically
   spin.setState({
@@ -837,6 +861,7 @@ test('Q. Spin-wave Stage 3: symmetric n_ij, Mut n=0, P/T/S 4M matrices (2f1-f2, 
   assert.doesNotMatch(spinWavesHtml, /id="slChi3"|id="slChi4"/, '3M and old chi4 sliders must be removed from HTML');
   assert.match(spinWavesHtml, /id="btnWaitT1SS"/, 'Wait T1 SS toggle button must exist in HTML');
   assert.match(spinWavesHtml, /id="nikBtnZeroMut"/, 'Mut n=0 button must exist in HTML');
+  assert.match(spinWavesHtml, /data-mat="x"/, 'X_ij (|a_i|^2 a_j) 4M matrix tab must exist in HTML');
   spin.setState({ dualTone: false, driveAmp2: 0, tone2WaitSS: false, chi4m: 0.0 });
 });
 

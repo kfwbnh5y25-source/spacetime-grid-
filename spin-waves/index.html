@@ -58,8 +58,8 @@
   canvas#arnoldCanvas { display: block; width: 100%; height: 104px; cursor: crosshair; touch-action: none; border-radius: 6px; }
   #nikWrap { margin-top: 2px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
   #nikHeader { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.78); margin-bottom: 5px; }
-  .nikTabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-bottom: 5px; }
-  .nikTab { padding: 3px 2px; border-radius: 4px; border: 1px solid rgba(190,220,255,.2); background: rgba(120,165,225,.08); color: rgba(210,228,255,.8); font: 8px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; text-align: center; }
+  .nikTabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; margin-bottom: 5px; }
+  .nikTab { padding: 3px 1px; border-radius: 4px; border: 1px solid rgba(190,220,255,.2); background: rgba(120,165,225,.08); color: rgba(210,228,255,.8); font: 7.5px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; text-align: center; }
   .nikTab.active { background: rgba(105,175,255,.3); border-color: rgba(165,215,255,.65); color: #fff; }
   #nikGrid { display: grid; grid-template-columns: 18px repeat(6, 1fr); gap: 2px; align-items: center; }
   .nikLbl { font: 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,210,240,.65); text-align: center; }
@@ -213,7 +213,8 @@
         <button class="nikTab active" data-mat="n" type="button" title="Resonant Kerr NFS: Δf_i = n_ij |a_j|^2">nᵢⱼ (fᵢ)</button>
         <button class="nikTab" data-mat="p" type="button" title="Pair / FWM c_i*^2 c_j^2: generates 2f_j - f_i & 2f_i - f_j">Pᵢⱼ (2fⱼ-fᵢ)</button>
         <button class="nikTab" data-mat="t" type="button" title="Non-RWA 3↔1 c_i* c_j^3: generates 3f_j & f_i - 2f_j">Tᵢⱼ (3fⱼ)</button>
-        <button class="nikTab" data-mat="s" type="button" title="4M Cross-Scattering c_i* c_j |c_j|^2 between modes">Sᵢⱼ (fⱼ↔fᵢ)</button>
+        <button class="nikTab" data-mat="s" type="button" title="Donor-intensity 4M scattering S_ij |a_j|^2 a_j (at f_j)">Sᵢⱼ (|aⱼ|²aⱼ)</button>
+        <button class="nikTab" data-mat="x" type="button" title="Host-intensity 4M coupling X_ij |a_i|^2 a_j (at f_j & 2f_i-f_j)">Xᵢⱼ (|aᵢ|²aⱼ)</button>
       </div>
       <div id="nikGrid" role="grid" aria-label="4th-order magnon interaction matrix"></div>
       <div id="nikConfig">
@@ -352,11 +353,12 @@
   const pair4 = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
   const tri4 = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
   const scat4 = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
+  const xmod4 = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
   function refreshHasCustomMat4() {
     hasCustomMat4 = false;
     for (let i = 0; i < MODE_SPECS.length; i++) {
       for (let j = 0; j < MODE_SPECS.length; j++) {
-        if (Math.abs(pair4[i][j]) > 1e-6 || Math.abs(tri4[i][j]) > 1e-6 || Math.abs(scat4[i][j]) > 1e-6) {
+        if (Math.abs(pair4[i][j]) > 1e-6 || Math.abs(tri4[i][j]) > 1e-6 || Math.abs(scat4[i][j]) > 1e-6 || Math.abs(xmod4[i][j]) > 1e-6) {
           hasCustomMat4 = true;
           return;
         }
@@ -400,7 +402,6 @@
     for (let m = 0; m < MODE_SPECS.length; m++) {
       const spec = MODE_SPECS[m];
       const tpl = modeTemplates[m];
-      let normSq = 0;
       for (let y = 0; y < NY; y++) {
         for (let x = 0; x < NX; x++) {
           const i = y * NX + x;
@@ -414,9 +415,19 @@
             v = Math.cos(spec.nx * Math.PI * u) * Math.cos(spec.ny * Math.PI * w);
           }
           tpl[i] = v;
-          normSq += v * v;
         }
       }
+      // Gram-Schmidt orthogonalization on the discrete mesh so <φ_h, B_0⊥ φ_k> = δ_hk
+      for (let prev = 0; prev < m; prev++) {
+        const tPrev = modeTemplates[prev];
+        let dot = 0;
+        for (let i = 0; i < N; i++) if (activeMask[i]) dot += tpl[i] * tPrev[i];
+        if (Math.abs(dot) > 1e-12) {
+          for (let i = 0; i < N; i++) if (activeMask[i]) tpl[i] -= dot * tPrev[i];
+        }
+      }
+      let normSq = 0;
+      for (let i = 0; i < N; i++) if (activeMask[i]) normSq += tpl[i] * tpl[i];
       const inv = 1 / Math.sqrt(Math.max(1e-8, normSq));
       for (let i = 0; i < N; i++) tpl[i] *= inv;
     }
@@ -553,7 +564,8 @@
       }
     }
 
-    // Modal 4th-order tensor interactions: P_ij (2f_j-f_i), T_ij (3f_j / 3<->1), S_ij (f_j<->f_i)
+    // Modal 4th-order tensor interactions via d'Aquino symplectic B_0⊥ = -i m_0 × (·) projection:
+    // P_ij (2f_j-f_i), T_ij (3f_j / 3<->1), S_ij (|a_j|^2 a_j), X_ij (|a_i|^2 a_j + a_i^2 a_j*)
     const M = MODE_SPECS.length;
     if (hasCustomMat4) {
       const invSqrtN = 1 / Math.max(1, sqrtActiveCache);
@@ -567,7 +579,9 @@
         const hEff = biasH0 + J_EX * modeK2(m);
         const eps = Math.sqrt(hEff / (hEff + DEMAG_NZ));
         epsProj[m] = eps;
-        const u = qy * invSqrtN, v = qz * invSqrtN, w = v / eps;
+        // Symplectic B_0⊥ projection <φ_m, -i m_0 × δm_⊥> eliminates conjugate e^{-iω_m t} contamination
+        const symp = Math.sqrt(0.5 * (1 + eps * eps)) * invSqrtN;
+        const u = qy * symp, v = qz * symp, w = v / eps;
         uProj[m] = u; vProj[m] = v; wProj[m] = w;
         const x2 = u * u - w * w, y2 = 2 * u * w;
         x2Proj[m] = x2; y2Proj[m] = y2;
@@ -578,7 +592,7 @@
       }
       const C4 = 0.35;
       for (let i = 0; i < M; i++) {
-        const ui = uProj[i], wi = wProj[i], x2i = x2Proj[i], y2i = y2Proj[i], invEi = 1 / epsProj[i];
+        const ui = uProj[i], wi = wProj[i], x2i = x2Proj[i], y2i = y2Proj[i], a2i = a2Proj[i], invEi = 1 / epsProj[i];
         let fy = 0, fz = 0;
         for (let j = 0; j < M; j++) {
           const pij = pair4[i][j];
@@ -601,9 +615,16 @@
             fy += C4 * sij * uProj[j] * a2Proj[j];
             fz += C4 * invEi * sij * wProj[j] * a2Proj[j];
           }
+          const xij = xmod4[i][j];
+          if (xij !== 0) {
+            const dij = ui * uProj[j] + wi * wProj[j];
+            fy += 3.0 * C4 * xij * (a2i * uProj[j] + 2 * ui * dij);
+            fz += 3.0 * C4 * invEi * xij * (a2i * wProj[j] + 2 * wi * dij);
+          }
         }
-        fyProj[i] = fy * sqrtActiveCache;
-        fzProj[i] = fz * sqrtActiveCache;
+        const invSymp = 1 / Math.sqrt(0.5 * (1 + epsProj[i] * epsProj[i]));
+        fyProj[i] = fy * invSymp * sqrtActiveCache;
+        fzProj[i] = fz * invSymp * sqrtActiveCache;
       }
     }
 
@@ -690,8 +711,8 @@
       }
       simTime += h;
     }
-    if (simTime - lastModeSampleT >= 0.14 || modeHistCount === 0) recordModeSample();
-    if (lastSpecSampleT < 0 || simTime - lastSpecSampleT >= SPEC_DT) {
+    if (simTime < lastModeSampleT || simTime - lastModeSampleT >= 0.14 || modeHistCount === 0) recordModeSample();
+    if (lastSpecSampleT < 0 || simTime < lastSpecSampleT || simTime - lastSpecSampleT >= SPEC_DT) {
       probeSeries[probeHead] = my[SPEC_PROBE_IDX] + 0.6 * mz[SPEC_PROBE_IDX];
       probeHead = (probeHead + 1) % SPEC_LEN;
       lastSpecSampleT = simTime;
@@ -729,9 +750,7 @@
   }
 
   function recordModeSample() {
-    let activeCount = 0;
-    for (let i = 0; i < N; i++) if (activeMask[i]) activeCount++;
-    const invN = 1 / Math.max(1, activeCount);
+    const invN = 1 / Math.max(1, activeCountCache);
     modeHistTime[modeHistHead] = simTime;
     for (let m = 0; m < MODE_SPECS.length; m++) {
       const tpl = modeTemplates[m];
@@ -741,7 +760,10 @@
         dy += my[i] * tpl[i];
         dz += mz[i] * tpl[i];
       }
-      modeHistSq[m][modeHistHead] = (dy * dy + dz * dz) * invN;
+      const hEff = biasH0 + J_EX * modeK2(m);
+      const eps2 = hEff / (hEff + DEMAG_NZ);
+      // Symplectic B_0⊥ = -i m_0 × (·) projection: |<φ_m, B_0⊥ δm_⊥>|^2 ∝ ε_m dy^2 + ε_m^{-1} dz^2
+      modeHistSq[m][modeHistHead] = 0.5 * (1 + eps2) * (dy * dy + (dz * dz) / eps2) * invN;
     }
     modeHistHead = (modeHistHead + 1) % MODE_HIST_LEN;
     if (modeHistCount < MODE_HIST_LEN) modeHistCount++;
@@ -920,7 +942,7 @@
     if (hasCustomMat4) {
       for (let i = 0; i < MODE_SPECS.length; i++) {
         for (let j = 0; j < MODE_SPECS.length; j++) {
-          fwmMax = Math.max(fwmMax, Math.abs(pair4[i][j]), Math.abs(tri4[i][j]), Math.abs(scat4[i][j]));
+          fwmMax = Math.max(fwmMax, Math.abs(pair4[i][j]), Math.abs(tri4[i][j]), Math.abs(scat4[i][j]), Math.abs(xmod4[i][j]));
         }
       }
     }
@@ -1032,7 +1054,7 @@
   let nikHoverPair = null;
 
   function activeMat4Array() {
-    return activeMat4 === 'p' ? pair4 : activeMat4 === 't' ? tri4 : activeMat4 === 's' ? scat4 : null;
+    return activeMat4 === 'p' ? pair4 : activeMat4 === 't' ? tri4 : activeMat4 === 's' ? scat4 : activeMat4 === 'x' ? xmod4 : null;
   }
 
   function syncNikConfigUi() {
@@ -1056,8 +1078,8 @@
     } else {
       const mat = activeMat4Array();
       const val = mat ? mat[si][sj] : 0;
-      const sym = activeMat4 === 'p' ? 'P' : activeMat4 === 't' ? 'T' : 'S';
-      const chan = activeMat4 === 'p' ? `2f${sj}-f${si}` : activeMat4 === 't' ? `3f${sj}/3↔1` : `f${sj}↔f${si}`;
+      const sym = activeMat4 === 'p' ? 'P' : activeMat4 === 't' ? 'T' : activeMat4 === 's' ? 'S' : 'X';
+      const chan = activeMat4 === 'p' ? `2f${sj}-f${si}` : activeMat4 === 't' ? `3f${sj}/3↔1` : activeMat4 === 's' ? `|a${sj}|²a${sj} @f${sj}` : `|a${si}|²a${sj} @f${sj}`;
       nikSelLabelEl.textContent = `${sym}_${si}${sj} (${chan})`;
       nikSlValEl.value = Math.max(-3, Math.min(3, val)).toFixed(2);
       nikOutValEl.textContent = `${val >= 0 ? '+' : ''}${val.toFixed(2)}`;
@@ -1106,7 +1128,7 @@
           const v = mat ? mat[i][k] : 0;
           if (Math.abs(v) > bestAbs) { bestAbs = Math.abs(v); bestI = i; bestK = k; }
           const mag = Math.min(1, Math.abs(v) / 1.5);
-          const rgb = activeMat4 === 'p' ? '244,114,182' : activeMat4 === 't' ? '251,191,36' : '167,139,250';
+          const rgb = activeMat4 === 'p' ? '244,114,182' : activeMat4 === 't' ? '251,191,36' : activeMat4 === 's' ? '167,139,250' : '56,189,248';
           cell.style.background = Math.abs(v) > 1e-4 ? `rgba(${rgb},${(0.18 + 0.7 * mag).toFixed(2)})` : 'rgba(255,255,255,0.03)';
           cell.classList.toggle('activeCol', ak > 0.015 || cycleAvgModeAmp(i) > 0.015);
           cell.classList.toggle('custom', Math.abs(v) > 1e-4);
@@ -1125,8 +1147,14 @@
         nikInfoEl.textContent = `n_${i}${k}=${nGHz.toFixed(2)} · Δf=${dfMHz >= 0 ? '+' : ''}${dfMHz.toFixed(0)}MHz`;
       } else {
         const v = mat ? mat[i][k] : 0;
-        const sym = activeMat4 === 'p' ? 'P' : activeMat4 === 't' ? 'T' : 'S';
-        const fTxt = activeMat4 === 'p' ? `${(2 * modeFreqGHz(k) - modeFreqGHz(i)).toFixed(2)}G` : activeMat4 === 't' ? `${(3 * modeFreqGHz(k)).toFixed(2)}G` : `${modeFreqGHz(k).toFixed(2)}↔${modeFreqGHz(i).toFixed(2)}G`;
+        const sym = activeMat4 === 'p' ? 'P' : activeMat4 === 't' ? 'T' : activeMat4 === 's' ? 'S' : 'X';
+        const fTxt = activeMat4 === 'p'
+          ? `${(2 * modeFreqGHz(k) - modeFreqGHz(i)).toFixed(2)}G`
+          : activeMat4 === 't'
+            ? `${(3 * modeFreqGHz(k)).toFixed(2)}G`
+            : activeMat4 === 'x'
+              ? `${modeFreqGHz(k).toFixed(2)}G / ${(2 * modeFreqGHz(i) - modeFreqGHz(k)).toFixed(2)}G`
+              : `${modeFreqGHz(k).toFixed(2)}↔${modeFreqGHz(i).toFixed(2)}G`;
         nikInfoEl.textContent = `${sym}_${i}${k}=${v.toFixed(2)} · @${fTxt}`;
       }
     }
