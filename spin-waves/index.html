@@ -56,11 +56,14 @@
   .tutBtnGroup { display: flex; gap: 6px; }
   #arnoldBox { pointer-events: auto; }
   canvas#arnoldCanvas { display: block; width: 100%; height: 104px; cursor: crosshair; touch-action: none; border-radius: 6px; }
-  #nikWrap { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,.1); }
-  #nikHeader { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.78); margin-bottom: 4px; }
+  #nikWrap { margin-top: 2px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
+  #nikHeader { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.78); margin-bottom: 5px; }
+  .nikTabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-bottom: 5px; }
+  .nikTab { padding: 3px 2px; border-radius: 4px; border: 1px solid rgba(190,220,255,.2); background: rgba(120,165,225,.08); color: rgba(210,228,255,.8); font: 8px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; text-align: center; }
+  .nikTab.active { background: rgba(105,175,255,.3); border-color: rgba(165,215,255,.65); color: #fff; }
   #nikGrid { display: grid; grid-template-columns: 18px repeat(6, 1fr); gap: 2px; align-items: center; }
   .nikLbl { font: 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,210,240,.65); text-align: center; }
-  .nikCell { height: 13px; border-radius: 2px; border: 1px solid rgba(255,255,255,.08); cursor: pointer; font: 7.5px/13px ui-monospace,SFMono-Regular,Menlo,monospace; text-align: center; color: rgba(240,248,255,.88); transition: transform .08s, border-color .12s; }
+  .nikCell { height: 14px; border-radius: 2px; border: 1px solid rgba(255,255,255,.08); cursor: pointer; font: 7.5px/14px ui-monospace,SFMono-Regular,Menlo,monospace; text-align: center; color: rgba(240,248,255,.88); transition: transform .08s, border-color .12s; }
   .nikCell:hover { border-color: rgba(255,255,255,.7); transform: scale(1.06); z-index: 2; }
   .nikCell.activeCol { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
   .nikCell.selected { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; z-index: 3; }
@@ -184,6 +187,7 @@
         <input id="slPhase2" type="range" min="-180" max="180" step="5" value="0">
       </label>
       <div class="btnRow">
+        <button class="btn" id="btnWaitT1SS" type="button" title="Hold Tone 2 until Tone 1 reaches steady state">Wait T1 SS: OFF</button>
         <button class="btn" id="btnSwapTones" type="button" title="Swap Tone 1 and Tone 2 to test nonreciprocity">Swap T1↔T2</button>
       </div>
     </div>
@@ -196,14 +200,6 @@
       <input id="slDamp" type="range" min="0.008" max="0.120" step="0.002" value="0.040">
     </label>
     <label class="sliderRow">
-      <span>3-Magnon Dipolar χ₃</span><output id="outChi3">0.16</output>
-      <input id="slChi3" type="range" min="0.00" max="0.45" step="0.01" value="0.16">
-    </label>
-    <label class="sliderRow">
-      <span>4-Magnon Kerr NFS χ₄</span><output id="outChi4">0.00</output>
-      <input id="slChi4" type="range" min="-1.00" max="1.00" step="0.05" value="0.00">
-    </label>
-    <label class="sliderRow">
       <span>Non-Resonant 4M χ₄,nr</span><output id="outChi4Nr">0.00</output>
       <input id="slChi4Nr" type="range" min="0.00" max="1.00" step="0.05" value="0.00">
     </label>
@@ -211,11 +207,38 @@
       <span>Mutual Pump Grad μ_ij</span><output id="outMutPump">0.00</output>
       <input id="slMutPump" type="range" min="0.00" max="0.80" step="0.05" value="0.00">
     </label>
+    <div id="nikWrap">
+      <div id="nikHeader"><span>4TH-ORDER MATRICES (4M)</span><span id="nikInfo">tap cell to edit</span></div>
+      <div class="nikTabs" id="mat4Tabs">
+        <button class="nikTab active" data-mat="n" type="button" title="Resonant Kerr NFS: Δf_i = n_ij |a_j|^2">nᵢⱼ (fᵢ)</button>
+        <button class="nikTab" data-mat="p" type="button" title="Pair / FWM c_i*^2 c_j^2: generates 2f_j - f_i & 2f_i - f_j">Pᵢⱼ (2fⱼ-fᵢ)</button>
+        <button class="nikTab" data-mat="t" type="button" title="Non-RWA 3↔1 c_i* c_j^3: generates 3f_j & f_i - 2f_j">Tᵢⱼ (3fⱼ)</button>
+        <button class="nikTab" data-mat="s" type="button" title="4M Cross-Scattering c_i* c_j |c_j|^2 between modes">Sᵢⱼ (fⱼ↔fᵢ)</button>
+      </div>
+      <div id="nikGrid" role="grid" aria-label="4th-order magnon interaction matrix"></div>
+      <div id="nikConfig">
+        <div class="nikCfgRow"><span id="nikSelLabel">n₀₁ (0←1)</span><span id="nikOutVal">-0.83 GHz</span></div>
+        <div class="nikCfgRow"><input id="nikSlVal" type="range" min="-3.00" max="3.00" step="0.05" value="-0.83"></div>
+        <div class="nikCfgRow">
+          <div class="nikMiniBtns">
+            <button class="nikMiniBtn" id="nikBtnLlg" type="button" title="Reset cell to default (LLG for n_ij, 0 for P/T/S)">LLG/0</button>
+            <button class="nikMiniBtn" id="nikBtnZero" type="button" title="Set cell = 0">0</button>
+            <button class="nikMiniBtn" id="nikBtnSoft" type="button" title="Set negative / softening">-2×/-</button>
+            <button class="nikMiniBtn" id="nikBtnHard" type="button" title="Set positive / hardening">+2×/+</button>
+          </div>
+          <div class="nikMiniBtns">
+            <button class="nikMiniBtn" id="nikBtnZeroMut" type="button" title="Set all mutual (off-diagonal i≠j) n_ij = 0">Mut n=0</button>
+            <button class="nikMiniBtn" id="nikBtnPump" type="button" title="Pump mode j">Pump j</button>
+            <button class="nikMiniBtn" id="nikBtnResetAll" type="button" title="Reset active matrix to default">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="btnRow">
       <button class="btn" id="btnPause" type="button">Pause</button>
       <button class="btn" id="btnSeed" type="button">Seed Modes</button>
       <button class="btn" id="btnClear" type="button">Calm Spins</button>
-      <button class="btn" id="btnFastSS" type="button" title="Accelerate simulation until steady state">Fast-Fwd → SS</button>
+      <button class="btn" id="btnFastSS" type="button" title="Fast-forward animation (1 cycle per frame) until steady state">Fast-Fwd → SS</button>
     </div>
   </div>
 </details>
@@ -226,33 +249,13 @@
     <div class="magnonGrid" id="magnonTerms">
       <div><b>1M</b> Direct: <span id="m1Val">0.00</span></div>
       <div><b>2M</b> Pump: <span id="m2Val">0.00</span></div>
-      <div><b>3M</b> Split: <span id="m3Val">0.00</span></div>
+      <div><b>4M</b> FWM: <span id="m3Val">0.00</span></div>
       <div><b>nᵢⱼ</b> <span id="m4Val">—</span></div>
     </div>
   </div>
   <div class="readoutCard" id="arnoldBox">
     <div class="specTitle"><span>ARNOLD TONGUES</span><button id="arnoldTargetBtn" type="button" title="Toggle tap target between Tone 1 and Tone 2">TAP: T1</button><span id="arnoldHint">tap to pump</span></div>
     <canvas id="arnoldCanvas" width="290" height="104"></canvas>
-    <div id="nikWrap">
-      <div id="nikHeader"><span>nᵢⱼ INTERACTION (Δfᵢ←ⱼ)</span><span id="nikInfo">tap cell to edit</span></div>
-      <div id="nikGrid" role="grid" aria-label="Nonlinear frequency shift interaction matrix n_ij"></div>
-      <div id="nikConfig">
-        <div class="nikCfgRow"><span id="nikSelLabel">n₀₁ (0←1)</span><span id="nikOutVal">-0.83 GHz</span></div>
-        <div class="nikCfgRow"><input id="nikSlVal" type="range" min="-3.00" max="3.00" step="0.05" value="-0.83"></div>
-        <div class="nikCfgRow">
-          <div class="nikMiniBtns">
-            <button class="nikMiniBtn" id="nikBtnLlg" type="button" title="Reset this n_ij to exact LLG value">LLG</button>
-            <button class="nikMiniBtn" id="nikBtnZero" type="button" title="Set n_ij = 0">0</button>
-            <button class="nikMiniBtn" id="nikBtnSoft" type="button" title="Double softening">-2×</button>
-            <button class="nikMiniBtn" id="nikBtnHard" type="button" title="Flip to hardening">+2×</button>
-          </div>
-          <div class="nikMiniBtns">
-            <button class="nikMiniBtn" id="nikBtnPump" type="button" title="Pump mode j">Pump j</button>
-            <button class="nikMiniBtn" id="nikBtnResetAll" type="button" title="Reset entire matrix to LLG">Reset All</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
   <div class="readoutCard" id="spectrumBox">
     <div class="specTitle"><span>MAGNON SPECTRUM</span><span id="specPeak">f_peak: —</span></div>
@@ -295,18 +298,28 @@
   let driveFreq2 = 11.40;
   let driveAmp2 = 0.0;
   let tone2DelayNs = 0.0;
+  let tone2WaitSS = false;
+  let tone2Released = false;
+  let tone2ReleaseT = Infinity;
+  let t1WaitStable = 0;
+  let lastWaitCheckT = -1;
   let drivePhase2 = 0.0; // radians
   let arnoldTarget = 1;
   let biasH0 = 0.29; // ~50.8 mT
   let damping = 0.040;
-  let chi3m = 0.16; // 3-magnon cubic dipolar coupling
-  let chi4m = 0.0; // 4-magnon extra Kerr parameter (0 = pure physical LLG softening)
+  let chi4m = 0.0; // Internal 4-magnon Kerr baseline offset (0 = pure physical LLG)
   let chi4nr = 0.0; // Non-resonant 4-magnon terms omitted by d'Aquino RWA (3<->1, c_i^2 c_j*^2, FWM)
   let mutualPump = 0.0; // Spatial pump gradient coupling mutual sum-frequency pairs f_i + f_j
   let paused = false;
+  let fastForwarding = false;
+  let ffStable = 0, ffFrames = 0;
   let simTime = 0;
   let hasCustomNik = false;
+  let hasCustomMat4 = false;
+  let activeMat4 = 'n'; // 'n' | 'p' | 't' | 's'
   let nikSelPair = [0, 1];
+  let activeCountCache = N;
+  let sqrtActiveCache = Math.sqrt(N);
 
   // Exact free-boundary (Neumann J_m'(alpha)=0) disk modes and rectangular modes
   const MODE_SPECS = [
@@ -322,6 +335,34 @@
   const modeOverlap = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
   const pumpGradProfile = new Float32Array(N);
   const mutualPumpOverlap = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
+  const t1WaitPrev = new Float32Array(MODE_SPECS.length);
+  const ffPrev = new Float32Array(MODE_SPECS.length);
+  const uProj = new Float32Array(MODE_SPECS.length);
+  const vProj = new Float32Array(MODE_SPECS.length);
+  const wProj = new Float32Array(MODE_SPECS.length);
+  const x2Proj = new Float32Array(MODE_SPECS.length);
+  const y2Proj = new Float32Array(MODE_SPECS.length);
+  const u3Proj = new Float32Array(MODE_SPECS.length);
+  const w3Proj = new Float32Array(MODE_SPECS.length);
+  const a2Proj = new Float32Array(MODE_SPECS.length);
+  const fyProj = new Float32Array(MODE_SPECS.length);
+  const fzProj = new Float32Array(MODE_SPECS.length);
+  const epsProj = new Float32Array(MODE_SPECS.length);
+
+  const pair4 = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
+  const tri4 = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
+  const scat4 = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
+  function refreshHasCustomMat4() {
+    hasCustomMat4 = false;
+    for (let i = 0; i < MODE_SPECS.length; i++) {
+      for (let j = 0; j < MODE_SPECS.length; j++) {
+        if (Math.abs(pair4[i][j]) > 1e-6 || Math.abs(tri4[i][j]) > 1e-6 || Math.abs(scat4[i][j]) > 1e-6) {
+          hasCustomMat4 = true;
+          return;
+        }
+      }
+    }
+  }
 
   function besselJ(n, x) {
     let sum = 0, factK = 1, factNK = 1;
@@ -337,8 +378,10 @@
   }
 
   const SPEC_LEN = 128;
+  const SPEC_DT = 0.72;
+  const SPEC_PROBE_IDX = Math.floor(NY * 0.36) * NX + Math.floor(NX * 0.38);
   const probeSeries = new Float32Array(SPEC_LEN);
-  let probeHead = 0, frameCounter = 0;
+  let probeHead = 0, lastSpecSampleT = -1;
   const spectrum = new Float32Array(SPEC_LEN / 2);
 
   function buildMaskAndModes() {
@@ -379,6 +422,8 @@
     }
     let activeCount = 0;
     for (let i = 0; i < N; i++) if (activeMask[i]) activeCount++;
+    activeCountCache = Math.max(1, activeCount);
+    sqrtActiveCache = Math.sqrt(activeCountCache);
     // Build zero-mean, unit-RMS spatial pump asymmetry profile for mutual pumping (f_p = f_i + f_j)
     let pMean = 0;
     for (let y = 0; y < NY; y++) {
@@ -391,10 +436,10 @@
         pMean += val;
       }
     }
-    pMean /= Math.max(1, activeCount);
+    pMean /= activeCountCache;
     let pSq = 0;
     for (let i = 0; i < N; i++) if (activeMask[i]) { pumpGradProfile[i] -= pMean; pSq += pumpGradProfile[i] * pumpGradProfile[i]; }
-    const pInv = 1 / Math.sqrt(Math.max(1e-8, pSq / Math.max(1, activeCount)));
+    const pInv = 1 / Math.sqrt(Math.max(1e-8, pSq / activeCountCache));
     for (let i = 0; i < N; i++) pumpGradProfile[i] *= pInv;
 
     for (let a = 0; a < MODE_SPECS.length; a++) {
@@ -477,10 +522,17 @@
     const omega = driveFreq * FREQ_TO_RAD;
     let driveVal = driveAmp * Math.cos(omega * t);
     if (dualTone && driveAmp2 > 0) {
-      const tDelay = (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD;
-      if (t >= tDelay) {
-        const env = tone2DelayNs > 0 ? Math.min(1, (t - tDelay) / (0.4 * 2 * Math.PI / FREQ_TO_RAD)) : 1;
-        driveVal += env * driveAmp2 * Math.cos(driveFreq2 * FREQ_TO_RAD * (t - tDelay) + drivePhase2);
+      if (tone2WaitSS) {
+        if (tone2Released && t >= tone2ReleaseT) {
+          const env = Math.min(1, (t - tone2ReleaseT) / (0.4 * 2 * Math.PI / FREQ_TO_RAD));
+          driveVal += env * driveAmp2 * Math.cos(driveFreq2 * FREQ_TO_RAD * (t - tone2ReleaseT) + drivePhase2);
+        }
+      } else {
+        const tDelay = (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD;
+        if (t >= tDelay) {
+          const env = tone2DelayNs > 0 ? Math.min(1, (t - tDelay) / (0.4 * 2 * Math.PI / FREQ_TO_RAD)) : 1;
+          driveVal += env * driveAmp2 * Math.cos(driveFreq2 * FREQ_TO_RAD * (t - tDelay) + drivePhase2);
+        }
       }
     }
     // 1M: direct transverse RF (y); 2M: parallel parametric pumping (x)
@@ -489,17 +541,69 @@
     const mutScale = (driveMode === 'parallel' && mutualPump !== 0) ? driveVal * mutualPump : 0;
     const invNorm = 1 / (1 + damping * damping);
 
-    let dHMode = null, activeCntCustom = 1;
+    let dHMode = null;
     if (hasCustomNik) {
       dHMode = new Float32Array(MODE_SPECS.length);
-      let act = 0; for (let i = 0; i < N; i++) if (activeMask[i]) act++;
-      activeCntCustom = Math.max(1, act);
       for (let m = 0; m < MODE_SPECS.length; m++) {
         const dF = modeNfsShiftGHz(m) - modeLlgNfsShiftGHz(m);
         if (Math.abs(dF) > 1e-5) {
           const ovSelf = (modeOverlap[m] && modeOverlap[m][m]) ? modeOverlap[m][m] : 1;
           dHMode[m] = (dF * FREQ_TO_RAD) / (ovSelf * 1.15);
         }
+      }
+    }
+
+    // Modal 4th-order tensor interactions: P_ij (2f_j-f_i), T_ij (3f_j / 3<->1), S_ij (f_j<->f_i)
+    const M = MODE_SPECS.length;
+    if (hasCustomMat4) {
+      const invSqrtN = 1 / Math.max(1, sqrtActiveCache);
+      for (let m = 0; m < M; m++) {
+        const tpl = modeTemplates[m];
+        let qy = 0, qz = 0;
+        for (let i = 0; i < N; i++) if (activeMask[i]) {
+          qy += sy[i] * tpl[i];
+          qz += sz[i] * tpl[i];
+        }
+        const hEff = biasH0 + J_EX * modeK2(m);
+        const eps = Math.sqrt(hEff / (hEff + DEMAG_NZ));
+        epsProj[m] = eps;
+        const u = qy * invSqrtN, v = qz * invSqrtN, w = v / eps;
+        uProj[m] = u; vProj[m] = v; wProj[m] = w;
+        const x2 = u * u - w * w, y2 = 2 * u * w;
+        x2Proj[m] = x2; y2Proj[m] = y2;
+        u3Proj[m] = u * x2 - w * y2;
+        w3Proj[m] = u * y2 + w * x2;
+        a2Proj[m] = u * u + w * w;
+        fyProj[m] = 0; fzProj[m] = 0;
+      }
+      const C4 = 0.35;
+      for (let i = 0; i < M; i++) {
+        const ui = uProj[i], wi = wProj[i], x2i = x2Proj[i], y2i = y2Proj[i], invEi = 1 / epsProj[i];
+        let fy = 0, fz = 0;
+        for (let j = 0; j < M; j++) {
+          const pij = pair4[i][j];
+          if (pij !== 0) {
+            fy += C4 * pij * (ui * x2Proj[j] + wi * y2Proj[j]);
+            fz += C4 * invEi * pij * (-wi * x2Proj[j] + ui * y2Proj[j]);
+          }
+          const tij = tri4[i][j];
+          if (tij !== 0) {
+            fy += 0.5 * C4 * tij * u3Proj[j];
+            fz += 0.5 * C4 * invEi * tij * w3Proj[j];
+          }
+          const tji = tri4[j][i];
+          if (tji !== 0) {
+            fy += 1.5 * C4 * tji * (uProj[j] * x2i + wProj[j] * y2i);
+            fz += 1.5 * C4 * invEi * tji * (-uProj[j] * y2i + wProj[j] * x2i);
+          }
+          const sij = scat4[i][j];
+          if (sij !== 0) {
+            fy += C4 * sij * uProj[j] * a2Proj[j];
+            fz += C4 * invEi * sij * wProj[j] * a2Proj[j];
+          }
+        }
+        fyProj[i] = fy * sqrtActiveCache;
+        fzProj[i] = fz * sqrtActiveCache;
       }
     }
 
@@ -520,15 +624,23 @@
 
         let customHx = 0;
         if (dHMode) {
-          for (let m = 0; m < MODE_SPECS.length; m++) {
+          for (let m = 0; m < M; m++) {
             if (dHMode[m] !== 0) {
               const p = modeTemplates[m][i];
-              customHx += dHMode[m] * p * p * activeCntCustom;
+              customHx += dHMode[m] * p * p * activeCountCache;
             }
           }
         }
+        let mat4Y = 0, mat4Z = 0;
+        if (hasCustomMat4) {
+          for (let m = 0; m < M; m++) {
+            const p = modeTemplates[m][i];
+            mat4Y += fyProj[m] * p;
+            mat4Z += fzProj[m] * p;
+          }
+        }
 
-        // 1M linear + 2M pump (uniform + mutual spatial gradient) + 3M cubic dipolar + 4M Kerr NFS + non-resonant 4M (3<->1, c_i^2 c_j*^2)
+        // 1M linear + 2M pump (uniform + mutual spatial gradient) + 4M Kerr NFS + non-resonant 4M & P/T/S tensors
         const mPerp2 = myi * myi + mzi * mzi;
         let nrY = 0, nrZ = 0;
         if (chi4nr !== 0) {
@@ -538,8 +650,8 @@
           nrZ = nrW * (-mzi * mzi * mzi + 0.5 * my2 * myi);
         }
         const hx = hxExt + mutScale * pumpGradProfile[i] + customHx + J_EX * lx;
-        const hy = hyExt + J_EX * ly + chi3m * mzi * mzi + chi4m * mPerp2 * myi + nrY;
-        const hz = -DEMAG_NZ * mzi + J_EX * lz + 2 * chi3m * myi * mzi + chi4m * mPerp2 * mzi + nrZ;
+        const hy = hyExt + J_EX * ly + chi4m * mPerp2 * myi + nrY + mat4Y;
+        const hz = -DEMAG_NZ * mzi + J_EX * lz + chi4m * mPerp2 * mzi + nrZ + mat4Z;
 
         const cx = myi * hz - mzi * hy;
         const cy = mzi * hx - mxi * hz;
@@ -579,6 +691,29 @@
       simTime += h;
     }
     if (simTime - lastModeSampleT >= 0.14 || modeHistCount === 0) recordModeSample();
+    if (lastSpecSampleT < 0 || simTime - lastSpecSampleT >= SPEC_DT) {
+      probeSeries[probeHead] = my[SPEC_PROBE_IDX] + 0.6 * mz[SPEC_PROBE_IDX];
+      probeHead = (probeHead + 1) % SPEC_LEN;
+      lastSpecSampleT = simTime;
+    }
+    if (dualTone && tone2WaitSS && !tone2Released && driveAmp2 > 0 && simTime - lastWaitCheckT >= 0.45) {
+      let maxDiff = 0, maxRel = 0;
+      for (let m = 0; m < MODE_SPECS.length; m++) {
+        const cur = cycleAvgModeAmp(m);
+        const diff = Math.abs(cur - t1WaitPrev[m]);
+        if (diff > maxDiff) maxDiff = diff;
+        const rel = diff / Math.max(0.025, cur);
+        if (rel > maxRel) maxRel = rel;
+        t1WaitPrev[m] = cur;
+      }
+      lastWaitCheckT = simTime;
+      if (simTime >= 16.0 && maxDiff < 0.0005 && maxRel < 0.008) {
+        if (++t1WaitStable >= 4) { tone2Released = true; tone2ReleaseT = simTime; }
+      } else {
+        t1WaitStable = 0;
+      }
+      if (!tone2Released && simTime >= 110.0) { tone2Released = true; tone2ReleaseT = simTime; }
+    }
   }
 
   const MODE_HIST_LEN = 96;
@@ -587,7 +722,10 @@
   let modeHistHead = 0, modeHistCount = 0, lastModeSampleT = -1;
 
   function resetModeHistory() {
-    modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime;
+    modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime; lastSpecSampleT = -1;
+    probeSeries.fill(0); probeHead = 0;
+    tone2Released = false; tone2ReleaseT = Infinity; t1WaitStable = 0; lastWaitCheckT = simTime;
+    t1WaitPrev.fill(0);
   }
 
   function recordModeSample() {
@@ -709,14 +847,7 @@
   window.addEventListener('pointerup', () => { pluckDown = false; });
 
   function updateSpectrum() {
-    frameCounter++;
-    if (frameCounter % 4 !== 0) return;
-    const idx = Math.floor(NY * 0.36) * NX + Math.floor(NX * 0.38);
-    probeSeries[probeHead] = my[idx] + 0.6 * mz[idx];
-    probeHead = (probeHead + 1) % SPEC_LEN;
-
-    const dtSample = 4 * 18 * 0.010; // 0.72 sim-time units
-    const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * dtSample); // ~24.58 GHz
+    const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * SPEC_DT); // ~24.58 GHz
 
     let maxVal = 1e-6, peakBin = 1;
     for (let k = 1; k < SPEC_LEN / 2; k++) {
@@ -785,12 +916,20 @@
     const hTh = parametricThreshold(domIdx);
     const m1 = driveMode === 'transverse' ? driveAmp * Math.max(0.05, meanAmp * 5) : 0;
     const m2 = driveMode === 'parallel' ? driveAmp / hTh : 0;
-    const m3 = chi3m * meanAmp * meanAmp * 10;
+    let fwmMax = chi4nr;
+    if (hasCustomMat4) {
+      for (let i = 0; i < MODE_SPECS.length; i++) {
+        for (let j = 0; j < MODE_SPECS.length; j++) {
+          fwmMax = Math.max(fwmMax, Math.abs(pair4[i][j]), Math.abs(tri4[i][j]), Math.abs(scat4[i][j]));
+        }
+      }
+    }
+    const m4fwm = fwmMax * meanAmp * meanAmp * 10;
     const nSelfGHz = mutualNfsCoeff(domIdx, domIdx) / FREQ_TO_RAD;
     const kerrShiftMHz = modeNfsShiftGHz(domIdx) * 1000;
     document.getElementById('m1Val').textContent = m1.toFixed(3);
     document.getElementById('m2Val').textContent = m2.toFixed(2) + 'x';
-    document.getElementById('m3Val').textContent = m3.toFixed(3);
+    document.getElementById('m3Val').textContent = m4fwm.toFixed(3);
     const m4El = document.getElementById('m4Val');
     if (m4El) m4El.textContent = `n${domIdx}${domIdx}=${nSelfGHz.toFixed(2)} (${kerrShiftMHz >= 0 ? '+' : ''}${kerrShiftMHz.toFixed(1)}MHz)`;
   }
@@ -805,8 +944,8 @@
     hasCustomNik = nikCustom.some(row => row.some(v => v !== null));
   }
 
-  // Exact elliptical harmonic-balance 4M + reactive 3M Kerr NFS coefficient n_ij = d(omega_i)/d(A_j^2)
-  function llgMutualNfsCoeff(mIdx = 0, jIdx = mIdx) {
+  // Exact elliptical harmonic-balance 4M Kerr NFS coefficient (symmetrized n_ij = n_ji)
+  function rawLlgNfsCoeff(mIdx = 0, jIdx = mIdx) {
     const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
     const R = NX * 0.45;
     const k2 = geometryMode === 'disk'
@@ -828,28 +967,13 @@
     const cy = chi4m * fMix * (3 + eps2J);
     const cz = (0.5 * DEMAG_NZ + chi4m) * fMix * (1 + 3 * eps2J);
     const base = -((hEff * cz + (hEff + DEMAG_NZ) * cy) / (2 * omegaK));
-
-    // Reactive 3-magnon Kerr: 2nd-order virtual 3M process ~ -chi3m^2 / detuning
-    let reactive3m = 0;
-    if (chi3m > 0) {
-      const wI = modeFreqGHz(mIdx) * FREQ_TO_RAD;
-      const wJ = modeFreqGHz(jIdx) * FREQ_TO_RAD;
-      const epsFactor = (hEff / (hEff + DEMAG_NZ)) * 0.15;
-      for (let n = 0; n < MODE_SPECS.length; n++) {
-        const wN = modeFreqGHz(n) * FREQ_TO_RAD;
-        const gN = modeGamma(n);
-        const detSum = wN - (wI + wJ);
-        const detDiff = wN - Math.abs(wI - wJ);
-        const ovN = 0.5 * ((modeOverlap[mIdx]?.[n] ?? 1) + (modeOverlap[jIdx]?.[n] ?? 1));
-        reactive3m -= chi3m * chi3m * epsFactor * ovN * (
-          detSum / (detSum * detSum + gN * gN) +
-          0.5 * detDiff / (detDiff * detDiff + gN * gN)
-        );
-      }
-      if (mIdx !== jIdx) reactive3m *= 2.0;
-    }
     const rmsScale = 2 / (1 + eps2J);
-    return (base + reactive3m) * overlap * rmsScale;
+    return base * overlap * rmsScale;
+  }
+
+  function llgMutualNfsCoeff(mIdx = 0, jIdx = mIdx) {
+    if (mIdx === jIdx) return rawLlgNfsCoeff(mIdx, mIdx);
+    return 0.5 * (rawLlgNfsCoeff(mIdx, jIdx) + rawLlgNfsCoeff(jIdx, mIdx));
   }
 
   function mutualNfsCoeff(mIdx = 0, jIdx = mIdx) {
@@ -861,6 +985,22 @@
 
   function selfNfsCoeff(mIdx = 0) {
     return mutualNfsCoeff(mIdx, mIdx);
+  }
+
+  function setNikSymmetric(i, j, val) {
+    nikCustom[i][j] = val;
+    if (i !== j) nikCustom[j][i] = val;
+    refreshHasCustomNik();
+  }
+
+  function zeroMutualNfs() {
+    for (let i = 0; i < MODE_SPECS.length; i++) {
+      for (let j = 0; j < MODE_SPECS.length; j++) {
+        if (i !== j) nikCustom[i][j] = 0;
+      }
+    }
+    refreshHasCustomNik();
+    syncNikConfigUi();
   }
 
   function modeLlgNfsShiftGHz(mIdx = 0) {
@@ -886,28 +1026,53 @@
   const nikSelLabelEl = document.getElementById('nikSelLabel');
   const nikSlValEl = document.getElementById('nikSlVal');
   const nikOutValEl = document.getElementById('nikOutVal');
+  const nikBtnZeroMutEl = document.getElementById('nikBtnZeroMut');
+  const mat4TabsEl = document.getElementById('mat4Tabs');
   const nikCells = [];
   let nikHoverPair = null;
 
+  function activeMat4Array() {
+    return activeMat4 === 'p' ? pair4 : activeMat4 === 't' ? tri4 : activeMat4 === 's' ? scat4 : null;
+  }
+
   function syncNikConfigUi() {
+    if (mat4TabsEl) {
+      mat4TabsEl.querySelectorAll('.nikTab').forEach(b => b.classList.toggle('active', b.dataset.mat === activeMat4));
+    }
+    if (nikBtnZeroMutEl) {
+      nikBtnZeroMutEl.textContent = activeMat4 === 'n' ? 'Mut n=0' : 'Off=0';
+      nikBtnZeroMutEl.title = activeMat4 === 'n'
+        ? 'Set all mutual (off-diagonal i≠j) n_ij = 0'
+        : 'Set all off-diagonal (i≠j) entries of this 4M tensor = 0';
+    }
     if (!nikSelLabelEl || !nikSlValEl || !nikOutValEl) return;
     const [si, sj] = nikSelPair;
-    const nGHz = mutualNfsCoeff(si, sj) / FREQ_TO_RAD;
-    const isCustom = nikCustom[si][sj] !== null;
-    nikSelLabelEl.textContent = `n_${si}${sj} (${si}←${sj})${isCustom ? ' *' : ''}`;
-    nikSlValEl.value = Math.max(-3, Math.min(3, nGHz)).toFixed(2);
-    nikOutValEl.textContent = `${nGHz >= 0 ? '+' : ''}${nGHz.toFixed(2)} GHz`;
+    if (activeMat4 === 'n') {
+      const nGHz = mutualNfsCoeff(si, sj) / FREQ_TO_RAD;
+      const isCustom = nikCustom[si][sj] !== null;
+      nikSelLabelEl.textContent = `n_${si}${sj} (${si}↔${sj})${isCustom ? ' *' : ''}`;
+      nikSlValEl.value = Math.max(-3, Math.min(3, nGHz)).toFixed(2);
+      nikOutValEl.textContent = `${nGHz >= 0 ? '+' : ''}${nGHz.toFixed(2)} GHz`;
+    } else {
+      const mat = activeMat4Array();
+      const val = mat ? mat[si][sj] : 0;
+      const sym = activeMat4 === 'p' ? 'P' : activeMat4 === 't' ? 'T' : 'S';
+      const chan = activeMat4 === 'p' ? `2f${sj}-f${si}` : activeMat4 === 't' ? `3f${sj}/3↔1` : `f${sj}↔f${si}`;
+      nikSelLabelEl.textContent = `${sym}_${si}${sj} (${chan})`;
+      nikSlValEl.value = Math.max(-3, Math.min(3, val)).toFixed(2);
+      nikOutValEl.textContent = `${val >= 0 ? '+' : ''}${val.toFixed(2)}`;
+    }
   }
 
   function buildNikMatrix() {
     if (!nikGridEl) return;
-    const shortLabels = ['00', '10', '20', '01', '11', '30'];
+    const shortLabels = ['00', '01', '02', '10', '11', '20'];
     let html = '<div class="nikLbl">i\\j</div>';
     for (let k = 0; k < MODE_SPECS.length; k++) html += `<div class="nikLbl">${shortLabels[k]}</div>`;
     for (let i = 0; i < MODE_SPECS.length; i++) {
       html += `<div class="nikLbl">${shortLabels[i]}</div>`;
       for (let k = 0; k < MODE_SPECS.length; k++) {
-        html += `<div class="nikCell" data-i="${i}" data-k="${k}" title="n_${i}${k}"></div>`;
+        html += `<div class="nikCell" data-i="${i}" data-k="${k}" title="(${i},${k})"></div>`;
       }
     }
     nikGridEl.innerHTML = html;
@@ -921,33 +1086,61 @@
     if (!nikGridEl || nikCells.length === 0) return;
     let bestI = 0, bestK = 0, bestAbs = -1;
     let idx = 0;
+    const mat = activeMat4Array();
     for (let i = 0; i < MODE_SPECS.length; i++) {
       for (let k = 0; k < MODE_SPECS.length; k++) {
         const cell = nikCells[idx++];
         if (!cell) continue;
-        const nVal = mutualNfsCoeff(i, k) / FREQ_TO_RAD;
         const ak = cycleAvgModeAmp(k);
-        const dfMHz = nVal * ak * ak * 1000;
-        if (i !== k && Math.abs(dfMHz) > bestAbs) { bestAbs = Math.abs(dfMHz); bestI = i; bestK = k; }
-        const mag = Math.min(1, Math.abs(nVal) / 1.8);
-        const rgb = nVal >= 0 ? '99,210,151' : '108,184,255';
-        cell.style.background = `rgba(${rgb},${(0.14 + 0.68 * mag).toFixed(2)})`;
-        cell.classList.toggle('activeCol', ak > 0.015);
+        if (activeMat4 === 'n') {
+          const nVal = mutualNfsCoeff(i, k) / FREQ_TO_RAD;
+          const dfMHz = nVal * ak * ak * 1000;
+          if (i !== k && Math.abs(dfMHz) > bestAbs) { bestAbs = Math.abs(dfMHz); bestI = i; bestK = k; }
+          const mag = Math.min(1, Math.abs(nVal) / 1.8);
+          const rgb = nVal >= 0 ? '99,210,151' : '108,184,255';
+          cell.style.background = `rgba(${rgb},${(0.14 + 0.68 * mag).toFixed(2)})`;
+          cell.classList.toggle('activeCol', ak > 0.015);
+          cell.classList.toggle('custom', nikCustom[i][k] !== null);
+          cell.textContent = Math.abs(dfMHz) >= 1 ? (dfMHz >= 0 ? '+' : '') + dfMHz.toFixed(0) : (nikCustom[i][k] === 0 ? '0' : '');
+        } else {
+          const v = mat ? mat[i][k] : 0;
+          if (Math.abs(v) > bestAbs) { bestAbs = Math.abs(v); bestI = i; bestK = k; }
+          const mag = Math.min(1, Math.abs(v) / 1.5);
+          const rgb = activeMat4 === 'p' ? '244,114,182' : activeMat4 === 't' ? '251,191,36' : '167,139,250';
+          cell.style.background = Math.abs(v) > 1e-4 ? `rgba(${rgb},${(0.18 + 0.7 * mag).toFixed(2)})` : 'rgba(255,255,255,0.03)';
+          cell.classList.toggle('activeCol', ak > 0.015 || cycleAvgModeAmp(i) > 0.015);
+          cell.classList.toggle('custom', Math.abs(v) > 1e-4);
+          cell.textContent = Math.abs(v) >= 0.05 ? v.toFixed(1) : '';
+        }
         cell.classList.toggle('selected', i === nikSelPair[0] && k === nikSelPair[1]);
-        cell.classList.toggle('custom', nikCustom[i][k] !== null);
-        cell.textContent = Math.abs(dfMHz) >= 1 ? (dfMHz >= 0 ? '+' : '') + dfMHz.toFixed(0) : '';
       }
     }
     if (nikInfoEl) {
       const i = nikHoverPair ? nikHoverPair[0] : bestI;
       const k = nikHoverPair ? nikHoverPair[1] : bestK;
-      const nGHz = mutualNfsCoeff(i, k) / FREQ_TO_RAD;
-      const ak = cycleAvgModeAmp(k);
-      const dfMHz = nGHz * ak * ak * 1000;
-      nikInfoEl.textContent = `n_${i}${k}=${nGHz.toFixed(2)} · Δf=${dfMHz >= 0 ? '+' : ''}${dfMHz.toFixed(0)}MHz`;
+      if (activeMat4 === 'n') {
+        const nGHz = mutualNfsCoeff(i, k) / FREQ_TO_RAD;
+        const ak = cycleAvgModeAmp(k);
+        const dfMHz = nGHz * ak * ak * 1000;
+        nikInfoEl.textContent = `n_${i}${k}=${nGHz.toFixed(2)} · Δf=${dfMHz >= 0 ? '+' : ''}${dfMHz.toFixed(0)}MHz`;
+      } else {
+        const v = mat ? mat[i][k] : 0;
+        const sym = activeMat4 === 'p' ? 'P' : activeMat4 === 't' ? 'T' : 'S';
+        const fTxt = activeMat4 === 'p' ? `${(2 * modeFreqGHz(k) - modeFreqGHz(i)).toFixed(2)}G` : activeMat4 === 't' ? `${(3 * modeFreqGHz(k)).toFixed(2)}G` : `${modeFreqGHz(k).toFixed(2)}↔${modeFreqGHz(i).toFixed(2)}G`;
+        nikInfoEl.textContent = `${sym}_${i}${k}=${v.toFixed(2)} · @${fTxt}`;
+      }
     }
   }
 
+  if (mat4TabsEl) {
+    mat4TabsEl.addEventListener('click', e => {
+      const btn = e.target && e.target.closest ? e.target.closest('.nikTab[data-mat]') : null;
+      if (!btn) return;
+      activeMat4 = btn.dataset.mat;
+      syncNikConfigUi();
+      updateNikMatrix();
+    });
+  }
   if (nikGridEl) {
     nikGridEl.addEventListener('pointermove', e => {
       const cell = e.target && e.target.closest ? e.target.closest('.nikCell') : null;
@@ -966,36 +1159,67 @@
   if (nikSlValEl) {
     nikSlValEl.addEventListener('input', e => {
       const [si, sj] = nikSelPair;
-      nikCustom[si][sj] = +e.target.value;
-      refreshHasCustomNik();
+      const val = +e.target.value;
+      if (activeMat4 === 'n') {
+        setNikSymmetric(si, sj, val);
+      } else {
+        const mat = activeMat4Array();
+        if (mat) { mat[si][sj] = val; refreshHasCustomMat4(); }
+      }
       syncNikConfigUi();
     });
   }
   const nikBtnLlg = document.getElementById('nikBtnLlg');
   if (nikBtnLlg) nikBtnLlg.addEventListener('click', () => {
     const [si, sj] = nikSelPair;
-    nikCustom[si][sj] = null;
-    refreshHasCustomNik(); syncNikConfigUi();
+    if (activeMat4 === 'n') setNikSymmetric(si, sj, null);
+    else { const mat = activeMat4Array(); if (mat) { mat[si][sj] = 0; refreshHasCustomMat4(); } }
+    syncNikConfigUi();
   });
   const nikBtnZero = document.getElementById('nikBtnZero');
   if (nikBtnZero) nikBtnZero.addEventListener('click', () => {
     const [si, sj] = nikSelPair;
-    nikCustom[si][sj] = 0;
-    refreshHasCustomNik(); syncNikConfigUi();
+    if (activeMat4 === 'n') setNikSymmetric(si, sj, 0);
+    else { const mat = activeMat4Array(); if (mat) { mat[si][sj] = 0; refreshHasCustomMat4(); } }
+    syncNikConfigUi();
   });
   const nikBtnSoft = document.getElementById('nikBtnSoft');
   if (nikBtnSoft) nikBtnSoft.addEventListener('click', () => {
     const [si, sj] = nikSelPair;
-    const base = llgMutualNfsCoeff(si, sj) / FREQ_TO_RAD;
-    nikCustom[si][sj] = -2 * Math.abs(base || 0.5);
-    refreshHasCustomNik(); syncNikConfigUi();
+    if (activeMat4 === 'n') {
+      const base = llgMutualNfsCoeff(si, sj) / FREQ_TO_RAD;
+      setNikSymmetric(si, sj, -2 * Math.abs(base || 0.5));
+    } else {
+      const mat = activeMat4Array();
+      if (mat) { mat[si][sj] = -0.5; refreshHasCustomMat4(); }
+    }
+    syncNikConfigUi();
   });
   const nikBtnHard = document.getElementById('nikBtnHard');
   if (nikBtnHard) nikBtnHard.addEventListener('click', () => {
     const [si, sj] = nikSelPair;
-    const base = llgMutualNfsCoeff(si, sj) / FREQ_TO_RAD;
-    nikCustom[si][sj] = 2 * Math.abs(base || 0.5);
-    refreshHasCustomNik(); syncNikConfigUi();
+    if (activeMat4 === 'n') {
+      const base = llgMutualNfsCoeff(si, sj) / FREQ_TO_RAD;
+      setNikSymmetric(si, sj, 2 * Math.abs(base || 0.5));
+    } else {
+      const mat = activeMat4Array();
+      if (mat) { mat[si][sj] = 0.5; refreshHasCustomMat4(); }
+    }
+    syncNikConfigUi();
+  });
+  if (nikBtnZeroMutEl) nikBtnZeroMutEl.addEventListener('click', () => {
+    if (activeMat4 === 'n') {
+      zeroMutualNfs();
+    } else {
+      const mat = activeMat4Array();
+      if (mat) {
+        for (let i = 0; i < MODE_SPECS.length; i++) {
+          for (let j = 0; j < MODE_SPECS.length; j++) if (i !== j) mat[i][j] = 0;
+        }
+        refreshHasCustomMat4();
+        syncNikConfigUi();
+      }
+    }
   });
   const nikBtnPump = document.getElementById('nikBtnPump');
   if (nikBtnPump) nikBtnPump.addEventListener('click', () => {
@@ -1010,8 +1234,14 @@
   });
   const nikBtnResetAll = document.getElementById('nikBtnResetAll');
   if (nikBtnResetAll) nikBtnResetAll.addEventListener('click', () => {
-    for (let i = 0; i < MODE_SPECS.length; i++) nikCustom[i].fill(null);
-    refreshHasCustomNik(); syncNikConfigUi();
+    if (activeMat4 === 'n') {
+      for (let i = 0; i < MODE_SPECS.length; i++) nikCustom[i].fill(null);
+      refreshHasCustomNik();
+    } else {
+      const mat = activeMat4Array();
+      if (mat) { for (let i = 0; i < MODE_SPECS.length; i++) mat[i].fill(0); refreshHasCustomMat4(); }
+    }
+    syncNikConfigUi();
   });
 
   function modeMutualNfsShiftGHz(mIdx = 0) {
@@ -1430,8 +1660,26 @@
     if (slF2) { slF2.value = driveFreq2; document.getElementById('outFreq2').textContent = driveFreq2.toFixed(2) + ' GHz'; }
     const slA2 = document.getElementById('slAmp2');
     if (slA2) { slA2.value = driveAmp2; document.getElementById('outAmp2').textContent = `${driveAmp2.toFixed(3)} (${(driveAmp2 * MU0_MS_MT).toFixed(1)} mT)`; }
+    const btnWait = document.getElementById('btnWaitT1SS');
+    if (btnWait) {
+      btnWait.textContent = tone2WaitSS ? (tone2Released ? 'Wait T1 SS: ON (GO)' : 'Wait T1 SS: ON') : 'Wait T1 SS: OFF';
+      btnWait.classList.toggle('active', tone2WaitSS);
+    }
     const slD2 = document.getElementById('slDelay2');
-    if (slD2) { slD2.value = tone2DelayNs; document.getElementById('outDelay2').textContent = tone2DelayNs.toFixed(1) + ' ns'; }
+    if (slD2) {
+      slD2.value = tone2DelayNs;
+      slD2.disabled = tone2WaitSS;
+      const outD2 = document.getElementById('outDelay2');
+      if (outD2) {
+        if (tone2WaitSS) {
+          outD2.textContent = tone2Released
+            ? `T1 SS @ ${((tone2ReleaseT * FREQ_TO_RAD) / (2 * Math.PI)).toFixed(2)}ns`
+            : 'WAIT T1 SS';
+        } else {
+          outD2.textContent = tone2DelayNs.toFixed(1) + ' ns';
+        }
+      }
+    }
     const slP2 = document.getElementById('slPhase2');
     if (slP2) { const deg = Math.round(drivePhase2 * 180 / Math.PI); slP2.value = deg; document.getElementById('outPhase2').textContent = deg + '°'; }
     const tBtn = document.getElementById('arnoldTargetBtn');
@@ -1440,14 +1688,15 @@
     document.getElementById('outField').textContent = `${(biasH0 * MU0_MS_MT).toFixed(1)} mT (${biasH0.toFixed(2)})`;
     document.getElementById('slDamp').value = damping;
     document.getElementById('outDamp').textContent = damping.toFixed(3);
-    document.getElementById('slChi3').value = chi3m;
-    document.getElementById('outChi3').textContent = chi3m.toFixed(2);
-    document.getElementById('slChi4').value = chi4m;
-    document.getElementById('outChi4').textContent = chi4m.toFixed(2);
     const slC4Nr = document.getElementById('slChi4Nr');
     if (slC4Nr) { slC4Nr.value = chi4nr; document.getElementById('outChi4Nr').textContent = chi4nr.toFixed(2); }
     const slMut = document.getElementById('slMutPump');
     if (slMut) { slMut.value = mutualPump; document.getElementById('outMutPump').textContent = mutualPump.toFixed(2); }
+    const btnFast = document.getElementById('btnFastSS');
+    if (btnFast) {
+      btnFast.textContent = fastForwarding ? 'Fast-Fwd (Stop)' : 'Fast-Fwd → SS';
+      btnFast.classList.toggle('active', fastForwarding);
+    }
     document.getElementById('geomDisk').classList.toggle('active', geometryMode === 'disk');
     document.getElementById('geomRect').classList.toggle('active', geometryMode === 'rect');
     document.getElementById('driveParallel').classList.toggle('active', driveMode === 'parallel');
@@ -1463,7 +1712,7 @@
   const swTutSteps = [
     { tag: 'STEP 1 OF 4 · EIGENMODES', title: 'Excite a Standing Eigenmode', body: 'Click any eigenmode button like (1,0) Radial or (0,2) Quad to excite an exact Bessel standing wave at its distinct eigenfrequency.', formula: 'J_m(α_nm r/R) cos(mθ)' },
     { tag: 'STEP 2 OF 4 · DAMPING', title: 'Remove Drive & Watch Decay', body: 'Click Zero Drive (or set h_p = 0). Gilbert damping α dissipates precession energy until the film settles back to equilibrium.', formula: 'Γ ≈ α(H_0 + N_z/2)' },
-    { tag: 'STEP 3 OF 4 · PARAMETRIC', title: 'Parametric Instability (f_p = 2f_k)', body: 'Pump parallel to H_0 at twice a mode frequency. Above threshold h_p > h_th, 2-magnon pumping amplifies modes while 3M/4M terms saturate them.', formula: 'h_p > h_th · f_magnon = f_p/2' },
+    { tag: 'STEP 3 OF 4 · PARAMETRIC', title: 'Parametric Instability (f_p = 2f_k)', body: 'Pump parallel to H_0 at twice a mode frequency. Above threshold h_p > h_th, 2-magnon pumping amplifies modes while 4M terms saturate them.', formula: 'h_p > h_th · f_magnon = f_p/2' },
     { tag: 'STEP 4 OF 4 · PLUCK & SPECTRUM', title: 'Pluck & Read the Spectrum', body: 'Tap or drag directly on the magnetic disk to launch local spin waves and watch Live Eigenmodes & 1–4 Magnon terms react.', formula: 'tap/drag film → live modes' }
   ];
   let swTutState = { step: 0, done: [false, false, false, false], dismissed: false };
@@ -1508,6 +1757,7 @@
   if (!swTutState.dismissed) openSwTut(); else { swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); }
 
   function applyPreset(name) {
+    fastForwarding = false;
     document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
@@ -1525,7 +1775,7 @@
     } else if (name === 'mutual') {
       const pMutEl = document.getElementById('presetMutual');
       if (pMutEl) pMutEl.classList.add('active');
-      driveMode = 'parallel'; biasH0 = 0.29; damping = 0.030; dualTone = false; driveAmp2 = 0; tone2DelayNs = 0;
+      driveMode = 'parallel'; biasH0 = 0.29; damping = 0.030; dualTone = false; driveAmp2 = 0; tone2DelayNs = 0; tone2WaitSS = false;
       if (chi4nr < 0.05) chi4nr = 0.45;
       if (mutualPump < 0.05) mutualPump = 0.55;
       // Pick pair with strongest spatial pump gradient overlap (or fallback 0+1)
@@ -1584,14 +1834,20 @@
   const slA2El = document.getElementById('slAmp2');
   if (slA2El) slA2El.addEventListener('input', e => { driveAmp2 = +e.target.value; syncUi(); });
   const slD2El = document.getElementById('slDelay2');
-  if (slD2El) slD2El.addEventListener('input', e => { tone2DelayNs = +e.target.value; simTime = 0; seedSpins(0.025); syncUi(); });
+  if (slD2El) slD2El.addEventListener('input', e => { tone2WaitSS = false; tone2DelayNs = +e.target.value; simTime = 0; fastForwarding = false; seedSpins(0.025); syncUi(); });
   const slP2El = document.getElementById('slPhase2');
   if (slP2El) slP2El.addEventListener('input', e => { drivePhase2 = (+e.target.value) * Math.PI / 180; syncUi(); });
+  const btnWaitT1El = document.getElementById('btnWaitT1SS');
+  if (btnWaitT1El) btnWaitT1El.addEventListener('click', () => {
+    tone2WaitSS = !tone2WaitSS;
+    if (tone2WaitSS && !dualTone) dualTone = true;
+    simTime = 0; fastForwarding = false; seedSpins(0.025); syncUi();
+  });
   const btnSwapEl = document.getElementById('btnSwapTones');
   if (btnSwapEl) btnSwapEl.addEventListener('click', () => {
     [driveFreq, driveFreq2] = [driveFreq2, driveFreq];
     [driveAmp, driveAmp2] = [driveAmp2, driveAmp];
-    simTime = 0; seedSpins(0.025); syncUi();
+    simTime = 0; fastForwarding = false; seedSpins(0.025); syncUi();
   });
   const arnoldTargetEl = document.getElementById('arnoldTargetBtn');
   if (arnoldTargetEl) arnoldTargetEl.addEventListener('click', () => {
@@ -1601,22 +1857,28 @@
   });
   document.getElementById('slField').addEventListener('input', e => { biasH0 = +e.target.value; syncUi(); });
   document.getElementById('slDamp').addEventListener('input', e => { damping = +e.target.value; syncUi(); });
-  document.getElementById('slChi3').addEventListener('input', e => { chi3m = +e.target.value; syncUi(); });
-  document.getElementById('slChi4').addEventListener('input', e => { chi4m = +e.target.value; syncUi(); });
   const slChi4NrEl = document.getElementById('slChi4Nr');
   if (slChi4NrEl) slChi4NrEl.addEventListener('input', e => { chi4nr = +e.target.value; syncUi(); });
   const slMutPumpEl = document.getElementById('slMutPump');
   if (slMutPumpEl) slMutPumpEl.addEventListener('input', e => { mutualPump = +e.target.value; syncUi(); });
   document.getElementById('btnPause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; });
   document.getElementById('btnSeed').addEventListener('click', () => seedSpins(0.035));
-  document.getElementById('btnClear').addEventListener('click', () => seedSpins(0.0));
+  document.getElementById('btnClear').addEventListener('click', () => { fastForwarding = false; seedSpins(0.0); syncUi(); });
+
+  function fastForwardStepsPerFrame() {
+    const fRef = Math.max(2.0, driveFreq || modeFreqGHz(0));
+    const periodT = (2 * Math.PI) / (fRef * FREQ_TO_RAD);
+    return Math.max(40, Math.min(320, Math.round(periodT / 0.012)));
+  }
+
   function fastForwardSteadyState(maxSteps = 32000) {
     let meanAmp = 0, cnt = 0;
     for (let i = 0; i < N; i++) if (activeMask[i]) { meanAmp += Math.hypot(my[i], mz[i]); cnt++; }
     if (cnt && meanAmp / cnt < 0.012 && (driveAmp > 0 || (dualTone && driveAmp2 > 0))) seedSpins(0.04);
-    const delaySimT = (dualTone && driveAmp2 > 0 && tone2DelayNs > 0) ? (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD : 0;
+    const delaySimT = (dualTone && driveAmp2 > 0 && !tone2WaitSS && tone2DelayNs > 0)
+      ? (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD : 0;
     const targetSimT = Math.max(simTime, delaySimT) + 48;
-    const totalSteps = Math.max(maxSteps, Math.ceil((delaySimT + 140 - simTime) / 0.012));
+    const totalSteps = Math.min(60000, Math.max(maxSteps, Math.ceil((delaySimT + 140 - simTime) / 0.012)));
     let prev = MODE_SPECS.map((_, m) => cycleAvgModeAmp(m));
     let stable = 0;
     for (let k = 0; k < totalSteps; k += 300) {
@@ -1630,20 +1892,62 @@
         if (rel > maxRel) maxRel = rel;
       }
       prev = cur;
-      if (k >= 4200 && simTime >= targetSimT && maxDiff < 0.0004 && maxRel < 0.006) { if (++stable >= 4) break; } else stable = 0;
+      const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + 42);
+      if (k >= 4200 && simTime >= targetSimT && waitReady && maxDiff < 0.0004 && maxRel < 0.006) { if (++stable >= 4) break; } else stable = 0;
     }
     updateSpectrum();
     drawScene();
   }
+
   const btnFastSS = document.getElementById('btnFastSS');
-  if (btnFastSS) btnFastSS.addEventListener('click', () => fastForwardSteadyState());
+  if (btnFastSS) btnFastSS.addEventListener('click', () => {
+    fastForwarding = !fastForwarding;
+    if (fastForwarding) {
+      paused = false;
+      const pauseEl = document.getElementById('btnPause');
+      if (pauseEl) pauseEl.textContent = 'Pause';
+      let meanAmp = 0, cnt = 0;
+      for (let i = 0; i < N; i++) if (activeMask[i]) { meanAmp += Math.hypot(my[i], mz[i]); cnt++; }
+      if (cnt && meanAmp / cnt < 0.012 && (driveAmp > 0 || (dualTone && driveAmp2 > 0))) seedSpins(0.04);
+      ffStable = 0;
+      ffFrames = 0;
+      for (let m = 0; m < MODE_SPECS.length; m++) ffPrev[m] = cycleAvgModeAmp(m);
+    }
+    syncUi();
+  });
 
   buildMaskAndModes();
   applyPreset('param');
 
   function frame() {
     if (!paused) {
-      for (let s = 0; s < 15; s++) stepLlg(0.012);
+      const wasReleased = tone2Released;
+      if (fastForwarding) {
+        const steps = fastForwardStepsPerFrame();
+        for (let s = 0; s < steps; s++) stepLlg(0.012);
+        ffFrames++;
+        const delaySimT = (dualTone && driveAmp2 > 0 && !tone2WaitSS && tone2DelayNs > 0)
+          ? (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD : 0;
+        const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + 36);
+        let maxDiff = 0, maxRel = 0;
+        for (let m = 0; m < MODE_SPECS.length; m++) {
+          const cur = cycleAvgModeAmp(m);
+          const diff = Math.abs(cur - ffPrev[m]);
+          if (diff > maxDiff) maxDiff = diff;
+          const rel = diff / Math.max(0.025, cur);
+          if (rel > maxRel) maxRel = rel;
+          ffPrev[m] = cur;
+        }
+        if (ffFrames >= 12 && simTime >= delaySimT + 36 && waitReady && maxDiff < 0.0005 && maxRel < 0.007) {
+          if (++ffStable >= 4) { fastForwarding = false; syncUi(); }
+        } else {
+          ffStable = 0;
+        }
+        if (fastForwarding && ffFrames >= 240) { fastForwarding = false; syncUi(); }
+      } else {
+        for (let s = 0; s < 15; s++) stepLlg(0.012);
+      }
+      if (tone2WaitSS && !wasReleased && tone2Released) syncUi();
       updateSpectrum();
     }
     drawScene();
