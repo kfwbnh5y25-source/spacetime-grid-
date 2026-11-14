@@ -183,7 +183,7 @@
     renderMs: [], lastReport: 0, longTasks: 0, maxFrameMs: 0, frameLog: []
   };
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let width=0, height=0, dpr=1, last=0, elapsed=0, hintTimer, raf=0, lastFrame=0;
+  let width=0, height=0, dpr=1, last=0, elapsed=0, hintTimer, raf=0, lastFrame=0, lastCausalHudUpdate=0;
   let rayMargin=0, geometry=null, imageStatus='loading';
   let geodesicFrameOffsetX=0,geodesicFrameOffsetY=0;
   const spacing = () => Math.max(30, Math.min(48, Math.round(Math.min(width,height)/17)));
@@ -203,6 +203,7 @@ uniform float u_rS[24];
 uniform float u_createdAt[24];
 uniform float u_time;
 uniform float u_c;
+uniform float u_frontWidth;
 uniform int u_pointerCount;
 uniform float u_softening;
 out float v_edge;
@@ -222,10 +223,14 @@ vec2 gradLogConformal(vec2 p){
   // Retarded activation: the source contributes only inside its future
   // light cone on this displayed time slice, t - t0 >= |x-x0|/c.
   float age=u_time-u_createdAt[i];
-  float reached=step(length(d)/u_c,age);
-  float rs=u_rS[i]*reached;
-  psi+=rs/(4.0*r);
-  gradPsi-=rs*d/(4.0*r*r*r);
+  float radialDistance=length(d);
+  float q=clamp(0.5+(u_c*age-radialDistance)/(2.0*u_frontWidth),0.0,1.0);
+  float activation=q*q*(3.0-2.0*q);
+  float dActivationDr=(q>0.0&&q<1.0)?-3.0*q*(1.0-q)/u_frontWidth:0.0;
+  float rs=u_rS[i];
+  vec2 gradActivation=dActivationDr*d/max(radialDistance,0.0001);
+  psi+=activation*rs/(4.0*r);
+  gradPsi+=activation*(-rs*d/(4.0*r*r*r))+(rs/(4.0*r))*gradActivation;
  }
  return 2.0*gradPsi/psi; // grad(log(psi²))
 }
@@ -310,6 +315,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     // causal front advances at c (180 CSS px/s) in this visualization.
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t*.001);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_c'),180.0);
+    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_frontWidth'),8.0);
     const xy=new Float32Array(48),rS=new Float32Array(24),created=new Float32Array(24);let count=0;
     for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x+geodesicFrameOffsetX;xy[count*2+1]=p.y+geodesicFrameOffsetY;const mass=p.mass??(p.strength*.25);rS[count]=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);created[count]=p.createdAt??0;count++;}
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
@@ -595,12 +601,21 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   function spatialMetricGradient(x,y,sourceList=fields,softening=1){
     let psi=1,gx=0,gy=0;
     for(let j=0;j<Math.min(sourceList.length,MAX_GPU_POINTERS);j++){
-      const m=sourceList[j],dx=x-(m.x+geodesicFrameOffsetX),dy=y-(m.y+geodesicFrameOffsetY),r=Math.sqrt(dx*dx+dy*dy+softening*softening);
-      // Same retarded light-cone condition as the WebGL path, evaluated on
-      // the current displayed time slice.
-      if(elapsed*.001-(m.createdAt??0)<Math.hypot(dx,dy)/180)continue;
+      const m=sourceList[j],dx=x-(m.x+geodesicFrameOffsetX),dy=y-(m.y+geodesicFrameOffsetY);
+      const radialDistance=Math.hypot(dx,dy),r=Math.sqrt(dx*dx+dy*dy+softening*softening);
+      // A finite-width retarded front avoids a discontinuous metric. The
+      // spatial derivative includes the front's radial gradient as well.
+      let activation=1,dActivationDr=0;
+      if(Number.isFinite(m.createdAt)){
+        const age=elapsed*.001-m.createdAt,q=Math.max(0,Math.min(1,.5+(180*age-radialDistance)/(2*8)));
+        activation=q*q*(3-2*q);
+        if(q>0&&q<1)dActivationDr=-3*q*(1-q)/8;
+      }
       const rs=Number.isFinite(m.rS)?m.rS:2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
-      psi+=rs/(4*r);gx-=rs*dx/(4*r*r*r);gy-=rs*dy/(4*r*r*r);
+      const invRadial=1/Math.max(radialDistance,1e-4),gradActivationX=dActivationDr*dx*invRadial,gradActivationY=dActivationDr*dy*invRadial;
+      psi+=activation*rs/(4*r);
+      gx+=activation*(-rs*dx/(4*r*r*r))+(rs/(4*r))*gradActivationX;
+      gy+=activation*(-rs*dy/(4*r*r*r))+(rs/(4*r))*gradActivationY;
     }
     return {x:2*gx/psi,y:2*gy/psi};
   }
@@ -677,8 +692,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       relativeMetricSpeedDrift:rel(initial.energy,final.energy),relativeAngularMomentumDrift:rel(initial.angularMomentum,final.angularMomentum),
       gradientRelativeError,finiteDifferenceRelativeError,weakFieldDeflectionRad:measured,weakFieldLeadingOrderRad:expected,
       weakFieldRelativeError:rel(expected,measured),convergence,referenceSteps:reference.steps,
-      radiation:"none: the source is stationary; a stationary isolated mass has no time-varying quadrupole and emits no gravitational waves",
-      note:"Tests validate a 2-D rendering of the exact isotropic Schwarzschild spatial metric and its spatial geodesics. This is not a 4-D null-geodesic solver. Screen coordinates are not calibrated physical lengths."};
+      radiation:"none: this is an idealized causal activation front, not gravitational radiation from a conserved source",
+      causalFront:"smooth retarded activation at 180 CSS px/s; 8 px transition width; display convention only",
+      note:"After the front passes, the spatial slice approaches the isotropic Schwarzschild metric. The moving transition is a prescribed visualization, not a self-consistent solution of the time-dependent Einstein equations or a 4-D null-geodesic solver."};
   }
   const geodesicValidation=runGeodesicValidation();
   function warpVertex(g,i,t,horizontal){
@@ -762,6 +778,13 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const dt=Math.min(40,now-(last||now));last=now;lastFrame=now;if(!paused)elapsed+=dt;
     if(perf.firstFrame===null)perf.firstFrame=now;
     const t=paused?pauseTime:elapsed;
+    if(now-lastCausalHudUpdate>100){
+      lastCausalHudUpdate=now;
+      if(persistentMasses.length){
+        const age=Math.max(0,t*.001-(persistentMasses[0].createdAt??0)),radius=180*age;
+        document.getElementById('simHud').textContent='CAUSAL FRONT · c · '+radius.toFixed(0)+' PX · '+age.toFixed(1)+' S';
+      }else document.getElementById('simHud').textContent='EMPTY SPACE · TAP TO CREATE A MASS';
+    }
     ctx.drawImage(background,0,0,width,height);
     fields.length=0;
     for(const [id,p] of pointers){
@@ -793,7 +816,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode){let touchPointers=0,downPointers=0;for(const p of pointers.values()){if(p.down){downPointers++;if(p.pointerType==='touch')touchPointers++;}}perf.frameLog.push({t:+(now-perf.started).toFixed(1),intervalMs:+frameDelta.toFixed(2),renderCpuMs:+renderCost.toFixed(2),activePointers:pointers.size,downPointers,touchPointers,dpr,frameCapHz:frameCap});if(perf.frameLog.length>18000)perf.frameLog.shift();}
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nPHYSICS CHECKS ${r.geodesicValidation.passed}/${r.geodesicValidation.total} passed\n${r.geodesicValidation.checks.map(c=>(c.pass?'PASS ':'FAIL ')+c.name+' · '+Number(c.value).toExponential(2)).join('\n')}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nRadiation ${r.geodesicValidation.radiation}\nStatic Schwarzschild isotropic spatial slice · no GW source\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nPHYSICS CHECKS ${r.geodesicValidation.passed}/${r.geodesicValidation.total} passed\n${r.geodesicValidation.checks.map(c=>(c.pass?'PASS ':'FAIL ')+c.name+' · '+Number(c.value).toExponential(2)).join('\n')}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nRadiation ${r.geodesicValidation.radiation}\nStatic Schwarzschild slice · idealized causal front (not GWs)\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
