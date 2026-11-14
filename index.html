@@ -789,7 +789,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const weak=traceSpatialGeodesic(-range,impact,1,0,2*range,{sources:[weakSource],softening:0,tolerance:.0005,maxStep:8});
     const measured=Math.atan2(weak.vy,weak.vx),expected=-weakSource.rS/impact;
     const reference=traceSpatialGeodesic(start.x,start.y,start.vx,start.vy,320,{sources:[source],softening:0,tolerance:1e-9,maxStep:1});
-    const convergence=[.1,.01,.001,.0001].map(tol=>{
+    const convergence=[.1,.001,.0001,.00001].map(tol=>{
       const q=traceSpatialGeodesic(start.x,start.y,start.vx,start.vy,320,{sources:[source],softening:0,tolerance:tol,maxStep:40});
       return {tolerance:tol,endpointError:Math.hypot(q.x-reference.x,q.y-reference.y),steps:q.steps,completed:q.completed};
     });
