@@ -6,20 +6,20 @@
 <meta name="theme-color" content="#000000">
 <title>Spin Waves — Eigenmodes &amp; Parametric Excitation</title>
 <style>
-  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #03060d; color: #ebf3ff; font: 12px/1.4 system-ui,-apple-system,sans-serif; }
+  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; background: #03060d; color: #ebf3ff; font: 12px/1.4 system-ui,-apple-system,sans-serif; }
   canvas#fieldCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
   #topHud { position: fixed; z-index: 6; top: max(14px,env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; pointer-events: none; width: min(820px, calc(100vw - 24px)); }
   .hudPill { padding: 6px 11px; border: 1px solid rgba(190,220,255,.2); border-radius: 99px; background: rgba(4,9,18,.74); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: rgba(235,245,255,.88); white-space: nowrap; }
   .hudPill.warn { border-color: rgba(255,200,95,.55); color: #ffd479; }
   .hudPill.active { border-color: rgba(110,225,175,.55); color: #8af0c4; }
-  #controlsPanel { position: fixed; z-index: 8; top: max(54px,calc(env(safe-area-inset-top) + 42px)); right: max(14px,env(safe-area-inset-right)); width: min(326px,calc(100vw - 28px)); max-height: calc(100vh - 130px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border: 1px solid rgba(190,220,255,.2); border-radius: 14px; background: rgba(5,10,20,.84); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  #controlsPanel { position: fixed; z-index: 8; top: max(54px,calc(env(safe-area-inset-top) + 42px)); right: max(14px,env(safe-area-inset-right)); width: min(326px,calc(100vw - 28px)); max-height: calc(100vh - 130px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(190,220,255,.2); border-radius: 14px; background: rgba(5,10,20,.84); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
   #controlsPanel summary { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: grab; touch-action: none; padding: 10px 12px; background: rgba(5,10,20,.95); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: rgba(225,238,255,.9); }
   #controlsPanel summary:active { cursor: grabbing; }
   #controlsPanel summary::-webkit-details-marker { display: none; }
   #controlsPanel[open] summary { border-bottom: 1px solid rgba(190,220,255,.14); }
   .ctrlToggleHint { font-size: 11px; opacity: .75; }
-  .ctrlBody { padding: 11px 12px 12px; display: grid; gap: 10px; }
+  .ctrlBody { padding: 11px 12px 12px; display: grid; gap: 10px; touch-action: pan-y; }
   .sectionLabel { font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: rgba(185,212,245,.62); text-transform: uppercase; }
   .btnRow { display: flex; gap: 6px; flex-wrap: wrap; }
   .btn { min-height: 28px; padding: 5px 9px; border: 1px solid rgba(190,220,255,.22); border-radius: 8px; background: rgba(120,165,225,.13); color: #eef5ff; font: 10px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .04em; cursor: pointer; }
@@ -1120,6 +1120,10 @@
   }
   window.addEventListener('resize', resize, { passive: true });
   resize();
+  if (typeof document.addEventListener === 'function') {
+    document.addEventListener('dblclick', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+    document.addEventListener('gesturestart', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
+  }
 
   let pluckDown = false;
   fieldCanvas.addEventListener('pointerdown', e => { pluckDown = true; pluckAt(e.clientX, e.clientY); });
