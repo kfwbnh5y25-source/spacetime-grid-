@@ -66,6 +66,29 @@
     pointer-events: none; transition: opacity 1.2s ease;
   }
   .hint.hidden { opacity: 0; }
+  #orbitTutorialBtn { position:fixed; z-index:8; left:max(14px,env(safe-area-inset-left)); bottom:max(16px,env(safe-area-inset-bottom)); display:flex; align-items:center; gap:6px; min-height:36px; padding:0 13px; border:1px solid rgba(190,220,255,.28); border-radius:20px; background:rgba(6,12,24,.72); color:rgba(235,245,255,.92); font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.12em; cursor:pointer; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:background .18s,border-color .18s,opacity .2s; }
+  #orbitTutorialBtn:hover { background:rgba(30,54,90,.78); border-color:rgba(165,210,255,.55); }
+  #orbitTutorialBtn.hidden { opacity:0; pointer-events:none; }
+  #orbitTutorial { position:fixed; z-index:9; left:max(14px,env(safe-area-inset-left)); bottom:max(16px,env(safe-area-inset-bottom)); width:min(340px,calc(100vw - 28px)); padding:14px 15px; border:1px solid rgba(185,218,255,.24); border-radius:16px; background:rgba(5,10,20,.84); color:#ebf3ff; font:12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); box-shadow:0 14px 36px rgba(0,0,0,.55); touch-action:manipulation; }
+  #orbitTutorial[hidden] { display:none; }
+  .tutHeader { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .tutStepTag { font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.14em; color:#8ec5ff; text-transform:uppercase; }
+  .tutClose { width:26px; height:26px; border:1px solid rgba(255,255,255,.16); border-radius:50%; background:rgba(255,255,255,.06); color:rgba(235,243,255,.8); font:14px/1 system-ui,sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .tutPills { display:flex; gap:5px; margin-bottom:10px; }
+  .tutPill { flex:1; height:4px; border-radius:99px; background:rgba(255,255,255,.14); transition:background .2s; }
+  .tutPill.done { background:#63d297; }
+  .tutPill.active { background:#8ec5ff; }
+  .tutTitle { margin:0 0 5px; font-size:14px; font-weight:600; color:#fff; letter-spacing:-.01em; }
+  .tutBody { margin:0 0 11px; font-size:12px; color:rgba(225,236,255,.82); }
+  .tutFormula { display:inline-block; margin-top:4px; padding:2px 7px; border-radius:6px; background:rgba(130,185,255,.12); border:1px solid rgba(130,185,255,.22); font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:#b9dcff; }
+  .tutActions { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
+  .tutBtnGroup { display:flex; gap:6px; }
+  .tutBtn { min-height:30px; padding:5px 11px; border:1px solid rgba(190,220,255,.24); border-radius:8px; background:rgba(120,165,225,.14); color:#eef5ff; font:11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.04em; cursor:pointer; }
+  .tutBtn.primary { background:rgba(110,175,255,.32); border-color:rgba(165,215,255,.55); color:#fff; }
+  .tutBtn:active { transform:scale(.97); }
+  @media (pointer:coarse) {
+    #orbitTutorial { left:50%; transform:translateX(-50%); width:min(360px,calc(100vw - 24px)); }
+  }
 </style>
 </head>
 <body>
@@ -78,6 +101,31 @@
 <button id="gyroButton" hidden type="button" aria-pressed="false"></button>
 <button id="resetViewButton" type="button" aria-label="Reset simulation" title="Reset simulation">↺</button>
 <div id="simHud" aria-live="polite">EMPTY SPACE · TAP TO CREATE A MASS</div>
+<button id="orbitTutorialBtn" type="button" aria-label="Open orbital trajectories tutorial">ORBITS ?</button>
+<section id="orbitTutorial" hidden aria-label="Orbital trajectories tutorial">
+  <div class="tutHeader">
+    <span class="tutStepTag" id="tutStepTag">STEP 1 OF 4</span>
+    <button class="tutClose" id="tutClose" type="button" aria-label="Close tutorial">×</button>
+  </div>
+  <div class="tutPills" aria-hidden="true">
+    <div class="tutPill" data-step="0"></div>
+    <div class="tutPill" data-step="1"></div>
+    <div class="tutPill" data-step="2"></div>
+    <div class="tutPill" data-step="3"></div>
+  </div>
+  <h2 class="tutTitle" id="tutTitle"></h2>
+  <p class="tutBody" id="tutBody"></p>
+  <div class="tutActions">
+    <div class="tutBtnGroup">
+      <button class="tutBtn primary" id="tutDemo" type="button">Watch Demo</button>
+      <button class="tutBtn" id="tutReset" type="button">Reset</button>
+    </div>
+    <div class="tutBtnGroup">
+      <button class="tutBtn" id="tutPrev" type="button">Back</button>
+      <button class="tutBtn" id="tutNext" type="button">Next</button>
+    </div>
+  </div>
+</section>
 <script>
 (() => {
   'use strict';
@@ -484,14 +532,35 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       const anchor=screenPoint(launchDrag.startWorld.x,launchDrag.startWorld.y);
       const pull=screenPoint(launchDrag.currentWorld.x,launchDrag.currentWorld.y);
       const dx=launchDrag.startWorld.x-launchDrag.currentWorld.x,dy=launchDrag.startWorld.y-launchDrag.currentWorld.y;
-      const tip=screenPoint(launchDrag.startWorld.x+dx,launchDrag.startWorld.y+dy);
+      const dragDist=Math.hypot(dx,dy);
+      const rawVx=dx*SLINGSHOT_SPEED_SCALE,rawVy=dy*SLINGSHOT_SPEED_SCALE;
+      const orbitInfo=dragDist>6?classifyLaunchOrbit(launchDrag.startWorld.x,launchDrag.startWorld.y,rawVx,rawVy,newMassValue):null;
+      const usedVx=orbitInfo?orbitInfo.vx:rawVx,usedVy=orbitInfo?orbitInfo.vy:rawVy;
+      const tip=screenPoint(launchDrag.startWorld.x+usedVx/SLINGSHOT_SPEED_SCALE,launchDrag.startWorld.y+usedVy/SLINGSHOT_SPEED_SCALE);
+      const regimeColor=orbitInfo?(orbitInfo.regime==='parabolic'?'rgba(255,205,95,.9)':orbitInfo.regime==='hyperbolic'?'rgba(255,130,175,.88)':'rgba(115,205,255,.9)'):'rgba(165,220,255,.9)';
       trajectoryCtx.save();
+      if(orbitInfo&&dragDist>6){
+        const arcCount=predictLaunchArc(launchDrag.startWorld.x,launchDrag.startWorld.y,usedVx,usedVy,newMassValue);
+        if(arcCount>1){
+          trajectoryCtx.save();
+          trajectoryCtx.setLineDash([5,5]);
+          trajectoryCtx.strokeStyle=orbitInfo.regime==='parabolic'?'rgba(255,205,95,.62)':orbitInfo.regime==='hyperbolic'?'rgba(255,130,175,.58)':'rgba(115,205,255,.55)';
+          trajectoryCtx.lineWidth=1.8;
+          trajectoryCtx.beginPath();
+          for(let i=0;i<arcCount;i++){
+            const pt=screenPoint(previewArcXY[i*2],previewArcXY[i*2+1]);
+            if(i===0)trajectoryCtx.moveTo(pt.x,pt.y);else trajectoryCtx.lineTo(pt.x,pt.y);
+          }
+          trajectoryCtx.stroke();
+          trajectoryCtx.restore();
+        }
+      }
       trajectoryCtx.setLineDash([4,4]);
       trajectoryCtx.strokeStyle='rgba(165,210,255,.45)';trajectoryCtx.lineWidth=1.5;
       trajectoryCtx.beginPath();trajectoryCtx.moveTo(pull.x,pull.y);trajectoryCtx.lineTo(anchor.x,anchor.y);trajectoryCtx.stroke();
       trajectoryCtx.setLineDash([]);
-      if(Math.hypot(dx,dy)>4){
-        trajectoryCtx.strokeStyle='rgba(165,220,255,.9)';trajectoryCtx.lineWidth=2;
+      if(dragDist>4){
+        trajectoryCtx.strokeStyle=regimeColor;trajectoryCtx.lineWidth=2.2;
         trajectoryCtx.beginPath();trajectoryCtx.moveTo(anchor.x,anchor.y);trajectoryCtx.lineTo(tip.x,tip.y);trajectoryCtx.stroke();
         const ang=Math.atan2(tip.y-anchor.y,tip.x-anchor.x);
         trajectoryCtx.beginPath();
@@ -502,10 +571,139 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
         trajectoryCtx.stroke();
       }
       trajectoryCtx.beginPath();trajectoryCtx.arc(anchor.x,anchor.y,6,0,Math.PI*2);
-      trajectoryCtx.fillStyle='rgba(210,235,255,.85)';trajectoryCtx.fill();
+      trajectoryCtx.fillStyle=regimeColor;trajectoryCtx.fill();
+      if(orbitInfo&&dragDist>6){
+        const tag=orbitInfo.regime.toUpperCase()+' · e '+orbitInfo.e.toFixed(2)+' · '+orbitInfo.ratio.toFixed(2)+' v_esc';
+        trajectoryCtx.font='600 10px ui-monospace,SFMono-Regular,Menlo,monospace';
+        const tw=trajectoryCtx.measureText(tag).width+14,bx=Math.min(width-tw-10,Math.max(10,anchor.x-tw/2)),by=Math.max(12,anchor.y-32);
+        trajectoryCtx.fillStyle='rgba(5,10,20,.82)';
+        trajectoryCtx.strokeStyle=regimeColor;trajectoryCtx.lineWidth=1;
+        trajectoryCtx.beginPath();trajectoryCtx.roundRect(bx,by,tw,20,6);trajectoryCtx.fill();trajectoryCtx.stroke();
+        trajectoryCtx.fillStyle='#f3f8ff';trajectoryCtx.fillText(tag,bx+7,by+13.5);
+      }
       trajectoryCtx.restore();
     }
   }
+  const previewArcXY=new Float64Array(180);
+  function classifyLaunchOrbit(x,y,vx,vy,mass=newMassValue){
+    if(!persistentMasses.length)return null;
+    let best=persistentMasses[0],bestScore=-1;
+    for(const b of persistentMasses){
+      const d=Math.hypot(x-b.x,y-b.y,14),score=(b.mass??newMassValue)/d;
+      if(score>bestScore){bestScore=score;best=b;}
+    }
+    const rx=x-best.x,ry=y-best.y,r=Math.sqrt(rx*rx+ry*ry+196);
+    const bvx=best.vx||0,bvy=best.vy||0,rvx=vx-bvx,rvy=vy-bvy,v=Math.hypot(rvx,rvy);
+    const mu=N_BODY_MU_PER_MASS*((best.mass??newMassValue)+mass);
+    const vEsc=Math.sqrt(2*mu/r);
+    let ratio=vEsc>0?v/vEsc:0,svx=rvx,svy=rvy,snapped=false;
+    if(Math.abs(ratio-1)<=0.045&&v>1){
+      const k=vEsc/v;svx=rvx*k;svy=rvy*k;ratio=1;snapped=true;
+    }
+    const h=rx*svy-ry*svx,energy=.5*(svx*svx+svy*svy)-mu/r;
+    const e=Math.sqrt(Math.max(0,1+2*energy*h*h/(mu*mu)));
+    const regime=ratio<0.965?'elliptical':ratio<=1.035?'parabolic':'hyperbolic';
+    return {regime,e,ratio,vEsc,vx:bvx+svx,vy:bvy+svy,attractor:best,snapped};
+  }
+  function predictLaunchArc(x,y,vx,vy,mass=newMassValue){
+    let px=x,py=y,pvx=vx,pvy=vy,count=0;
+    const stepDt=0.022,maxSteps=90;
+    for(let step=0;step<maxSteps;step++){
+      previewArcXY[count*2]=px;previewArcXY[count*2+1]=py;count++;
+      let ax=0,ay=0,collided=false;
+      for(const b of persistentMasses){
+        const dx=b.x-px,dy=b.y-py,d2=dx*dx+dy*dy;
+        if(d2<144){collided=true;break;}
+        const r2=d2+196;
+        const muScale=N_BODY_MU_PER_MASS*(b.mass??newMassValue)/(r2*Math.sqrt(r2));
+        ax+=muScale*dx;ay+=muScale*dy;
+      }
+      if(collided)break;
+      pvx+=ax*stepDt;pvy+=ay*stepDt;
+      px+=pvx*stepDt;py+=pvy*stepDt;
+      if(Math.hypot(px-x,py-y)>2600)break;
+    }
+    return count;
+  }
+  const tutorialKey='spacetime-orbit-tutorial-v1';
+  const tutorialEl=document.getElementById('orbitTutorial');
+  const tutorialBtn=document.getElementById('orbitTutorialBtn');
+  const tutSteps=[
+    {tag:'STEP 1 OF 4 · CENTRAL MASS',title:'Place a Central Planet',body:'Tap or click anywhere in empty space to place a stationary planet. Its gravity curves the grid around it.',formula:'v = 0 · central attractor'},
+    {tag:'STEP 2 OF 4 · ELLIPTICAL',title:'Elliptical Orbit (e < 1)',body:'Pull back sideways (not straight at the center) at moderate speed so gravity keeps the second planet bound in a closed loop.',formula:'v < v_esc · e < 1'},
+    {tag:'STEP 3 OF 4 · PARABOLIC',title:'Parabolic Escape (e ≈ 1)',body:'Pull further until the live arc turns gold and snaps to PARABOLIC — the exact razor-edge boundary between orbit and escape.',formula:'v = v_esc · e ≈ 1'},
+    {tag:'STEP 4 OF 4 · HYPERBOLIC',title:'Hyperbolic Flyby (e > 1)',body:'Pull even harder past escape speed. The planet whips around the gravity well and escapes into deep space forever.',formula:'v > v_esc · e > 1'}
+  ];
+  let tutState={step:0,done:[false,false,false,false],dismissed:false};
+  try{const saved=JSON.parse(localStorage.getItem(tutorialKey)||'null');if(saved&&typeof saved==='object')tutState={...tutState,...saved};}catch(_){}
+  function saveTutorialState(){try{localStorage.setItem(tutorialKey,JSON.stringify(tutState));}catch(_){}}
+  function renderTutorial(){
+    const s=tutSteps[tutState.step]||tutSteps[0];
+    const allDone=tutState.done.every(Boolean);
+    document.getElementById('tutStepTag').textContent=allDone?'ALL ORBITS MASTERED':s.tag;
+    document.getElementById('tutTitle').textContent=s.title;
+    document.getElementById('tutBody').innerHTML=s.body+'<br><span class="tutFormula">'+s.formula+'</span>';
+    document.querySelectorAll('#orbitTutorial .tutPill').forEach((el,idx)=>{
+      el.classList.toggle('done',!!tutState.done[idx]);
+      el.classList.toggle('active',idx===tutState.step&&!tutState.done[idx]);
+    });
+    document.getElementById('tutPrev').disabled=tutState.step===0;
+    document.getElementById('tutNext').textContent=tutState.step===tutSteps.length-1?'Done':'Next';
+  }
+  function openTutorial(){tutState.dismissed=false;tutorialEl.hidden=false;tutorialBtn.classList.add('hidden');renderTutorial();saveTutorialState();}
+  function closeTutorial(){tutState.dismissed=true;tutorialEl.hidden=true;tutorialBtn.classList.remove('hidden');saveTutorialState();}
+  function notifyTutorialMassCreated(){
+    if(persistentMasses.length>=1&&!tutState.done[0]){
+      tutState.done[0]=true;
+      if(tutState.step===0)tutState.step=1;
+      renderTutorial();saveTutorialState();
+    }
+  }
+  function notifyTutorialLaunch(info){
+    if(!info)return;
+    const map={elliptical:1,parabolic:2,hyperbolic:3};
+    const idx=map[info.regime];
+    if(idx!==undefined){
+      tutState.done[0]=true;
+      tutState.done[idx]=true;
+      if(tutState.step===idx&&idx<tutSteps.length-1)tutState.step=idx+1;
+      renderTutorial();saveTutorialState();
+    }
+  }
+  function runTutorialDemo(step){
+    stopInertia();stopCameraAnimation();launchDrag=null;
+    persistentMasses.length=0;viewScale=1;viewX=0;viewY=0;viewRotation=0;
+    const cx=width*.5,cy=height*.5;camComX=cx;camComY=cy;
+    createMass(cx,cy,newMassValue,0,0);
+    if(step===0){showStatus('DEMO · CENTRAL MASS');return;}
+    const r=155,mu=N_BODY_MU_PER_MASS*(newMassValue*2),vEsc=Math.sqrt(2*mu/r);
+    if(step===1){
+      const v=0.72*vEsc;
+      createMass(cx+r,cy,newMassValue,0,v);
+      notifyTutorialLaunch({regime:'elliptical'});
+      showStatus('DEMO · ELLIPTICAL ORBIT (e < 1)');
+    }else if(step===2){
+      createMass(cx+r,cy-10,newMassValue,0,vEsc);
+      notifyTutorialLaunch({regime:'parabolic'});
+      showStatus('DEMO · PARABOLIC ESCAPE (e = 1)');
+    }else if(step===3){
+      const v=1.38*vEsc;
+      createMass(cx+r,cy-35,newMassValue,-0.25*v,v);
+      notifyTutorialLaunch({regime:'hyperbolic'});
+      showStatus('DEMO · HYPERBOLIC FLYBY (e > 1)');
+    }
+  }
+  tutorialBtn.addEventListener('click',openTutorial);
+  document.getElementById('tutClose').addEventListener('click',closeTutorial);
+  document.getElementById('tutPrev').addEventListener('click',()=>{tutState.step=Math.max(0,tutState.step-1);renderTutorial();saveTutorialState();});
+  document.getElementById('tutNext').addEventListener('click',()=>{
+    if(tutState.step>=tutSteps.length-1)closeTutorial();
+    else{tutState.step++;renderTutorial();saveTutorialState();}
+  });
+  document.getElementById('tutDemo').addEventListener('click',()=>runTutorialDemo(tutState.step));
+  document.getElementById('tutReset').addEventListener('click',()=>resetView());
+  if(!tutState.dismissed&&!benchMode){openTutorial();}else{tutorialEl.hidden=true;tutorialBtn.classList.remove('hidden');}
+
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
     if(persistentMasses.length>=MAX_GPU_POINTERS)persistentMasses.shift();
     if(persistentMasses.length===0){
@@ -519,6 +717,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const speed=Math.hypot(vx,vy);
     document.getElementById('simHud').textContent='CURVATURE FRONT · c';
     showStatus(speed>5?'PLANET LAUNCHED · N-BODY ORBIT':'PLANET CREATED · CURVATURE PROPAGATING');
+    notifyTutorialMassCreated();
   }
   const PLANET_DT=1/1200;
   const planetAx=new Float64Array(MAX_GPU_POINTERS),planetAy=new Float64Array(MAX_GPU_POINTERS);
@@ -621,7 +820,12 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
         const dist=Math.hypot(dx,dy);
         if(e.type==='pointerup'){
           if(dist<=6)createMass(launchDrag.startWorld.x,launchDrag.startWorld.y,newMassValue,0,0);
-          else createMass(launchDrag.startWorld.x,launchDrag.startWorld.y,newMassValue,dx*SLINGSHOT_SPEED_SCALE,dy*SLINGSHOT_SPEED_SCALE);
+          else{
+            const rawVx=dx*SLINGSHOT_SPEED_SCALE,rawVy=dy*SLINGSHOT_SPEED_SCALE;
+            const info=classifyLaunchOrbit(launchDrag.startWorld.x,launchDrag.startWorld.y,rawVx,rawVy,newMassValue);
+            createMass(launchDrag.startWorld.x,launchDrag.startWorld.y,newMassValue,info?info.vx:rawVx,info?info.vy:rawVy);
+            notifyTutorialLaunch(info);
+          }
         }
         launchDrag=null;sceneDirty=true;
       }
@@ -633,7 +837,12 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       if(launchDrag&&launchDrag.pointerId===e.pointerId){
         const dx=launchDrag.startWorld.x-launchDrag.currentWorld.x,dy=launchDrag.startWorld.y-launchDrag.currentWorld.y;
         if(p.travel<=14)createMass(p.startX,p.startY,newMassValue,0,0);
-        else createMass(p.startX,p.startY,newMassValue,dx*SLINGSHOT_SPEED_SCALE,dy*SLINGSHOT_SPEED_SCALE);
+        else{
+          const rawVx=dx*SLINGSHOT_SPEED_SCALE,rawVy=dy*SLINGSHOT_SPEED_SCALE;
+          const info=classifyLaunchOrbit(p.startX,p.startY,rawVx,rawVy,newMassValue);
+          createMass(p.startX,p.startY,newMassValue,info?info.vx:rawVx,info?info.vy:rawVy);
+          notifyTutorialLaunch(info);
+        }
       }else if(p.travel<=14){
         createMass(p.startX,p.startY,newMassValue,0,0);
       }

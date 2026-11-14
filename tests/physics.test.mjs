@@ -65,6 +65,7 @@ function loadPhysicsContext() {
       activeElement: null,
       getElementById: () => makeEl(),
       createElement: () => makeEl(),
+      querySelectorAll: () => [],
       addEventListener: noop,
       body: { appendChild: noop }
     },
@@ -95,6 +96,8 @@ function loadPhysicsContext() {
     createMass,
     massAccelerationAt,
     advanceMasses,
+    classifyLaunchOrbit,
+    predictLaunchArc,
     resetView,
     get cam() { return { viewX, viewY, viewScale, viewRotation, camComX, camComY, width, height }; },
     setCam(patch) {
@@ -295,4 +298,36 @@ test('H. Slingshot launch and COM camera preservation on first planet', () => {
   assert.ok(Math.abs(after.x - before.x) < 1e-9 && Math.abs(after.y - before.y) < 1e-9, 'First planet creation must preserve screen position');
   assert.equal(physics.cam.camComX, 320, 'camComX initialized to first planet');
   assert.equal(physics.cam.camComY, 240, 'camComY initialized to first planet');
+});
+
+test('I. Orbital tutorial: elliptical, parabolic (with snap), hyperbolic classification and arc prediction', () => {
+  physics.resetView();
+  const m = physics.newMassValue;
+  assert.equal(physics.classifyLaunchOrbit(100, 0, 0, 50, m), null, 'No attractor in empty space');
+
+  physics.createMass(0, 0, m, 0, 0);
+  const r = 155;
+  const rSoft = Math.sqrt(r * r + 196);
+  const mu = physics.N_BODY_MU_PER_MASS * (2 * m);
+  const vEsc = Math.sqrt(2 * mu / rSoft);
+
+  const ell = physics.classifyLaunchOrbit(r, 0, 0, 0.72 * vEsc, m);
+  assert.equal(ell.regime, 'elliptical');
+  assert.ok(ell.e < 1, `Expected elliptical e < 1, got ${ell.e}`);
+
+  // Near escape speed (within 4.5% band) snaps gently to parabolic
+  const par = physics.classifyLaunchOrbit(r, 0, 0, 0.98 * vEsc, m);
+  assert.equal(par.regime, 'parabolic');
+  assert.equal(par.snapped, true, 'Expected parabolic magnetic snap near v_esc');
+  assert.ok(Math.abs(par.ratio - 1) < 1e-9, 'Snapped ratio should be 1.0');
+
+  const hyp = physics.classifyLaunchOrbit(r, 0, 0, 1.38 * vEsc, m);
+  assert.equal(hyp.regime, 'hyperbolic');
+  assert.ok(hyp.e > 1, `Expected hyperbolic e > 1, got ${hyp.e}`);
+
+  // Radial infall below escape speed should still be classified as bound/elliptical
+  const radialBound = physics.classifyLaunchOrbit(r, 0, -0.5 * vEsc, 0, m);
+  assert.equal(radialBound.regime, 'elliptical');
+
+  assert.ok(physics.predictLaunchArc(r, 0, 0, 0.72 * vEsc, m) > 20, 'Predicted launch arc should sample trajectory points');
 });
