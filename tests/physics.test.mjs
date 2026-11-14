@@ -544,7 +544,15 @@ test("N. Spin-wave model: d'Aquino single-mode steady-state, LLG NFS sign, dynam
 
   // Pure LLG (chi4m = 0) has negative (softening) nonlinear frequency shift
   const n0 = spin.selfNfsCoeff(0);
+  const n01 = spin.mutualNfsCoeff(0, 1);
   assert.ok(n0 < 0, `Pure LLG (chi4m=0) must soften (negative NFS): got ${n0.toFixed(4)}`);
+  assert.ok(Math.abs(n01 / n0 - 1.5) < 0.05, `Cross-mode n_01 should be ~1.5x self n_00: got ${(n01 / n0).toFixed(3)}`);
+
+  // Exciting mode 1 must shift mode 0's frequency via n_01 * A_1^2 even when mode 0 is unexcited
+  spin.exciteEigenmode(1);
+  for (let s = 0; s < 50; s++) spin.stepLlg(0.01);
+  assert.ok(spin.modeNfsShiftGHz(0) < -0.002, `Exciting mode 1 should soften mode 0 via n_01: got ${spin.modeNfsShiftGHz(0).toFixed(5)} GHz`);
+  spin.setState({ driveMode: 'parallel' });
 
   // Negative chi4m (-0.35) reverses to hardening (positive NFS); positive chi4m (+0.35) strengthens softening
   spin.setState({ chi4m: -0.35 });

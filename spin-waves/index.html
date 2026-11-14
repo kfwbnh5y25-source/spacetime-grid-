@@ -56,6 +56,13 @@
   .tutBtnGroup { display: flex; gap: 6px; }
   #arnoldBox { pointer-events: auto; }
   canvas#arnoldCanvas { display: block; width: 100%; height: 104px; cursor: crosshair; touch-action: none; border-radius: 6px; }
+  #nikWrap { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,.1); }
+  #nikHeader { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.78); margin-bottom: 4px; }
+  #nikGrid { display: grid; grid-template-columns: 18px repeat(6, 1fr); gap: 2px; align-items: center; }
+  .nikLbl { font: 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,210,240,.65); text-align: center; }
+  .nikCell { height: 13px; border-radius: 2px; border: 1px solid rgba(255,255,255,.08); cursor: pointer; font: 7.5px/13px ui-monospace,SFMono-Regular,Menlo,monospace; text-align: center; color: rgba(240,248,255,.88); transition: transform .08s, border-color .12s; }
+  .nikCell:hover { border-color: rgba(255,255,255,.7); transform: scale(1.06); z-index: 2; }
+  .nikCell.activeCol { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
   #tonguesToggleBtn { display: none; }
   @media (pointer:coarse), (max-width: 760px) {
     #topHud { gap: 4px; width: calc(100vw - 16px); }
@@ -181,6 +188,10 @@
   <div class="readoutCard" id="arnoldBox">
     <div class="specTitle"><span>ARNOLD TONGUES (f_p, h_p)</span><span id="arnoldHint">tap to pump</span></div>
     <canvas id="arnoldCanvas" width="290" height="104"></canvas>
+    <div id="nikWrap">
+      <div id="nikHeader"><span>n_ik INTERACTION (Δfᵢ←ₖ)</span><span id="nikInfo">tap cell to pump k</span></div>
+      <div id="nikGrid" role="grid" aria-label="Nonlinear frequency shift interaction matrix n_ik"></div>
+    </div>
   </div>
   <div class="readoutCard" id="spectrumBox">
     <div class="specTitle"><span>MAGNON SPECTRUM</span><span id="specPeak">f_peak: —</span></div>
@@ -633,8 +644,8 @@
   const ARNOLD_F_MIN = 4.5, ARNOLD_F_MAX = 16.5, ARNOLD_H_MAX = 0.60;
   const TONGUE_COLORS = ['#6cb8ff', '#6ee7b7', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
 
-  // Exact 4-magnon NFS coefficient d(omega_m)/d(A_j^2) derived from LLG:
-  // dw = -[0.5*hEff*N_z + (2*hEff + N_z)*chi4m] / (2*omega_k) * overlap(m,j)
+  // Exact 4-magnon NFS coefficient n_ik = d(omega_i)/d(A_k^2) derived from LLG:
+  // dw_i = -[0.5*hEff*N_z + (2*hEff + N_z)*chi4m] / (2*omega_k) * overlap(i,k) * crossFactor
   function mutualNfsCoeff(mIdx = 0, jIdx = mIdx) {
     const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
     const R = NX * 0.45;
@@ -645,7 +656,8 @@
     const omegaK = Math.sqrt(hEff * (hEff + DEMAG_NZ));
     const base = -(0.5 * hEff * DEMAG_NZ + (2 * hEff + DEMAG_NZ) * chi4m) / (2 * omegaK);
     const overlap = (modeOverlap[mIdx] && modeOverlap[mIdx][jIdx]) ? modeOverlap[mIdx][jIdx] : 1.0;
-    return base * overlap;
+    const crossFactor = mIdx === jIdx ? 1.0 : 1.5;
+    return base * overlap * crossFactor;
   }
 
   function selfNfsCoeff(mIdx = 0) {
@@ -659,6 +671,76 @@
       if (a > 0) dOmega += mutualNfsCoeff(mIdx, j) * a * a;
     }
     return dOmega / FREQ_TO_RAD;
+  }
+
+  const nikGridEl = document.getElementById('nikGrid');
+  const nikInfoEl = document.getElementById('nikInfo');
+  const nikCells = [];
+  let nikHoverPair = null;
+
+  function buildNikMatrix() {
+    if (!nikGridEl) return;
+    const shortLabels = ['00', '10', '20', '01', '11', '30'];
+    let html = '<div class="nikLbl">i\\k</div>';
+    for (let k = 0; k < MODE_SPECS.length; k++) html += `<div class="nikLbl">${shortLabels[k]}</div>`;
+    for (let i = 0; i < MODE_SPECS.length; i++) {
+      html += `<div class="nikLbl">${shortLabels[i]}</div>`;
+      for (let k = 0; k < MODE_SPECS.length; k++) {
+        html += `<div class="nikCell" data-i="${i}" data-k="${k}" title="n_${i}${k}"></div>`;
+      }
+    }
+    nikGridEl.innerHTML = html;
+    nikCells.length = 0;
+    const nodes = nikGridEl.querySelectorAll ? nikGridEl.querySelectorAll('.nikCell') : [];
+    nodes.forEach(el => nikCells.push(el));
+  }
+
+  function updateNikMatrix() {
+    if (!nikGridEl || nikCells.length === 0) return;
+    let bestI = 0, bestK = 0, bestAbs = -1;
+    let idx = 0;
+    for (let i = 0; i < MODE_SPECS.length; i++) {
+      for (let k = 0; k < MODE_SPECS.length; k++) {
+        const cell = nikCells[idx++];
+        if (!cell) continue;
+        const nVal = mutualNfsCoeff(i, k) / FREQ_TO_RAD;
+        const ak = cycleAvgModeAmp(k);
+        const dfMHz = nVal * ak * ak * 1000;
+        if (i !== k && Math.abs(dfMHz) > bestAbs) { bestAbs = Math.abs(dfMHz); bestI = i; bestK = k; }
+        const mag = Math.min(1, Math.abs(nVal) / 1.8);
+        const rgb = nVal >= 0 ? '99,210,151' : '108,184,255';
+        cell.style.background = `rgba(${rgb},${(0.14 + 0.68 * mag).toFixed(2)})`;
+        cell.classList.toggle('activeCol', ak > 0.015);
+        cell.textContent = Math.abs(dfMHz) >= 1 ? (dfMHz >= 0 ? '+' : '') + dfMHz.toFixed(0) : '';
+      }
+    }
+    if (nikInfoEl) {
+      const i = nikHoverPair ? nikHoverPair[0] : bestI;
+      const k = nikHoverPair ? nikHoverPair[1] : bestK;
+      const nGHz = mutualNfsCoeff(i, k) / FREQ_TO_RAD;
+      const ak = cycleAvgModeAmp(k);
+      const dfMHz = nGHz * ak * ak * 1000;
+      nikInfoEl.textContent = `n_${i}${k}=${nGHz.toFixed(2)} · Δf=${dfMHz >= 0 ? '+' : ''}${dfMHz.toFixed(0)}MHz`;
+    }
+  }
+
+  if (nikGridEl) {
+    nikGridEl.addEventListener('pointermove', e => {
+      const cell = e.target && e.target.closest ? e.target.closest('.nikCell') : null;
+      if (cell) nikHoverPair = [+cell.dataset.i, +cell.dataset.k];
+    });
+    nikGridEl.addEventListener('pointerleave', () => { nikHoverPair = null; });
+    nikGridEl.addEventListener('click', e => {
+      const cell = e.target && e.target.closest ? e.target.closest('.nikCell') : null;
+      if (!cell) return;
+      const k = +cell.dataset.k;
+      driveMode = 'parallel';
+      driveFreq = Math.max(ARNOLD_F_MIN, Math.min(ARNOLD_F_MAX, 2 * (modeFreqGHz(k) + modeNfsShiftGHz(k))));
+      driveAmp = Math.min(ARNOLD_H_MAX, Math.max(0.08, parametricThreshold(k) * 2.2));
+      syncUi();
+      seedSpins(0.04);
+    });
+    buildNikMatrix();
   }
 
   function steadyStateAmp(mIdx, fPumpGHz, hPump) {
@@ -903,6 +985,7 @@
     threshBadge.classList.toggle('active', driveMode === 'transverse');
     updateEigenmodeReadout(meanAmp, activeCount);
     drawArnoldTongues();
+    updateNikMatrix();
   }
 
   const controlsPanel = document.getElementById('controlsPanel');
