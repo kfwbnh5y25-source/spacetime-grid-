@@ -218,11 +218,16 @@
     return omega / FREQ_TO_RAD;
   }
 
-  function seedSpins(noise = 0.018) {
+  function seedSpins(amp = 0.02) {
+    if (!amp) {
+      for (let i = 0; i < N; i++) { mx[i] = 1; my[i] = 0; mz[i] = 0; }
+      return;
+    }
+    const scale = amp * 28;
     for (let i = 0; i < N; i++) {
       if (!activeMask[i]) { mx[i] = 1; my[i] = 0; mz[i] = 0; continue; }
-      const ny = (Math.random() - 0.5) * noise;
-      const nz = (Math.random() - 0.5) * noise;
+      const ny = scale * (0.6 * modeTemplates[1][i] + 0.5 * modeTemplates[2][i] + 0.4 * modeTemplates[3][i] + 0.3 * modeTemplates[4][i]);
+      const nz = ny * 0.25;
       const inv = 1 / Math.hypot(1, ny, nz);
       mx[i] = inv; my[i] = ny * inv; mz[i] = nz * inv;
     }
