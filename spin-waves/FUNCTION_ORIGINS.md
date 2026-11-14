@@ -51,18 +51,8 @@ Every function falls into one of four categories:
 | :--- | :--- | :--- | :--- |
 | `modeFreqGHz`, `modeGammaGHz`, `vParamGHz_mT`, `parametricThresholdMT` | [L885–L896](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L885-L896) | **d'Aquino Eqs. (2, 9, 17, 32)** | Exact generalized eigenfrequencies ($1.7033$–$2.0689\,\text{GHz}$), linear damping $\Gamma_h = \alpha K^+_{hh}$, parallel-pumping efficiency $v_h$, and distinct 29-mode thresholds $h_{\text{th},h} = \Gamma_h / v_h$. |
 | `mutualNfsCoeffGHz`, `modeNfsShiftGHz`, `modeMutualNfsShiftGHz` | [L897–L918](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L897-L918) | **d'Aquino Eqs. (29, 52)** | Exact symmetric 4-wave secular Kerr/NFS tensor $N_{hk}$ (`N4A`), gated by `terms.t4A` so unchecking `4A N_hk` pins Arnold tongues horizontally. |
-| `crossPump4BGHz`, `instantaneousArnoldThresholdMT` | [L920–L959](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L920-L959) | **d'Aquino Eq. (9) `4B` Term** | Evaluates 4-magnon parametric cross-pumping rate $W_{4B,h} = \sum_{k\neq h} P_{hk} a_k^2$ (`4B` $P_{hk} a_h^* a_k^2$) and computes the instantaneous threshold reduction $\max(0, \sqrt{\Gamma_h^2 + \Delta_h^2} - W_{4B,h}) / v_h$. |
-| `steadyStateAmp`, `routhHurwitzStable`, `checkCoupledStab`, `analyzeTwoMode` | [L970–L1095](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L970-L1095) | **d'Aquino Eqs. (33)–(34), (55)–(57), Table I** | Single-mode saturated amplitude, quartic Routh–Hurwitz 2-mode stability, Scenario 1 coexistence vs Scenario 2 ($S_{\text{det}} < 0$) solo bistability, and solo mutual-detuning lockout. |
-
----
-
-## 4. Exact 29-Mode NMM Integration & AWG Sequencing
-
-| Function | Lines | Origin | Mathematical / Engineering Basis |
-| :--- | :--- | :--- | :--- |
-| `tone1EnvAt`, `tone2EnvAt`, `fieldComponentsAt` | [L1101–L1127](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L1101-L1127) | **AWG Protocol (`tukey(128,1)[:64]`)** | Applies 1.0 ns Tukey turn-on from $\tau = 0$ (Tone 1) and after `tone2DelayNs` or `tone2ReleaseT` under `Wait T1 SS` (Tone 2), with uniform RF field. |
-| `evalNmmRhs` | [L1129–L1298](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L1129-L1298) | **d'Aquino (2026) Eq. (9)** | Exact 29-mode NMM RHS $\dot{a}_h = (1+\alpha^2)^{-1}[G_1 + G_2(h_x,h_y) + G_3(a,a^*) + G_4(a,a^*)]$. |
-| `stepLlg` | [L1300–L1359](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L1300-L1359) | **RK4 + Brown FDT Noise** | Integrates $(a_{R,m}, a_{I,m})$ via classical RK4 + Brown FDT thermal kicks $\mathcal{N}(0,\sigma_{R,m}^2), \mathcal{N}(0,\sigma_{I,m}^2)$, samples DFT at exact `SPEC_DT`, and triggers physical `tone2WaitSS` release. |
+| `crossPump4BGHz`, `instantaneousArnoldThresholdMT`, `arnoldZoomAt`, `arnoldPanBy`, `arnoldResetAuto` | [spin-waves/index.html](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html) | **d'Aquino Eq. (9) `4B` Term + UI Viewport** | Evaluates coherent phase-resolved 4-magnon cross-pumping $W_{4B,h}(\phi_p) = \sum_{k\neq h} P_{hk} a_k^2$ against the $2A$ pumping sideband (`cross4b` prior-excitation downward shift + `slPhase1`) and powers the cursor-anchored Zoom/H/V/AUTO Arnold diagram controls. |
+| `stepLlg` | [spin-waves/index.html](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html) | **Adaptive RK4 + Brown FDT Noise** | Integrates $(a_{R,m}, a_{I,m})$ via classical RK4 with nonlinear-rate-bounded adaptive substepping (`maxSubH ∈ [0.08, 0.40]`), Brown FDT thermal kicks, exact `SPEC_DT` sampling, and smooth `FAST→SS` pacing (`140×0.35 = 49 τ/frame`). |
 | `seedSpins`, `exciteEigenmode`, `pluckAt` | [L1361–L1440](file:///home/antigravity/kfwbnh5y25-source/spacetime-grid-/spin-waves/index.html#L1361-L1440) | **d'Aquino Eq. (S12) + Init** | Zero/deterministic/Gaussian thermal seeding and exact symplectic projection of spatial pointer plucks. |
 
 ---

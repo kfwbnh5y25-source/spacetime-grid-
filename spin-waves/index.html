@@ -1359,7 +1359,16 @@
   }
 
   function stepLlg(dt, skipSpatial = false) {
-    const sub = Math.max(1, Math.ceil(dt / 0.65));
+    let maxNlRate = 0;
+    for (let m = 0; m < M; m++) {
+      const a2 = aRe[m] * aRe[m] + aIm[m] * aIm[m];
+      if (a2 > 1e-8) {
+        const r = Math.abs(wBarArr[m]) + Math.abs(N4A[m * M + m]) * a2;
+        if (r > maxNlRate) maxNlRate = r;
+      }
+    }
+    const maxSubH = maxNlRate > 0.85 ? Math.max(0.08, Math.min(0.65, 0.85 / maxNlRate)) : 0.65;
+    const sub = Math.max(1, Math.ceil(dt / maxSubH));
     const h = dt / sub, c6 = h / 6.0;
     const useTherm = temperatureK > 0 && damping > 0;
     if (useTherm) ensureThermalSigmas(h);
@@ -3667,7 +3676,7 @@
     announcePress(`Speed ${b.textContent.trim()}`, desc, `speed:${playbackSpeed}`);
   });
 
-  function fastForwardStepsPerFrame() { return isRwaFast() ? 900 : 180; }
+  function fastForwardStepsPerFrame() { return isRwaFast() ? 140 : 48; }
   function fastForwardSteadyState(maxSteps = 240000) {
     let maxA = 0; for (let m = 0; m < M; m++) maxA = Math.max(maxA, cycleAvgModeAmp(m));
     if (maxA < 1e-4 && temperatureK === 0 && (driveAmp > 0 || (dualTone && driveAmp2 > 0))) seedSpins(0.004);
@@ -4638,9 +4647,9 @@
       const wasFast = fastForwarding;
       let frameStepTau = 0;
       if (fastForwarding) {
-        const steps = fastForwardStepsPerFrame();
-        frameStepTau = steps * 0.65;
-        for (let s = 0; s < steps; s++) stepLlg(0.65, true);
+        const steps = fastForwardStepsPerFrame(), dtFast = 0.35;
+        frameStepTau = steps * dtFast;
+        for (let s = 0; s < steps; s++) stepLlg(dtFast, true);
         reconstructSpatialSpins();
         ffFrames++;
         const delayTau = (dualTone && driveAmp2 > 0 && !tone2WaitSS && tone2DelayNs > 0) ? usToTau(tone2DelayNs) : 0;
@@ -4657,7 +4666,7 @@
         if (ffFrames >= 10 && simTime >= delayTau + usToTau(1.0) && waitReady && maxDiff < ffTol && maxRel < 0.006) {
           if (++ffStable >= 4) { fastForwarding = false; syncUi(); }
         } else ffStable = 0;
-        if (fastForwarding && ffFrames >= 360) { fastForwarding = false; syncUi(); }
+        if (fastForwarding && ffFrames >= 3000) { fastForwarding = false; syncUi(); }
       } else {
         const [nSub, hSub] = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
         frameStepTau = nSub * hSub;

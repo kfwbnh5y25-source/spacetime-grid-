@@ -1092,6 +1092,39 @@ test('V. Arnold Tongues H/V/Zoom sliders, auto-follow frame lock & trackpad zoom
     `Reset must restore AUTO & Zoom=1: ${JSON.stringify(stR)}`);
 });
 
+test('W. FAST->SS smooth frame pacing & high-amplitude adaptive RK4 stability', () => {
+  spin.setNmmMode(false); // RWA Fast
+  const rwaSteps = spin.fastForwardStepsPerFrame();
+  assert.ok(rwaSteps <= 160 && rwaSteps * 0.35 <= 60,
+    `RWA FAST->SS per-frame step budget must stay smooth (got ${rwaSteps} steps, ${(rwaSteps * 0.35).toFixed(1)} tau)`);
+  spin.setNmmMode(true); // Full NMM
+  const fullSteps = spin.fastForwardStepsPerFrame();
+  assert.ok(fullSteps <= 64, `Full NMM FAST->SS steps should stay <= 64 (got ${fullSteps})`);
+
+  // High-amplitude stability on m13 (3.5x h_th) in RWA Fast settles cleanly without NaN or mode hopping
+  spin.setNmmMode(false);
+  const f13 = 2 * spin.modeFreqGHz(13) + 0.004;
+  const h13 = 3.5 * spin.parametricThreshold(13);
+  spin.setState({ temperatureK: 0, damping: 0.0020, driveMode: 'parallel', dualTone: false, driveFreq: f13, driveAmp: h13, simTime: 0 });
+  spin.seedSpins(0.004, [13]);
+  spin.fastForwardSteadyState();
+  const a13 = spin.cycleAvgModeAmp(13);
+  const th13 = spin.steadyStateAmp(13, f13, h13, 0, true);
+  assert.ok(Number.isFinite(a13) && Math.abs(a13 - th13) < 0.015,
+    `High-amp m13 (3.5*h_th) must remain finite & close to Eq. (33): sim=${a13.toFixed(4)} vs d'Aq=${th13.toFixed(4)}`);
+
+  // Edge mode m0 under strong pump (3.5x h_th) stabilizes smoothly without blowing up
+  const f0 = 2 * spin.modeFreqGHz(0) + 0.002;
+  const h0 = 3.5 * spin.parametricThreshold(0);
+  spin.setState({ temperatureK: 0, damping: 0.0020, driveMode: 'parallel', dualTone: false, driveFreq: f0, driveAmp: h0, simTime: 0 });
+  spin.seedSpins(0.004, [0]);
+  spin.fastForwardSteadyState();
+  const a0 = spin.cycleAvgModeAmp(0);
+  assert.ok(Number.isFinite(a0) && a0 > 0.005 && a0 < 0.8,
+    `High-amp m0 must remain bounded & stable (got a0=${a0})`);
+});
+
+
 
 
 
