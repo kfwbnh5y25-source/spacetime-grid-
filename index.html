@@ -129,7 +129,7 @@
   function showStatus(m){gestureStatus.textContent=m;gestureStatus.classList.add('visible');clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>gestureStatus.classList.remove('visible'),1300);}
   function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
   function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
-  function resetView(){persistentMasses.length=0;document.getElementById('simHud').textContent='EMPTY SPACE · TAP TO CREATE A MASS';updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
+  function resetView(){persistentMasses.length=0;sceneDirty=true;document.getElementById('simHud').textContent='EMPTY SPACE · TAP TO CREATE A MASS';updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
   const gyroButton=document.getElementById('gyroButton');
   let gyroEnabled=false,gyroBaseline=null,gyroTargetX=0,gyroTargetY=0,gyroX=0,gyroY=0,gyroListener=null;
   function handleDeviceOrientation(e){
@@ -357,16 +357,23 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     geometry={x,y,starts:new Uint32Array(starts),verticalLineCount};
     uploadGpuGeometry(geometry);
   }
+  let sceneDirty=true;
   function rebuildBackground(){
-    background.width=Math.max(1,Math.round(width*dpr));
-    background.height=Math.max(1,Math.round(height*dpr));
-    bgctx.setTransform(dpr,0,0,dpr,0,0);
-    bgctx.fillStyle='#000';bgctx.fillRect(0,0,width,height);
-    if(imageStatus!=='loaded'||!starfield.naturalWidth)return;
-    const scale=Math.max(width/starfield.naturalWidth,height/starfield.naturalHeight);
-    const sw=starfield.naturalWidth*scale,sh=starfield.naturalHeight*scale;
-    bgctx.globalAlpha=.34;bgctx.drawImage(starfield,(width-sw)/2,(height-sh)/2,sw,sh);
-    bgctx.globalAlpha=1;bgctx.fillStyle='rgba(0,0,0,.58)';bgctx.fillRect(0,0,width,height);
+    const targetCtx=gpuEnabled?ctx:bgctx;
+    if(!gpuEnabled){
+      background.width=Math.max(1,Math.round(width*dpr));
+      background.height=Math.max(1,Math.round(height*dpr));
+      bgctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    targetCtx.fillStyle='#000';targetCtx.fillRect(0,0,width,height);
+    if(imageStatus==='loaded'&&starfield.naturalWidth){
+      const scale=Math.max(width/starfield.naturalWidth,height/starfield.naturalHeight);
+      const sw=starfield.naturalWidth*scale,sh=starfield.naturalHeight*scale;
+      targetCtx.globalAlpha=.34;targetCtx.drawImage(starfield,(width-sw)/2,(height-sh)/2,sw,sh);
+      targetCtx.globalAlpha=1;targetCtx.fillStyle='rgba(0,0,0,.58)';targetCtx.fillRect(0,0,width,height);
+    }
+    if(!gpuEnabled)ctx.drawImage(background,0,0,width,height);
+    sceneDirty=true;
   }
   function resize(){
     dpr=Math.min(window.devicePixelRatio||1,benchMode?requestedDpr:adaptiveDprCap);
@@ -425,6 +432,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(persistentMasses.length)return;
     // One fixed source: the first tap creates the only mass and it never moves.
     persistentMasses.push({x,y,mass,fixed:true,strength:1,createdAt:elapsed*.001});
+    sceneDirty=true;
     document.getElementById('simHud').textContent='CURVATURE FRONT · c';
     showStatus('MASS CREATED · CURVATURE PROPAGATING');
   }
@@ -783,18 +791,23 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(lastFrame&&now-lastFrame<frameInterval-1){raf=requestAnimationFrame(render);return;}
     const frameDelta=lastFrame?now-lastFrame:0;
     if(frameDelta){perf.samples.push(frameDelta);if(perf.samples.length>18000)perf.samples.shift();perf.frames++;if(perf.samples.length===30&&perf.baselineFrameMs===null)perf.baselineFrameMs=percentile(perf.samples,.5);else if(perf.baselineFrameMs!==null&&frameDelta>perf.baselineFrameMs*1.5)perf.dropped+=Math.max(1,Math.round(frameDelta/perf.baselineFrameMs)-1);perf.maxFrameMs=Math.max(perf.maxFrameMs,frameDelta);
-      if(!benchMode&&!reducedMotion.matches){if(frameDelta>50){slowFrames++;smoothFrames=0;}else{smoothFrames++;slowFrames=Math.max(0,slowFrames-1);}if(slowFrames>=8&&adaptiveDprCap>1){adaptiveDprCap=Math.max(1,adaptiveDprCap-.25);slowFrames=0;resize();}else if(smoothFrames>=600&&adaptiveDprCap<(matchMedia('(pointer:coarse)').matches?1.5:2)){adaptiveDprCap=Math.min(matchMedia('(pointer:coarse)').matches?1.5:2,adaptiveDprCap+.25);smoothFrames=0;resize();}}
+      if(!benchMode&&!reducedMotion.matches){if(frameDelta>50)slowFrames++;else slowFrames=Math.max(0,slowFrames-1);if(slowFrames>=8&&adaptiveDprCap>1){adaptiveDprCap=1;slowFrames=0;resize();}}
     }
     const renderStart=performance.now();
     const dt=Math.min(40,now-(last||now));last=now;lastFrame=now;if(!paused)elapsed+=dt;
     if(perf.firstFrame===null)perf.firstFrame=now;
     const t=paused?pauseTime:elapsed;
+    const maxViewportRadius=Math.hypot(width,height)+120;
+    let frontActive=false;
+    if(persistentMasses.length){
+      const age=Math.max(0,t*.001-(persistentMasses[0].createdAt??0));
+      frontActive=180*age<=maxViewportRadius+CAUSAL_FRONT_WIDTH_PX*2;
+    }
     if(now-lastCausalHudUpdate>100){
       lastCausalHudUpdate=now;
       let nextHud='EMPTY SPACE · TAP TO CREATE A MASS';
       if(persistentMasses.length){
         const age=Math.max(0,t*.001-(persistentMasses[0].createdAt??0)),radius=180*age;
-        const maxViewportRadius=Math.hypot(width,height)+120;
         if(radius<=maxViewportRadius){
           nextHud='CURVATURE FRONT · c · '+radius.toFixed(0)+' PX · '+age.toFixed(1)+' S';
         }else{
@@ -805,7 +818,6 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       const hudEl=document.getElementById('simHud');
       if(hudEl.textContent!==nextHud)hudEl.textContent=nextHud;
     }
-    ctx.drawImage(background,0,0,width,height);
     fields.length=0;
     for(const [id,p] of pointers){
       p.x=smooth(p.x,p.tx,.22);p.y=smooth(p.y,p.ty,.22);
@@ -818,19 +830,18 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     geodesicFrameOffsetX=0;
     geodesicFrameOffsetY=0;
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
-    if(gpuEnabled)drawGpu(t);
-    drawMassOverlay(t);
-    if(!gpuEnabled){
-      const g=geometry;
-      ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
-      for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line>=g.verticalLineCount;for(let i=from;i<to;i++){warpVertex(g,i,t,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
-      ctx.stroke();
-    }
-    for(const p of fields){
-      const radius=110,glow=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,radius);
-      glow.addColorStop(0,'rgba(190,215,255,'+(.075*p.strength)+')');
-      glow.addColorStop(1,'rgba(190,215,255,0)');
-      ctx.fillStyle=glow;ctx.fillRect(p.x-radius,p.y-radius,radius*2,radius*2);
+    const needsDraw=benchMode||sceneDirty||frontActive||gyroEnabled;
+    if(needsDraw){
+      if(gpuEnabled)drawGpu(t);
+      drawMassOverlay(t);
+      if(!gpuEnabled){
+        ctx.drawImage(background,0,0,width,height);
+        const g=geometry;
+        ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
+        for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line>=g.verticalLineCount;for(let i=from;i<to;i++){warpVertex(g,i,t,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
+        ctx.stroke();
+      }
+      sceneDirty=false;
     }
     const renderCost=performance.now()-renderStart;
     perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
