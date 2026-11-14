@@ -137,20 +137,34 @@
   let paused = false;
   let simTime = 0;
 
-  const J_EX = 0.65;
+  const J_EX = 14.0;
   const DEMAG_NZ = 1.60;
-  const FREQ_TO_RAD = 0.355; // f_kittel(H0=0.45) ≈ 2.70 GHz, 2*f_k ≈ 5.41 GHz
+  const FREQ_TO_RAD = 0.355; // f_kittel(H0=0.45) ≈ 2.71 GHz, 2*f_k ≈ 5.42 GHz
 
+  // Exact free-boundary (Neumann J_m'(alpha)=0) disk modes and rectangular modes
   const MODE_SPECS = [
-    { label: '(0,0) Kittel', rectLabel: '(0,0) Unif', k2: 0.0 },
-    { label: '(1,0) Radial', rectLabel: '(1,0) Stand', k2: 0.14 },
-    { label: '(0,1) Dipole', rectLabel: '(0,1) Stand', k2: 0.14 },
-    { label: '(0,2) Quad', rectLabel: '(1,1) Cross', k2: 0.28 },
-    { label: '(1,1) Mixed', rectLabel: '(2,0) 2-Node', k2: 0.42 },
-    { label: '(2,0) 2-Ring', rectLabel: '(2,1) Mode', k2: 0.56 }
+    { label: '(0,0) Kittel', rectLabel: '(0,0) Unif', m: 0, alpha: 0.0, nx: 0, ny: 0 },
+    { label: '(0,1) Dipole', rectLabel: '(1,0) Mode', m: 1, alpha: 1.8412, nx: 1, ny: 0 },
+    { label: '(0,2) Quad',   rectLabel: '(1,1) Cross', m: 2, alpha: 3.0542, nx: 1, ny: 1 },
+    { label: '(1,0) Radial', rectLabel: '(2,0) 2-Node', m: 0, alpha: 3.8317, nx: 2, ny: 0 },
+    { label: '(1,1) Mixed',  rectLabel: '(2,1) Mode', m: 1, alpha: 5.3314, nx: 2, ny: 1 },
+    { label: '(2,0) 2-Ring', rectLabel: '(2,2) Mode', m: 0, alpha: 7.0156, nx: 2, ny: 2 }
   ];
   const modeTemplates = MODE_SPECS.map(() => new Float32Array(N));
   const modeAmps = new Float32Array(MODE_SPECS.length);
+
+  function besselJ(n, x) {
+    let sum = 0, factK = 1, factNK = 1;
+    for (let i = 2; i <= n; i++) factNK *= i;
+    const halfX = 0.5 * x;
+    for (let k = 0; k < 18; k++) {
+      if (k > 0) { factK *= k; factNK *= (n + k); }
+      const term = ((k & 1) ? -1 : 1) * Math.pow(halfX, 2 * k + n) / (factK * factNK);
+      sum += term;
+      if (Math.abs(term) < 1e-12) break;
+    }
+    return sum;
+  }
 
   const SPEC_LEN = 128;
   const probeSeries = new Float32Array(SPEC_LEN);
@@ -171,6 +185,7 @@
       }
     }
     for (let m = 0; m < MODE_SPECS.length; m++) {
+      const spec = MODE_SPECS[m];
       const tpl = modeTemplates[m];
       let normSq = 0;
       for (let y = 0; y < NY; y++) {
@@ -180,20 +195,10 @@
           let v = 0;
           if (geometryMode === 'disk') {
             const dx = (x - cx) / R, dy = (y - cy) / R, r = Math.hypot(dx, dy), th = Math.atan2(dy, dx);
-            if (m === 0) v = 1;
-            else if (m === 1) v = Math.cos(Math.PI * r);
-            else if (m === 2) v = Math.sin(Math.PI * 0.5 * r) * Math.cos(th);
-            else if (m === 3) v = Math.sin(Math.PI * 0.65 * r) * Math.cos(2 * th);
-            else if (m === 4) v = Math.sin(Math.PI * 1.15 * r) * Math.cos(th);
-            else v = Math.cos(2 * Math.PI * r);
+            v = spec.alpha === 0 ? 1 : besselJ(spec.m, spec.alpha * r) * Math.cos(spec.m * th);
           } else {
-            const u = x / (NX - 1), w = y / (NY - 1);
-            if (m === 0) v = 1;
-            else if (m === 1) v = Math.cos(Math.PI * u);
-            else if (m === 2) v = Math.cos(Math.PI * w);
-            else if (m === 3) v = Math.cos(Math.PI * u) * Math.cos(Math.PI * w);
-            else if (m === 4) v = Math.cos(2 * Math.PI * u);
-            else v = Math.cos(2 * Math.PI * u) * Math.cos(Math.PI * w);
+            const u = (x + 0.5) / NX, w = (y + 0.5) / NY;
+            v = Math.cos(spec.nx * Math.PI * u) * Math.cos(spec.ny * Math.PI * w);
           }
           tpl[i] = v;
           normSq += v * v;
@@ -213,7 +218,12 @@
   }
 
   function modeFreqGHz(mIdx) {
-    const hEff = biasH0 + J_EX * MODE_SPECS[mIdx].k2;
+    const spec = MODE_SPECS[mIdx];
+    const R = NX * 0.45;
+    const k2 = geometryMode === 'disk'
+      ? (spec.alpha / R) * (spec.alpha / R)
+      : Math.pow((spec.nx * Math.PI) / NX, 2) + Math.pow((spec.ny * Math.PI) / NY, 2);
+    const hEff = biasH0 + J_EX * k2;
     const omega = Math.sqrt(hEff * (hEff + DEMAG_NZ));
     return omega / FREQ_TO_RAD;
   }
@@ -237,17 +247,17 @@
     const tpl = modeTemplates[mIdx];
     let maxT = 1e-6;
     for (let i = 0; i < N; i++) if (Math.abs(tpl[i]) > maxT) maxT = Math.abs(tpl[i]);
-    const scale = 0.24 / maxT;
+    const scale = 0.26 / maxT;
     for (let i = 0; i < N; i++) {
       if (!activeMask[i]) { mx[i] = 1; my[i] = 0; mz[i] = 0; continue; }
       const ny = tpl[i] * scale;
-      const nz = tpl[i] * scale * 0.25;
+      const nz = 0;
       const inv = 1 / Math.hypot(1, ny, nz);
-      mx[i] = inv; my[i] = ny * inv; mz[i] = nz * inv;
+      mx[i] = inv; my[i] = ny * inv; mz[i] = 0;
     }
     driveMode = 'transverse';
     driveFreq = modeFreqGHz(mIdx);
-    driveAmp = 0.04;
+    driveAmp = mIdx === 0 ? 0.04 : 0.0;
     document.querySelectorAll('#eigenButtons button').forEach((b, i) => b.classList.toggle('active', i === mIdx));
     syncUi();
   }
@@ -355,13 +365,13 @@
 
   function updateSpectrum() {
     frameCounter++;
-    if (frameCounter % 8 !== 0) return;
+    if (frameCounter % 11 !== 0) return;
     const idx = Math.floor(NY * 0.36) * NX + Math.floor(NX * 0.38);
     probeSeries[probeHead] = my[idx] + 0.6 * mz[idx];
     probeHead = (probeHead + 1) % SPEC_LEN;
 
-    const dtSample = 8 * 6 * 0.014; // 0.672 sim-time units
-    const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * dtSample); // ~26.34 GHz
+    const dtSample = 11 * 12 * 0.005; // 0.66 sim-time units
+    const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * dtSample); // ~26.82 GHz
 
     let maxVal = 1e-6, peakBin = 1;
     for (let k = 1; k < SPEC_LEN / 2; k++) {
@@ -522,11 +532,11 @@
     document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
-      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.018; driveFreq = 5.80; driveAmp = 0.22;
+      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.018; driveFreq = 2 * modeFreqGHz(3); driveAmp = 0.28;
       seedSpins(0.03);
     } else if (name === 'sub') {
       document.getElementById('presetSub').classList.add('active');
-      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.025; driveFreq = 5.80; driveAmp = 0.04;
+      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.025; driveFreq = 2 * modeFreqGHz(3); driveAmp = 0.04;
       seedSpins(0.02);
     } else if (name === 'direct') {
       document.getElementById('presetDirect').classList.add('active');
@@ -562,7 +572,7 @@
 
   function frame() {
     if (!paused) {
-      for (let s = 0; s < 6; s++) stepLlg(0.014);
+      for (let s = 0; s < 12; s++) stepLlg(0.005);
       updateSpectrum();
     }
     drawScene();
