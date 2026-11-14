@@ -99,7 +99,7 @@
   const persistentMasses=[];
   let gravityG=3,newMassValue=20,gravityEnabled=true,trailsEnabled=true;
   let mouseWorld={x:innerWidth/2,y:innerHeight/2},mousePan=null;
-  let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1.5:2,slowFrames=0,smoothFrames=0;
+  let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1:1.5,slowFrames=0,smoothFrames=0;
   const storageKey='spacetime-grid-state-v1';
   let cameraAnimationRaf=0,cameraAnimationTarget=null,cameraAnimationLast=0;
   function worldPoint(x,y){const dx=x-width/2-viewX,dy=y-height/2-viewY,a=viewRotation*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);return {x:(dx*c+dy*sn)/viewScale+width/2,y:(-dx*sn+dy*c)/viewScale+height/2};}
@@ -253,17 +253,14 @@ vec4 rk4GeodesicStep(vec4 s,float h){
 vec4 traceGeodesic(vec2 p,vec2 direction,float distanceAlong){
  vec4 state=vec4(p,normalize(direction));
  if(distanceAlong<=0.0001)return state;
- float travelled=0.0,h=min(12.0,distanceAlong);
- for(int iteration=0;iteration<512;iteration++){
+ float travelled=0.0;
+ // Fixed-step RK4 avoids three integrations per adaptive step in every vertex.
+ // The grid itself is densely sampled, so 12 px integration steps remain smooth.
+ for(int iteration=0;iteration<128;iteration++){
   if(travelled>=distanceAlong-0.00001)break;
-  h=min(h,distanceAlong-travelled);
-  vec4 full=rk4GeodesicStep(state,h);
-  vec4 half=rk4GeodesicStep(state,0.5*h);
-  half=rk4GeodesicStep(half,0.5*h);
-  float error=max(length(half.xy-full.xy),h*length(half.zw-full.zw));
-  float factor=error<0.0000001?2.0:clamp(0.9*pow(0.02/error,0.2),0.5,2.0);
-  if(error<=0.02||h<=0.25){state=half;travelled+=h;}
-  h=clamp(h*factor,0.25,12.0);
+  float h=min(12.0,distanceAlong-travelled);
+  state=rk4GeodesicStep(state,h);
+  travelled+=h;
  }
  return state;
 }
@@ -342,7 +339,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   starfield.onerror = () => { imageStatus='failed'; perf.imageLoad=performance.now()-perf.imageStart; };
 
   function buildGeometry() {
-    const step=spacing(), sampleStep=2.5, margin=step*2, xs=[], ys=[], starts=[];
+    const step=spacing(), sampleStep=4.0, margin=step*2, xs=[], ys=[], starts=[];
     for(let x=-margin;x<=width+margin;x+=step){
       starts.push(xs.length);
       for(let y=-margin;y<=height+margin;y+=sampleStep){xs.push(x);ys.push(y);}
