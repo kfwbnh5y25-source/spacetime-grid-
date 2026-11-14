@@ -220,18 +220,11 @@ vec2 gradLogConformal(vec2 p){
   if(i>=u_pointerCount)break;
   vec2 d=p-u_pointer[i];
   float r=sqrt(dot(d,d)+u_softening*u_softening);
-  // Retarded activation: the source contributes only inside its future
-  // light cone on this displayed time slice, t - t0 >= |x-x0|/c.
-  float age=u_time-u_createdAt[i];
-  float radialDistance=length(d);
-  float q=clamp(0.5+(u_c*age-radialDistance)/(2.0*u_frontWidth),0.0,1.0);
-  float activation=q*q*(3.0-2.0*q);
+  // Static Schwarzschild background. Retardation belongs to the
+  // radiative perturbation, not to the stationary mass geometry.
   float rs=u_rS[i];
-  // Keep the front as a smooth turn-on of the source field. Do not
-  // differentiate the display envelope: that creates a fictitious
-  // ring-shaped curvature shell at the wavefront.
-  psi+=activation*rs/(4.0*r);
-  gradPsi+=activation*(-rs*d/(4.0*r*r*r));
+  psi+=rs/(4.0*r);
+  gradPsi+=(-rs*d/(4.0*r*r*r));
  }
  return 2.0*gradPsi/psi; // grad(log(psi²))
 }
@@ -247,6 +240,25 @@ vec4 rk4GeodesicStep(vec4 s,float h){
  vec4 k3=geodesicDerivative(s+0.5*h*k2);
  vec4 k4=geodesicDerivative(s+h*k3);
  return s+(h/6.0)*(k1+2.0*k2+2.0*k3+k4);
+}
+// Linearized outgoing quadrupolar gravitational wave in the wave zone:
+ // h_ij^TT ~ (2G/c^4 r) Q_ddot_ij^TT(t-r/c). The source burst is prescribed;
+ // its + polarization is projected as an exaggerated out-of-plane height.
+float gravitationalWaveHeight(vec2 p){
+ float height=0.0;
+ for(int i=0;i<24;i++){
+  if(i>=u_pointerCount)break;
+  vec2 d=p-u_pointer[i];
+  float r=max(1.0,length(d));
+  float retarded=u_time-u_createdAt[i]-r/u_c;
+  float turnOn=smoothstep(0.0,0.16,retarded);
+  float envelope=exp(-pow((retarded-0.82)/0.56,2.0));
+  float phase=6.28318530718*2.15*(retarded-0.16);
+  float quadrupole=(d.x*d.x-d.y*d.y)/(r*r);
+  float displayHeight=14.0*clamp(u_rS[i]/1.2,0.0,3.0)*60.0/(r+60.0);
+  height+=displayHeight*turnOn*envelope*sin(phase)*quadrupole;
+ }
+ return height;
 }
 vec4 traceGeodesic(vec2 p,vec2 direction,float distanceAlong){
  vec4 state=vec4(p,normalize(direction));
@@ -269,6 +281,7 @@ void main(){
  vec2 tangent=normalize(state.zw);
  vec2 normal=vec2(-tangent.y,tangent.x);
  vec2 p=state.xy+normal*a_side*1.2;
+ p.y-=gravitationalWaveHeight(p);
  gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
  v_edge=a_side;
 }`;
@@ -312,8 +325,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_frameOffset'),geodesicFrameOffsetX,geodesicFrameOffsetY);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),1.0);
-    // Display-space calibration: one pixel represents c/180 metres, so the
-    // causal front advances at c (180 CSS px/s) in this visualization.
+    // Display-space calibration: the retarded gravitational-wave packet
+    // propagates at c=180 CSS px/s in this visualization.
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t*.001);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_c'),180.0);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_frontWidth'),8.0);
@@ -390,7 +403,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     for(const body of persistentMasses){
       const pos={x:body.x,y:body.y};
       const age=Math.max(0,t*.001-(body.createdAt??0));
-      const frontRadius=180*age;
+      const frontRadius=180*Math.max(0,age-.82);
       if(frontRadius>0){
         trajectoryCtx.save();
         trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,frontRadius,0,Math.PI*2);
@@ -421,7 +434,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(persistentMasses.length)return;
     // One fixed source: the first tap creates the only mass and it never moves.
     persistentMasses.push({x,y,mass,fixed:true,strength:1,createdAt:elapsed*.001});
-    document.getElementById('simHud').textContent='CAUSAL FIELD FRONT · c · RETARDED SOURCE';
+    document.getElementById('simHud').textContent='QUADRUPOLE GRAVITATIONAL WAVE · c';
     showStatus('MASS CREATED · FIELD FRONT PROPAGATING');
   }
   function pointerDown(e){
@@ -599,23 +612,30 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   });
 
   let warpedX=0, warpedY=0;
+  function gravitationalWaveProjection(x,y,t,sourceList=fields){
+    let height=0;const time=t*.001;
+    for(let i=0;i<Math.min(sourceList.length,MAX_GPU_POINTERS);i++){
+      const m=sourceList[i],dx=x-(m.x+geodesicFrameOffsetX),dy=y-(m.y+geodesicFrameOffsetY);
+      const r=Math.max(1,Math.hypot(dx,dy)),retarded=time-(m.createdAt??0)-r/180;
+      const q=Math.max(0,Math.min(1,retarded/.16)),turnOn=q*q*(3-2*q);
+      const envelope=Math.exp(-Math.pow((retarded-.82)/.56,2)),phase=2*Math.PI*2.15*(retarded-.16);
+      const quadrupole=(dx*dx-dy*dy)/(r*r);
+      const rs=Number.isFinite(m.rS)?m.rS:2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
+      height+=14*Math.max(0,Math.min(3,rs/1.2))*60/(r+60)*turnOn*envelope*Math.sin(phase)*quadrupole;
+    }
+    return height;
+  }
   function spatialMetricGradient(x,y,sourceList=fields,softening=1){
     let psi=1,gx=0,gy=0;
     for(let j=0;j<Math.min(sourceList.length,MAX_GPU_POINTERS);j++){
       const m=sourceList[j],dx=x-(m.x+geodesicFrameOffsetX),dy=y-(m.y+geodesicFrameOffsetY);
       const radialDistance=Math.hypot(dx,dy),r=Math.sqrt(dx*dx+dy*dy+softening*softening);
-      // The causal envelope smoothly turns on the source field. Its
-      // derivative is intentionally excluded: that display-only term would
-      // behave like a fictitious thin shell of curvature at the front.
-      let activation=1;
-      if(Number.isFinite(m.createdAt)){
-        const age=elapsed*.001-m.createdAt,q=Math.max(0,Math.min(1,.5+(180*age-radialDistance)/(2*8)));
-        activation=q*q*(3-2*q);
-      }
+      // Exact single-source isotropic Schwarzschild spatial conformal factor.
+      // Retardation is handled by the radiative perturbation, not this background.
       const rs=Number.isFinite(m.rS)?m.rS:2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
-      psi+=activation*rs/(4*r);
-      gx+=activation*(-rs*dx/(4*r*r*r));
-      gy+=activation*(-rs*dy/(4*r*r*r));
+      psi+=rs/(4*r);
+      gx+=(-rs*dx/(4*r*r*r));
+      gy+=(-rs*dy/(4*r*r*r));
     }
     return {x:2*gx/psi,y:2*gy/psi};
   }
@@ -692,9 +712,10 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       relativeMetricSpeedDrift:rel(initial.energy,final.energy),relativeAngularMomentumDrift:rel(initial.angularMomentum,final.angularMomentum),
       gradientRelativeError,finiteDifferenceRelativeError,weakFieldDeflectionRad:measured,weakFieldLeadingOrderRad:expected,
       weakFieldRelativeError:rel(expected,measured),convergence,referenceSteps:reference.steps,
-      radiation:"none: this is an idealized causal activation front, not gravitational radiation from a conserved source",
-      causalFront:"smooth retarded activation at 180 CSS px/s; 8 px transition width; display convention only",
-      note:"After the front passes, the spatial slice approaches the isotropic Schwarzschild metric. The moving transition is a prescribed visualization, not a self-consistent solution of the time-dependent Einstein equations or a 4-D null-geodesic solver."};
+      radiation:"linearized outgoing quadrupolar TT wave packet; prescribed source quadrupole burst, not a self-consistent matter simulation",
+      waveModel:"wave-zone approximation h_ij^TT ~ (2G/c^4 r) Q_ddot_ij^TT(t-r/c); retarded propagation at c; + polarization projected as screen height",
+      waveDisplay:"14 CSS px maximum display-height scale, 60 px radial soft scale; amplitude deliberately exaggerated for visibility",
+      note:"Static background: exact single-mass Schwarzschild spatial slice in isotropic coordinates. Dynamics: linearized far-zone quadrupolar gravitational radiation on that background. The burst waveform is prescribed; this is not an exact nonlinear Einstein solution or full 3-D numerical-relativity evolution."};
   }
   const geodesicValidation=runGeodesicValidation();
   function warpVertex(g,i,t,horizontal){
@@ -708,7 +729,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const signedDistance=(g.x[i]-anchorX)*tx+(g.y[i]-anchorY)*ty;
     const sign=signedDistance<0?-1:1;
     const state=traceSpatialGeodesic(anchorX+geodesicFrameOffsetX,anchorY+geodesicFrameOffsetY,tx*sign,ty*sign,Math.abs(signedDistance));
-    warpedX=state.x;warpedY=state.y;
+    warpedX=state.x;warpedY=state.y-gravitationalWaveProjection(state.x,state.y,t);
   }
   function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
   function report(){
@@ -781,8 +802,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(now-lastCausalHudUpdate>100){
       lastCausalHudUpdate=now;
       if(persistentMasses.length){
-        const age=Math.max(0,t*.001-(persistentMasses[0].createdAt??0)),radius=180*age;
-        document.getElementById('simHud').textContent='CAUSAL FRONT · c · '+radius.toFixed(0)+' PX · '+age.toFixed(1)+' S';
+        const age=Math.max(0,t*.001-(persistentMasses[0].createdAt??0)),radius=180*Math.max(0,age-.82);
+        document.getElementById('simHud').textContent='GRAVITATIONAL WAVE · c · '+radius.toFixed(0)+' PX · '+age.toFixed(1)+' S';
       }else document.getElementById('simHud').textContent='EMPTY SPACE · TAP TO CREATE A MASS';
     }
     ctx.drawImage(background,0,0,width,height);
@@ -816,7 +837,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode){let touchPointers=0,downPointers=0;for(const p of pointers.values()){if(p.down){downPointers++;if(p.pointerType==='touch')touchPointers++;}}perf.frameLog.push({t:+(now-perf.started).toFixed(1),intervalMs:+frameDelta.toFixed(2),renderCpuMs:+renderCost.toFixed(2),activePointers:pointers.size,downPointers,touchPointers,dpr,frameCapHz:frameCap});if(perf.frameLog.length>18000)perf.frameLog.shift();}
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nPHYSICS CHECKS ${r.geodesicValidation.passed}/${r.geodesicValidation.total} passed\n${r.geodesicValidation.checks.map(c=>(c.pass?'PASS ':'FAIL ')+c.name+' · '+Number(c.value).toExponential(2)).join('\n')}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nRadiation ${r.geodesicValidation.radiation}\nStatic Schwarzschild slice · idealized causal front (not GWs)\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nPHYSICS CHECKS ${r.geodesicValidation.passed}/${r.geodesicValidation.total} passed\n${r.geodesicValidation.checks.map(c=>(c.pass?'PASS ':'FAIL ')+c.name+' · '+Number(c.value).toExponential(2)).join('\n')}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nRadiation ${r.geodesicValidation.radiation}\nSchwarzschild background · linearized quadrupolar GW (display amplified)\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
