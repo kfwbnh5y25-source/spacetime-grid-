@@ -408,6 +408,8 @@ function loadSpinWavesContext() {
     steadyStateAmp, analyzeTwoMode, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
     applyPreset, swapTonesAction, SPEED_FRAME_STEPS,
     swLog, recordLogEvent, recordTelemetrySample, buildEvaluationReport,
+    drawModeTimePlot, updatePlotWindow, recordPlotSample,
+    getPlotStats: () => ({ count: plotHistCount, winTau: plotWinTau, originTau: plotOriginTau, lastPlotTau }),
     setState(patch) {
       if ('driveMode' in patch) driveMode = patch.driveMode;
       if ('driveFreq' in patch) driveFreq = patch.driveFreq;
@@ -809,8 +811,19 @@ test('R. Slow default playback, dynamic tensor δm = m - m0 profile fidelity & t
   assert.ok(Math.abs(mean27) > Math.sqrt(std27 / spin.NACT), 'Kittel mode m27 δmy must be spatially quasi-uniform');
   assert.ok(cos13_23 < 0.25, `Tensor modes m13 and m23 δmy profiles must be nearly orthogonal, got cos=${cos13_23.toFixed(3)}`);
 
-  // 4. Telemetry evaluation logger captures events, trajectory samples & analytical theory comparison
+  // 4. Moving time-window plot records nonzero mode trajectory and slides smoothly
   spin.applyPreset('coex');
+  for (let i = 0; i < 6; i++) {
+    spin.stepLlg(0.65, true);
+    spin.updatePlotWindow(0.65);
+    spin.recordPlotSample();
+  }
+  spin.drawModeTimePlot();
+  const ps = spin.getPlotStats();
+  assert.ok(ps.count >= 5 && ps.lastPlotTau > 0 && ps.winTau > 0,
+    `Moving time-window plot must record advancing trajectory samples: ${JSON.stringify(ps)}`);
+
+  // 5. Telemetry evaluation logger captures events, trajectory samples & analytical theory comparison
   spin.recordLogEvent('action', 'Test Coex Trigger');
   spin.recordTelemetrySample(true);
   const report = spin.buildEvaluationReport('test_suite');
