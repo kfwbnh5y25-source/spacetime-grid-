@@ -1825,7 +1825,15 @@
     if (hintEl) {
       if (driveMode !== 'parallel') {
         hintEl.textContent = 'tap to pump';
-      } else if (!dualTone && closestMutPair && bestMutDist < bestDist) {
+      } else if (dualTone && driveAmp2 > 0) {
+        const m1 = closestArnoldMode(driveFreq);
+        const m2 = closestArnoldMode(driveFreq2);
+        const [th1, th2] = m1 !== m2
+          ? steadyState2Mode(m1, m2, driveFreq, driveAmp, driveFreq2, driveAmp2)
+          : [steadyStateAmp(m1, driveFreq, driveAmp, modeMutualNfsShiftGHz(m1)), 0];
+        const s1 = modeAmps[m1] || 0, s2 = modeAmps[m2] || 0;
+        hintEl.textContent = `m${m1}:${s1.toFixed(2)}(d'Aq ${th1.toFixed(2)}) · m${m2}:${s2.toFixed(2)}(${th2.toFixed(2)})`;
+      } else if (closestMutPair && bestMutDist < bestDist) {
         const [mi, mj, fShiftSum] = closestMutPair;
         const hMutAtF = mutualArnoldThreshold(mi, mj, targetFp, fShiftSum);
         hintEl.textContent = targetHp > hMutAtF
