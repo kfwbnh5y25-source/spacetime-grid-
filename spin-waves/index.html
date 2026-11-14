@@ -99,9 +99,16 @@
   .nikCell.activeCol { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
   .nikCell.selected { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; z-index: 3; }
   #nikConfig { margin-top: 6px; padding: 6px 7px; border-radius: 6px; background: rgba(14,26,46,.72); border: 1px solid rgba(130,185,255,.18); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.88); }
-  #arnoldTargetBtn, #arnoldBandBtn, #specBandBtn { padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.3); background: rgba(130,185,255,.14); color: #b9dcff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
-  #arnoldTargetBtn.t2 { border-color: rgba(251,191,36,.5); background: rgba(251,191,36,.18); color: #fde68a; }
-  #arnoldBandBtn.all, #specBandBtn.modes { border-color: rgba(110,231,183,.45); background: rgba(16,185,129,.16); color: #a7f3d0; }
+  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #specBandBtn { padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(130,185,255,.3); background: rgba(130,185,255,.14); color: #b9dcff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldTargetBtn.t2, #arnoldPanBtn.active { border-color: rgba(251,191,36,.55); background: rgba(251,191,36,.2); color: #fde68a; }
+  #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes { border-color: rgba(110,231,183,.5); background: rgba(16,185,129,.18); color: #a7f3d0; }
+  canvas#arnoldCanvas.panMode { cursor: grab; }
+  canvas#arnoldCanvas.panning { cursor: grabbing; }
+  .arnoldNavBar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 4px; }
+  .arnoldNavCtrl { display: grid; gap: 1px; font: 7.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.78); }
+  .arnoldNavHead { display: flex; justify-content: space-between; align-items: center; gap: 2px; }
+  .arnoldNavHead output { color: #b9dcff; font-weight: 600; }
+  .arnoldNavCtrl input[type=range] { width: 100%; height: 12px; margin: 0; accent-color: #7cd4ff; cursor: pointer; }
   #arnoldTermsNote { margin-top: 3px; font: 8px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,218,250,.76); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #dbDiagBanner { margin-top: 5px; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.14); background: rgba(10,20,38,.7); font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.85); word-break: break-word; }
   #dbDiagBanner.err { border-color: rgba(251,191,36,.45); color: #fde68a; background: rgba(80,45,10,.35); }
@@ -384,14 +391,31 @@
   </div>
   <div class="readoutCard" id="arnoldBox">
     <div class="specTitle">
-      <span>ARNOLD (29M · 27mT)</span>
-      <span style="display:flex;gap:3px;align-items:center;">
+      <span>ARNOLD</span>
+      <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
+        <button id="arnoldAutoBtn" class="active" type="button" title="Auto-follow active &amp; shifted Arnold tongues so none leave the frame">AUTO</button>
+        <button id="arnoldPanBtn" type="button" title="Toggle canvas drag to pan H/V (or hold Alt+drag / two-finger trackpad scroll &amp; pinch zoom)">PAN</button>
+        <button id="arnoldFitBtn" type="button" title="Reset Zoom 1×, h₀=0 and fit active tongues">FIT</button>
         <button id="arnoldBandBtn" class="all" type="button" title="Toggle between ALL 29 modes (3.38–4.18 GHz) and BULK zoom (3.88–4.16 GHz)">ALL 29</button>
         <button id="arnoldTargetBtn" type="button" title="Toggle tap target between Tone 1 and Tone 2">TAP: T1</button>
       </span>
       <span id="arnoldHint">tap to pump</span>
     </div>
     <canvas id="arnoldCanvas" width="296" height="114"></canvas>
+    <div class="arnoldNavBar" id="arnoldNavBar">
+      <label class="arnoldNavCtrl" title="Zoom into/out of the Arnold instability map (or pinch on trackpad)">
+        <span class="arnoldNavHead"><span>Zoom</span><output id="outArnoldZoom">1.0×</output></span>
+        <input id="slArnoldZoom" type="range" min="1" max="8" step="0.05" value="1">
+      </label>
+      <label class="arnoldNavCtrl" title="Horizontal frequency slide f_c across Arnold tongues (or horizontal trackpad swipe)">
+        <span class="arnoldNavHead"><span>f_c</span><output id="outArnoldPanF">3.78G</output></span>
+        <input id="slArnoldPanF" type="range" min="3.10" max="4.40" step="0.005" value="3.78">
+      </label>
+      <label class="arnoldNavCtrl" title="Vertical amplitude floor h₀ in mT (or vertical trackpad swipe)">
+        <span class="arnoldNavHead"><span>h₀</span><output id="outArnoldPanH">0.0mT</output></span>
+        <input id="slArnoldPanH" type="range" min="0" max="2.50" step="0.01" value="0">
+      </label>
+    </div>
     <div id="arnoldTermsNote">4A N_hk shift: ON · 4B cross-pump: OFF</div>
   </div>
   <div class="readoutCard" id="spectrumBox">
@@ -788,7 +812,9 @@
   const plotHistAmps = new Float32Array(PLOT_HIST_CAP * M);
   let plotHistHead = 0, plotHistCount = 0, lastPlotTau = -1, plotOriginTau = 0;
   let plotWinTau = 10.8, plotYScale = 0.02, plotYTarget = 0.02, holdPlotWin = false;
-  let lastPlotDrawMs = 0, lastLegendBuildMs = 0, arnoldHMaxSmooth = 0, lastLegendKey = '';
+  let lastPlotDrawMs = 0, lastLegendBuildMs = 0, arnoldHMaxSmooth = 0, arnoldHMinSmooth = 0, lastLegendKey = '';
+  let arnoldFMinSmooth = 3.38, arnoldFMaxSmooth = 4.18;
+  let arnoldAutoFollow = true, arnoldPanMode = false, arnoldViewZoom = 1.0, arnoldCenterF = 3.78, arnoldBaseMT = 0;
 
   function quantizePlotTop(rawVal) {
     const v = Math.max(0.01, rawVal);
@@ -2022,13 +2048,125 @@
     return Math.ceil(raw * 10) / 10;
   }
 
+  const ARNOLD_ABS_F_MIN = 3.00, ARNOLD_ABS_F_MAX = 4.60;
+
+  function arnoldBaseSpan() {
+    const baseFMin = arnoldBand === 'all' ? 3.38 : 3.88;
+    const baseFMax = arnoldBand === 'all' ? 4.18 : 4.16;
+    return { baseFMin, baseFMax, baseSpanF: baseFMax - baseFMin };
+  }
+
   function getArnoldRange(snap = false) {
-    const fMin = arnoldBand === 'all' ? 3.38 : 3.88;
-    const fMax = arnoldBand === 'all' ? 4.18 : 4.16;
-    const targetH = computeArnoldHMaxMT(fMin, fMax);
-    if (snap || arnoldHMaxSmooth <= 0) arnoldHMaxSmooth = targetH;
-    else arnoldHMaxSmooth += 0.16 * (targetH - arnoldHMaxSmooth);
-    return { fMin, fMax, hMax: Math.max(0.6, arnoldHMaxSmooth) };
+    const { baseFMin, baseFMax, baseSpanF } = arnoldBaseSpan();
+    let tFMin = baseFMin, tFMax = baseFMax, tHMin = 0, tHMax = computeArnoldHMaxMT(baseFMin, baseFMax);
+    if (arnoldAutoFollow) {
+      const targetFp = (dualTone && arnoldTarget === 2) ? driveFreq2 : driveFreq;
+      const closestM = closestArnoldMode(targetFp);
+      for (let m = 0; m < M; m++) {
+        const amp = cycleAvgModeAmp(m);
+        const fMut = modeMutualNfsShiftGHz(m);
+        const fShift = 2 * (fGhzArr[m] + fMut);
+        const isActive = amp > 0.0025 || m === closestM || Math.abs(fMut) > 0.008;
+        if (!isActive) continue;
+        const tipInst = instantaneousArnoldThresholdMT(m, fShift);
+        const fSpread = Math.min(fShift, Math.abs(fMut) > 0.005 ? 2 * fGhzArr[m] : fShift);
+        const fUpper = Math.max(fShift, Math.abs(fMut) > 0.005 ? 2 * fGhzArr[m] : fShift);
+        if (fSpread - 0.06 < tFMin) tFMin = Math.max(ARNOLD_ABS_F_MIN, fSpread - 0.06);
+        if (fUpper + 0.06 > tFMax) tFMax = Math.min(ARNOLD_ABS_F_MAX, fUpper + 0.06);
+        if (Number.isFinite(tipInst) && tipInst > 0) {
+          tHMax = Math.max(tHMax, Math.ceil(tipInst * 1.35 * 10) / 10);
+        }
+      }
+      if (driveMode === 'parallel' && driveAmp > 0 && driveFreq >= 2.8) {
+        tFMin = Math.min(tFMin, Math.max(ARNOLD_ABS_F_MIN, driveFreq - 0.06));
+        tFMax = Math.max(tFMax, Math.min(ARNOLD_ABS_F_MAX, driveFreq + 0.06));
+        tHMax = Math.max(tHMax, Math.ceil(driveAmp * MU0_MS_MT * 1.18 * 10) / 10);
+      }
+      if (driveMode === 'parallel' && dualTone && driveAmp2 > 0 && driveFreq2 >= 2.8) {
+        tFMin = Math.min(tFMin, Math.max(ARNOLD_ABS_F_MIN, driveFreq2 - 0.06));
+        tFMax = Math.max(tFMax, Math.min(ARNOLD_ABS_F_MAX, driveFreq2 + 0.06));
+        tHMax = Math.max(tHMax, Math.ceil(driveAmp2 * MU0_MS_MT * 1.18 * 10) / 10);
+      }
+      tHMax = Math.max(0.8, computeArnoldHMaxMT(tFMin, tFMax), tHMax);
+      const effZoom = Math.min(1.0, baseSpanF / Math.max(0.12, tFMax - tFMin));
+      arnoldViewZoom = Math.max(1.0, +(1.0 / Math.max(0.5, effZoom)).toFixed(2));
+      if (snap || arnoldHMaxSmooth <= 0) {
+        arnoldFMinSmooth = tFMin; arnoldFMaxSmooth = tFMax;
+        arnoldHMinSmooth = tHMin; arnoldHMaxSmooth = tHMax;
+      } else {
+        arnoldFMinSmooth += 0.16 * (tFMin - arnoldFMinSmooth);
+        arnoldFMaxSmooth += 0.16 * (tFMax - arnoldFMaxSmooth);
+        arnoldHMinSmooth += 0.16 * (tHMin - arnoldHMinSmooth);
+        arnoldHMaxSmooth += 0.16 * (tHMax - arnoldHMaxSmooth);
+      }
+      arnoldCenterF = (arnoldFMinSmooth + arnoldFMaxSmooth) * 0.5;
+      arnoldBaseMT = arnoldHMinSmooth;
+    } else {
+      const z = Math.max(1.0, Math.min(8.0, arnoldViewZoom));
+      const spanF = Math.max(0.08, baseSpanF / z);
+      const halfF = spanF * 0.5;
+      tFMin = Math.max(ARNOLD_ABS_F_MIN, Math.min(ARNOLD_ABS_F_MAX - spanF, arnoldCenterF - halfF));
+      tFMax = Math.min(ARNOLD_ABS_F_MAX, tFMin + spanF);
+      arnoldCenterF = (tFMin + tFMax) * 0.5;
+      const fullH = Math.max(1.2, computeArnoldHMaxMT(tFMin, tFMax));
+      const spanH = Math.max(0.25, fullH / z);
+      const maxHMin = Math.max(0, fullH * 1.4 - spanH);
+      tHMin = Math.max(0, Math.min(maxHMin, arnoldBaseMT));
+      arnoldBaseMT = tHMin;
+      tHMax = tHMin + spanH;
+      arnoldFMinSmooth = tFMin; arnoldFMaxSmooth = tFMax;
+      arnoldHMinSmooth = tHMin; arnoldHMaxSmooth = tHMax;
+    }
+    return {
+      fMin: arnoldFMinSmooth,
+      fMax: Math.max(arnoldFMinSmooth + 0.05, arnoldFMaxSmooth),
+      hMin: Math.max(0, arnoldHMinSmooth),
+      hMax: Math.max(arnoldHMinSmooth + 0.25, arnoldHMaxSmooth)
+    };
+  }
+
+  function arnoldZoomAt(factor, normX = 0.5, normY = 0.5) {
+    const cur = getArnoldRange(true);
+    const nx = Math.max(0, Math.min(1, normX));
+    const ny = Math.max(0, Math.min(1, normY));
+    const anchorF = cur.fMin + nx * (cur.fMax - cur.fMin);
+    const anchorH = cur.hMin + ny * (cur.hMax - cur.hMin);
+    const nextZoom = Math.max(1.0, Math.min(8.0, arnoldViewZoom * factor));
+    const { baseSpanF } = arnoldBaseSpan();
+    const newSpanF = Math.max(0.08, baseSpanF / nextZoom);
+    const newFMin = Math.max(ARNOLD_ABS_F_MIN, Math.min(ARNOLD_ABS_F_MAX - newSpanF, anchorF - nx * newSpanF));
+    arnoldCenterF = newFMin + newSpanF * 0.5;
+    const fullH = Math.max(1.2, computeArnoldHMaxMT(newFMin, newFMin + newSpanF));
+    const newSpanH = Math.max(0.25, fullH / nextZoom);
+    const maxBase = Math.max(0, fullH * 1.4 - newSpanH);
+    arnoldBaseMT = Math.max(0, Math.min(maxBase, anchorH - ny * newSpanH));
+    arnoldViewZoom = nextZoom;
+    arnoldAutoFollow = false;
+    getArnoldRange(true);
+    syncUi();
+  }
+
+  function arnoldPanBy(dFreqGHz, dHMT) {
+    const cur = getArnoldRange(true);
+    const halfF = (cur.fMax - cur.fMin) * 0.5;
+    arnoldCenterF = Math.max(ARNOLD_ABS_F_MIN + halfF, Math.min(ARNOLD_ABS_F_MAX - halfF, (cur.fMin + cur.fMax) * 0.5 + dFreqGHz));
+    const fullH = Math.max(1.2, computeArnoldHMaxMT(cur.fMin, cur.fMax));
+    const spanH = cur.hMax - cur.hMin;
+    const maxBase = Math.max(0, fullH * 1.4 - spanH);
+    arnoldBaseMT = Math.max(0, Math.min(maxBase, cur.hMin + dHMT));
+    arnoldAutoFollow = false;
+    getArnoldRange(true);
+    syncUi();
+  }
+
+  function arnoldResetAuto() {
+    arnoldAutoFollow = true;
+    arnoldViewZoom = 1.0;
+    arnoldBaseMT = 0;
+    const { baseFMin, baseFMax } = arnoldBaseSpan();
+    arnoldCenterF = (baseFMin + baseFMax) * 0.5;
+    getArnoldRange(true);
+    syncUi();
   }
 
   function drawArnoldTongues() {
@@ -2036,14 +2174,15 @@
     const w = arnoldCanvas.width, h = arnoldCanvas.height;
     const pw = Math.max(20, w - ARNOLD_PAD_L - ARNOLD_PAD_R);
     const ph = Math.max(16, h - ARNOLD_PAD_T - ARNOLD_PAD_B);
-    const { fMin, fMax, hMax } = getArnoldRange(false);
+    const { fMin, fMax, hMin, hMax } = getArnoldRange(false);
+    const spanH = Math.max(1e-6, hMax - hMin);
 
     arnoldCtx.clearRect(0, 0, w, h);
     arnoldCtx.fillStyle = 'rgba(8, 16, 30, 0.90)';
     arnoldCtx.fillRect(0, 0, w, h);
 
     const toX = f => ARNOLD_PAD_L + ((f - fMin) / (fMax - fMin)) * pw;
-    const toY = hmt => ARNOLD_PAD_T + ph - (hmt / hMax) * ph;
+    const toY = hmt => ARNOLD_PAD_T + ph - ((hmt - hMin) / spanH) * ph;
 
     // Gridlines & mT / GHz axis ticks so threshold differences are clearly legible
     arnoldCtx.strokeStyle = 'rgba(190,220,255,0.12)';
@@ -2074,9 +2213,9 @@
 
     for (let m = 0; m < M; m++) {
       const f0 = 2 * fGhzArr[m];
-      if (f0 < fMin - 0.14 || f0 > fMax + 0.14) continue;
       const fMut = modeMutualNfsShiftGHz(m); // 0 if 4A is OFF
       const f2Mut = 2 * (fGhzArr[m] + fMut);
+      if (Math.max(f0, f2Mut) < fMin - 0.14 || Math.min(f0, f2Mut) > fMax + 0.14) continue;
       const col = modeColor(m);
       const hThStatic = parametricThresholdMT(m);
       const tipPh = activePumpPhaseAt(f2Mut);
@@ -2092,7 +2231,7 @@
 
       arnoldCtx.save();
       arnoldCtx.beginPath();
-      arnoldCtx.rect(ARNOLD_PAD_L, 0, pw, ARNOLD_PAD_T + ph);
+      arnoldCtx.rect(ARNOLD_PAD_L, ARNOLD_PAD_T, pw, ph);
       arnoldCtx.clip();
 
       // Static unperturbed reference outline (dashed) whenever shifted by 4A or reduced by 4B
@@ -2102,7 +2241,7 @@
         for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 3) {
           const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
           const hb = arnoldThresholdMT(m, fp, 0);
-          if (hb <= hMax * 1.15) {
+          if (hb <= hMax + spanH * 0.15) {
             const yb = Math.max(0, toY(hb));
             if (!refStarted) { arnoldCtx.moveTo(px, yb); refStarted = true; } else arnoldCtx.lineTo(px, yb);
           }
@@ -2118,8 +2257,8 @@
         for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 2) {
           const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
           const hT = instantaneousArnoldThresholdMT(m, fp, activePumpPhaseAt(fp));
-          if (Number.isFinite(hT) && hT <= hMax * 1.12) {
-            const y = Math.max(0, toY(hT));
+          if (Number.isFinite(hT) && hT <= hMax + spanH * 0.15) {
+            const y = Math.max(0, Math.min(ARNOLD_PAD_T + ph + 4, toY(hT)));
             if (!started) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); started = true; } else arnoldCtx.lineTo(px, y);
             lastPx = px;
           } else if (started) { arnoldCtx.lineTo(px, 0); lastPx = px; break; }
@@ -2135,7 +2274,7 @@
       }
 
       // Mark each mode's distinct tip vertex + label key modes cleanly
-      if (Number.isFinite(hThInst) && hThInst <= hMax * 1.05) {
+      if (Number.isFinite(hThInst) && hThInst >= hMin - spanH * 0.05 && hThInst <= hMax + spanH * 0.05) {
         const tipX = toX(f2Mut), tipY = toY(hThInst);
         if (tipX >= ARNOLD_PAD_L && tipX <= ARNOLD_PAD_L + pw) {
           arnoldCtx.globalAlpha = 0.95; arnoldCtx.fillStyle = col;
@@ -2143,7 +2282,7 @@
           const showLbl = m === closestMode || m === 0 || m === 4 || m === 13 || m === 16 || m === 20 || m === 23 || m === 27 || m === 28 || cycleAvgModeAmp(m) > 0.0025;
           if (showLbl && tipX > ARNOLD_PAD_L + 4 && tipX < ARNOLD_PAD_L + pw - 14) {
             arnoldCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
-            const lblY = Math.min(ARNOLD_PAD_T + ph - 2, tipY + (m % 2 === 0 ? 8 : 14));
+            const lblY = Math.min(ARNOLD_PAD_T + ph - 2, Math.max(ARNOLD_PAD_T + 8, tipY + (m % 2 === 0 ? 8 : 14)));
             arnoldCtx.fillText(`m${m}`, tipX - 6, lblY);
           }
         }
@@ -2156,7 +2295,7 @@
     const closestMut = modeMutualNfsShiftGHz(closestMode);
     arnoldCtx.save();
     arnoldCtx.beginPath();
-    arnoldCtx.rect(ARNOLD_PAD_L, 0, pw, ARNOLD_PAD_T + ph);
+    arnoldCtx.rect(ARNOLD_PAD_L, ARNOLD_PAD_T, pw, ph);
     arnoldCtx.clip();
     arnoldCtx.strokeStyle = ssCol; arnoldCtx.globalAlpha = 0.52; arnoldCtx.lineWidth = 1.2; arnoldCtx.beginPath();
     let ssStarted = false;
@@ -2169,20 +2308,23 @@
     arnoldCtx.stroke();
     arnoldCtx.restore();
 
-    // Axis numeric labels (mT on left, GHz on bottom)
+    // Axis numeric labels (mT on left, dynamic GHz on bottom)
     arnoldCtx.fillStyle = 'rgba(195,220,250,0.68)';
     arnoldCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
     arnoldCtx.textBaseline = 'top';
     arnoldCtx.fillText(hMax.toFixed(1), 2, ARNOLD_PAD_T);
     arnoldCtx.textBaseline = 'middle';
-    arnoldCtx.fillText((hMax * 0.5).toFixed(1), 2, ARNOLD_PAD_T + ph * 0.5);
+    arnoldCtx.fillText(((hMin + hMax) * 0.5).toFixed(1), 2, ARNOLD_PAD_T + ph * 0.5);
     arnoldCtx.textBaseline = 'bottom';
-    arnoldCtx.fillText('0mT', 1, ARNOLD_PAD_T + ph);
-    const fTicks = arnoldBand === 'all' ? [3.4, 3.6, 3.8, 4.0] : [3.90, 4.00, 4.10];
-    for (const ft of fTicks) {
+    arnoldCtx.fillText(`${hMin.toFixed(1)}mT`, 1, ARNOLD_PAD_T + ph);
+    const spanF = fMax - fMin;
+    const fStep = spanF > 0.60 ? 0.20 : (spanF > 0.28 ? 0.10 : (spanF > 0.12 ? 0.05 : 0.02));
+    const decimals = fStep >= 0.19 ? 1 : 2;
+    const fTickStart = Math.ceil(fMin / fStep) * fStep;
+    for (let ft = fTickStart; ft <= fMax + 1e-6; ft += fStep) {
       const tx = toX(ft);
       if (tx >= ARNOLD_PAD_L + 4 && tx <= ARNOLD_PAD_L + pw - 16) {
-        arnoldCtx.fillText(ft.toFixed(arnoldBand === 'all' ? 1 : 2) + 'G', tx - 9, h - 1);
+        arnoldCtx.fillText(ft.toFixed(decimals) + 'G', tx - 9, h - 1);
       }
     }
 
@@ -2314,8 +2456,8 @@
     const xPx = ((clientX - rect.left) / rect.width) * w;
     const yPx = ((clientY - rect.top) / rect.height) * h;
     const nx = Math.max(0, Math.min(1, (xPx - ARNOLD_PAD_L) / pw));
-    const { fMin, fMax, hMax } = getArnoldRange(true);
-    const hpMT = Math.max(0, Math.min(hMax, ((ARNOLD_PAD_T + ph - yPx) / ph) * hMax));
+    const { fMin, fMax, hMin, hMax } = getArnoldRange(true);
+    const hpMT = Math.max(hMin, Math.min(hMax, hMin + ((ARNOLD_PAD_T + ph - yPx) / ph) * (hMax - hMin)));
     const freq = fMin + nx * (fMax - fMin);
     driveMode = 'parallel';
     if (forceT2 || arnoldTarget === 2) { dualTone = true; driveFreq2 = freq; driveAmp2 = hpMT / MU0_MS_MT; }
@@ -2324,8 +2466,14 @@
     if (maxA < 0.002) seedSpins(0.004);
     syncUi();
   }
-  let arnoldDrag = false;
+  let arnoldDrag = false, arnoldPanDrag = null, arnoldGestureStartZoom = 1;
   arnoldCanvas.addEventListener('pointerdown', e => {
+    if (arnoldPanMode || e.button === 1 || e.altKey) {
+      arnoldPanDrag = { x: e.clientX, y: e.clientY };
+      arnoldCanvas.classList.add('panning');
+      e.preventDefault();
+      return;
+    }
     arnoldDrag = true;
     selectArnoldAt(e.clientX, e.clientY, e.shiftKey);
     const isT2 = e.shiftKey || arnoldTarget === 2;
@@ -2333,8 +2481,48 @@
     const hp = (isT2 ? driveAmp2 : driveAmp) * MU0_MS_MT;
     announcePress(`Arnold Map (Tone ${isT2 ? 2 : 1})`, `Set Tone ${isT2 ? 2 : 1} parallel pump directly to f_p = ${fp.toFixed(4)} GHz, μ₀h_p = ${hp.toFixed(2)} mT on the instability diagram.`);
   });
-  arnoldCanvas.addEventListener('pointermove', e => { if (arnoldDrag) selectArnoldAt(e.clientX, e.clientY, e.shiftKey); });
-  window.addEventListener('pointerup', () => { arnoldDrag = false; });
+  arnoldCanvas.addEventListener('pointermove', e => {
+    if (arnoldPanDrag) {
+      const rect = arnoldCanvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        const { fMin, fMax, hMin, hMax } = getArnoldRange(true);
+        const dx = e.clientX - arnoldPanDrag.x, dy = e.clientY - arnoldPanDrag.y;
+        arnoldPanBy(-(dx / rect.width) * (fMax - fMin), (dy / rect.height) * (hMax - hMin));
+        arnoldPanDrag = { x: e.clientX, y: e.clientY };
+        drawArnoldTongues();
+      }
+      return;
+    }
+    if (arnoldDrag) selectArnoldAt(e.clientX, e.clientY, e.shiftKey);
+  });
+  window.addEventListener('pointerup', () => {
+    arnoldDrag = false;
+    if (arnoldPanDrag) { arnoldPanDrag = null; arnoldCanvas.classList.remove('panning'); }
+  });
+  arnoldCanvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = arnoldCanvas.getBoundingClientRect();
+    const nx = rect.width > 0 ? Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) : 0.5;
+    const ny = rect.height > 0 ? Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height)) : 0.5;
+    if (e.ctrlKey || e.metaKey) {
+      arnoldZoomAt(Math.exp(-e.deltaY * 0.008), nx, ny);
+    } else {
+      const { fMin, fMax, hMin, hMax } = getArnoldRange(true);
+      const w = Math.max(100, rect.width || arnoldCanvas.width);
+      const h = Math.max(60, rect.height || arnoldCanvas.height);
+      const rawDx = e.deltaX !== 0 ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+      const rawDy = (e.shiftKey && e.deltaX === 0) ? 0 : e.deltaY;
+      arnoldPanBy((rawDx / w) * (fMax - fMin) * 0.85, -(rawDy / h) * (hMax - hMin) * 0.85);
+    }
+    drawArnoldTongues();
+  }, { passive: false });
+  arnoldCanvas.addEventListener('gesturestart', e => { e.preventDefault(); arnoldGestureStartZoom = arnoldViewZoom; }, { passive: false });
+  arnoldCanvas.addEventListener('gesturechange', e => {
+    e.preventDefault();
+    const targetZ = Math.max(1.0, Math.min(8.0, arnoldGestureStartZoom * (e.scale || 1)));
+    arnoldZoomAt(targetZ / Math.max(1e-6, arnoldViewZoom), 0.5, 0.5);
+    drawArnoldTongues();
+  }, { passive: false });
 
   function drawScene() {
     reconstructSpatialSpins();
@@ -2518,6 +2706,20 @@
     if (tBtn) { tBtn.textContent = `TAP: T${arnoldTarget}`; tBtn.classList.toggle('t2', arnoldTarget === 2); }
     const bBtn = document.getElementById('arnoldBandBtn');
     if (bBtn) { bBtn.textContent = arnoldBand === 'all' ? 'ALL 29' : 'BULK'; bBtn.classList.toggle('all', arnoldBand === 'all'); }
+    const autoBtn = document.getElementById('arnoldAutoBtn');
+    if (autoBtn) autoBtn.classList.toggle('active', arnoldAutoFollow);
+    const panBtn = document.getElementById('arnoldPanBtn');
+    if (panBtn) panBtn.classList.toggle('active', arnoldPanMode);
+    if (arnoldCanvas && arnoldCanvas.classList) arnoldCanvas.classList.toggle('panMode', arnoldPanMode);
+    const slAZ = document.getElementById('slArnoldZoom'), outAZ = document.getElementById('outArnoldZoom');
+    if (slAZ) slAZ.value = arnoldViewZoom.toFixed(2);
+    if (outAZ) outAZ.textContent = `${arnoldViewZoom.toFixed(1)}×`;
+    const slAF = document.getElementById('slArnoldPanF'), outAF = document.getElementById('outArnoldPanF');
+    if (slAF) slAF.value = arnoldCenterF.toFixed(3);
+    if (outAF) outAF.textContent = `${arnoldCenterF.toFixed(2)}G`;
+    const slAH = document.getElementById('slArnoldPanH'), outAH = document.getElementById('outArnoldPanH');
+    if (slAH) slAH.value = arnoldBaseMT.toFixed(2);
+    if (outAH) outAH.textContent = `${arnoldBaseMT.toFixed(1)}mT`;
     const sbBtn = document.getElementById('specBandBtn');
     if (sbBtn) { sbBtn.textContent = specBand === 'modes' ? '1.5–2.3G' : '0–6.5G'; sbBtn.classList.toggle('modes', specBand === 'modes'); }
     document.getElementById('slDamp').value = damping;
@@ -3356,12 +3558,53 @@
   const arnoldBandBtnEl = document.getElementById('arnoldBandBtn');
   if (arnoldBandBtnEl) arnoldBandBtnEl.addEventListener('click', () => {
     arnoldBand = arnoldBand === 'all' ? 'bulk' : 'all';
-    getArnoldRange(true);
-    syncUi();
+    arnoldResetAuto();
     drawScene();
     announcePress(`Arnold: ${arnoldBand === 'all' ? 'ALL 29' : 'BULK'}`, arnoldBand === 'all'
       ? 'Showing all 29 modes m0..m28 (3.38–4.18 GHz) with dynamic mT ceiling so edge & bulk thresholds stay distinct.'
       : 'Zoomed into bulk spin-wave modes m10..m28 (3.88–4.16 GHz).');
+  });
+  const arnoldAutoBtnEl = document.getElementById('arnoldAutoBtn');
+  if (arnoldAutoBtnEl) arnoldAutoBtnEl.addEventListener('click', () => {
+    arnoldAutoFollow = !arnoldAutoFollow;
+    if (arnoldAutoFollow) { arnoldViewZoom = 1.0; arnoldBaseMT = 0; getArnoldRange(true); }
+    syncUi(); drawArnoldTongues();
+    announcePress(`Arnold AUTO: ${arnoldAutoFollow ? 'ON' : 'OFF'}`, arnoldAutoFollow
+      ? 'Auto-following shifted Arnold tongues & pump crosshairs so none leave the frame.'
+      : 'Locked manual Arnold viewport — use sliders or trackpad pinch/scroll to explore.');
+  });
+  const arnoldPanBtnEl = document.getElementById('arnoldPanBtn');
+  if (arnoldPanBtnEl) arnoldPanBtnEl.addEventListener('click', () => {
+    arnoldPanMode = !arnoldPanMode;
+    syncUi();
+    announcePress(`Arnold PAN: ${arnoldPanMode ? 'ON' : 'OFF'}`, arnoldPanMode
+      ? 'Canvas drag now slides the Arnold map horizontally & vertically (click again to return to tap-to-pump).'
+      : 'Canvas click/drag returned to tap-to-pump mode (Alt+drag or two-finger swipe still pans!).');
+  });
+  const arnoldFitBtnEl = document.getElementById('arnoldFitBtn');
+  if (arnoldFitBtnEl) arnoldFitBtnEl.addEventListener('click', () => {
+    arnoldResetAuto(); drawArnoldTongues();
+    announcePress('Arnold FIT (1×)', 'Reset Zoom to 1.0×, h₀ = 0 mT, and re-centered all visible Arnold tongues.');
+  });
+  const slArnoldZoomEl = document.getElementById('slArnoldZoom');
+  if (slArnoldZoomEl) slArnoldZoomEl.addEventListener('input', e => {
+    const newZ = Math.max(1.0, Math.min(8.0, +e.target.value));
+    arnoldZoomAt(newZ / Math.max(1e-6, arnoldViewZoom), 0.5, 0.5);
+    drawArnoldTongues();
+  });
+  const slArnoldPanFEl = document.getElementById('slArnoldPanF');
+  if (slArnoldPanFEl) slArnoldPanFEl.addEventListener('input', e => {
+    const cur = getArnoldRange(true);
+    const halfF = (cur.fMax - cur.fMin) * 0.5;
+    arnoldAutoFollow = false;
+    arnoldCenterF = Math.max(ARNOLD_ABS_F_MIN + halfF, Math.min(ARNOLD_ABS_F_MAX - halfF, +e.target.value));
+    getArnoldRange(true); syncUi(); drawArnoldTongues();
+  });
+  const slArnoldPanHEl = document.getElementById('slArnoldPanH');
+  if (slArnoldPanHEl) slArnoldPanHEl.addEventListener('input', e => {
+    arnoldAutoFollow = false;
+    arnoldBaseMT = Math.max(0, +e.target.value);
+    getArnoldRange(true); syncUi(); drawArnoldTongues();
   });
   const specBandBtnEl = document.getElementById('specBandBtn');
   if (specBandBtnEl) specBandBtnEl.addEventListener('click', () => {

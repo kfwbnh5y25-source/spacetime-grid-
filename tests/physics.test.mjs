@@ -417,7 +417,7 @@ function loadSpinWavesContext() {
     tukeyRamp, tone1EnvAt, tone2EnvAt,
     seedSpins, exciteEigenmode, pluckAt, stepLlg, updateSpectrum,
     modeFreqGHz, modeGammaGHz, modeGamma, parametricThreshold, parametricThresholdMT, arnoldThreshold,
-    crossPump4BGHz, instantaneousArnoldThresholdMT, computeArnoldHMaxMT, getArnoldRange, phase1Deg, relPhaseDeg,
+    crossPump4BGHz, instantaneousArnoldThresholdMT, computeArnoldHMaxMT, getArnoldRange, arnoldZoomAt, arnoldPanBy, arnoldResetAuto, phase1Deg, relPhaseDeg,
     cycleAvgModeAmp, modeRmsAmp,
     selfNfsCoeff, mutualNfsCoeff, mutualNfsCoeffGHz, modeNfsShiftGHz, modeMutualNfsShiftGHz,
     steadyStateAmp, analyzeTwoMode, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
@@ -447,6 +447,11 @@ function loadSpinWavesContext() {
       if ('thermalSeed' in patch) reseedRng(patch.thermalSeed);
       if ('arnoldTarget' in patch) arnoldTarget = patch.arnoldTarget;
       if ('arnoldBand' in patch) arnoldBand = patch.arnoldBand;
+      if ('arnoldAutoFollow' in patch) arnoldAutoFollow = patch.arnoldAutoFollow;
+      if ('arnoldPanMode' in patch) arnoldPanMode = patch.arnoldPanMode;
+      if ('arnoldViewZoom' in patch) arnoldViewZoom = patch.arnoldViewZoom;
+      if ('arnoldCenterF' in patch) arnoldCenterF = patch.arnoldCenterF;
+      if ('arnoldBaseMT' in patch) arnoldBaseMT = patch.arnoldBaseMT;
       if ('specBand' in patch) specBand = patch.specBand;
       if ('playbackSpeed' in patch) playbackSpeed = patch.playbackSpeed;
       if ('simTime' in patch) { simTime = patch.simTime; resetModeHistory(); recordModeSample(); }
@@ -456,6 +461,7 @@ function loadSpinWavesContext() {
         driveMode, driveFreq, driveAmp, damping, simTime, dualTone, driveFreq2, driveAmp2,
         tone2DelayNs, tone2WaitSS, tone2Released, tone2ReleaseT,
         drivePhase1, drivePhase2, temperatureK, playbackSpeed, arnoldBand, specBand,
+        arnoldAutoFollow, arnoldPanMode, arnoldViewZoom, arnoldCenterF, arnoldBaseMT,
         lastSpecPeakGHz, isRwa: isRwaFast()
       };
     },
@@ -1035,6 +1041,57 @@ test('U. Unmodified 4B prior-excitation downward Arnold tongue & phase dependenc
   }
   spin.terms.t4B = false;
 });
+
+test('V. Arnold Tongues H/V/Zoom sliders, auto-follow frame lock & trackpad zoom/pan', () => {
+  spin.terms.t4A = true;
+  spin.setState({ arnoldBand: 'all', driveMode: 'parallel', temperatureK: 0 });
+  spin.aRe.fill(0); spin.aIm.fill(0);
+  spin.arnoldResetAuto();
+  const baseRange = spin.getArnoldRange(true);
+  assert.ok(Math.abs(baseRange.fMin - 3.38) < 1e-6 && Math.abs(baseRange.fMax - 4.18) < 1e-6 && baseRange.hMin === 0,
+    `Expected default ALL 29 range 3.38..4.18 GHz, got ${baseRange.fMin}..${baseRange.fMax}`);
+
+  // 1. Auto-follow keeps large 4A downward-shifted tongue (e.g. m27 strong softening) and high pump crosshair in frame
+  spin.aRe[27] = 0.22;
+  const f27Shifted = 2 * (spin.modeFreqGHz(27) + spin.modeMutualNfsShiftGHz(27));
+  spin.setState({ driveFreq: f27Shifted, driveAmp: 2.2 / spin.MU0_MS_MT });
+  const autoRange = spin.getArnoldRange(true);
+  assert.ok(f27Shifted >= autoRange.fMin && f27Shifted <= autoRange.fMax,
+    `Auto-follow must keep shifted tongue ${f27Shifted.toFixed(4)} GHz in frame [${autoRange.fMin.toFixed(4)}, ${autoRange.fMax.toFixed(4)}]`);
+  assert.ok(autoRange.hMax >= 2.2, `Auto-follow hMax (${autoRange.hMax.toFixed(2)}) must cover 2.2 mT drive`);
+
+  // 2. Cursor-anchored zoom narrows spans and disables auto-follow
+  spin.aRe.fill(0);
+  spin.setState({ driveFreq: 3.95, driveAmp: 0.6 / spin.MU0_MS_MT });
+  spin.arnoldResetAuto();
+  const r0 = spin.getArnoldRange(true);
+  const nx = 0.72, ny = 0.25;
+  const anchorF = r0.fMin + nx * (r0.fMax - r0.fMin);
+  const anchorH = r0.hMin + ny * (r0.hMax - r0.hMin);
+  spin.arnoldZoomAt(2.5, nx, ny);
+  const rZ = spin.getArnoldRange(true);
+  assert.equal(spin.getState().arnoldAutoFollow, false);
+  assert.ok(Math.abs((rZ.fMax - rZ.fMin) - (r0.fMax - r0.fMin) / 2.5) < 0.01,
+    `Expected frequency span shrunk ~2.5x: ${(rZ.fMax - rZ.fMin).toFixed(4)} vs ${(r0.fMax - r0.fMin).toFixed(4)}`);
+  const anchorF2 = rZ.fMin + nx * (rZ.fMax - rZ.fMin);
+  const anchorH2 = rZ.hMin + ny * (rZ.hMax - rZ.hMin);
+  assert.ok(Math.abs(anchorF2 - anchorF) < 0.02 && Math.abs(anchorH2 - anchorH) < 0.05,
+    `Cursor anchor must hold under zoom: F ${anchorF.toFixed(3)}->${anchorF2.toFixed(3)}, H ${anchorH.toFixed(3)}->${anchorH2.toFixed(3)}`);
+
+  // 3. Horizontal & vertical panning move both windows smoothly and stay clamped
+  spin.arnoldPanBy(-0.14, 0.35);
+  const rP = spin.getArnoldRange(true);
+  assert.ok(rP.fMin < rZ.fMin - 0.08 && rP.hMin > rZ.hMin + 0.15,
+    `Pan must move both H & V bounds: F ${rZ.fMin.toFixed(3)}->${rP.fMin.toFixed(3)}, hMin ${rZ.hMin.toFixed(2)}->${rP.hMin.toFixed(2)}`);
+
+  // 4. Reset restores AUTO + hMin = 0 + Zoom = 1
+  spin.arnoldResetAuto();
+  const stR = spin.getState();
+  const rReset = spin.getArnoldRange(true);
+  assert.ok(stR.arnoldAutoFollow && Math.abs(stR.arnoldViewZoom - 1) < 1e-6 && rReset.hMin === 0,
+    `Reset must restore AUTO & Zoom=1: ${JSON.stringify(stR)}`);
+});
+
 
 
 
