@@ -390,6 +390,7 @@ function loadSpinWavesContext() {
     modeFreqGHz, parametricThreshold, arnoldThreshold, cycleAvgModeAmp, besselJ,
     selfNfsCoeff, mutualNfsCoeff, llgMutualNfsCoeff, modeNfsShiftGHz, modeMutualNfsShiftGHz,
     modeGamma, steadyStateAmp, steadyState2Mode, fastForwardSteadyState,
+    mutualPumpOverlap, mutualPumpThreshold, mutualArnoldThreshold,
     setNikCustom(i, j, val) { nikCustom[i][j] = val; refreshHasCustomNik(); },
     resetNikCustom() { for (const r of nikCustom) r.fill(null); refreshHasCustomNik(); },
     setState(patch) {
@@ -401,6 +402,8 @@ function loadSpinWavesContext() {
       if ('damping' in patch) damping = patch.damping;
       if ('chi3m' in patch) chi3m = patch.chi3m;
       if ('chi4m' in patch) chi4m = patch.chi4m;
+      if ('chi4nr' in patch) chi4nr = patch.chi4nr;
+      if ('mutualPump' in patch) mutualPump = patch.mutualPump;
       if ('dualTone' in patch) dualTone = patch.dualTone;
       if ('driveFreq2' in patch) driveFreq2 = patch.driveFreq2;
       if ('driveAmp2' in patch) driveAmp2 = patch.driveAmp2;
@@ -409,7 +412,7 @@ function loadSpinWavesContext() {
       if ('arnoldTarget' in patch) arnoldTarget = patch.arnoldTarget;
       if ('simTime' in patch) simTime = patch.simTime;
     },
-    getState() { return { geometryMode, driveMode, driveFreq, driveAmp, biasH0, damping, simTime, dualTone, driveFreq2, driveAmp2, tone2DelayNs }; },
+    getState() { return { geometryMode, driveMode, driveFreq, driveAmp, biasH0, damping, chi3m, chi4m, chi4nr, mutualPump, simTime, dualTone, driveFreq2, driveAmp2, tone2DelayNs }; },
     meanTransverseAmp() {
       let sum = 0, cnt = 0;
       for (let i = 0; i < N; i++) {
@@ -681,3 +684,56 @@ test("O. Spin-wave Stage 1: Mode 5 seed, Fast-Fwd to SS, custom n_ij matrix, mut
   const [s3, s5] = spin.steadyState2Mode(3, 5, 2 * f3 + 0.06, 1.45 * h3, 2 * f5 + 0.06, 1.45 * h5);
   assert.ok(s3 === 0 && s5 > 0.15, `Pair (3,5) should show Mode 5 suppressing Mode 3: s3=${s3.toFixed(3)}, s5=${s5.toFixed(3)}`);
 });
+
+test('P. Spin-wave Stage 2: mutual sum-frequency parametric pumping (f_i+f_j) & non-resonant 4-magnon coupling (chi4nr)', () => {
+  // 1. Mutual sum-frequency Arnold threshold & parametric instability at f_0 + f_1
+  spin.setState({
+    geometryMode: 'disk', driveMode: 'parallel', biasH0: 0.29, damping: 0.030,
+    chi3m: 0.0, chi4m: -0.40, chi4nr: 0.0, mutualPump: 0.55,
+    dualTone: false, driveAmp2: 0, tone2DelayNs: 0
+  });
+  spin.buildMaskAndModes();
+  const fSum01 = spin.modeFreqGHz(0) + spin.modeFreqGHz(1);
+  const hThMut = spin.mutualPumpThreshold(0, 1);
+  assert.ok(Number.isFinite(hThMut) && hThMut > 0.05 && hThMut < 0.50, `Expected finite mutualPumpThreshold(0,1), got ${hThMut}`);
+  assert.ok(Math.abs(spin.mutualArnoldThreshold(0, 1, fSum01) - hThMut) < 1e-6, 'Mutual Arnold tip must equal mutualPumpThreshold');
+  assert.ok(spin.mutualArnoldThreshold(0, 1, fSum01 + 0.5) > hThMut * 1.4, 'Detuned mutual Arnold boundary must rise');
+
+  // Below mutual threshold: both modes decay
+  spin.setState({ driveFreq: fSum01, driveAmp: 0.65 * hThMut, simTime: 0 });
+  spin.seedSpins(0.03);
+  for (let s = 0; s < 2500; s++) spin.stepLlg(0.012);
+  const sub0 = spin.cycleAvgModeAmp(0), sub1 = spin.cycleAvgModeAmp(1);
+  assert.ok(sub0 < 0.025 && sub1 < 0.030, `Below mutual h_th, modes 0+1 must stay damped: (${sub0.toFixed(4)}, ${sub1.toFixed(4)})`);
+
+  // Above mutual threshold at f_0 + f_1: both modes amplify simultaneously
+  spin.setState({ driveFreq: fSum01, driveAmp: 1.55 * hThMut, simTime: 0 });
+  spin.seedSpins(0.03);
+  for (let s = 0; s < 4500; s++) spin.stepLlg(0.012);
+  const sup0 = spin.cycleAvgModeAmp(0), sup1 = spin.cycleAvgModeAmp(1);
+  assert.ok(sup0 > 0.15 && sup1 > 0.12, `Above mutual h_th at f_0+f_1, both Mode 0 and Mode 1 must amplify: (${sup0.toFixed(4)}, ${sup1.toFixed(4)})`);
+
+  // 2. Non-resonant 4-magnon coupling (chi4nr): norm conservation + non-RWA cross-mode excitation
+  const f0 = spin.modeFreqGHz(0);
+  spin.setState({ simTime: 0 });
+  spin.exciteEigenmode(0);
+  spin.setState({ driveMode: 'transverse', driveFreq: f0, driveAmp: 0.08, damping: 0.025, chi3m: 0.0, chi4m: 0.0, mutualPump: 0.0, chi4nr: 0.0 });
+  for (let s = 0; s < 1500; s++) spin.stepLlg(0.012);
+  const base1 = spin.cycleAvgModeAmp(1), base2 = spin.cycleAvgModeAmp(2);
+  assert.ok(base1 < 1e-4 && base2 < 1e-4, `Without chi4nr, symmetric Mode 0 drive must not excite modes 1,2: (${base1.toExponential(2)}, ${base2.toExponential(2)})`);
+
+  spin.setState({ simTime: 0 });
+  spin.exciteEigenmode(0);
+  spin.setState({ driveMode: 'transverse', driveFreq: f0, driveAmp: 0.08, damping: 0.025, chi3m: 0.0, chi4m: 0.0, mutualPump: 0.0, chi4nr: 0.45 });
+  for (let s = 0; s < 1500; s++) spin.stepLlg(0.012);
+  const nr1 = spin.cycleAvgModeAmp(1), nr2 = spin.cycleAvgModeAmp(2);
+  assert.ok(nr1 > 0.05 && nr2 > 0.03, `Non-resonant 4M (chi4nr=0.45) should scatter into non-RWA modes 1,2: (${nr1.toFixed(4)}, ${nr2.toFixed(4)})`);
+
+  for (let i = 0; i < spin.N; i++) {
+    if (!spin.activeMask[i]) continue;
+    const len = Math.hypot(spin.mx[i], spin.my[i], spin.mz[i]);
+    assert.ok(Math.abs(len - 1) < 1e-5, `Spin ${i} norm drifted under chi4nr/mutualPump to ${len}`);
+  }
+  spin.setState({ chi4nr: 0.0, mutualPump: 0.0 });
+});
+

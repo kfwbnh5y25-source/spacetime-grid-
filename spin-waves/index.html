@@ -135,6 +135,7 @@
       <button class="btn active" id="presetParam" type="button">Parametric 2f_k</button>
       <button class="btn" id="presetSub" type="button">Below Thresh</button>
       <button class="btn" id="presetDirect" type="button">Direct RF</button>
+      <button class="btn" id="presetMutual" type="button" title="Drive mutual sum-frequency instability f_0+f_1 with non-resonant 4M">Mutual fᵢ+fⱼ</button>
       <button class="btn" id="btnZeroDrive" type="button">Zero Drive</button>
     </div>
     <div class="sectionLabel">Launch / Inspect Eigenmode (n,m)</div>
@@ -201,6 +202,14 @@
     <label class="sliderRow">
       <span>4-Magnon Kerr NFS χ₄</span><output id="outChi4">0.00</output>
       <input id="slChi4" type="range" min="-1.00" max="1.00" step="0.05" value="0.00">
+    </label>
+    <label class="sliderRow">
+      <span>Non-Resonant 4M χ₄,nr</span><output id="outChi4Nr">0.00</output>
+      <input id="slChi4Nr" type="range" min="0.00" max="1.00" step="0.05" value="0.00">
+    </label>
+    <label class="sliderRow">
+      <span>Mutual Pump Grad μ_ij</span><output id="outMutPump">0.00</output>
+      <input id="slMutPump" type="range" min="0.00" max="0.80" step="0.05" value="0.00">
     </label>
     <div class="btnRow">
       <button class="btn" id="btnPause" type="button">Pause</button>
@@ -292,6 +301,8 @@
   let damping = 0.040;
   let chi3m = 0.16; // 3-magnon cubic dipolar coupling
   let chi4m = 0.0; // 4-magnon extra Kerr parameter (0 = pure physical LLG softening)
+  let chi4nr = 0.0; // Non-resonant 4-magnon terms omitted by d'Aquino RWA (3<->1, c_i^2 c_j*^2, FWM)
+  let mutualPump = 0.0; // Spatial pump gradient coupling mutual sum-frequency pairs f_i + f_j
   let paused = false;
   let simTime = 0;
   let hasCustomNik = false;
@@ -309,6 +320,8 @@
   const modeTemplates = MODE_SPECS.map(() => new Float32Array(N));
   const modeAmps = new Float32Array(MODE_SPECS.length);
   const modeOverlap = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
+  const pumpGradProfile = new Float32Array(N);
+  const mutualPumpOverlap = Array.from({ length: MODE_SPECS.length }, () => new Float32Array(MODE_SPECS.length));
 
   function besselJ(n, x) {
     let sum = 0, factK = 1, factNK = 1;
@@ -366,12 +379,34 @@
     }
     let activeCount = 0;
     for (let i = 0; i < N; i++) if (activeMask[i]) activeCount++;
+    // Build zero-mean, unit-RMS spatial pump asymmetry profile for mutual pumping (f_p = f_i + f_j)
+    let pMean = 0;
+    for (let y = 0; y < NY; y++) {
+      for (let x = 0; x < NX; x++) {
+        const i = y * NX + x;
+        if (!activeMask[i]) { pumpGradProfile[i] = 0; continue; }
+        const ux = (x - cx) / R, uy = (y - cy) / R, rr = ux * ux + uy * uy;
+        const val = ux + 0.7 * uy + 0.85 * (ux * ux - uy * uy) + 0.85 * (2 * rr - 1);
+        pumpGradProfile[i] = val;
+        pMean += val;
+      }
+    }
+    pMean /= Math.max(1, activeCount);
+    let pSq = 0;
+    for (let i = 0; i < N; i++) if (activeMask[i]) { pumpGradProfile[i] -= pMean; pSq += pumpGradProfile[i] * pumpGradProfile[i]; }
+    const pInv = 1 / Math.sqrt(Math.max(1e-8, pSq / Math.max(1, activeCount)));
+    for (let i = 0; i < N; i++) pumpGradProfile[i] *= pInv;
+
     for (let a = 0; a < MODE_SPECS.length; a++) {
       for (let b = a; b < MODE_SPECS.length; b++) {
-        let sum4 = 0;
+        let sum4 = 0, sumGrad = 0;
         const ta = modeTemplates[a], tb = modeTemplates[b];
-        for (let i = 0; i < N; i++) if (activeMask[i]) sum4 += ta[i] * ta[i] * tb[i] * tb[i];
+        for (let i = 0; i < N; i++) if (activeMask[i]) {
+          sum4 += ta[i] * ta[i] * tb[i] * tb[i];
+          sumGrad += ta[i] * tb[i] * pumpGradProfile[i];
+        }
         modeOverlap[a][b] = modeOverlap[b][a] = activeCount * sum4;
+        mutualPumpOverlap[a][b] = mutualPumpOverlap[b][a] = sumGrad;
       }
     }
     const barsEl = document.getElementById('modeBars');
@@ -451,6 +486,7 @@
     // 1M: direct transverse RF (y); 2M: parallel parametric pumping (x)
     const hxExt = biasH0 + (driveMode === 'parallel' ? driveVal : 0);
     const hyExt = driveMode === 'transverse' ? driveVal : 0;
+    const mutScale = (driveMode === 'parallel' && mutualPump !== 0) ? driveVal * mutualPump : 0;
     const invNorm = 1 / (1 + damping * damping);
 
     let dHMode = null, activeCntCustom = 1;
@@ -492,11 +528,18 @@
           }
         }
 
-        // 1M linear + 2M pump + 3M cubic dipolar (E_3m = -chi3m*my*mz^2) + 4M Kerr NFS (E_4m = -0.25*chi4m*m_perp^4)
+        // 1M linear + 2M pump (uniform + mutual spatial gradient) + 3M cubic dipolar + 4M Kerr NFS + non-resonant 4M (3<->1, c_i^2 c_j*^2)
         const mPerp2 = myi * myi + mzi * mzi;
-        const hx = hxExt + customHx + J_EX * lx;
-        const hy = hyExt + J_EX * ly + chi3m * mzi * mzi + chi4m * mPerp2 * myi;
-        const hz = -DEMAG_NZ * mzi + J_EX * lz + 2 * chi3m * myi * mzi + chi4m * mPerp2 * mzi;
+        let nrY = 0, nrZ = 0;
+        if (chi4nr !== 0) {
+          const nrW = chi4nr * (1 + 0.5 * pumpGradProfile[i]);
+          const my2 = myi * myi;
+          nrY = nrW * (my2 * myi + 1.5 * my2 * mzi);
+          nrZ = nrW * (-mzi * mzi * mzi + 0.5 * my2 * myi);
+        }
+        const hx = hxExt + mutScale * pumpGradProfile[i] + customHx + J_EX * lx;
+        const hy = hyExt + J_EX * ly + chi3m * mzi * mzi + chi4m * mPerp2 * myi + nrY;
+        const hz = -DEMAG_NZ * mzi + J_EX * lz + 2 * chi3m * myi * mzi + chi4m * mPerp2 * mzi + nrZ;
 
         const cx = myi * hz - mzi * hy;
         const cy = mzi * hx - mxi * hz;
@@ -581,23 +624,21 @@
     return Math.sqrt(sum / Math.max(1, cnt));
   }
 
-  function modeGamma(mIdx = 0) {
+  function modeK2(mIdx = 0) {
     const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
     const R = NX * 0.45;
-    const k2 = geometryMode === 'disk'
+    return geometryMode === 'disk'
       ? (spec.alpha / R) * (spec.alpha / R)
       : Math.pow((spec.nx * Math.PI) / NX, 2) + Math.pow((spec.ny * Math.PI) / NY, 2);
-    const hEff = biasH0 + J_EX * k2;
+  }
+
+  function modeGamma(mIdx = 0) {
+    const hEff = biasH0 + J_EX * modeK2(mIdx);
     return damping * (hEff + 0.5 * DEMAG_NZ);
   }
 
   function parametricThreshold(mIdx = 0) {
-    const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
-    const R = NX * 0.45;
-    const k2 = geometryMode === 'disk'
-      ? (spec.alpha / R) * (spec.alpha / R)
-      : Math.pow((spec.nx * Math.PI) / NX, 2) + Math.pow((spec.ny * Math.PI) / NY, 2);
-    const hEff = biasH0 + J_EX * k2;
+    const hEff = biasH0 + J_EX * modeK2(mIdx);
     const omegaK = Math.sqrt(hEff * (hEff + DEMAG_NZ));
     return Math.max(0.005, (4 * damping * omegaK * (hEff + 0.5 * DEMAG_NZ)) / DEMAG_NZ);
   }
@@ -607,6 +648,28 @@
     const delta = 0.5 * (fPumpGHz - 2 * (modeFreqGHz(mIdx) + fShiftGHz)) * FREQ_TO_RAD;
     const gamma = Math.max(1e-5, modeGamma(mIdx));
     return hTh * Math.hypot(1, delta / gamma);
+  }
+
+  function mutualPumpThreshold(i, j) {
+    const sEff = Math.abs(mutualPumpOverlap[i][j]) * Math.abs(mutualPump);
+    if (sEff < 1e-6) return Infinity;
+    const hi = biasH0 + J_EX * modeK2(i);
+    const hj = biasH0 + J_EX * modeK2(j);
+    const epsI = Math.sqrt(hi / (hi + DEMAG_NZ));
+    const epsJ = Math.sqrt(hj / (hj + DEMAG_NZ));
+    const gi = Math.max(1e-5, damping * (hi + 0.5 * DEMAG_NZ));
+    const gj = Math.max(1e-5, damping * (hj + 0.5 * DEMAG_NZ));
+    const denom = sEff * Math.max(1e-6, 1 - epsI * epsJ);
+    return Math.max(0.005, (4 * Math.sqrt(gi * gj) * Math.sqrt(epsI * epsJ)) / denom);
+  }
+
+  function mutualArnoldThreshold(i, j, fPumpGHz, fShiftSumGHz = 0) {
+    const hTh = mutualPumpThreshold(i, j);
+    if (!Number.isFinite(hTh)) return Infinity;
+    const gi = Math.max(1e-5, modeGamma(i));
+    const gj = Math.max(1e-5, modeGamma(j));
+    const deltaSum = (fPumpGHz - (modeFreqGHz(i) + modeFreqGHz(j) + fShiftSumGHz)) * FREQ_TO_RAD;
+    return hTh * Math.hypot(1, deltaSum / (gi + gj));
   }
 
   function pluckAt(clientX, clientY) {
@@ -1113,6 +1176,59 @@
       arnoldCtx.restore();
     }
 
+    // Sum-frequency mutual parametric Arnold tongues (f_p = f_i + f_j + Δf_i + Δf_j) when μ_ij > 0
+    let closestMutPair = null, bestMutDist = 1e9;
+    if (Math.abs(mutualPump) > 0.01) {
+      const MUT_COLOR = '#f472b6';
+      for (let i = 0; i < MODE_SPECS.length; i++) {
+        for (let j = i + 1; j < MODE_SPECS.length; j++) {
+          const hThMut = mutualPumpThreshold(i, j);
+          if (!Number.isFinite(hThMut) || hThMut > ARNOLD_H_MAX * 1.15) continue;
+          const fShiftSum = modeNfsShiftGHz(i) + modeNfsShiftGHz(j);
+          const fSum = modeFreqGHz(i) + modeFreqGHz(j) + fShiftSum;
+          const dMut = Math.abs(targetFp - fSum);
+          if (dMut < bestMutDist) { bestMutDist = dMut; closestMutPair = [i, j, fShiftSum, hThMut]; }
+          if (fSum < ARNOLD_F_MIN - 1 || fSum > ARNOLD_F_MAX + 1) continue;
+          arnoldCtx.save();
+          arnoldCtx.beginPath();
+          let mStarted = false;
+          for (let px = 0; px <= w; px += 3) {
+            const fp = ARNOLD_F_MIN + (px / w) * (ARNOLD_F_MAX - ARNOLD_F_MIN);
+            const hT = mutualArnoldThreshold(i, j, fp, fShiftSum);
+            if (hT <= ARNOLD_H_MAX * 1.15) {
+              const y = Math.max(0, toY(hT));
+              if (!mStarted) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); mStarted = true; }
+              else arnoldCtx.lineTo(px, y);
+            } else if (mStarted) {
+              arnoldCtx.lineTo(px, 0);
+              break;
+            }
+          }
+          if (mStarted) {
+            arnoldCtx.lineTo(w, 0);
+            arnoldCtx.closePath();
+            arnoldCtx.globalAlpha = 0.09;
+            arnoldCtx.fillStyle = MUT_COLOR;
+            arnoldCtx.fill();
+            arnoldCtx.globalAlpha = 0.8;
+            arnoldCtx.setLineDash([4, 3]);
+            arnoldCtx.strokeStyle = MUT_COLOR;
+            arnoldCtx.lineWidth = 1.1;
+            arnoldCtx.stroke();
+            arnoldCtx.setLineDash([]);
+          }
+          const tipX = toX(fSum), tipY = toY(hThMut);
+          if (tipX > 8 && tipX < w - 18) {
+            arnoldCtx.globalAlpha = 0.92;
+            arnoldCtx.fillStyle = MUT_COLOR;
+            arnoldCtx.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+            arnoldCtx.fillText(`${i}+${j}`, tipX - 8, Math.min(h - 2, tipY + 10));
+          }
+          arnoldCtx.restore();
+        }
+      }
+    }
+
     // Mini analytical steady-state |a_k|_ss(f_p) saw-tooth curve at current h_p (including mutual shift!)
     const closestMut = modeMutualNfsShiftGHz(closestMode);
     const ssCol = TONGUE_COLORS[closestMode % TONGUE_COLORS.length];
@@ -1136,9 +1252,17 @@
     const simSS = modeAmps[closestMode] || 0;
     const hintEl = document.getElementById('arnoldHint');
     if (hintEl) {
-      hintEl.textContent = driveMode === 'parallel'
-        ? (thSS > 0 ? `ss sim ${simSS.toFixed(3)} / th ${thSS.toFixed(3)}` : 'below h_th')
-        : 'tap to pump';
+      if (driveMode !== 'parallel') {
+        hintEl.textContent = 'tap to pump';
+      } else if (closestMutPair && bestMutDist < bestDist) {
+        const [mi, mj, fShiftSum] = closestMutPair;
+        const hMutAtF = mutualArnoldThreshold(mi, mj, targetFp, fShiftSum);
+        hintEl.textContent = targetHp > hMutAtF
+          ? `mut ${mi}+${mj} ON (h_th ${hMutAtF.toFixed(2)})`
+          : `mut ${mi}+${mj} < h_th (${hMutAtF.toFixed(2)})`;
+      } else {
+        hintEl.textContent = thSS > 0 ? `ss sim ${simSS.toFixed(3)} / th ${thSS.toFixed(3)}` : 'below h_th';
+      }
     }
 
     // Current (f_p1, h_p1) operating point crosshair
@@ -1188,7 +1312,7 @@
     let sum = 0, cnt = 0;
     for (let i = 0; i < N; i++) if (activeMask[i]) { sum += Math.hypot(my[i], mz[i]); cnt++; }
     if (cnt && sum / cnt < 0.006) seedSpins(0.025);
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     syncUi();
     notifySwTutorial('param');
   }
@@ -1320,6 +1444,10 @@
     document.getElementById('outChi3').textContent = chi3m.toFixed(2);
     document.getElementById('slChi4').value = chi4m;
     document.getElementById('outChi4').textContent = chi4m.toFixed(2);
+    const slC4Nr = document.getElementById('slChi4Nr');
+    if (slC4Nr) { slC4Nr.value = chi4nr; document.getElementById('outChi4Nr').textContent = chi4nr.toFixed(2); }
+    const slMut = document.getElementById('slMutPump');
+    if (slMut) { slMut.value = mutualPump; document.getElementById('outMutPump').textContent = mutualPump.toFixed(2); }
     document.getElementById('geomDisk').classList.toggle('active', geometryMode === 'disk');
     document.getElementById('geomRect').classList.toggle('active', geometryMode === 'rect');
     document.getElementById('driveParallel').classList.toggle('active', driveMode === 'parallel');
@@ -1380,7 +1508,7 @@
   if (!swTutState.dismissed) openSwTut(); else { swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); }
 
   function applyPreset(name) {
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
       driveMode = 'parallel'; biasH0 = 0.29; damping = 0.040; driveFreq = 2 * modeFreqGHz(3); driveAmp = 2.2 * parametricThreshold(3);
@@ -1394,6 +1522,25 @@
       document.getElementById('presetDirect').classList.add('active');
       driveMode = 'transverse'; biasH0 = 0.29; damping = 0.040; driveFreq = modeFreqGHz(0); driveAmp = 0.045;
       seedSpins(0.006);
+    } else if (name === 'mutual') {
+      const pMutEl = document.getElementById('presetMutual');
+      if (pMutEl) pMutEl.classList.add('active');
+      driveMode = 'parallel'; biasH0 = 0.29; damping = 0.030; dualTone = false; driveAmp2 = 0; tone2DelayNs = 0;
+      if (chi4nr < 0.05) chi4nr = 0.45;
+      if (mutualPump < 0.05) mutualPump = 0.55;
+      // Pick pair with strongest spatial pump gradient overlap (or fallback 0+1)
+      let bi = 0, bj = 1, bestOv = 0;
+      for (let a = 0; a < MODE_SPECS.length; a++) {
+        for (let b = a + 1; b < MODE_SPECS.length; b++) {
+          const ov = Math.abs(mutualPumpOverlap[a][b]);
+          if (ov > bestOv) { bestOv = ov; bi = a; bj = b; }
+        }
+      }
+      driveFreq = modeFreqGHz(bi) + modeFreqGHz(bj);
+      const hMut = mutualPumpThreshold(bi, bj);
+      driveAmp = Number.isFinite(hMut) ? Math.min(ARNOLD_H_MAX, 1.55 * hMut) : 0.35;
+      seedSpins(0.035);
+      notifySwTutorial('param');
     }
     syncUi();
   }
@@ -1401,13 +1548,15 @@
   document.getElementById('presetParam').addEventListener('click', () => applyPreset('param'));
   document.getElementById('presetSub').addEventListener('click', () => applyPreset('sub'));
   document.getElementById('presetDirect').addEventListener('click', () => applyPreset('direct'));
+  const presetMutualEl = document.getElementById('presetMutual');
+  if (presetMutualEl) presetMutualEl.addEventListener('click', () => applyPreset('mutual'));
   document.getElementById('btnZeroDrive').addEventListener('click', () => {
     driveAmp = 0; syncUi(); notifySwTutorial('zero');
   });
   document.getElementById('eigenButtons').addEventListener('click', e => {
     const btn = e.target.closest('button[data-mode]');
     if (!btn) return;
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#btnZeroDrive').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#btnZeroDrive').forEach(b => b.classList.remove('active'));
     exciteEigenmode(Number(btn.dataset.mode));
     notifySwTutorial('eigen');
   });
@@ -1454,6 +1603,10 @@
   document.getElementById('slDamp').addEventListener('input', e => { damping = +e.target.value; syncUi(); });
   document.getElementById('slChi3').addEventListener('input', e => { chi3m = +e.target.value; syncUi(); });
   document.getElementById('slChi4').addEventListener('input', e => { chi4m = +e.target.value; syncUi(); });
+  const slChi4NrEl = document.getElementById('slChi4Nr');
+  if (slChi4NrEl) slChi4NrEl.addEventListener('input', e => { chi4nr = +e.target.value; syncUi(); });
+  const slMutPumpEl = document.getElementById('slMutPump');
+  if (slMutPumpEl) slMutPumpEl.addEventListener('input', e => { mutualPump = +e.target.value; syncUi(); });
   document.getElementById('btnPause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; });
   document.getElementById('btnSeed').addEventListener('click', () => seedSpins(0.035));
   document.getElementById('btnClear').addEventListener('click', () => seedSpins(0.0));
