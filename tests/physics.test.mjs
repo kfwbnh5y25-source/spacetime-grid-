@@ -352,13 +352,20 @@ function loadSpinWavesContext() {
     getContext: () => makeCtx(),
     querySelector: () => makeEl(),
     querySelectorAll: () => [],
+    closest: () => null,
+    scrollIntoView: noop,
+    remove: noop,
+    contains: () => false,
+    dataset: {},
+    hidden: false,
     textContent: '',
     innerHTML: '',
     value: 0,
     disabled: false,
-    width: 280,
-    height: 54
+    width: 290,
+    height: 68
   });
+  const lsStore = new Map();
   const sandbox = {
     console,
     Math,
@@ -375,7 +382,14 @@ function loadSpinWavesContext() {
     innerWidth: 1200,
     innerHeight: 800,
     devicePixelRatio: 2,
-    localStorage: { getItem: () => null, setItem: noop },
+    localStorage: {
+      getItem: k => (lsStore.has(k) ? lsStore.get(k) : null),
+      setItem: (k, v) => lsStore.set(k, String(v)),
+      removeItem: k => lsStore.delete(k)
+    },
+    navigator: { userAgent: 'node-test' },
+    setTimeout: () => 0,
+    clearTimeout: noop,
     requestAnimationFrame: () => 0,
     addEventListener: noop,
     atob: s => Buffer.from(s, 'base64').toString('binary'),
@@ -403,13 +417,17 @@ function loadSpinWavesContext() {
     tukeyRamp, tone1EnvAt, tone2EnvAt,
     seedSpins, exciteEigenmode, pluckAt, stepLlg, updateSpectrum,
     modeFreqGHz, modeGammaGHz, modeGamma, parametricThreshold, parametricThresholdMT, arnoldThreshold,
+    crossPump4BGHz, instantaneousArnoldThresholdMT, computeArnoldHMaxMT, getArnoldRange, relPhaseDeg,
     cycleAvgModeAmp, modeRmsAmp,
     selfNfsCoeff, mutualNfsCoeff, mutualNfsCoeffGHz, modeNfsShiftGHz, modeMutualNfsShiftGHz,
     steadyStateAmp, analyzeTwoMode, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
     applyPreset, swapTonesAction, SPEED_FRAME_STEPS,
     swLog, recordLogEvent, recordTelemetrySample, buildEvaluationReport,
+    getDbConfig, saveDbConfig, resetDbConfig, formatDbDiagText,
+    VERIFY_STAGES, runVerificationStage, runFullVerificationProtocol, runThroughputBenchmark,
+    inspectLiveCalibration, probe4Avs4BCrossPump,
     drawModeTimePlot, updatePlotWindow, recordPlotSample,
-    getPlotStats: () => ({ count: plotHistCount, winTau: plotWinTau, originTau: plotOriginTau, lastPlotTau }),
+    getPlotStats: () => ({ count: plotHistCount, winTau: plotWinTau, originTau: plotOriginTau, lastPlotTau, plotYScale, plotYTarget }),
     setState(patch) {
       if ('driveMode' in patch) driveMode = patch.driveMode;
       if ('driveFreq' in patch) driveFreq = patch.driveFreq;
@@ -428,6 +446,8 @@ function loadSpinWavesContext() {
       if ('temperatureK' in patch) temperatureK = patch.temperatureK;
       if ('thermalSeed' in patch) reseedRng(patch.thermalSeed);
       if ('arnoldTarget' in patch) arnoldTarget = patch.arnoldTarget;
+      if ('arnoldBand' in patch) arnoldBand = patch.arnoldBand;
+      if ('specBand' in patch) specBand = patch.specBand;
       if ('playbackSpeed' in patch) playbackSpeed = patch.playbackSpeed;
       if ('simTime' in patch) { simTime = patch.simTime; resetModeHistory(); recordModeSample(); }
     },
@@ -435,7 +455,8 @@ function loadSpinWavesContext() {
       return {
         driveMode, driveFreq, driveAmp, damping, simTime, dualTone, driveFreq2, driveAmp2,
         tone2DelayNs, tone2WaitSS, tone2Released, tone2ReleaseT,
-        drivePhase1, drivePhase2, temperatureK, playbackSpeed, isRwa: isRwaFast()
+        drivePhase1, drivePhase2, temperatureK, playbackSpeed, arnoldBand, specBand,
+        lastSpecPeakGHz, isRwa: isRwaFast()
       };
     },
     meanTransverseAmp() {
@@ -835,5 +856,138 @@ test('R. Slow default playback, dynamic tensor δm = m - m0 profile fidelity & t
   assert.equal(report.finalState.theory?.scenario, 1);
   assert.ok(Number.isFinite(report.finalState.theory.S_det) && report.finalState.theory.S_det > 0);
 });
+
+test('S. Arnold 29-mode distinct thresholds, 4A/4B physics, 300K nonrecip, smooth Y-slew & 1.5–2.3 GHz mode-resolved FFT', () => {
+  // 1. All 29 mode thresholds are distinct at alpha=0.002 and unclipped by dynamic ceiling
+  spin.setNmmMode(false);
+  spin.setState({ temperatureK: 0, damping: 0.0020, arnoldBand: 'all', specBand: 'modes' });
+  let minTh = Infinity, maxTh = 0;
+  for (let m = 0; m < spin.M; m++) {
+    const th = spin.parametricThresholdMT(m);
+    if (th < minTh) minTh = th;
+    if (th > maxTh) maxTh = th;
+  }
+  assert.ok((maxTh / minTh) > 1.25 && (maxTh - minTh) > 0.10, `29-mode thresholds must be distinct (>25% spread), got ${minTh.toFixed(3)}..${maxTh.toFixed(3)} mT`);
+  const allRange = spin.getArnoldRange(true);
+  assert.ok(Math.abs(allRange.fMin - 3.38) < 1e-6 && Math.abs(allRange.fMax - 4.18) < 1e-6);
+  assert.ok(allRange.hMax > maxTh * 1.15, `Arnold ceiling ${allRange.hMax} mT must exceed max tip ${maxTh.toFixed(3)} mT`);
+  spin.setState({ damping: 0.0080 });
+  let maxTh8 = 0, minTh8 = Infinity;
+  for (let m = 0; m < spin.M; m++) {
+    const th = spin.parametricThresholdMT(m);
+    if (th < minTh8) minTh8 = th;
+    if (th > maxTh8) maxTh8 = th;
+  }
+  const hiRange = spin.getArnoldRange(true);
+  assert.ok((maxTh8 - minTh8) > 0.40 && hiRange.hMax > maxTh8 * 1.15, `High-α Arnold ceiling ${hiRange.hMax} mT must unclip max tip ${maxTh8.toFixed(3)} mT`);
+  spin.setState({ damping: 0.0020, arnoldBand: 'bulk' });
+  const bulkRange = spin.getArnoldRange(true);
+  assert.ok(Math.abs(bulkRange.fMin - 3.88) < 1e-6 && Math.abs(bulkRange.fMax - 4.16) < 1e-6);
+  spin.setState({ arnoldBand: 'all' });
+
+  // 2. 4A N_hk OFF stops Arnold tongue drift; 4B P_hk lowers threshold & physically cross-pumps m15 from m16
+  spin.setState({ simTime: 0 });
+  spin.aRe.fill(0); spin.aIm.fill(0); spin.aRe[13] = 0.05;
+  spin.terms.t4A = true;
+  assert.ok(Math.abs(spin.modeMutualNfsShiftGHz(15)) > 1e-4);
+  spin.terms.t4A = false;
+  assert.equal(spin.modeNfsShiftGHz(15), 0);
+  assert.equal(spin.modeMutualNfsShiftGHz(15), 0);
+  spin.terms.t4A = true;
+
+  spin.aRe.fill(0); spin.aIm.fill(0);
+  const base15 = spin.instantaneousArnoldThresholdMT(15, 2 * spin.modeFreqGHz(15));
+  spin.aRe[16] = 0.045;
+  const fTip15 = 2 * (spin.modeFreqGHz(15) + spin.modeMutualNfsShiftGHz(15));
+  spin.terms.t4B = false;
+  assert.ok(Math.abs(spin.instantaneousArnoldThresholdMT(15, fTip15) - base15) < 1e-6, '4A alone must not alter tip h_th');
+  spin.terms.t4B = true;
+  const red15 = spin.instantaneousArnoldThresholdMT(15, fTip15);
+  assert.ok(red15 < base15 - 0.1, `4B P_hk must lower m15 threshold: base=${base15.toFixed(3)} vs 4B=${red15.toFixed(3)}`);
+  const probe4B = spin.probe4Avs4BCrossPump();
+  assert.ok(probe4B.thresholdReductionMT > 0.1 && probe4B.m11After4B > 0.004 && probe4B.m11After4AOnly < 0.0016,
+    `4B probe failed: ${JSON.stringify(probe4B)}`);
+  spin.terms.t4B = false;
+
+  // 3. nonrecip preset at BOTH 0 K and 300 K + relative phase preserved after Swap
+  for (const temp of [0, 300]) {
+    spin.setState({ temperatureK: temp, thermalSeed: 20260101, drivePhase1: 0, drivePhase2: 0 });
+    spin.applyPreset('nonrecip');
+    spin.fastForwardSteadyState();
+    assert.ok(spin.cycleAvgModeAmp(13) > 0.015 && spin.cycleAvgModeAmp(16) < 0.003,
+      `nonrecip T=${temp}K T1->T2 expected m13 win, got (${spin.cycleAvgModeAmp(13).toFixed(4)}, ${spin.cycleAvgModeAmp(16).toFixed(4)})`);
+    spin.swapTonesAction();
+    assert.equal(spin.relPhaseDeg(), 0);
+    spin.fastForwardSteadyState();
+    assert.ok(spin.cycleAvgModeAmp(16) > 0.025 && spin.cycleAvgModeAmp(13) < 0.003,
+      `nonrecip T=${temp}K Swap expected m16 win, got (${spin.cycleAvgModeAmp(13).toFixed(4)}, ${spin.cycleAvgModeAmp(16).toFixed(4)})`);
+  }
+
+  // 4. Non-instantaneous smooth Y-axis rescaling in drawModeTimePlot
+  spin.setState({ temperatureK: 0, driveAmp: 0, dualTone: false, driveAmp2: 0, simTime: 0 });
+  spin.aRe.fill(0); spin.aIm.fill(0); spin.aRe[13] = 0.12;
+  spin.stepLlg(0.5, true);
+  spin.recordPlotSample();
+  spin.drawModeTimePlot();
+  const y1 = spin.getPlotStats();
+  assert.ok(y1.plotYScale > 0.0205 && y1.plotYScale < y1.plotYTarget * 0.92,
+    `Plot Y scale must slew smoothly instead of snapping: Y1=${y1.plotYScale.toFixed(4)}, target=${y1.plotYTarget.toFixed(4)}`);
+
+  // 5. High-resolution 4096-pt FFT resolves edge mode m0 AND closely-spaced modes (m13=1.9739G vs m16=1.9992G)
+  assert.equal(spin.SPEC_LEN, 4096);
+  const fsGHz = (2 * Math.PI) / (spin.FREQ_TO_RAD * spin.SPEC_DT);
+
+  // Edge mode m0 visibility at linear amplitude (avoiding 207 GHz Kerr shift at 0.04)
+  spin.setState({ damping: 0, temperatureK: 0, driveAmp: 0, dualTone: false, driveAmp2: 0, simTime: 0 });
+  spin.exciteEigenmode(0, 0.005);
+  spin.setState({ damping: 0, driveAmp: 0, simTime: 0 });
+  for (let i = 0; i < 1200; i++) spin.stepLlg(0.65, true);
+  spin.updateSpectrum();
+  assert.ok(Math.abs(spin.getState().lastSpecPeakGHz - spin.modeFreqGHz(0)) < 0.015,
+    `Edge mode m0 FFT peak ${spin.getState().lastSpecPeakGHz} GHz must match ${spin.modeFreqGHz(0).toFixed(4)} GHz`);
+
+  // Dual close modes m13 (1.9739 GHz) + m16 (1.9992 GHz) simultaneously resolved inside 1.5–2.3 GHz
+  spin.setState({ damping: 0, temperatureK: 0, driveAmp: 0, dualTone: false, driveAmp2: 0, simTime: 0 });
+  spin.seedSpins(0.0);
+  spin.aRe[13] = 0.015; spin.aRe[16] = 0.015;
+  for (let i = 0; i < 8000; i++) spin.stepLlg(0.65, true);
+  spin.updateSpectrum();
+  const binAt = fG => Math.round((fG / fsGHz) * spin.SPEC_LEN);
+  const k13 = binAt(spin.modeFreqGHz(13)), k16 = binAt(spin.modeFreqGHz(16));
+  const peakAround = kCenter => {
+    let best = 0;
+    for (let k = kCenter - 2; k <= kCenter + 2; k++) if (spin.spectrum[k] > best) best = spin.spectrum[k];
+    return best;
+  };
+  let valley = Infinity;
+  for (let k = k13 + 1; k < k16; k++) if (spin.spectrum[k] < valley) valley = spin.spectrum[k];
+  const p13 = peakAround(k13), p16 = peakAround(k16);
+  assert.ok(p13 > valley * 2.0 && p16 > valley * 2.0,
+    `4096-pt FFT must resolve m13 (${spin.modeFreqGHz(13).toFixed(4)}G, pk=${p13.toFixed(2)}) and m16 (${spin.modeFreqGHz(16).toFixed(4)}G, pk=${p16.toFixed(2)}) above valley=${valley.toFixed(2)}`);
+});
+
+test('T. Interactive 7-Stage Benchmark, Calibration & Verification Protocol + DB Config', async () => {
+  spin.resetDbConfig();
+  const cfg0 = spin.getDbConfig();
+  assert.ok(cfg0.url.includes('spacetime_feedback_runs'));
+  spin.saveDbConfig('https://example.supabase.co/rest/v1/custom', 'jwt.test.token');
+  assert.equal(spin.getDbConfig().url, 'https://example.supabase.co/rest/v1/custom');
+  spin.resetDbConfig();
+
+  const cal = spin.inspectLiveCalibration();
+  assert.ok(cal && Array.isArray(cal.activeModes) && cal.arnoldCeilingMT > 0);
+
+  const ver = await spin.runFullVerificationProtocol();
+  assert.equal(ver.stagesCompleted, 7, 'All 7 verification stages must execute');
+  assert.ok(ver.totalChecks >= 18, `Expected >=18 protocol checks, got ${ver.totalChecks}`);
+  assert.equal(ver.passedChecks, ver.totalChecks,
+    `Verification protocol had failing checks: ${JSON.stringify(ver.stages.filter(s => !s.pass), null, 2)}`);
+
+  const rep = spin.buildEvaluationReport('verified_test');
+  assert.equal(rep.verification.passedChecks, rep.verification.totalChecks);
+  assert.ok(rep.calibration && rep.benchmark && rep.benchmark.rwaKstepsPerSec > 0);
+  assert.ok(typeof spin.formatDbDiagText() === 'string');
+});
+
 
 
