@@ -54,6 +54,9 @@
   .tutFormula { display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 6px; background: rgba(130,185,255,.12); border: 1px solid rgba(130,185,255,.22); font: 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color: #b9dcff; }
   .tutActions { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
   .tutBtnGroup { display: flex; gap: 6px; }
+  #arnoldBox { pointer-events: auto; }
+  canvas#arnoldCanvas { display: block; width: 100%; height: 104px; cursor: crosshair; touch-action: none; border-radius: 6px; }
+  #tonguesToggleBtn { display: none; }
   @media (pointer:coarse), (max-width: 760px) {
     #topHud { gap: 4px; width: calc(100vw - 16px); }
     .hudPill { padding: 4px 8px; font-size: 9px; letter-spacing: .05em; }
@@ -63,9 +66,13 @@
     .readoutCard { padding: 6px 8px; }
     .modeRow { grid-template-columns: 82px 1fr 34px; font-size: 8.5px; }
     #spectrumBox { display: none; }
+    #arnoldBox { display: none; position: fixed; left: 10px; right: 10px; bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); z-index: 9; }
+    #arnoldBox.mobileOpen { display: block; }
     .magnonGrid { grid-template-columns: 1fr; gap: 2px; font-size: 8.5px; }
     #swTutorial { left: 10px; right: 10px; width: auto; top: max(64px,calc(env(safe-area-inset-top) + 52px)); padding: 10px 12px; }
     #swTutorialBtn { left: 10px; top: max(64px,calc(env(safe-area-inset-top) + 52px)); min-height: 30px; padding: 0 10px; font-size: 9px; }
+    #tonguesToggleBtn { display: flex; align-items: center; position: fixed; z-index: 9; left: 88px; top: max(64px,calc(env(safe-area-inset-top) + 52px)); min-height: 30px; padding: 0 10px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.76); color: rgba(235,245,255,.94); font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .1em; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+    #tonguesToggleBtn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.65); }
     #backBtn { right: 10px; bottom: max(12px,env(safe-area-inset-bottom)); min-height: 32px; padding: 0 11px; font-size: 9px; }
   }
 </style>
@@ -78,6 +85,7 @@
   <div class="hudPill active" id="domModeBadge">MODE: (0,0)</div>
 </div>
 <button id="swTutorialBtn" type="button" aria-label="Open Spin Waves tutorial">GUIDE ?</button>
+<button id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
 <section id="swTutorial" hidden aria-label="Spin Waves & Parametric Excitation tutorial">
   <div class="tutHeader">
     <span class="tutStepTag" id="swTutTag">STEP 1 OF 4</span>
@@ -169,6 +177,10 @@
       <div><b>3M</b> Split: <span id="m3Val">0.00</span></div>
       <div><b>4M</b> Kerr Δf: <span id="m4Val">0 MHz</span></div>
     </div>
+  </div>
+  <div class="readoutCard" id="arnoldBox">
+    <div class="specTitle"><span>ARNOLD TONGUES (f_p, h_p)</span><span id="arnoldHint">tap to pump</span></div>
+    <canvas id="arnoldCanvas" width="290" height="104"></canvas>
   </div>
   <div class="readoutCard" id="spectrumBox">
     <div class="specTitle"><span>MAGNON SPECTRUM</span><span id="specPeak">f_peak: —</span></div>
@@ -311,16 +323,18 @@
   function seedSpins(amp = 0.025) {
     if (!amp) {
       for (let i = 0; i < N; i++) { mx[i] = 1; my[i] = 0; mz[i] = 0; }
+      resetModeHistory(); recordModeSample();
       return;
     }
     const scale = amp * 20;
     for (let i = 0; i < N; i++) {
       if (!activeMask[i]) { mx[i] = 1; my[i] = 0; mz[i] = 0; continue; }
-      const ny = scale * (0.5 * modeTemplates[1][i] + 0.5 * modeTemplates[2][i] + 0.65 * modeTemplates[3][i] + 0.35 * modeTemplates[4][i]);
+      const ny = scale * (0.25 * modeTemplates[0][i] + 0.5 * modeTemplates[1][i] + 0.5 * modeTemplates[2][i] + 0.65 * modeTemplates[3][i] + 0.35 * modeTemplates[4][i]);
       const nz = ny * 0.25;
       const inv = 1 / Math.hypot(1, ny, nz);
       mx[i] = inv; my[i] = ny * inv; mz[i] = nz * inv;
     }
+    resetModeHistory(); recordModeSample();
   }
 
   function exciteEigenmode(mIdx) {
@@ -337,6 +351,7 @@
     driveMode = 'transverse';
     driveFreq = modeFreqGHz(mIdx);
     driveAmp = mIdx === 0 ? 0.04 : 0.0;
+    resetModeHistory(); recordModeSample();
     document.querySelectorAll('#eigenButtons button').forEach((b, i) => b.classList.toggle('active', i === mIdx));
     syncUi();
   }
@@ -407,6 +422,60 @@
       }
       simTime += h;
     }
+    if (simTime - lastModeSampleT >= 0.14 || modeHistCount === 0) recordModeSample();
+  }
+
+  const MODE_HIST_LEN = 96;
+  const modeHistSq = MODE_SPECS.map(() => new Float32Array(MODE_HIST_LEN));
+  const modeHistTime = new Float32Array(MODE_HIST_LEN);
+  let modeHistHead = 0, modeHistCount = 0, lastModeSampleT = -1;
+
+  function resetModeHistory() {
+    modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime;
+  }
+
+  function recordModeSample() {
+    let activeCount = 0;
+    for (let i = 0; i < N; i++) if (activeMask[i]) activeCount++;
+    const invN = 1 / Math.max(1, activeCount);
+    modeHistTime[modeHistHead] = simTime;
+    for (let m = 0; m < MODE_SPECS.length; m++) {
+      const tpl = modeTemplates[m];
+      let dy = 0, dz = 0;
+      for (let i = 0; i < N; i++) {
+        if (!activeMask[i]) continue;
+        dy += my[i] * tpl[i];
+        dz += mz[i] * tpl[i];
+      }
+      modeHistSq[m][modeHistHead] = (dy * dy + dz * dz) * invN;
+    }
+    modeHistHead = (modeHistHead + 1) % MODE_HIST_LEN;
+    if (modeHistCount < MODE_HIST_LEN) modeHistCount++;
+    lastModeSampleT = simTime;
+  }
+
+  function cycleAvgModeAmp(mIdx) {
+    if (modeHistCount === 0) recordModeSample();
+    const period = (2 * Math.PI) / Math.max(1e-4, modeFreqGHz(mIdx) * FREQ_TO_RAD);
+    const tCut = simTime - period;
+    let sum = 0, cnt = 0;
+    for (let k = 0; k < modeHistCount; k++) {
+      const idx = (modeHistHead - 1 - k + MODE_HIST_LEN) % MODE_HIST_LEN;
+      if (cnt > 0 && modeHistTime[idx] < tCut) break;
+      sum += modeHistSq[mIdx][idx];
+      cnt++;
+    }
+    return Math.sqrt(sum / Math.max(1, cnt));
+  }
+
+  function modeGamma(mIdx = 0) {
+    const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
+    const R = NX * 0.45;
+    const k2 = geometryMode === 'disk'
+      ? (spec.alpha / R) * (spec.alpha / R)
+      : Math.pow((spec.nx * Math.PI) / NX, 2) + Math.pow((spec.ny * Math.PI) / NY, 2);
+    const hEff = biasH0 + J_EX * k2;
+    return damping * (hEff + 0.5 * DEMAG_NZ);
   }
 
   function parametricThreshold(mIdx = 0) {
@@ -418,6 +487,13 @@
     const hEff = biasH0 + J_EX * k2;
     const omegaK = Math.sqrt(hEff * (hEff + DEMAG_NZ));
     return Math.max(0.005, (4 * damping * omegaK * (hEff + 0.5 * DEMAG_NZ)) / DEMAG_NZ);
+  }
+
+  function arnoldThreshold(mIdx, fPumpGHz) {
+    const hTh = parametricThreshold(mIdx);
+    const delta = 0.5 * (fPumpGHz - 2 * modeFreqGHz(mIdx)) * FREQ_TO_RAD;
+    const gamma = Math.max(1e-5, modeGamma(mIdx));
+    return hTh * Math.hypot(1, delta / gamma);
   }
 
   function pluckAt(clientX, clientY) {
@@ -512,16 +588,8 @@
 
   function updateEigenmodeReadout(meanAmp, activeCount) {
     let domIdx = 0, domVal = -1;
-    const invSqrtN = 1 / Math.sqrt(Math.max(1, activeCount));
     for (let m = 0; m < MODE_SPECS.length; m++) {
-      const tpl = modeTemplates[m];
-      let dotY = 0, dotZ = 0;
-      for (let i = 0; i < N; i++) {
-        if (!activeMask[i]) continue;
-        dotY += my[i] * tpl[i];
-        dotZ += mz[i] * tpl[i];
-      }
-      const amp = Math.hypot(dotY, dotZ) * invSqrtN;
+      const amp = cycleAvgModeAmp(m);
       modeAmps[m] = amp;
       if (amp > domVal) { domVal = amp; domIdx = m; }
     }
@@ -538,7 +606,7 @@
     document.getElementById('domModeBadge').textContent = domVal > 0.002 ? `MODE: ${domName}` : 'MODE: — (EQUILIBRIUM)';
     document.getElementById('ampTotal').textContent = `⟨|m_⊥|⟩: ${meanAmp.toFixed(3)}`;
 
-    const hTh = parametricThreshold();
+    const hTh = parametricThreshold(domIdx);
     const m1 = driveMode === 'transverse' ? driveAmp * Math.max(0.05, meanAmp * 5) : 0;
     const m2 = driveMode === 'parallel' ? driveAmp / hTh : 0;
     const m3 = chi3m * meanAmp * meanAmp * 10;
@@ -548,6 +616,179 @@
     document.getElementById('m3Val').textContent = m3.toFixed(3);
     document.getElementById('m4Val').textContent = (kerrShiftMHz >= 0 ? '+' : '') + kerrShiftMHz.toFixed(0) + ' MHz';
   }
+
+  const arnoldCanvas = document.getElementById('arnoldCanvas');
+  const arnoldCtx = arnoldCanvas.getContext('2d');
+  const ARNOLD_F_MIN = 4.5, ARNOLD_F_MAX = 16.5, ARNOLD_H_MAX = 0.60;
+  const TONGUE_COLORS = ['#6cb8ff', '#6ee7b7', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
+
+  function selfNfsCoeff(mIdx = 0) {
+    const spec = MODE_SPECS[mIdx] || MODE_SPECS[0];
+    const R = NX * 0.45;
+    const k2 = geometryMode === 'disk'
+      ? (spec.alpha / R) * (spec.alpha / R)
+      : Math.pow((spec.nx * Math.PI) / NX, 2) + Math.pow((spec.ny * Math.PI) / NY, 2);
+    const hEff = biasH0 + J_EX * k2;
+    const omegaK = Math.sqrt(hEff * (hEff + DEMAG_NZ));
+    const shapeFactor = mIdx === 0 ? 1.0 : 1.55;
+    return (-0.5 * DEMAG_NZ - chi4m) * (omegaK / (hEff + 0.5 * DEMAG_NZ)) * shapeFactor;
+  }
+
+  function steadyStateAmp(mIdx, fPumpGHz, hPump) {
+    const hTh = parametricThreshold(mIdx);
+    if (hPump <= hTh) return 0;
+    const gamma = Math.max(1e-5, modeGamma(mIdx));
+    const vk = gamma / hTh;
+    const rad = Math.sqrt(Math.max(0, (vk * hPump) ** 2 - gamma * gamma));
+    const delta = 0.5 * (fPumpGHz - 2 * modeFreqGHz(mIdx)) * FREQ_TO_RAD;
+    const nkk = selfNfsCoeff(mIdx);
+    if (Math.abs(nkk) < 1e-6) return 0;
+    const sgn = nkk >= 0 ? 1 : -1;
+    // Stable branch inside tilted detuning cone (d'Aquino et al. 2026)
+    if (sgn * delta < -rad) return 0;
+    const a2 = (delta + sgn * rad) / nkk;
+    return a2 > 0 ? Math.sqrt(a2) : 0;
+  }
+
+  function drawArnoldTongues() {
+    if (!arnoldCtx) return;
+    const w = arnoldCanvas.width, h = arnoldCanvas.height;
+    arnoldCtx.clearRect(0, 0, w, h);
+    arnoldCtx.fillStyle = 'rgba(8, 16, 30, 0.85)';
+    arnoldCtx.fillRect(0, 0, w, h);
+
+    const toX = f => ((f - ARNOLD_F_MIN) / (ARNOLD_F_MAX - ARNOLD_F_MIN)) * w;
+    const toY = amp => h - 10 - (amp / ARNOLD_H_MAX) * (h - 16);
+
+    let closestMode = 0, bestDist = 1e9;
+    for (let m = 0; m < MODE_SPECS.length; m++) {
+      const f2 = 2 * modeFreqGHz(m);
+      const d = Math.abs(driveFreq - f2);
+      if (d < bestDist) { bestDist = d; closestMode = m; }
+      if (f2 < ARNOLD_F_MIN - 1 || f2 > ARNOLD_F_MAX + 1) continue;
+      const col = TONGUE_COLORS[m % TONGUE_COLORS.length];
+      arnoldCtx.save();
+      arnoldCtx.beginPath();
+      let started = false;
+      for (let px = 0; px <= w; px += 3) {
+        const fp = ARNOLD_F_MIN + (px / w) * (ARNOLD_F_MAX - ARNOLD_F_MIN);
+        const hT = arnoldThreshold(m, fp);
+        if (hT <= ARNOLD_H_MAX * 1.15) {
+          const y = Math.max(0, toY(hT));
+          if (!started) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); started = true; }
+          else arnoldCtx.lineTo(px, y);
+        } else if (started) {
+          arnoldCtx.lineTo(px, 0);
+          break;
+        }
+      }
+      if (started) {
+        arnoldCtx.lineTo(w, 0);
+        arnoldCtx.closePath();
+        arnoldCtx.globalAlpha = 0.16;
+        arnoldCtx.fillStyle = col;
+        arnoldCtx.fill();
+        arnoldCtx.globalAlpha = 0.85;
+        arnoldCtx.strokeStyle = col;
+        arnoldCtx.lineWidth = 1.2;
+        arnoldCtx.stroke();
+      }
+
+      // Nonlinear s-NFS tilted saw-tooth fold edge (d'Aquino 2026)
+      const hTh = parametricThreshold(m);
+      const gamma = modeGamma(m);
+      const nkk = selfNfsCoeff(m);
+      const sgn = nkk >= 0 ? 1 : -1;
+      arnoldCtx.beginPath();
+      arnoldCtx.setLineDash([2, 2]);
+      arnoldCtx.globalAlpha = 0.72;
+      arnoldCtx.strokeStyle = col;
+      let foldStarted = false;
+      for (let hp = hTh; hp <= ARNOLD_H_MAX; hp += 0.025) {
+        const rad = Math.sqrt(Math.max(0, ((gamma / hTh) * hp) ** 2 - gamma * gamma));
+        const fFold = f2 + (2 * sgn * rad) / FREQ_TO_RAD;
+        if (fFold >= ARNOLD_F_MIN && fFold <= ARNOLD_F_MAX) {
+          const xF = toX(fFold), yF = toY(hp);
+          if (!foldStarted) { arnoldCtx.moveTo(xF, yF); foldStarted = true; }
+          else arnoldCtx.lineTo(xF, yF);
+        }
+      }
+      arnoldCtx.stroke();
+      arnoldCtx.setLineDash([]);
+
+      const tipX = toX(f2), tipY = toY(hTh);
+      if (tipX > 8 && tipX < w - 16) {
+        arnoldCtx.globalAlpha = 0.95;
+        arnoldCtx.fillStyle = col;
+        arnoldCtx.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+        const tag = MODE_SPECS[m].label.split(' ')[0];
+        arnoldCtx.fillText(tag, tipX - 11, Math.min(h - 2, tipY + 10));
+      }
+      arnoldCtx.restore();
+    }
+
+    // Mini analytical steady-state |a_k|_ss(f_p) saw-tooth curve at current h_p for closestMode
+    const ssCol = TONGUE_COLORS[closestMode % TONGUE_COLORS.length];
+    arnoldCtx.save();
+    arnoldCtx.strokeStyle = ssCol;
+    arnoldCtx.globalAlpha = 0.55;
+    arnoldCtx.lineWidth = 1.2;
+    arnoldCtx.beginPath();
+    let ssStarted = false;
+    for (let px = 0; px <= w; px += 2) {
+      const fp = ARNOLD_F_MIN + (px / w) * (ARNOLD_F_MAX - ARNOLD_F_MIN);
+      const aSS = steadyStateAmp(closestMode, fp, driveAmp);
+      const ySS = h - 4 - Math.min(1, aSS / 0.35) * 26;
+      if (!ssStarted) { arnoldCtx.moveTo(px, ySS); ssStarted = true; }
+      else arnoldCtx.lineTo(px, ySS);
+    }
+    arnoldCtx.stroke();
+    arnoldCtx.restore();
+
+    const thSS = driveMode === 'parallel' ? steadyStateAmp(closestMode, driveFreq, driveAmp) : 0;
+    const simSS = modeAmps[closestMode] || 0;
+    const hintEl = document.getElementById('arnoldHint');
+    if (hintEl) {
+      hintEl.textContent = driveMode === 'parallel'
+        ? (thSS > 0 ? `ss sim ${simSS.toFixed(3)} / th ${thSS.toFixed(3)}` : 'below h_th')
+        : 'tap to pump';
+    }
+
+    // Current (f_p, h_p) operating point crosshair
+    const cx = Math.max(2, Math.min(w - 2, toX(driveFreq)));
+    const cy = Math.max(2, Math.min(h - 2, toY(driveAmp)));
+    arnoldCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+    arnoldCtx.lineWidth = 1;
+    arnoldCtx.setLineDash([2, 2]);
+    arnoldCtx.beginPath(); arnoldCtx.moveTo(cx, 0); arnoldCtx.lineTo(cx, h); arnoldCtx.moveTo(0, cy); arnoldCtx.lineTo(w, cy); arnoldCtx.stroke();
+    arnoldCtx.setLineDash([]);
+    arnoldCtx.fillStyle = driveMode === 'parallel' ? '#ffd479' : '#7cd4ff';
+    arnoldCtx.beginPath(); arnoldCtx.arc(cx, cy, 4, 0, Math.PI * 2); arnoldCtx.fill();
+    arnoldCtx.strokeStyle = '#03060d'; arnoldCtx.lineWidth = 1; arnoldCtx.stroke();
+  }
+
+  function selectArnoldAt(clientX, clientY) {
+    const rect = arnoldCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const nx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const ny = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    const hPx = ny * arnoldCanvas.height;
+    const amp = Math.max(0, Math.min(ARNOLD_H_MAX, ((arnoldCanvas.height - 10 - hPx) / (arnoldCanvas.height - 16)) * ARNOLD_H_MAX));
+    driveMode = 'parallel';
+    driveFreq = ARNOLD_F_MIN + nx * (ARNOLD_F_MAX - ARNOLD_F_MIN);
+    driveAmp = amp;
+    let sum = 0, cnt = 0;
+    for (let i = 0; i < N; i++) if (activeMask[i]) { sum += Math.hypot(my[i], mz[i]); cnt++; }
+    if (cnt && sum / cnt < 0.006) seedSpins(0.025);
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    syncUi();
+    notifySwTutorial('param');
+  }
+
+  let arnoldDrag = false;
+  arnoldCanvas.addEventListener('pointerdown', e => { arnoldDrag = true; selectArnoldAt(e.clientX, e.clientY); });
+  arnoldCanvas.addEventListener('pointermove', e => { if (arnoldDrag) selectArnoldAt(e.clientX, e.clientY); });
+  window.addEventListener('pointerup', () => { arnoldDrag = false; });
 
   function drawScene() {
     const data = imgData.data;
@@ -615,17 +856,32 @@
     threshBadge.classList.toggle('warn', driveMode === 'parallel' && ratio > 1.02);
     threshBadge.classList.toggle('active', driveMode === 'transverse');
     updateEigenmodeReadout(meanAmp, activeCount);
+    drawArnoldTongues();
   }
 
   const controlsPanel = document.getElementById('controlsPanel');
   const ctrlToggleHint = document.getElementById('ctrlToggleHint');
+  const arnoldBox = document.getElementById('arnoldBox');
+  const tonguesToggleBtn = document.getElementById('tonguesToggleBtn');
   const isCompactViewport = () => !!(window.matchMedia && window.matchMedia('(pointer:coarse), (max-width: 760px)').matches);
   if (isCompactViewport()) controlsPanel.open = false;
   function syncCtrlHint() { ctrlToggleHint.textContent = controlsPanel.open ? '✕' : '▾'; }
   syncCtrlHint();
   controlsPanel.addEventListener('toggle', () => {
     syncCtrlHint();
-    if (controlsPanel.open && isCompactViewport() && !swTutEl.hidden) closeSwTut();
+    if (controlsPanel.open && isCompactViewport()) {
+      if (!swTutEl.hidden) closeSwTut();
+      arnoldBox.classList.remove('mobileOpen');
+      tonguesToggleBtn.classList.remove('active');
+    }
+  });
+  tonguesToggleBtn.addEventListener('click', () => {
+    const open = arnoldBox.classList.toggle('mobileOpen');
+    tonguesToggleBtn.classList.toggle('active', open);
+    if (open && isCompactViewport()) {
+      controlsPanel.open = false;
+      if (!swTutEl.hidden) closeSwTut();
+    }
   });
 
   function syncUi() {

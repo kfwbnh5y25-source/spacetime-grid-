@@ -387,7 +387,7 @@ function loadSpinWavesContext() {
     NX, NY, N, J_EX, DEMAG_NZ, FREQ_TO_RAD,
     mx, my, mz, activeMask, modeTemplates, MODE_SPECS,
     buildMaskAndModes, seedSpins, exciteEigenmode, stepLlg,
-    modeFreqGHz, parametricThreshold, besselJ,
+    modeFreqGHz, parametricThreshold, arnoldThreshold, cycleAvgModeAmp, besselJ,
     setState(patch) {
       if ('geometryMode' in patch) geometryMode = patch.geometryMode;
       if ('driveMode' in patch) driveMode = patch.driveMode;
@@ -395,6 +395,8 @@ function loadSpinWavesContext() {
       if ('driveAmp' in patch) driveAmp = patch.driveAmp;
       if ('biasH0' in patch) biasH0 = patch.biasH0;
       if ('damping' in patch) damping = patch.damping;
+      if ('chi3m' in patch) chi3m = patch.chi3m;
+      if ('chi4m' in patch) chi4m = patch.chi4m;
       if ('simTime' in patch) simTime = patch.simTime;
     },
     getState() { return { geometryMode, driveMode, driveFreq, driveAmp, biasH0, damping, simTime }; },
@@ -532,4 +534,35 @@ test('M. Spin-wave model: parametric excitation threshold (decay below h_th, exp
   for (let s = 0; s < 3000; s++) spin.stepLlg(0.01);
   const supEnd = spin.modeProjection(3);
   assert.ok(supEnd > supStart * 2.2, `Above threshold (h_p=${(2.5 * hTh).toFixed(3)} > h_th=${hTh.toFixed(3)}), mode 3 should grow: ${supStart.toFixed(4)} -> ${supEnd.toFixed(4)}`);
+});
+
+test("N. Spin-wave model: d'Aquino single-mode steady-state saturation, Arnold tongue & 1-cycle averaging", () => {
+  spin.setState({ geometryMode: 'disk', driveMode: 'parallel', biasH0: 0.29, damping: 0.040, chi3m: 0.16, chi4m: -0.35 });
+  spin.buildMaskAndModes();
+  const f0 = spin.modeFreqGHz(0);
+  const hTip = spin.arnoldThreshold(0, 2 * f0);
+  const hDetuned = spin.arnoldThreshold(0, 2 * f0 + 0.6);
+  assert.ok(Math.abs(hTip - spin.parametricThreshold(0)) < 1e-6, 'Arnold tongue tip must equal parametricThreshold');
+  assert.ok(hDetuned > hTip * 1.4, `Detuned Arnold tongue boundary should rise: tip=${hTip.toFixed(3)} vs detuned=${hDetuned.toFixed(3)}`);
+
+  // Outside detuned tongue -> must decay toward trivial steady state (0)
+  spin.setState({ driveFreq: 2 * f0 + 1.2, driveAmp: 1.5 * hTip, simTime: 0 });
+  spin.seedSpins(0.03);
+  for (let s = 0; s < 2500; s++) spin.stepLlg(0.01);
+  const outAvg = spin.cycleAvgModeAmp(0);
+  assert.ok(outAvg < 0.012, `Outside Arnold tongue, mode 0 should decay to ~0: got ${outAvg.toFixed(4)}`);
+
+  // Inside Arnold tongue -> mode 0 must saturate at a finite steady-state plateau with smooth 1-cycle average
+  spin.setState({ driveFreq: 2 * f0 - 0.15, driveAmp: 3.2 * hTip, simTime: 0 });
+  spin.seedSpins(0.03);
+  for (let s = 0; s < 8000; s++) spin.stepLlg(0.012);
+  const samples = [];
+  for (let k = 0; k < 12; k++) {
+    for (let s = 0; s < 100; s++) spin.stepLlg(0.012);
+    samples.push(spin.cycleAvgModeAmp(0));
+  }
+  const meanSS = samples.reduce((a, b) => a + b, 0) / samples.length;
+  const maxDev = Math.max(...samples.map(v => Math.abs(v - meanSS) / Math.max(1e-6, meanSS)));
+  assert.ok(meanSS > 0.04, `Inside Arnold tongue, expected finite steady-state mode 0 amplitude, got ${meanSS.toFixed(4)}`);
+  assert.ok(maxDev < 0.08, `1-cycle averaged steady-state amplitude should be smooth (maxDev=${(maxDev * 100).toFixed(1)}%)`);
 });
