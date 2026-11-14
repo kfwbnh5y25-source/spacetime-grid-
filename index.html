@@ -93,7 +93,7 @@
   const planetCursor = document.getElementById('planetCursor');
   const gestureStatus=document.getElementById('gestureStatus');
   const persistentMasses=[];
-  let gravityG=3,newMassValue=20,gravityEnabled=true,trailsEnabled=true;
+  let gravityG=3,newMassValue=0.0005,gravityEnabled=true,trailsEnabled=true;
   let mouseWorld={x:innerWidth/2,y:innerHeight/2},mousePan=null;
   let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1:1.5,slowFrames=0,smoothFrames=0;
   const storageKey='spacetime-grid-state-v1';
