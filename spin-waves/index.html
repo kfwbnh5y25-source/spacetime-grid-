@@ -38,11 +38,16 @@
   .modeFill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg,#68b5ff,#9cf0ff); transition: width .08s linear; }
   .magnonGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(190,220,255,.12); font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,226,255,.78); }
   .magnonGrid b { color: #9ad8ff; font-weight: 600; }
-  #backBtn, #swTutorialBtn { position: fixed; z-index: 9; right: max(14px,env(safe-area-inset-right)); bottom: max(16px,env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 13px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.76); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-  #swTutorialBtn { right: auto; left: max(14px,env(safe-area-inset-left)); bottom: auto; top: max(54px,calc(env(safe-area-inset-top) + 42px)); }
-  #swTutorialBtn.hidden { opacity: 0; pointer-events: none; }
-  #backBtn:hover, #swTutorialBtn:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
-  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(54px,calc(env(safe-area-inset-top) + 42px)); width: min(330px,calc(100vw - 28px)); padding: 13px 14px; border: 1px solid rgba(185,218,255,.24); border-radius: 15px; background: rgba(5,10,20,.88); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+  #backBtn { position: fixed; z-index: 9; right: max(14px,env(safe-area-inset-right)); bottom: max(16px,env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 13px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.76); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  #quickLaunchBar { position: fixed; z-index: 9; left: max(14px,env(safe-area-inset-left)); top: max(54px,calc(env(safe-area-inset-top) + 42px)); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-width: calc(100vw - 28px); }
+  .quickPill { display: flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 11px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.78); color: rgba(235,245,255,.94); font: 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .08em; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .quickPill:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
+  .quickPill.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
+  .quickPill.accent { border-color: rgba(110,231,183,.48); color: #a7f3d0; }
+  .quickPill.accent.active { background: rgba(16,185,129,.3); border-color: rgba(110,231,183,.85); color: #fff; }
+  #swTutorialBtn.hidden { display: none; }
+  #backBtn:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
+  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(330px,calc(100vw - 28px)); padding: 13px 14px; border: 1px solid rgba(185,218,255,.24); border-radius: 15px; background: rgba(5,10,20,.88); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
   #swTutorial[hidden] { display: none; }
   .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; cursor: grab; touch-action: none; }
   .tutHeader:active { cursor: grabbing; }
@@ -93,10 +98,10 @@
     #arnoldBox { display: none; position: fixed; left: 10px; width: min(340px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); z-index: 9; }
     #arnoldBox.mobileOpen { display: block; }
     .magnonGrid { grid-template-columns: 1fr; gap: 2px; font-size: 8.5px; }
-    #swTutorial { left: 10px; width: min(340px,calc(100vw - 20px)); top: max(64px,calc(env(safe-area-inset-top) + 52px)); padding: 10px 12px; }
-    #swTutorialBtn { left: 10px; top: max(64px,calc(env(safe-area-inset-top) + 52px)); min-height: 30px; padding: 0 10px; font-size: 9px; }
-    #tonguesToggleBtn { display: flex; align-items: center; position: fixed; z-index: 9; left: 88px; top: max(64px,calc(env(safe-area-inset-top) + 52px)); min-height: 30px; padding: 0 10px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.76); color: rgba(235,245,255,.94); font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .1em; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-    #tonguesToggleBtn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.65); }
+    #quickLaunchBar { left: 10px; top: max(62px,calc(env(safe-area-inset-top) + 50px)); gap: 5px; }
+    .quickPill { min-height: 28px; padding: 0 9px; font-size: 8.5px; letter-spacing: .06em; }
+    #swTutorial { left: 10px; width: min(340px,calc(100vw - 20px)); top: max(98px,calc(env(safe-area-inset-top) + 86px)); padding: 10px 12px; }
+    #tonguesToggleBtn { display: flex; }
     #backBtn { right: 10px; bottom: max(12px,env(safe-area-inset-bottom)); min-height: 32px; padding: 0 11px; font-size: 9px; }
   }
 </style>
@@ -108,8 +113,13 @@
   <div class="hudPill" id="threshBadge">h_p / h_th: 1.00</div>
   <div class="hudPill active" id="domModeBadge">MODE: (0,0)</div>
 </div>
-<button id="swTutorialBtn" type="button" aria-label="Open Spin Waves tutorial">GUIDE ?</button>
-<button id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
+<div id="quickLaunchBar">
+  <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves tutorial">GUIDE ?</button>
+  <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
+  <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Launch 2-Tone Delayed Nonreciprocity example (Mode 0 pulls Mode 1 Arnold tongue down)">2-TONE EX</button>
+  <button class="quickPill" id="quickSwapBtn" type="button" title="Swap Tone 1 & Tone 2 arrival order (T1→T2 vs T2→T1)">SWAP T1↔T2</button>
+  <button class="quickPill" id="quickFastBtn" type="button" title="Fast-forward to steady state">FAST→SS</button>
+</div>
 <section id="swTutorial" hidden aria-label="Spin Waves & Parametric Excitation tutorial">
   <div class="tutHeader">
     <span class="tutStepTag" id="swTutTag">STEP 1 OF 4</span>
@@ -2115,6 +2125,13 @@
       btnFast.textContent = fastForwarding ? 'Fast-Fwd (Stop)' : 'Fast-Fwd → SS';
       btnFast.classList.toggle('active', fastForwarding);
     }
+    const qNonrecip = document.getElementById('quickNonrecipBtn');
+    if (qNonrecip) qNonrecip.classList.toggle('active', twoModeIsolate);
+    const qFast = document.getElementById('quickFastBtn');
+    if (qFast) {
+      qFast.textContent = fastForwarding ? 'FAST (STOP)' : 'FAST→SS';
+      qFast.classList.toggle('active', fastForwarding);
+    }
     document.getElementById('geomDisk').classList.toggle('active', geometryMode === 'disk');
     document.getElementById('geomRect').classList.toggle('active', geometryMode === 'rect');
     document.getElementById('driveParallel').classList.toggle('active', driveMode === 'parallel');
@@ -2212,6 +2229,12 @@
       driveAmp2 = 0.82 * parametricThreshold(1);
       simTime = 0;
       seedSpins(0.03);
+      if (isCompactViewport() && arnoldBox && tonguesToggleBtn) {
+        arnoldBox.classList.add('mobileOpen');
+        tonguesToggleBtn.classList.add('active');
+        controlsPanel.open = false;
+        if (!swTutEl.hidden) closeSwTut();
+      }
       notifySwTutorial('param');
     }
     syncUi();
@@ -2222,6 +2245,11 @@
   document.getElementById('presetDirect').addEventListener('click', () => applyPreset('direct'));
   const presetMutualEl = document.getElementById('presetMutual');
   if (presetMutualEl) presetMutualEl.addEventListener('click', () => applyPreset('mutual'));
+  const quickNonrecipEl = document.getElementById('quickNonrecipBtn');
+  if (quickNonrecipEl) quickNonrecipEl.addEventListener('click', () => {
+    if (!swTutEl.hidden) closeSwTut();
+    applyPreset('mutual');
+  });
   document.getElementById('btnZeroDrive').addEventListener('click', () => {
     driveAmp = 0; syncUi(); notifySwTutorial('zero');
   });
@@ -2265,12 +2293,16 @@
     if (tone2WaitSS && !dualTone) dualTone = true;
     simTime = 0; fastForwarding = false; seedSpins(0.025); syncUi();
   });
-  const btnSwapEl = document.getElementById('btnSwapTones');
-  if (btnSwapEl) btnSwapEl.addEventListener('click', () => {
+  function swapTonesAction() {
+    if (!dualTone) applyPreset('mutual');
     [driveFreq, driveFreq2] = [driveFreq2, driveFreq];
     [driveAmp, driveAmp2] = [driveAmp2, driveAmp];
-    simTime = 0; fastForwarding = false; seedSpins(0.025); syncUi();
-  });
+    simTime = 0; fastForwarding = false; seedSpins(0.03); syncUi();
+  }
+  const btnSwapEl = document.getElementById('btnSwapTones');
+  if (btnSwapEl) btnSwapEl.addEventListener('click', swapTonesAction);
+  const quickSwapEl = document.getElementById('quickSwapBtn');
+  if (quickSwapEl) quickSwapEl.addEventListener('click', swapTonesAction);
   const arnoldTargetEl = document.getElementById('arnoldTargetBtn');
   if (arnoldTargetEl) arnoldTargetEl.addEventListener('click', () => {
     arnoldTarget = arnoldTarget === 1 ? 2 : 1;
@@ -2321,8 +2353,7 @@
     drawScene();
   }
 
-  const btnFastSS = document.getElementById('btnFastSS');
-  if (btnFastSS) btnFastSS.addEventListener('click', () => {
+  function toggleFastForward() {
     fastForwarding = !fastForwarding;
     if (fastForwarding) {
       paused = false;
@@ -2336,7 +2367,11 @@
       for (let m = 0; m < MODE_SPECS.length; m++) ffPrev[m] = cycleAvgModeAmp(m);
     }
     syncUi();
-  });
+  }
+  const btnFastSS = document.getElementById('btnFastSS');
+  if (btnFastSS) btnFastSS.addEventListener('click', toggleFastForward);
+  const quickFastEl = document.getElementById('quickFastBtn');
+  if (quickFastEl) quickFastEl.addEventListener('click', toggleFastForward);
 
   buildMaskAndModes();
   applyPreset('param');
