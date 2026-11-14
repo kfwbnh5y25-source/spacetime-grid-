@@ -622,10 +622,37 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       const q=traceSpatialGeodesic(start.x,start.y,start.vx,start.vy,320,{sources:[source],softening:0,tolerance:tol,maxStep:40});
       return {tolerance:tol,endpointError:Math.hypot(q.x-reference.x,q.y-reference.y),steps:q.steps,completed:q.completed};
     });
-    return {model:"unsoftened single-mass Schwarzschild spatial slice; isotropic coordinates",radialStraightLineMaxY:Math.abs(radial.y),radialSteps:radial.steps,
+    const savedX=geodesicFrameOffsetX,savedY=geodesicFrameOffsetY;
+    geodesicFrameOffsetX=0;geodesicFrameOffsetY=0;
+    const point={x:120,y:70},r=Math.hypot(point.x,point.y),psi=schwarzschildPsi(point.x,point.y,source);
+    const analytic={x:-source.rS*point.x/(4*r*r*r),y:-source.rS*point.y/(4*r*r*r)};
+    const h=.001,psiXp=schwarzschildPsi(point.x+h,point.y,source),psiXm=schwarzschildPsi(point.x-h,point.y,source);
+    const psiYp=schwarzschildPsi(point.x,point.y+h,source),psiYm=schwarzschildPsi(point.x,point.y-h,source);
+    const finiteDifference={x:(psiXp-psiXm)/(2*h),y:(psiYp-psiYm)/(2*h)};
+    const analyticLog={x:2*analytic.x/psi,y:2*analytic.y/psi};
+    const actualLog=spatialMetricGradient(point.x,point.y,[source],0);
+    const gradientRelativeError=Math.hypot(actualLog.x-analyticLog.x,actualLog.y-analyticLog.y)/Math.max(1e-14,Math.hypot(...Object.values(analyticLog)));
+    const finiteDifferenceRelativeError=Math.hypot(finiteDifference.x-analytic.x,finiteDifference.y-analytic.y)/Math.max(1e-14,Math.hypot(analytic.x,analytic.y));
+    const flat=geodesicDerivative({x:30,y:50,vx:.6,vy:.8},[],0);
+    const emptySpaceAcceleration=Math.hypot(flat.vx,flat.vy);
+    geodesicFrameOffsetX=savedX;geodesicFrameOffsetY=savedY;
+    const checks=[
+      {name:"Flat-space limit",pass:emptySpaceAcceleration<1e-12,value:emptySpaceAcceleration},
+      {name:"Radial geodesic remains radial",pass:Math.abs(radial.y)<1e-6,value:Math.abs(radial.y)},
+      {name:"Metric-speed conservation",pass:rel(initial.energy,final.energy)<1e-4,value:rel(initial.energy,final.energy)},
+      {name:"Angular-momentum conservation",pass:rel(initial.angularMomentum,final.angularMomentum)<1e-4,value:rel(initial.angularMomentum,final.angularMomentum)},
+      {name:"Analytic metric gradient",pass:gradientRelativeError<1e-10,value:gradientRelativeError},
+      {name:"Finite-difference gradient cross-check",pass:finiteDifferenceRelativeError<1e-7,value:finiteDifferenceRelativeError},
+      {name:"Weak-field deflection",pass:rel(expected,measured)<.05,value:rel(expected,measured)},
+      {name:"Integrator convergence",pass:convergence.every((q,i)=>q.completed&&(i===0||q.endpointError<=convergence[i-1].endpointError*1.1)),value:convergence[convergence.length-1].endpointError}
+    ];
+    return {model:"single-mass Schwarzschild spatial slice; isotropic coordinates",checks,passed:checks.filter(c=>c.pass).length,total:checks.length,
+      radialStraightLineMaxY:Math.abs(radial.y),radialSteps:radial.steps,
       relativeMetricSpeedDrift:rel(initial.energy,final.energy),relativeAngularMomentumDrift:rel(initial.angularMomentum,final.angularMomentum),
-      weakFieldDeflectionRad:measured,weakFieldLeadingOrderRad:expected,weakFieldRelativeError:rel(expected,measured),convergence,referenceSteps:reference.steps,
-      note:"Weak-field reference is leading-order spatial-geodesic deflection rS/b, not 4-D light bending 2rS/b. The live renderer uses a 1 px numerical cutoff at the point-source singularity."};
+      gradientRelativeError,finiteDifferenceRelativeError,weakFieldDeflectionRad:measured,weakFieldLeadingOrderRad:expected,
+      weakFieldRelativeError:rel(expected,measured),convergence,referenceSteps:reference.steps,
+      radiation:"none: the source is stationary; a stationary isolated mass has no time-varying quadrupole and emits no gravitational waves",
+      note:"Tests validate a 2-D rendering of the exact isotropic Schwarzschild spatial metric and its spatial geodesics. This is not a 4-D null-geodesic solver. Screen coordinates are not calibrated physical lengths."};
   }
   const geodesicValidation=runGeodesicValidation();
   function warpVertex(g,i,t,horizontal){
@@ -740,7 +767,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode){let touchPointers=0,downPointers=0;for(const p of pointers.values()){if(p.down){downPointers++;if(p.pointerType==='touch')touchPointers++;}}perf.frameLog.push({t:+(now-perf.started).toFixed(1),intervalMs:+frameDelta.toFixed(2),renderCpuMs:+renderCost.toFixed(2),activePointers:pointers.size,downPointers,touchPointers,dpr,frameCapHz:frameCap});if(perf.frameLog.length>18000)perf.frameLog.shift();}
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nAdaptive Schwarzschild checks: radial y ${r.geodesicValidation.radialStraightLineMaxY.toExponential(2)} px\nInvariant drift E/L ${r.geodesicValidation.relativeMetricSpeedDrift.toExponential(2)} / ${r.geodesicValidation.relativeAngularMomentumDrift.toExponential(2)}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nConvergence endpoint errors ${r.geodesicValidation.convergence.map(x=>x.endpointError.toExponential(1)).join(' / ')} px\nStatic metric · Schwarzschild isotropic slice\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nPHYSICS CHECKS ${r.geodesicValidation.passed}/${r.geodesicValidation.total} passed\n${r.geodesicValidation.checks.map(c=>(c.pass?'PASS ':'FAIL ')+c.name+' · '+Number(c.value).toExponential(2)).join('\n')}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nRadiation ${r.geodesicValidation.radiation}\nStatic Schwarzschild isotropic spatial slice · no GW source\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
