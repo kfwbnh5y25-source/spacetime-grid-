@@ -33,10 +33,26 @@
   .modeRow { display: grid; grid-template-columns: 74px 1fr 34px; gap: 6px; align-items: center; font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.8); }
   .modeTrack { height: 6px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
   .modeFill { height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg,#68b5ff,#9cf0ff); transition: width .08s linear; }
-  #backBtn { position: fixed; z-index: 9; right: max(14px,env(safe-area-inset-right)); bottom: max(16px,env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 13px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.76); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; text-decoration: none; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-  #backBtn:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
+  #backBtn, #swTutorialBtn { position: fixed; z-index: 9; right: max(14px,env(safe-area-inset-right)); bottom: max(16px,env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 13px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.76); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  #swTutorialBtn { right: auto; left: max(14px,env(safe-area-inset-left)); bottom: auto; top: max(54px,calc(env(safe-area-inset-top) + 42px)); }
+  #swTutorialBtn.hidden { opacity: 0; pointer-events: none; }
+  #backBtn:hover, #swTutorialBtn:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
+  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(54px,calc(env(safe-area-inset-top) + 42px)); width: min(330px,calc(100vw - 28px)); padding: 13px 14px; border: 1px solid rgba(185,218,255,.24); border-radius: 15px; background: rgba(5,10,20,.86); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+  #swTutorial[hidden] { display: none; }
+  .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .tutStepTag { font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: #8ec5ff; text-transform: uppercase; }
+  .tutClose { width: 24px; height: 24px; border: 1px solid rgba(255,255,255,.16); border-radius: 50%; background: rgba(255,255,255,.06); color: rgba(235,243,255,.8); font: 14px/1 system-ui,sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .tutPills { display: flex; gap: 5px; margin-bottom: 9px; }
+  .tutPill { flex: 1; height: 4px; border-radius: 99px; background: rgba(255,255,255,.14); }
+  .tutPill.done { background: #63d297; }
+  .tutPill.active { background: #8ec5ff; }
+  .tutTitle { margin: 0 0 4px; font-size: 13.5px; font-weight: 600; color: #fff; }
+  .tutBody { margin: 0 0 10px; font-size: 11.5px; color: rgba(225,236,255,.82); }
+  .tutFormula { display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 6px; background: rgba(130,185,255,.12); border: 1px solid rgba(130,185,255,.22); font: 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color: #b9dcff; }
+  .tutActions { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+  .tutBtnGroup { display: flex; gap: 6px; }
   @media (pointer:coarse) {
-    #controlsPanel { top: auto; bottom: max(62px,calc(env(safe-area-inset-bottom) + 52px)); max-height: 44vh; }
+    #controlsPanel { top: auto; bottom: max(62px,calc(env(safe-area-inset-bottom) + 52px)); max-height: 40vh; }
     #readoutsDock { width: min(230px,calc(100vw - 140px)); }
     .modeRow { grid-template-columns: 60px 1fr 28px; }
   }
@@ -47,8 +63,32 @@
 <div id="topHud">
   <div class="hudPill" id="modeBadge">PARAMETRIC PUMPING</div>
   <div class="hudPill" id="threshBadge">h_p / h_th: 1.00</div>
-  <div class="hudPill active" id="domModeBadge">DOMINANT MODE: (0,0)</div>
+  <div class="hudPill active" id="domModeBadge">MODE: (0,0)</div>
 </div>
+<button id="swTutorialBtn" type="button" aria-label="Open Spin Waves tutorial">GUIDE ?</button>
+<section id="swTutorial" hidden aria-label="Spin Waves & Parametric Excitation tutorial">
+  <div class="tutHeader">
+    <span class="tutStepTag" id="swTutTag">STEP 1 OF 4</span>
+    <button class="tutClose" id="swTutClose" type="button" aria-label="Close tutorial">×</button>
+  </div>
+  <div class="tutPills" aria-hidden="true">
+    <div class="tutPill" data-step="0"></div>
+    <div class="tutPill" data-step="1"></div>
+    <div class="tutPill" data-step="2"></div>
+    <div class="tutPill" data-step="3"></div>
+  </div>
+  <h2 class="tutTitle" id="swTutTitle"></h2>
+  <p class="tutBody" id="swTutBody"></p>
+  <div class="tutActions">
+    <div class="tutBtnGroup">
+      <button class="btn active" id="swTutDemo" type="button">Watch Demo</button>
+    </div>
+    <div class="tutBtnGroup">
+      <button class="btn" id="swTutPrev" type="button">Back</button>
+      <button class="btn" id="swTutNext" type="button">Next</button>
+    </div>
+  </div>
+</section>
 <details id="controlsPanel" open>
   <summary>SPIN WAVE &amp; EIGENMODE CONTROLS ▾</summary>
   <div class="ctrlBody">
@@ -57,13 +97,14 @@
       <button class="btn active" id="presetParam" type="button">Parametric 2f_k</button>
       <button class="btn" id="presetSub" type="button">Below Thresh</button>
       <button class="btn" id="presetDirect" type="button">Direct RF</button>
+      <button class="btn" id="btnZeroDrive" type="button">Zero Drive</button>
     </div>
     <div class="sectionLabel">Launch / Inspect Eigenmode (n,m)</div>
     <div class="btnRow" id="eigenButtons">
       <button class="btn" data-mode="0" type="button">(0,0) Kittel</button>
-      <button class="btn" data-mode="1" type="button">(1,0) Radial</button>
-      <button class="btn" data-mode="2" type="button">(0,1) Dipole</button>
-      <button class="btn" data-mode="3" type="button">(0,2) Quad</button>
+      <button class="btn" data-mode="1" type="button">(0,1) Dipole</button>
+      <button class="btn" data-mode="2" type="button">(0,2) Quad</button>
+      <button class="btn" data-mode="3" type="button">(1,0) Radial</button>
       <button class="btn" data-mode="4" type="button">(1,1) Mixed</button>
       <button class="btn" data-mode="5" type="button">(2,0) 2-Ring</button>
     </div>
@@ -76,24 +117,24 @@
       <button class="btn" id="driveTransverse" type="button">Transverse RF (y)</button>
     </div>
     <label class="sliderRow">
-      <span>Drive Frequency f</span><output id="outFreq">5.80 GHz</output>
-      <input id="slFreq" type="range" min="1.5" max="11.0" step="0.05" value="5.80">
+      <span>Drive Frequency f</span><output id="outFreq">6.74 GHz</output>
+      <input id="slFreq" type="range" min="1.5" max="11.0" step="0.05" value="6.74">
     </label>
     <label class="sliderRow">
-      <span>Drive Amplitude h_p</span><output id="outAmp">0.180</output>
-      <input id="slAmp" type="range" min="0" max="0.45" step="0.005" value="0.180">
+      <span>Drive Amplitude h_p</span><output id="outAmp">0.430</output>
+      <input id="slAmp" type="range" min="0" max="0.60" step="0.005" value="0.430">
     </label>
     <label class="sliderRow">
       <span>Bias Field H_0 (x)</span><output id="outField">0.45</output>
       <input id="slField" type="range" min="0.15" max="1.20" step="0.01" value="0.45">
     </label>
     <label class="sliderRow">
-      <span>Gilbert Damping α</span><output id="outDamp">0.018</output>
-      <input id="slDamp" type="range" min="0.004" max="0.080" step="0.002" value="0.018">
+      <span>Gilbert Damping α</span><output id="outDamp">0.040</output>
+      <input id="slDamp" type="range" min="0.008" max="0.120" step="0.002" value="0.040">
     </label>
     <div class="btnRow">
       <button class="btn" id="btnPause" type="button">Pause</button>
-      <button class="btn" id="btnSeed" type="button">Re-seed</button>
+      <button class="btn" id="btnSeed" type="button">Seed Modes</button>
       <button class="btn" id="btnClear" type="button">Calm Spins</button>
     </div>
   </div>
@@ -112,9 +153,10 @@
 <script>
 (() => {
   'use strict';
-  const NX = 64, NY = 64, N = NX * NY;
+  const NX = 48, NY = 48, N = NX * NY;
   const mx = new Float32Array(N), my = new Float32Array(N), mz = new Float32Array(N);
   const kx1 = new Float32Array(N), ky1 = new Float32Array(N), kz1 = new Float32Array(N);
+  const kx2 = new Float32Array(N), ky2 = new Float32Array(N), kz2 = new Float32Array(N);
   const mxT = new Float32Array(N), myT = new Float32Array(N), mzT = new Float32Array(N);
   const activeMask = new Uint8Array(N);
 
@@ -130,14 +172,14 @@
 
   let geometryMode = 'disk';
   let driveMode = 'parallel';
-  let driveFreq = 5.80;
-  let driveAmp = 0.22;
+  let driveFreq = 6.74;
+  let driveAmp = 0.43;
   let biasH0 = 0.45;
-  let damping = 0.018;
+  let damping = 0.040;
   let paused = false;
   let simTime = 0;
 
-  const J_EX = 14.0;
+  const J_EX = 6.0;
   const DEMAG_NZ = 1.60;
   const FREQ_TO_RAD = 0.355; // f_kittel(H0=0.45) ≈ 2.71 GHz, 2*f_k ≈ 5.42 GHz
 
@@ -228,15 +270,15 @@
     return omega / FREQ_TO_RAD;
   }
 
-  function seedSpins(amp = 0.02) {
+  function seedSpins(amp = 0.025) {
     if (!amp) {
       for (let i = 0; i < N; i++) { mx[i] = 1; my[i] = 0; mz[i] = 0; }
       return;
     }
-    const scale = amp * 28;
+    const scale = amp * 20;
     for (let i = 0; i < N; i++) {
       if (!activeMask[i]) { mx[i] = 1; my[i] = 0; mz[i] = 0; continue; }
-      const ny = scale * (0.6 * modeTemplates[1][i] + 0.5 * modeTemplates[2][i] + 0.4 * modeTemplates[3][i] + 0.3 * modeTemplates[4][i]);
+      const ny = scale * (0.5 * modeTemplates[1][i] + 0.5 * modeTemplates[2][i] + 0.65 * modeTemplates[3][i] + 0.35 * modeTemplates[4][i]);
       const nz = ny * 0.25;
       const inv = 1 / Math.hypot(1, ny, nz);
       mx[i] = inv; my[i] = ny * inv; mz[i] = nz * inv;
@@ -247,12 +289,11 @@
     const tpl = modeTemplates[mIdx];
     let maxT = 1e-6;
     for (let i = 0; i < N; i++) if (Math.abs(tpl[i]) > maxT) maxT = Math.abs(tpl[i]);
-    const scale = 0.26 / maxT;
+    const scale = 0.16 / maxT;
     for (let i = 0; i < N; i++) {
       if (!activeMask[i]) { mx[i] = 1; my[i] = 0; mz[i] = 0; continue; }
       const ny = tpl[i] * scale;
-      const nz = 0;
-      const inv = 1 / Math.hypot(1, ny, nz);
+      const inv = 1 / Math.hypot(1, ny);
       mx[i] = inv; my[i] = ny * inv; mz[i] = 0;
     }
     driveMode = 'transverse';
@@ -311,12 +352,12 @@
       const inv = 1 / (Math.hypot(tx, ty, tz) || 1);
       mxT[i] = tx * inv; myT[i] = ty * inv; mzT[i] = tz * inv;
     }
-    computeLlgDerivatives(mxT, myT, mzT, mxT, myT, mzT, simTime + dt);
+    computeLlgDerivatives(mxT, myT, mzT, kx2, ky2, kz2, simTime + dt);
     for (let i = 0; i < N; i++) {
       if (!activeMask[i]) continue;
-      let nx = mx[i] + 0.5 * (kx1[i] + mxT[i]) * dt;
-      let ny = my[i] + 0.5 * (ky1[i] + myT[i]) * dt;
-      let nz = mz[i] + 0.5 * (kz1[i] + mzT[i]) * dt;
+      let nx = mx[i] + 0.5 * (kx1[i] + kx2[i]) * dt;
+      let ny = my[i] + 0.5 * (ky1[i] + ky2[i]) * dt;
+      let nz = mz[i] + 0.5 * (kz1[i] + kz2[i]) * dt;
       const inv = 1 / (Math.hypot(nx, ny, nz) || 1);
       mx[i] = nx * inv; my[i] = ny * inv; mz[i] = nz * inv;
     }
@@ -325,7 +366,7 @@
 
   function parametricThreshold() {
     const omegaK = Math.sqrt(biasH0 * (biasH0 + DEMAG_NZ));
-    return Math.max(0.005, (4 * damping * omegaK) / DEMAG_NZ);
+    return Math.max(0.005, (4 * damping * omegaK * (biasH0 + 0.5 * DEMAG_NZ)) / DEMAG_NZ);
   }
 
   function pluckAt(clientX, clientY) {
@@ -334,17 +375,18 @@
     const gx = Math.floor(((clientX - x0) / size) * NX);
     const gy = Math.floor(((clientY - y0) / size) * NY);
     if (gx < 0 || gx >= NX || gy < 0 || gy >= NY) return;
-    for (let y = Math.max(0, gy - 4); y <= Math.min(NY - 1, gy + 4); y++) {
-      for (let x = Math.max(0, gx - 4); x <= Math.min(NX - 1, gx + 4); x++) {
+    for (let y = Math.max(0, gy - 3); y <= Math.min(NY - 1, gy + 3); y++) {
+      for (let x = Math.max(0, gx - 3); x <= Math.min(NX - 1, gx + 3); x++) {
         const i = y * NX + x;
         if (!activeMask[i]) continue;
         const d2 = (x - gx) * (x - gx) + (y - gy) * (y - gy);
-        const kick = 0.28 * Math.exp(-d2 / 5.5);
-        const ny = my[i] + kick, nz = mz[i] + kick * 0.5;
+        const kick = 0.24 * Math.exp(-d2 / 4.0);
+        const ny = my[i] + kick, nz = mz[i] + kick * 0.4;
         const inv = 1 / Math.hypot(mx[i], ny, nz);
         mx[i] *= inv; my[i] = ny * inv; mz[i] = nz * inv;
       }
     }
+    notifySwTutorial('pluck');
   }
 
   let width = 0, height = 0, dpr = 1;
@@ -365,13 +407,13 @@
 
   function updateSpectrum() {
     frameCounter++;
-    if (frameCounter % 11 !== 0) return;
+    if (frameCounter % 4 !== 0) return;
     const idx = Math.floor(NY * 0.36) * NX + Math.floor(NX * 0.38);
     probeSeries[probeHead] = my[idx] + 0.6 * mz[idx];
     probeHead = (probeHead + 1) % SPEC_LEN;
 
-    const dtSample = 11 * 12 * 0.005; // 0.66 sim-time units
-    const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * dtSample); // ~26.82 GHz
+    const dtSample = 4 * 18 * 0.010; // 0.72 sim-time units
+    const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * dtSample); // ~24.58 GHz
 
     let maxVal = 1e-6, peakBin = 1;
     for (let k = 1; k < SPEC_LEN / 2; k++) {
@@ -392,7 +434,7 @@
     specCtx.fillStyle = 'rgba(130,185,255,0.08)';
     specCtx.fillRect(0, 0, sw, sh);
 
-    const maxFreq = 12.5;
+    const maxFreq = 12.0;
     const xFp = (driveFreq / maxFreq) * sw;
     const xHalf = ((driveFreq * 0.5) / maxFreq) * sw;
     specCtx.strokeStyle = 'rgba(255,205,95,0.6)';
@@ -457,8 +499,8 @@
       activeCount++;
       const vy = my[i], vz = mz[i];
       ampSum += Math.hypot(vy, vz);
-      const val = Math.max(-1, Math.min(1, vy * 2.8));
-      const p = Math.max(0, val), n = Math.max(0, -val), phase = Math.min(1, Math.abs(vz) * 2.4);
+      const val = Math.max(-1, Math.min(1, vy * 3.2));
+      const p = Math.max(0, val), n = Math.max(0, -val), phase = Math.min(1, Math.abs(vz) * 2.8);
       data[o] = Math.round(14 + p * 235 + phase * 45);
       data[o + 1] = Math.round(22 + p * 120 + n * 165);
       data[o + 2] = Math.round(42 + n * 213 + phase * 55);
@@ -483,14 +525,14 @@
 
     ctx.strokeStyle = 'rgba(240,248,255,0.42)';
     ctx.lineWidth = 1;
-    const step = 4, cell = size / NX;
+    const step = 3, cell = size / NX;
     ctx.beginPath();
-    for (let y = 2; y < NY; y += step) {
-      for (let x = 2; x < NX; x += step) {
+    for (let y = 1; y < NY; y += step) {
+      for (let x = 1; x < NX; x += step) {
         const i = y * NX + x;
         if (!activeMask[i]) continue;
         const sx = x0 + (x + 0.5) * cell, sy = y0 + (y + 0.5) * cell;
-        const ax = my[i] * cell * 6.5, ay = -mz[i] * cell * 6.5;
+        const ax = my[i] * cell * 5.2, ay = -mz[i] * cell * 5.2;
         ctx.moveTo(sx, sy); ctx.lineTo(sx + ax, sy + ay);
       }
     }
@@ -507,7 +549,7 @@
       : `TRANSVERSE RF · f_rf=${driveFreq.toFixed(2)} (f_0≈${modeFreqGHz(0).toFixed(2)})`;
     threshBadge.textContent = driveMode === 'parallel'
       ? `h_p / h_th: ${ratio.toFixed(2)}${ratio > 1.02 ? ' · INSTABILITY' : ' · DAMPED'}`
-      : 'DIRECT RESONANCE';
+      : (driveAmp === 0 ? 'FREE DECAY (h_p = 0)' : 'DIRECT RESONANCE');
     threshBadge.classList.toggle('warn', driveMode === 'parallel' && ratio > 1.02);
     threshBadge.classList.toggle('active', driveMode === 'transverse');
     updateEigenmodeReadout(meanAmp);
@@ -528,19 +570,68 @@
     document.getElementById('driveTransverse').classList.toggle('active', driveMode === 'transverse');
   }
 
+  // Interactive 4-step tutorial
+  const swTutKey = 'spin-waves-tutorial-v1';
+  const swTutEl = document.getElementById('swTutorial');
+  const swTutBtn = document.getElementById('swTutorialBtn');
+  const swTutSteps = [
+    { tag: 'STEP 1 OF 4 · EIGENMODES', title: 'Excite a Standing Eigenmode', body: 'Click any eigenmode button like (1,0) Radial or (0,2) Quad to excite an exact Bessel standing wave at its resonant frequency.', formula: 'J_m(α_nm r/R) cos(mθ)' },
+    { tag: 'STEP 2 OF 4 · DAMPING', title: 'Remove Drive & Watch Decay', body: 'Click Zero Drive (or set h_p = 0). Gilbert damping α dissipates precession energy until the film settles back to equilibrium.', formula: 'Γ ≈ α(H_0 + N_z/2)' },
+    { tag: 'STEP 3 OF 4 · PARAMETRIC', title: 'Parametric Instability (f_p = 2f_k)', body: 'Pump parallel to H_0 at twice a mode frequency. Above threshold h_p > h_th, magnons amplify at f_p / 2!', formula: 'h_p > h_th · f_magnon = f_p/2' },
+    { tag: 'STEP 4 OF 4 · PLUCK & SPECTRUM', title: 'Pluck & Read the Spectrum', body: 'Tap or drag directly on the magnetic disk to launch local spin waves and watch Live Eigenmodes & Magnon Spectrum react.', formula: 'tap/drag film → live FFT' }
+  ];
+  let swTutState = { step: 0, done: [false, false, false, false], dismissed: false };
+  try { const s = JSON.parse(localStorage.getItem(swTutKey) || 'null'); if (s && typeof s === 'object') swTutState = { ...swTutState, ...s }; } catch (_) {}
+  function saveSwTut() { try { localStorage.setItem(swTutKey, JSON.stringify(swTutState)); } catch (_) {} }
+  function renderSwTut() {
+    const s = swTutSteps[swTutState.step] || swTutSteps[0];
+    document.getElementById('swTutTag').textContent = swTutState.done.every(Boolean) ? 'ALL CONCEPTS EXPLORED' : s.tag;
+    document.getElementById('swTutTitle').textContent = s.title;
+    document.getElementById('swTutBody').innerHTML = s.body + '<br><span class="tutFormula">' + s.formula + '</span>';
+    document.querySelectorAll('#swTutorial .tutPill').forEach((el, idx) => {
+      el.classList.toggle('done', !!swTutState.done[idx]);
+      el.classList.toggle('active', idx === swTutState.step && !swTutState.done[idx]);
+    });
+    document.getElementById('swTutPrev').disabled = swTutState.step === 0;
+    document.getElementById('swTutNext').textContent = swTutState.step === swTutSteps.length - 1 ? 'Done' : 'Next';
+  }
+  function openSwTut() { swTutState.dismissed = false; swTutEl.hidden = false; swTutBtn.classList.add('hidden'); renderSwTut(); saveSwTut(); }
+  function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); saveSwTut(); }
+  function notifySwTutorial(action) {
+    const idx = action === 'eigen' ? 0 : action === 'zero' ? 1 : action === 'param' ? 2 : action === 'pluck' ? 3 : -1;
+    if (idx >= 0 && !swTutState.done[idx]) {
+      swTutState.done[idx] = true;
+      if (swTutState.step === idx && idx < swTutSteps.length - 1) swTutState.step = idx + 1;
+      renderSwTut(); saveSwTut();
+    }
+  }
+  function runSwTutDemo(step) {
+    if (step === 0) { exciteEigenmode(3); notifySwTutorial('eigen'); }
+    else if (step === 1) { exciteEigenmode(2); driveAmp = 0; syncUi(); notifySwTutorial('zero'); }
+    else if (step === 2) { applyPreset('param'); notifySwTutorial('param'); }
+    else if (step === 3) { pluckAt(width * 0.56, height * 0.44); notifySwTutorial('pluck'); }
+  }
+  swTutBtn.addEventListener('click', openSwTut);
+  document.getElementById('swTutClose').addEventListener('click', closeSwTut);
+  document.getElementById('swTutPrev').addEventListener('click', () => { swTutState.step = Math.max(0, swTutState.step - 1); renderSwTut(); saveSwTut(); });
+  document.getElementById('swTutNext').addEventListener('click', () => { if (swTutState.step >= swTutSteps.length - 1) closeSwTut(); else { swTutState.step++; renderSwTut(); saveSwTut(); } });
+  document.getElementById('swTutDemo').addEventListener('click', () => runSwTutDemo(swTutState.step));
+  if (!swTutState.dismissed) openSwTut(); else { swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); }
+
   function applyPreset(name) {
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
-      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.018; driveFreq = 2 * modeFreqGHz(3); driveAmp = 0.28;
+      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.040; driveFreq = 2 * modeFreqGHz(3); driveAmp = 2.5 * parametricThreshold();
       seedSpins(0.03);
+      notifySwTutorial('param');
     } else if (name === 'sub') {
       document.getElementById('presetSub').classList.add('active');
-      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.025; driveFreq = 2 * modeFreqGHz(3); driveAmp = 0.04;
-      seedSpins(0.02);
+      driveMode = 'parallel'; biasH0 = 0.45; damping = 0.040; driveFreq = 2 * modeFreqGHz(3); driveAmp = 0.25 * parametricThreshold();
+      seedSpins(0.03);
     } else if (name === 'direct') {
       document.getElementById('presetDirect').classList.add('active');
-      driveMode = 'transverse'; biasH0 = 0.45; damping = 0.018; driveFreq = modeFreqGHz(1); driveAmp = 0.055;
+      driveMode = 'transverse'; biasH0 = 0.45; damping = 0.040; driveFreq = modeFreqGHz(0); driveAmp = 0.055;
       seedSpins(0.006);
     }
     syncUi();
@@ -549,18 +640,26 @@
   document.getElementById('presetParam').addEventListener('click', () => applyPreset('param'));
   document.getElementById('presetSub').addEventListener('click', () => applyPreset('sub'));
   document.getElementById('presetDirect').addEventListener('click', () => applyPreset('direct'));
+  document.getElementById('btnZeroDrive').addEventListener('click', () => {
+    driveAmp = 0; syncUi(); notifySwTutorial('zero');
+  });
   document.getElementById('eigenButtons').addEventListener('click', e => {
     const btn = e.target.closest('button[data-mode]');
     if (!btn) return;
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#btnZeroDrive').forEach(b => b.classList.remove('active'));
     exciteEigenmode(Number(btn.dataset.mode));
+    notifySwTutorial('eigen');
   });
   document.getElementById('geomDisk').addEventListener('click', () => { geometryMode = 'disk'; buildMaskAndModes(); seedSpins(0.025); syncUi(); });
   document.getElementById('geomRect').addEventListener('click', () => { geometryMode = 'rect'; buildMaskAndModes(); seedSpins(0.025); syncUi(); });
   document.getElementById('driveParallel').addEventListener('click', () => { driveMode = 'parallel'; syncUi(); });
   document.getElementById('driveTransverse').addEventListener('click', () => { driveMode = 'transverse'; syncUi(); });
   document.getElementById('slFreq').addEventListener('input', e => { driveFreq = +e.target.value; syncUi(); });
-  document.getElementById('slAmp').addEventListener('input', e => { driveAmp = +e.target.value; syncUi(); });
+  document.getElementById('slAmp').addEventListener('input', e => {
+    driveAmp = +e.target.value; syncUi();
+    if (driveAmp === 0) notifySwTutorial('zero');
+    else if (driveMode === 'parallel' && driveAmp > parametricThreshold()) notifySwTutorial('param');
+  });
   document.getElementById('slField').addEventListener('input', e => { biasH0 = +e.target.value; syncUi(); });
   document.getElementById('slDamp').addEventListener('input', e => { damping = +e.target.value; syncUi(); });
   document.getElementById('btnPause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; });
@@ -572,7 +671,7 @@
 
   function frame() {
     if (!paused) {
-      for (let s = 0; s < 12; s++) stepLlg(0.005);
+      for (let s = 0; s < 18; s++) stepLlg(0.010);
       updateSpectrum();
     }
     drawScene();

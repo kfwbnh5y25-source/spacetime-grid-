@@ -336,3 +336,200 @@ test('I. Orbital tutorial: elliptical, parabolic (with snap), hyperbolic classif
 
   assert.ok(physics.predictLaunchArc(r, 0, 0, 0.72 * vEsc, m) > 20, 'Predicted launch arc should sample trajectory points');
 });
+
+function loadSpinWavesContext() {
+  const noop = () => {};
+  const makeCtx = () => new Proxy({
+    createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) })
+  }, {
+    get(target, prop) { return prop in target ? target[prop] : noop; }
+  });
+  const makeEl = () => ({
+    style: {},
+    classList: { add: noop, remove: noop, toggle: noop },
+    setAttribute: noop,
+    addEventListener: noop,
+    getContext: () => makeCtx(),
+    querySelector: () => makeEl(),
+    textContent: '',
+    innerHTML: '',
+    value: 0,
+    width: 280,
+    height: 54
+  });
+  const sandbox = {
+    console,
+    Math,
+    Number,
+    Array,
+    Float32Array,
+    Uint8Array,
+    Uint8ClampedArray,
+    innerWidth: 1200,
+    innerHeight: 800,
+    devicePixelRatio: 2,
+    localStorage: { getItem: () => null, setItem: noop },
+    requestAnimationFrame: () => 0,
+    addEventListener: noop,
+    document: {
+      getElementById: () => makeEl(),
+      createElement: () => makeEl(),
+      querySelectorAll: () => [],
+      addEventListener: noop
+    },
+    window: null
+  };
+  sandbox.window = sandbox;
+
+  const instrumented = spinWavesScript.replace(
+    /\}\)\(\);\s*$/,
+    `  globalThis.__spin = {
+    NX, NY, N, J_EX, DEMAG_NZ, FREQ_TO_RAD,
+    mx, my, mz, activeMask, modeTemplates, MODE_SPECS,
+    buildMaskAndModes, seedSpins, exciteEigenmode, stepLlg,
+    modeFreqGHz, parametricThreshold, besselJ,
+    setState(patch) {
+      if ('geometryMode' in patch) geometryMode = patch.geometryMode;
+      if ('driveMode' in patch) driveMode = patch.driveMode;
+      if ('driveFreq' in patch) driveFreq = patch.driveFreq;
+      if ('driveAmp' in patch) driveAmp = patch.driveAmp;
+      if ('biasH0' in patch) biasH0 = patch.biasH0;
+      if ('damping' in patch) damping = patch.damping;
+      if ('simTime' in patch) simTime = patch.simTime;
+    },
+    getState() { return { geometryMode, driveMode, driveFreq, driveAmp, biasH0, damping, simTime }; },
+    meanTransverseAmp() {
+      let sum = 0, cnt = 0;
+      for (let i = 0; i < N; i++) {
+        if (!activeMask[i]) continue;
+        sum += Math.hypot(my[i], mz[i]); cnt++;
+      }
+      return cnt ? sum / cnt : 0;
+    },
+    modeProjection(mIdx) {
+      let dy = 0, dz = 0;
+      const tpl = modeTemplates[mIdx];
+      for (let i = 0; i < N; i++) {
+        if (!activeMask[i]) continue;
+        dy += my[i] * tpl[i]; dz += mz[i] * tpl[i];
+      }
+      return Math.hypot(dy, dz);
+    }
+  };
+})();`
+  );
+  const context = vm.createContext(sandbox);
+  vm.runInContext(instrumented, context);
+  return context.__spin;
+}
+
+const spin = loadSpinWavesContext();
+
+test('J. Spin-wave model: unit spin norm conservation and eigenmode orthonormality', () => {
+  for (const geom of ['disk', 'rect']) {
+    spin.setState({ geometryMode: geom });
+    spin.buildMaskAndModes();
+    for (let a = 0; a < spin.MODE_SPECS.length; a++) {
+      let normSq = 0;
+      for (let i = 0; i < spin.N; i++) normSq += spin.modeTemplates[a][i] ** 2;
+      assert.ok(Math.abs(normSq - 1) < 1e-5, `${geom} mode ${a} not normalized: ${normSq}`);
+      for (let b = a + 1; b < spin.MODE_SPECS.length; b++) {
+        let dot = 0;
+        for (let i = 0; i < spin.N; i++) dot += spin.modeTemplates[a][i] * spin.modeTemplates[b][i];
+        assert.ok(Math.abs(dot) < 0.06, `${geom} modes ${a},${b} not orthogonal: dot=${dot.toFixed(4)}`);
+      }
+    }
+  }
+
+  spin.setState({ geometryMode: 'disk', driveMode: 'parallel', driveAmp: 0.35, damping: 0.04 });
+  spin.buildMaskAndModes();
+  spin.seedSpins(0.03);
+  for (let s = 0; s < 300; s++) spin.stepLlg(0.01);
+  for (let i = 0; i < spin.N; i++) {
+    if (!spin.activeMask[i]) continue;
+    const len = Math.hypot(spin.mx[i], spin.my[i], spin.mz[i]);
+    assert.ok(Math.abs(len - 1) < 1e-5, `Spin ${i} norm drifted to ${len}`);
+  }
+});
+
+test('K. Spin-wave model: eigenmode dispersion & mode purity (simulated vs analytical frequency)', () => {
+  spin.setState({ geometryMode: 'disk', biasH0: 0.45, damping: 0.0, driveAmp: 0.0, simTime: 0 });
+  spin.buildMaskAndModes();
+
+  for (const mIdx of [0, 1, 3]) {
+    spin.exciteEigenmode(mIdx);
+    spin.setState({ damping: 0.0, driveAmp: 0.0, simTime: 0 });
+    const fExpected = spin.modeFreqGHz(mIdx);
+
+    const proj = () => {
+      let sum = 0;
+      for (let i = 0; i < spin.N; i++) if (spin.activeMask[i]) sum += spin.my[i] * spin.modeTemplates[mIdx][i];
+      return sum;
+    };
+    const crossings = [];
+    let prev = proj();
+    const dt = 0.01;
+    for (let step = 1; step <= 3000; step++) {
+      spin.stepLlg(dt);
+      const cur = proj();
+      if (prev <= 0 && cur > 0) {
+        const frac = -prev / (cur - prev);
+        crossings.push((step - 1 + frac) * dt);
+        if (crossings.length >= 4) break;
+      }
+      prev = cur;
+    }
+    assert.ok(crossings.length >= 3, `Mode ${mIdx} did not complete enough oscillations`);
+    const avgPeriod = (crossings[crossings.length - 1] - crossings[0]) / (crossings.length - 1);
+    const omegaSim = (2 * Math.PI) / avgPeriod;
+    const fSim = omegaSim / spin.FREQ_TO_RAD;
+    const relErr = Math.abs(fSim - fExpected) / fExpected;
+    assert.ok(relErr < 0.065, `Mode ${mIdx} frequency mismatch: sim=${fSim.toFixed(3)} vs expected=${fExpected.toFixed(3)} GHz`);
+
+    const pSelf = spin.modeProjection(mIdx);
+    let totalSq = 0;
+    for (let k = 0; k < spin.MODE_SPECS.length; k++) totalSq += spin.modeProjection(k) ** 2;
+    assert.ok(pSelf / Math.sqrt(totalSq) > 0.95, `Mode ${mIdx} leaked into other modes: purity=${(pSelf / Math.sqrt(totalSq)).toFixed(3)}`);
+  }
+});
+
+test('L. Spin-wave model: Gilbert damping energy dissipation when drive is removed', () => {
+  spin.setState({ geometryMode: 'disk', biasH0: 0.45, driveAmp: 0.0 });
+  spin.buildMaskAndModes();
+
+  spin.exciteEigenmode(1);
+  spin.setState({ damping: 0.0, driveAmp: 0.0 });
+  const a0Zero = spin.meanTransverseAmp();
+  for (let s = 0; s < 1200; s++) spin.stepLlg(0.01);
+  const a1Zero = spin.meanTransverseAmp();
+  assert.ok(a1Zero >= a0Zero * 0.42, `Zero-damping amplitude collapsed unexpectedly: ${a1Zero.toFixed(4)} vs ${a0Zero.toFixed(4)}`);
+
+  spin.exciteEigenmode(1);
+  spin.setState({ damping: 0.04, driveAmp: 0.0 });
+  for (let s = 0; s < 2400; s++) spin.stepLlg(0.01);
+  const a1Damp = spin.meanTransverseAmp();
+  assert.ok(a1Damp < a0Zero * 0.35, `Expected strong zero-drive decay at alpha=0.04: ${a1Damp.toFixed(4)} vs ${a0Zero.toFixed(4)}`);
+});
+
+test('M. Spin-wave model: parametric excitation threshold (decay below h_th, exponential growth above h_th)', () => {
+  spin.setState({ geometryMode: 'disk', driveMode: 'parallel', biasH0: 0.45, damping: 0.040 });
+  spin.buildMaskAndModes();
+  const hTh = spin.parametricThreshold();
+  const fPump = 2 * spin.modeFreqGHz(3);
+
+  // Below threshold: h_p = 0.25 * h_th -> resonant mode 3 must decay
+  spin.setState({ driveFreq: fPump, driveAmp: 0.25 * hTh, simTime: 0 });
+  spin.seedSpins(0.03);
+  const subStart = spin.modeProjection(3);
+  for (let s = 0; s < 1800; s++) spin.stepLlg(0.01);
+  const subEnd = spin.modeProjection(3);
+  assert.ok(subEnd < subStart * 0.55, `Below threshold (h_p=${(0.25 * hTh).toFixed(3)} < h_th=${hTh.toFixed(3)}), mode 3 should decay: ${subStart.toFixed(4)} -> ${subEnd.toFixed(4)}`);
+
+  // Above threshold: h_p = 2.5 * h_th -> parametric instability must amplify resonant mode 3!
+  spin.setState({ driveFreq: fPump, driveAmp: 2.5 * hTh, simTime: 0 });
+  spin.seedSpins(0.03);
+  const supStart = spin.modeProjection(3);
+  for (let s = 0; s < 3000; s++) spin.stepLlg(0.01);
+  const supEnd = spin.modeProjection(3);
+  assert.ok(supEnd > supStart * 2.2, `Above threshold (h_p=${(2.5 * hTh).toFixed(3)} > h_th=${hTh.toFixed(3)}), mode 3 should grow: ${supStart.toFixed(4)} -> ${supEnd.toFixed(4)}`);
+});
