@@ -225,6 +225,7 @@ vec2 gradLogConformal(vec2 p){
   float rs=0.02*u_rS[i];
   psi+=rs/(4.0*r);
   gradPsi-=rs*d/(4.0*r*r*r);
+  // The pulse is centred on the same source position as the static mass.
   float rr=max(length(d),1.0);
   float age=max(0.0,u_time-u_waveStart);
   float q=rr-220.0*age;
@@ -495,7 +496,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(oldTotal>0){oldCx/=oldTotal;oldCy/=oldTotal;}
     if(persistentMasses.length)return;
     // One fixed source: the first tap creates the only mass and it never moves.
-    persistentMasses.push({x,y,mass,vx:0,vy:0,fixed:true,trail:[],trailClock:0,strength:1,waveStartTime:elapsed*0.001});
+    persistentMasses.push({x,y,waveX:x,waveY:y,mass,vx:0,vy:0,fixed:true,trail:[],trailClock:0,strength:1,waveStartTime:elapsed*0.001});
     let total=0,cx=0,cy=0;
     for(const body of persistentMasses){const weight=Math.max(0,body.mass??20);total+=weight;cx+=weight*body.x;cy+=weight*body.y;}
     if(total>0){cx/=total;cy/=total;}
@@ -597,7 +598,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const p=pointers.get(e.pointerId);
     if(p?.hover||p?.pointerType==='mouse'||!p?.down)return;
     if(e.type==='pointerup'&&!p.multiTouch&&p.travel<=14&&persistentMasses.length===0){
-      const w=worldPoint(e.clientX,e.clientY);createMass(w.x,w.y);
+      // Use the exact world-space point captured at touch-down. Pointer-up can
+      // be offset by browser gesture handling; the mass and its wave share this anchor.
+      createMass(p.startX,p.startY);
     }
     p.life=0;p.targetStrength=0;p.down=false;
   }
