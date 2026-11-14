@@ -417,7 +417,7 @@ function loadSpinWavesContext() {
     tukeyRamp, tone1EnvAt, tone2EnvAt,
     seedSpins, exciteEigenmode, pluckAt, stepLlg, updateSpectrum,
     modeFreqGHz, modeGammaGHz, modeGamma, parametricThreshold, parametricThresholdMT, arnoldThreshold,
-    crossPump4BGHz, instantaneousArnoldThresholdMT, computeArnoldHMaxMT, getArnoldRange, relPhaseDeg,
+    crossPump4BGHz, instantaneousArnoldThresholdMT, computeArnoldHMaxMT, getArnoldRange, phase1Deg, relPhaseDeg,
     cycleAvgModeAmp, modeRmsAmp,
     selfNfsCoeff, mutualNfsCoeff, mutualNfsCoeffGHz, modeNfsShiftGHz, modeMutualNfsShiftGHz,
     steadyStateAmp, analyzeTwoMode, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
@@ -988,6 +988,54 @@ test('T. Interactive 7-Stage Benchmark, Calibration & Verification Protocol + DB
   assert.ok(rep.calibration && rep.benchmark && rep.benchmark.rwaKstepsPerSec > 0);
   assert.ok(typeof spin.formatDbDiagText() === 'string');
 });
+
+test('U. Unmodified 4B prior-excitation downward Arnold tongue & phase dependence', () => {
+  spin.setNmmMode(false);
+  spin.terms.t4A = true;
+  spin.terms.t4B = true;
+
+  // 1. Coherent phase projection on instantaneousArnoldThresholdMT (with same-tau a_16^2, rotating phi flips wParGHz)
+  spin.setState({ temperatureK: 0, damping: 0.0020, simTime: 0 });
+  spin.aRe.fill(0); spin.aIm.fill(0);
+  spin.aRe[16] = 0.045;
+  const f15 = 2 * spin.modeFreqGHz(15) + 0.004;
+  const base15 = spin.parametricThresholdMT(15);
+  const thOpt = spin.instantaneousArnoldThresholdMT(15, f15, Math.PI / 2);
+  const thOpp = spin.instantaneousArnoldThresholdMT(15, f15, -Math.PI / 2);
+  assert.ok(thOpt < base15 - 0.15 && thOpp > base15 + 0.15,
+    `Phase-resolved 4B threshold must pull DOWN at constructive phase (${thOpt.toFixed(3)} mT) and push UP at opposite phase (${thOpp.toFixed(3)} mT) relative to base=${base15.toFixed(3)} mT`);
+
+  // 2. Sub-threshold cross4b preset (h_p = 0.90 * h_th(15)) at 0 K and 300 K
+  for (const temp of [0, 300]) {
+    spin.setState({ temperatureK: temp, thermalSeed: 20260101 });
+    spin.applyPreset('cross4b');
+    assert.equal(spin.phase1Deg(), 0);
+    // Without prior m16 excitation, sub-threshold 0.90*h_th(15) decays to floor
+    spin.aRe[16] = 0; spin.aIm[16] = 0;
+    for (let s = 0; s < 30000; s++) spin.stepLlg(0.5, true);
+    const noPrior15 = spin.cycleAvgModeAmp(15);
+
+    // With prior m16 excitation & constructive phase phi_1 = 0 deg, m15 ignites strongly above floor
+    spin.setState({ temperatureK: temp, thermalSeed: 20260101 });
+    spin.applyPreset('cross4b');
+    for (let s = 0; s < 30000; s++) spin.stepLlg(0.5, true);
+    const phi0_15 = spin.cycleAvgModeAmp(15);
+
+    // With prior m16 excitation & destructive phase phi_1 = 180 deg, m15 stays suppressed
+    spin.setState({ temperatureK: temp, thermalSeed: 20260101 });
+    spin.applyPreset('cross4b');
+    spin.setState({ drivePhase1: Math.PI });
+    assert.equal(spin.phase1Deg(), 180);
+    for (let s = 0; s < 30000; s++) spin.stepLlg(0.5, true);
+    const phi180_15 = spin.cycleAvgModeAmp(15);
+
+    assert.ok(noPrior15 < 0.0015 && phi0_15 > 0.012 && phi180_15 < 0.003,
+      `T=${temp}K cross4b expected sub-threshold ignition only with prior m16 + phi1=0deg: noPrior=${noPrior15.toFixed(4)}, 0deg=${phi0_15.toFixed(4)}, 180deg=${phi180_15.toFixed(4)}`);
+    assert.ok(phi0_15 > phi180_15 * 4, `T=${temp}K phase contrast too small: 0deg=${phi0_15.toFixed(4)} vs 180deg=${phi180_15.toFixed(4)}`);
+  }
+  spin.terms.t4B = false;
+});
+
 
 
 

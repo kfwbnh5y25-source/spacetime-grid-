@@ -241,6 +241,7 @@
       <button class="btn" id="presetCoex" type="button" title="Scenario 1 (S_det > 0): Weakly coupled c++ coexistence (m13, m23)">Coex (13,23)</button>
       <button class="btn" id="presetOpp" type="button" title="Scenario 1 (S_det > 0, Fig. 5): Opposite-sign (m13 +2.99, m27 -2.38) coexistence">Opp (13,27)</button>
       <button class="btn" id="presetNonrecip" type="button" title="Scenario 2 (S_det < 0, Fig. 6): 2-Tone 3.0us delayed nonreciprocity (m13, m16)">Nonrecip (13,16)</button>
+      <button class="btn" id="presetCross4B" type="button" title="4B Downward Arnold + Phase: prior m16 pulls m15 below h_th(15) (h_p = 0.90*h_th); toggle Phase φ₁ 0° vs 180°">4B Down+φ</button>
       <button class="btn" id="btnZeroDrive" type="button">Zero Drive</button>
     </div>
     <div class="sectionLabel">Inspect Bulk Normal Mode (&gt;1.6 GHz)</div>
@@ -263,6 +264,10 @@
     <label class="sliderRow">
       <span>Tone 1 Amp μ₀h_p1</span><output id="outAmp">0.60 mT</output>
       <input id="slAmp" type="range" min="0" max="2.50" step="0.01" value="0.60">
+    </label>
+    <label class="sliderRow">
+      <span>Tone 1 Phase φ₁</span><output id="outPhase1">0°</output>
+      <input id="slPhase1" type="range" min="-180" max="180" step="1" value="0">
     </label>
     <div class="btnRow">
       <button class="btn" id="btnDualTone" type="button">Dual-Tone: OFF</button>
@@ -917,34 +922,56 @@
     return df;
   }
   // Exact 4-magnon parametric cross-pumping rate W_4B = sum_{k != m} P_{mk} a_k^2 from Eq. (9) 4B term
-  function crossPump4BGHz(mIdx = 0, fProbeGHz = null) {
-    if (!terms.t4B) return { resRateGHz: 0, totalRateGHz: 0, maxDriver: -1 };
-    let totRe = 0, totIm = 0, resRateGHz = 0, bestContrib = 0, maxDriver = -1;
+  function crossPump4BGHz(mIdx = 0, fProbeGHz = null, pumpPhaseRad = null) {
+    if (!terms.t4B) return { resRateGHz: 0, totalRateGHz: 0, resRe: 0, resIm: 0, wParGHz: 0, wPerpGHz: 0, cosPhase: 0, maxDriver: -1 };
+    let totRe = 0, totIm = 0, resRe = 0, resIm = 0, resMagSum = 0, bestContrib = 0, maxDriver = -1;
     const bw = Math.max(0.008, 3 * modeGammaGHz(mIdx));
     for (let k = 0; k < M; k++) {
       if (k === mIdx) continue;
       const sqk = aRe[k] * aRe[k] + aIm[k] * aIm[k];
       if (sqk < 1e-8) continue;
       const hk2 = (mIdx * M + k) * 2;
-      const pAbs = Math.hypot(P4B[hk2], P4B[hk2 + 1]) * F_M;
+      const pR = P4B[hk2] * F_M, pI = P4B[hk2 + 1] * F_M;
+      const pAbs = Math.hypot(pR, pI);
       if (pAbs <= 1e-8) continue;
       const k2R = aRe[k] * aRe[k] - aIm[k] * aIm[k];
       const k2I = 2 * aRe[k] * aIm[k];
-      const pR = P4B[hk2] * F_M, pI = P4B[hk2 + 1] * F_M;
-      totRe += pR * k2R - pI * k2I;
-      totIm += pR * k2I + pI * k2R;
+      const wR = pR * k2R - pI * k2I;
+      const wI = pR * k2I + pI * k2R;
+      totRe += wR;
+      totIm += wI;
       const contrib = pAbs * sqk;
       if (contrib > bestContrib) { bestContrib = contrib; maxDriver = k; }
       if (fProbeGHz !== null) {
         const fkEff = fGhzArr[k] + modeNfsShiftGHz(k);
         const detK = 0.5 * (fProbeGHz - 2 * fkEff);
         const overlap = bw / Math.hypot(bw, detK);
-        resRateGHz += contrib * overlap;
+        resRe += wR * overlap;
+        resIm += wI * overlap;
+        resMagSum += contrib * overlap;
       }
     }
     const totalRateGHz = Math.hypot(totRe, totIm);
-    if (fProbeGHz === null) resRateGHz = totalRateGHz;
-    return { resRateGHz: Math.min(resRateGHz, totalRateGHz > 0 ? Math.max(resRateGHz, totalRateGHz * 0.25) : 0), totalRateGHz, maxDriver };
+    if (fProbeGHz === null) { resRe = totRe; resIm = totIm; resMagSum = totalRateGHz; }
+    const resVecMag = Math.hypot(resRe, resIm);
+    const resRateGHz = Math.min(Math.max(resMagSum, resVecMag), totalRateGHz > 0 ? Math.max(resMagSum, totalRateGHz * 0.25) : 0);
+    let wParGHz = resRateGHz, wPerpGHz = 0, cosPhase = 1;
+    if (typeof pumpPhaseRad === 'number' && Number.isFinite(pumpPhaseRad) && resVecMag > 1e-9) {
+      const i2 = (mIdx * M + mIdx) * 2;
+      const qR = Q2x[i2], qI = Q2x[i2 + 1], qMag = Math.hypot(qR, qI);
+      if (qMag > 1e-12) {
+        const fp = fProbeGHz !== null ? fProbeGHz : 2 * fGhzArr[mIdx];
+        const thP = (fp * FREQ_TO_RAD) * simTime + pumpPhaseRad;
+        // Exact Eq. (9) 2A rotating sideband multiplying a_h*: (-i Q2x / |Q2x|) * e^{i(omega_p tau + phi_p)}
+        const c = Math.cos(thP), s = Math.sin(thP);
+        const uR = (qI * c + qR * s) / qMag;
+        const uI = (qI * s - qR * c) / qMag;
+        wParGHz = resRe * uR + resIm * uI;
+        wPerpGHz = Math.abs(resRe * uI - resIm * uR);
+        cosPhase = wParGHz / resVecMag;
+      }
+    }
+    return { resRateGHz, totalRateGHz, resRe, resIm, wParGHz, wPerpGHz, cosPhase, maxDriver };
   }
   function arnoldThresholdMT(mIdx, fPumpGHz, fShiftGHz = 0) {
     const hTh = parametricThresholdMT(mIdx);
@@ -952,13 +979,21 @@
     const gamma = modeGammaGHz(mIdx);
     return hTh * Math.hypot(1, delta / gamma);
   }
-  function instantaneousArnoldThresholdMT(mIdx, fPumpGHz) {
+  function instantaneousArnoldThresholdMT(mIdx, fPumpGHz, pumpPhaseRad = null) {
     const fMut = modeMutualNfsShiftGHz(mIdx); // strictly 0 if 4A N_hk is unchecked!
     const vm = Math.max(1e-9, vParamGHz_mT(mIdx));
     const gamma = modeGammaGHz(mIdx);
     const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fMut));
     const reqRate = Math.hypot(gamma, delta);
-    const cp = crossPump4BGHz(mIdx, fPumpGHz);
+    const cp = crossPump4BGHz(mIdx, fPumpGHz, pumpPhaseRad);
+    if (typeof pumpPhaseRad === 'number' && Number.isFinite(pumpPhaseRad)) {
+      const wVec = Math.hypot(cp.resRe, cp.resIm);
+      if (!terms.t2A) return cp.resRateGHz >= reqRate ? 0 : Infinity;
+      if (wVec >= reqRate) return 0;
+      const radSq = reqRate * reqRate - cp.wPerpGHz * cp.wPerpGHz;
+      if (radSq <= 0) return reqRate / vm;
+      return Math.max(0, Math.sqrt(radSq) - cp.wParGHz) / vm;
+    }
     if (!terms.t2A) return cp.resRateGHz >= reqRate ? 0 : Infinity;
     return Math.max(0, reqRate - cp.resRateGHz) / vm;
   }
@@ -1392,7 +1427,7 @@
     resetModeHistory();
     recordModeSample();
     reconstructSpatialSpins();
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#btnZeroDrive').forEach(b => { if (b && b.classList) b.classList.remove('active'); });
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetCross4B,#btnZeroDrive').forEach(b => { if (b && b.classList) b.classList.remove('active'); });
     document.querySelectorAll('#eigenButtons button').forEach(b => { if (b && b.classList) b.classList.toggle('active', Number(b.dataset.mode) === mIdx); });
     syncUi();
   }
@@ -2026,6 +2061,14 @@
     const targetFp = (dualTone && arnoldTarget === 2) ? driveFreq2 : driveFreq;
     const targetHpNorm = (dualTone && arnoldTarget === 2) ? driveAmp2 : driveAmp;
     const closestMode = closestArnoldMode(targetFp);
+    const activePumpPhaseAt = (fp) => {
+      if (!terms.t4B || driveMode !== 'parallel') return null;
+      const d1 = driveAmp > 0 ? Math.abs(fp - driveFreq) : Infinity;
+      const d2 = (dualTone && driveAmp2 > 0) ? Math.abs(fp - driveFreq2) : Infinity;
+      if (d2 <= d1 && d2 < 0.025) return drivePhase2;
+      if (d1 < 0.025) return drivePhase1;
+      return null;
+    };
 
     let minTipMT = Infinity, maxTipMT = 0, maxShiftMHz = 0, maxW4B = 0, maxDh4B = 0;
 
@@ -2036,8 +2079,9 @@
       const f2Mut = 2 * (fGhzArr[m] + fMut);
       const col = modeColor(m);
       const hThStatic = parametricThresholdMT(m);
-      const cp = crossPump4BGHz(m, f2Mut);
-      const hThInst = instantaneousArnoldThresholdMT(m, f2Mut);
+      const tipPh = activePumpPhaseAt(f2Mut);
+      const cp = crossPump4BGHz(m, f2Mut, tipPh);
+      const hThInst = instantaneousArnoldThresholdMT(m, f2Mut, tipPh);
       if (f0 >= fMin && f0 <= fMax) {
         if (hThStatic < minTipMT) minTipMT = hThStatic;
         if (hThStatic > maxTipMT) maxTipMT = hThStatic;
@@ -2073,7 +2117,7 @@
         let started = false, lastPx = ARNOLD_PAD_L;
         for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 2) {
           const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
-          const hT = instantaneousArnoldThresholdMT(m, fp);
+          const hT = instantaneousArnoldThresholdMT(m, fp, activePumpPhaseAt(fp));
           if (Number.isFinite(hT) && hT <= hMax * 1.12) {
             const y = Math.max(0, toY(hT));
             if (!started) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); started = true; } else arnoldCtx.lineTo(px, y);
@@ -2435,18 +2479,24 @@
     if (vmEl && vmEl.querySelector) makeDraggablePanel(vmEl, vmEl.querySelector('.vmHeader'));
   }
 
-  function relPhaseDeg() {
-    let deg = Math.round(((drivePhase2 - drivePhase1) * 180) / Math.PI) % 360;
+  function phaseDegNorm(rad) {
+    let deg = Math.round((rad * 180) / Math.PI) % 360;
     if (deg > 180) deg -= 360;
     if (deg < -180) deg += 360;
     return deg;
   }
+
+  function phase1Deg() { return phaseDegNorm(drivePhase1); }
+
+  function relPhaseDeg() { return phaseDegNorm(drivePhase2 - drivePhase1); }
 
   function syncUi() {
     document.getElementById('slFreq').value = driveFreq;
     document.getElementById('outFreq').textContent = `${driveFreq.toFixed(4)} GHz`;
     document.getElementById('slAmp').value = (driveAmp * MU0_MS_MT).toFixed(2);
     document.getElementById('outAmp').textContent = `${(driveAmp * MU0_MS_MT).toFixed(2)} mT (${driveAmp.toFixed(4)})`;
+    const slP1 = document.getElementById('slPhase1');
+    if (slP1) { const deg1 = phase1Deg(); slP1.value = deg1; document.getElementById('outPhase1').textContent = `${deg1}°`; }
     const btnDual = document.getElementById('btnDualTone'), dualGrp = document.getElementById('dualToneGroup');
     if (btnDual) { btnDual.textContent = `Dual-Tone: ${dualTone ? 'ON' : 'OFF'}`; btnDual.classList.toggle('active', dualTone); }
     if (dualGrp) dualGrp.hidden = !dualTone;
@@ -3118,7 +3168,7 @@
 
   function applyPreset(name) {
     fastForwarding = false;
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetCross4B,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
       driveMode = 'parallel'; damping = 0.0020; dualTone = false; driveAmp2 = 0;
@@ -3160,6 +3210,16 @@
       driveFreq2 = 2 * fGhzArr[16] + 2 * (-0.2 * r2); driveAmp2 = hp2 / MU0_MS_MT;
       nikSelPair = [13, 16]; arnoldTarget = 2; simTime = 0; seedSpins(0.004, [13, 16]);
       notifySwTutorial('nonrecip');
+    } else if (name === 'cross4b') {
+      document.getElementById('presetCross4B').classList.add('active');
+      terms.g1 = true; terms.t2A = true; terms.t4A = true; terms.t4B = true;
+      driveMode = 'parallel'; damping = 0.0020; dualTone = false; driveAmp2 = 0;
+      driveFreq = 2 * fGhzArr[15] + 0.004;
+      driveAmp = 0.90 * parametricThreshold(15);
+      drivePhase1 = 0; drivePhase2 = 0;
+      nikSelPair = [15, 16]; arnoldTarget = 1; simTime = 0;
+      aRe.fill(0); aIm.fill(0); aRe[16] = 0.045; aRe[15] = 0.002;
+      resetModeHistory(); recordModeSample(); reconstructSpatialSpins();
     }
     syncUi();
   }
@@ -3188,6 +3248,11 @@
     applyPreset('nonrecip');
     announcePress('Nonrecip (13,16)', 'Scenario 2 (S_det = −12.84 < 0): Tone 1 (m13) turns on first; Tone 2 (m16) waits until T1 steady state, then gets locked out.', 'preset:nonrecip');
   });
+  const presetCross4BEl = document.getElementById('presetCross4B');
+  if (presetCross4BEl) presetCross4BEl.addEventListener('click', () => {
+    applyPreset('cross4b');
+    announcePress('4B Down+φ (m16→m15)', 'Prior m16 excitation (|a₁₆|=0.045) + exact 4B P₁₅,₁₆ pulls m15 Arnold tongue downward so 0.90×h_th(15) ignites at φ₁=0° and extinguishes at φ₁=180°!', 'preset:cross4b');
+  });
   document.getElementById('quickCoexBtn').addEventListener('click', () => {
     applyPreset('coex');
     announcePress('COEX c++', 'Scenario 1 (S_det = +1.08 > 0): both m13 & m23 coexist cleanly at shifted steady-state amplitudes.', 'preset:coex');
@@ -3204,7 +3269,7 @@
     const btn = e.target && e.target.closest ? e.target.closest('button[data-mode]') : null;
     if (!btn) return;
     const mIdx = Number(btn.dataset.mode);
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#btnZeroDrive').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetCross4B,#btnZeroDrive').forEach(b => b.classList.remove('active'));
     exciteEigenmode(mIdx);
     const kind = mIdx === 27 ? 'uniform Kittel mode (all spins rotate together)' : 'bulk spin-wave mode (spatial nodal rings)';
     announcePress(`m${mIdx}${mIdx === 27 ? ' Kit' : ''}`, `Excited ${kind} at f = ${fGhzArr[mIdx].toFixed(4)} GHz, self-NFS N = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz.`, `m${mIdx}`);
@@ -3224,6 +3289,15 @@
   document.getElementById('slAmp').addEventListener('input', e => {
     driveAmp = (+e.target.value) / MU0_MS_MT; syncUi();
     announcePress(`Tone 1 Amp ${(driveAmp * MU0_MS_MT).toFixed(2)} mT`, 'Adjusted Tone 1 pump strength vertically relative to parametric threshold h_th.');
+  });
+  const slPhase1El = document.getElementById('slPhase1');
+  if (slPhase1El) slPhase1El.addEventListener('input', e => {
+    const deg = +e.target.value;
+    const rel = drivePhase2 - drivePhase1;
+    drivePhase1 = (deg * Math.PI) / 180;
+    drivePhase2 = drivePhase1 + rel;
+    syncUi();
+    announcePress(`Tone 1 Phase φ₁ = ${deg}°`, `Set Tone 1 carrier phase φ₁ = ${deg}° — shifts interference against 4B cross-pumping P_hk a_k² (constructive pulls tongue down, 180° pushes up).`);
   });
   document.getElementById('btnDualTone').addEventListener('click', () => {
     dualTone = !dualTone;
