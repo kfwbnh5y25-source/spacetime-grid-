@@ -165,7 +165,7 @@
   #tonguesToggleBtn { display: none; }
   @media (pointer:coarse), (max-width: 760px) {
     #topHud { gap: 4px; width: calc(100vw - 16px); }
-    .hudPill { padding: 4px 8px; font-size: 9px; letter-spacing: .05em; }
+    .hudPill { padding: 3px 7px; font-size: 8.5px; letter-spacing: .04em; white-space: normal; text-align: center; }
     #controlsPanel { top: auto; right: 10px; width: min(344px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); max-height: 48vh; }
     #controlsPanel:not([open]) { left: auto; width: auto; }
     #readoutsDock { left: 10px; bottom: max(12px,env(safe-area-inset-bottom)); width: min(228px,calc(100vw - 132px)); gap: 5px; }
@@ -178,11 +178,11 @@
     #arnoldBox { display: none; position: fixed; left: 10px; width: min(344px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); z-index: 9; }
     #arnoldBox.mobileOpen { display: block; }
     .magnonGrid { grid-template-columns: 1fr; gap: 2px; font-size: 8px; }
-    #quickLaunchBar { left: 10px; top: max(62px,calc(env(safe-area-inset-top) + 50px)); gap: 4px; }
+    #quickLaunchBar { left: 8px; top: max(82px,calc(env(safe-area-inset-top) + 70px)); gap: 4px; max-width: calc(100vw - 16px); }
     .quickPill { min-height: 27px; padding: 0 7px; font-size: 8.5px; letter-spacing: .04em; }
     .speedGroup .speedLbl { display: none; }
     .spdBtn { min-height: 23px; padding: 0 5px; font-size: 8px; }
-    #swTutorial { left: 10px; width: min(344px,calc(100vw - 20px)); top: max(126px,calc(env(safe-area-inset-top) + 112px)); padding: 10px 12px; }
+    #swTutorial { left: 10px; width: min(344px,calc(100vw - 20px)); top: max(146px,calc(env(safe-area-inset-top) + 132px)); padding: 10px 12px; }
     #pressToast { display: none; }
     #tonguesToggleBtn { display: flex; }
     #backBtn { right: 10px; bottom: max(12px,env(safe-area-inset-bottom)); min-height: 32px; padding: 0 11px; font-size: 9px; }
@@ -195,11 +195,11 @@
   <div class="hudPill" id="modeBadge">d'AQUINO NMM · UNIFORM H</div>
   <div class="hudPill" id="threshBadge">h_p / h_th: 1.00</div>
   <div class="hudPill active" id="domModeBadge">MODE: m13 (1.9739G)</div>
-  <button class="hudPill cedric" id="cedricEggBtn" type="button" title="Click for a special spin-wave surprise">♥ FOR CÉDRIC</button>
 </div>
 <div id="quickLaunchBar">
   <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves step-by-step guide">GUIDE ?</button>
   <button class="quickPill accent" id="quickWhatsNewBtn" type="button" title="Summary of recent physics, controls & 10+ µs benchmark updates">WHAT'S NEW</button>
+  <button class="quickPill cedric" id="cedricEggBtn" type="button" title="Click for a special spin-wave surprise">♥ FOR CÉDRIC</button>
   <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
   <button class="quickPill accent" id="quickCoexBtn" type="button" title="Scenario 1 (S_det > 0): coupled c++ coexistence between m13 (+2.99 GHz) & m23 (+0.38 GHz)">COEX c++</button>
   <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Scenario 2 (S_det < 0): 2-Tone 3.0µs Delayed Nonreciprocity on (m13, m16)">3µs NONRECIP</button>
@@ -1570,13 +1570,27 @@
     notifySwTutorial('pluck');
   }
 
-  let width = 0, height = 0, dpr = 1;
+  let width = 0, height = 0, dpr = 1, lastQuickTopPx = -1;
+  function syncTopBarsLayout() {
+    const th = document.getElementById('topHud');
+    const qb = document.getElementById('quickLaunchBar');
+    if (!th || !qb || typeof th.getBoundingClientRect !== 'function') return;
+    const r = th.getBoundingClientRect();
+    if (r && r.bottom > 0) {
+      const nextTop = Math.ceil(r.bottom + 6);
+      if (Math.abs(nextTop - lastQuickTopPx) >= 2) {
+        lastQuickTopPx = nextTop;
+        qb.style.top = `${nextTop}px`;
+      }
+    }
+  }
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     width = window.innerWidth; height = window.innerHeight;
     fieldCanvas.width = Math.round(width * dpr);
     fieldCanvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    syncTopBarsLayout();
   }
   window.addEventListener('resize', resize, { passive: true });
   resize();
@@ -4704,7 +4718,7 @@
     if (tabName === 'db') refreshIdbVault();
   }
 
-  const APP_RELEASE_VERSION = 'spacetime-shell-v79';
+  const APP_RELEASE_VERSION = 'spacetime-shell-v80';
   const WHATS_NEW_KEY = 'spin-waves-whatsnew-seen-version';
   const whatsNewModalEl = document.getElementById('whatsNewModal');
   function shouldShowWhatsNew() {

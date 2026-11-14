@@ -1149,7 +1149,7 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
 
   // 2. Launch "What's New" gating (shows once per release version)
   const freshCtx = loadSpinWavesContext();
-  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v79');
+  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v80');
   assert.equal(freshCtx.shouldShowWhatsNew(), true);
   assert.equal(freshCtx.getElHidden('whatsNewModal'), false, 'Fresh launch must auto-open #whatsNewModal');
   freshCtx.dismissWhatsNew(true);
@@ -1162,10 +1162,13 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
   seenCtx.openWhatsNew();
   assert.equal(seenCtx.getElHidden('whatsNewModal'), false, 'WHAT\'S NEW button must reopen #whatsNewModal');
 
-  // 3. Service Worker v79 + precached BENCHMARK_HANDOUT.md
+  // 3. Service Worker v80 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
   const swSrc = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
-  assert.ok(swSrc.includes("'spacetime-shell-v79'"), 'sw.js must use spacetime-shell-v79');
+  assert.ok(swSrc.includes("'spacetime-shell-v80'"), 'sw.js must use spacetime-shell-v80');
   assert.ok(swSrc.includes('./spin-waves/BENCHMARK_HANDOUT.md'), 'sw.js must precache BENCHMARK_HANDOUT.md');
+  const htmlSrc = fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
+  const qbSlice = htmlSrc.slice(htmlSrc.indexOf('<div id="quickLaunchBar">'), htmlSrc.indexOf('<div id="readoutsDock">'));
+  assert.ok(qbSlice.includes('id="cedricEggBtn"'), '#cedricEggBtn must live inside #quickLaunchBar so wrapped portrait #topHud never covers it');
 
   // 4. Saved 10-12 us benchmark JSON & BENCHMARK_HANDOUT.md prints
   const benchJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'benchmarks/longterm-results.json'), 'utf8'));
