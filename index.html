@@ -936,11 +936,10 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     }
     gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
     advanceMasses(dt);
-    // Put the complete spatial metric and grid into the same instantaneous COM-local frame as the planets and blue tails.
-    let frameMass=0,frameComX=0,frameComY=0;
-    for(const body of persistentMasses){const w=Math.max(0,body.mass??20);frameMass+=w;frameComX+=w*body.x;frameComY+=w*body.y;}
-    if(frameMass>0){frameComX/=frameMass;frameComY/=frameMass;geodesicFrameOffsetX=width*.5-frameComX;geodesicFrameOffsetY=height*.5-frameComY;}
-    else{geodesicFrameOffsetX=0;geodesicFrameOffsetY=0;}
+    // Keep geodesic integration anchors in screen coordinates. Only the mass sources move;
+    // the grid itself must never follow the centre of mass.
+    geodesicFrameOffsetX=0;
+    geodesicFrameOffsetY=0;
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
     // A synthetic source exists only in the benchmark URL; it never enters saved app state.
     if(benchMode&&benchParams.has('probe'))fields.push({x:width*.5,y:height*.5,strength:1,benchmarkProbe:true});
