@@ -946,8 +946,45 @@ test("R. Spin-wave Stage 5: configurable mu_ij matrix, entire Arnold tongue down
   assert.ok(a1Seq2 < 0.005, `In swapped sequence T2->T1, sub-threshold Mode 1 must not be excited: got ${a1Seq2.toFixed(5)}`);
   assert.ok(Math.abs(a0Seq2 - th0Seq2) / th0Seq2 < 0.06, `In swapped sequence T2->T1, Mode 0 (${a0Seq2.toFixed(4)}) must match d'Aquino single-mode steady state (${th0Seq2.toFixed(4)})`);
 
+  // 4. Pure n_ij (μ_ij = 0) 2-Tone Delayed Nonreciprocity ('nij' preset) verified against d'Aquino coupled equations
+  spin.applyPreset('nij');
+  const stNij = spin.getState();
+  assert.equal(stNij.twoModeIsolate, true, '2-Tone n_ij preset must enable 2-mode isolation');
+  assert.equal(spin.muMat[0][1], 0, '2-Tone n_ij preset must have μ_01 = 0');
+  assert.equal(spin.muMat[1][0], 0, '2-Tone n_ij preset must have μ_10 = 0');
+  const h1BareAtF2 = spin.arnoldThreshold(1, stNij.driveFreq2, 0, false);
+  assert.ok(stNij.driveAmp2 < h1BareAtF2, `Tone 2 (${stNij.driveAmp2.toFixed(4)}) must lie outside Mode 1 bare Arnold tongue at f_p2 (${h1BareAtF2.toFixed(4)})`);
+
+  // Sequence T1 -> T2: Mode 0 grows and shifts Mode 1's Arnold tongue horizontally left via n_10 < 0 so Tone 2 enters the tongue
+  spin.fastForwardSteadyState(36000);
+  const a0Nij1 = spin.cycleAvgModeAmp(0);
+  const a1Nij1 = spin.cycleAvgModeAmp(1);
+  const h1ShiftedAtF2 = spin.arnoldThreshold(1, stNij.driveFreq2, spin.modeMutualNfsShiftGHz(1), true);
+  assert.ok(stNij.driveAmp2 > h1ShiftedAtF2, `Shifted Mode 1 Arnold tongue (${h1ShiftedAtF2.toFixed(4)}) must enclose Tone 2 (${stNij.driveAmp2.toFixed(4)})`);
+  const [th0Nij1, th1Nij1] = spin.steadyState2Mode(0, 1, stNij.driveFreq, stNij.driveAmp, stNij.driveFreq2, stNij.driveAmp2);
+  const th0NijLive = spin.steadyStateAmp(0, stNij.driveFreq, stNij.driveAmp, spin.modeMutualNfsShiftGHz(0));
+  const th1NijLive = spin.steadyStateAmp(1, stNij.driveFreq2, stNij.driveAmp2, spin.modeMutualNfsShiftGHz(1));
+  assert.ok(a0Nij1 > 0.18 && a1Nij1 > 0.12, `n_ij Sequence T1->T2 must excite both Mode 0 (${a0Nij1.toFixed(4)}) and Mode 1 (${a1Nij1.toFixed(4)})`);
+  assert.ok(Math.abs(a0Nij1 - th0Nij1) / th0Nij1 < 0.06, `n_ij Seq T1->T2 Mode 0 sim (${a0Nij1.toFixed(4)}) must match d'Aquino steadyState2Mode (${th0Nij1.toFixed(4)})`);
+  assert.ok(Math.abs(a1Nij1 - th1Nij1) / th1Nij1 < 0.06, `n_ij Seq T1->T2 Mode 1 sim (${a1Nij1.toFixed(4)}) must match d'Aquino steadyState2Mode (${th1Nij1.toFixed(4)})`);
+  assert.ok(Math.abs(a0Nij1 - th0NijLive) / th0NijLive < 0.05 && Math.abs(a1Nij1 - th1NijLive) / th1NijLive < 0.05, `Live steadyStateAmp must match n_ij 2-mode steady state`);
+
+  // Sequence T2 -> T1 (Swap T1 <-> T2): Tone 2 arrives first outside bare Mode 1 tongue -> Mode 1 decays to 0, only Mode 0 is excited
+  spin.applyPreset('nij');
+  spin.setState({
+    driveFreq: stNij.driveFreq2, driveAmp: stNij.driveAmp2,
+    driveFreq2: stNij.driveFreq, driveAmp2: stNij.driveAmp,
+    tone2WaitSS: true, simTime: 0
+  });
+  spin.seedSpins(0.03);
+  spin.fastForwardSteadyState(36000);
+  const a0Nij2 = spin.cycleAvgModeAmp(0);
+  const a1Nij2 = spin.cycleAvgModeAmp(1);
+  const [th1Nij2, th0Nij2] = spin.steadyState2Mode(1, 0, stNij.driveFreq2, stNij.driveAmp2, stNij.driveFreq, stNij.driveAmp);
+  assert.equal(th1Nij2, 0, `d'Aquino steadyState2Mode in swapped n_ij sequence T2->T1 must predict Mode 1 = 0`);
+  assert.ok(a1Nij2 < 0.005, `In swapped n_ij sequence T2->T1, detuned Mode 1 must not be excited: got ${a1Nij2.toFixed(5)}`);
+  assert.ok(Math.abs(a0Nij2 - th0Nij2) / th0Nij2 < 0.06, `In swapped n_ij sequence T2->T1, Mode 0 (${a0Nij2.toFixed(4)}) must match d'Aquino single-mode steady state (${th0Nij2.toFixed(4)})`);
+
   spin.resetMat4();
   spin.resetNikCustom();
 });
-
-

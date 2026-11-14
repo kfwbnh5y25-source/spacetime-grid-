@@ -85,6 +85,17 @@
   .nikMiniBtn:hover { background: rgba(130,185,255,.22); border-color: rgba(130,185,255,.45); }
   #arnoldTargetBtn { padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.3); background: rgba(130,185,255,.14); color: #b9dcff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #arnoldTargetBtn.t2 { border-color: rgba(251,191,36,.5); background: rgba(251,191,36,.18); color: #fde68a; }
+  #hInputBox { padding: 5px 8px; }
+  #hInputBox .specTitle { align-items: center; margin-bottom: 3px; gap: 4px; }
+  #hTimeVal { color: #b9dcff; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .hPulseRow { display: flex; align-items: center; gap: 4px; }
+  .pulseTag { padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(190,220,255,.2); background: rgba(255,255,255,.05); color: rgba(200,220,245,.55); font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .04em; white-space: nowrap; }
+  .pulseTag.on { border-color: rgba(124,212,255,.55); background: rgba(56,189,248,.18); color: #bae6fd; }
+  .pulseTag.wait { border-color: rgba(251,191,36,.55); background: rgba(251,191,36,.15); color: #fde68a; }
+  .pulseTag.p2on { border-color: rgba(52,211,153,.85); background: rgba(16,185,129,.28); color: #a7f3d0; box-shadow: 0 0 8px rgba(52,211,153,.35); font-weight: 600; }
+  #hResetBtn { padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(190,220,255,.28); background: rgba(120,165,225,.16); color: #eef5ff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #hResetBtn:hover { background: rgba(120,165,225,.3); border-color: rgba(165,215,255,.6); }
+  canvas#hInputCanvas { display: block; width: 100%; height: 26px; border-radius: 4px; background: rgba(3,7,15,.65); }
   #tonguesToggleBtn { display: none; }
   @media (pointer:coarse), (max-width: 760px) {
     #topHud { gap: 4px; width: calc(100vw - 16px); }
@@ -93,6 +104,8 @@
     #controlsPanel:not([open]) { left: auto; width: auto; }
     #readoutsDock { left: 10px; bottom: max(12px,env(safe-area-inset-bottom)); width: min(215px,calc(100vw - 135px)); gap: 5px; }
     .readoutCard { padding: 6px 8px; }
+    #hInputBox { padding: 4px 7px; }
+    canvas#hInputCanvas { height: 22px; }
     .modeRow { grid-template-columns: 82px 1fr 34px; font-size: 8.5px; }
     #spectrumBox { display: none; }
     #arnoldBox { display: none; position: fixed; left: 10px; width: min(340px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); z-index: 9; }
@@ -116,8 +129,10 @@
 <div id="quickLaunchBar">
   <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves tutorial">GUIDE ?</button>
   <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
-  <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Launch 2-Tone Delayed Nonreciprocity example (Mode 0 pulls Mode 1 Arnold tongue down)">2-TONE EX</button>
+  <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Launch 2-Tone Delayed Nonreciprocity via μ_ij cross-pumping (pulls Mode 1 Arnold tongue vertically down)">2-TONE μ</button>
+  <button class="quickPill accent" id="quickNijBtn" type="button" title="Launch d'Aquino 2-Tone Delayed Nonreciprocity via pure n_ij mutual Kerr shift (μ_ij = 0, pulls Mode 1 Arnold tongue horizontally)">2-TONE nᵢⱼ</button>
   <button class="quickPill" id="quickSwapBtn" type="button" title="Swap Tone 1 & Tone 2 arrival order (T1→T2 vs T2→T1)">SWAP T1↔T2</button>
+  <button class="quickPill" id="quickResetTimeBtn" type="button" title="Reset time t = 0 and replay Pulse 2 turn-on">↺ t=0</button>
   <button class="quickPill" id="quickFastBtn" type="button" title="Fast-forward to steady state">FAST→SS</button>
 </div>
 <section id="swTutorial" hidden aria-label="Spin Waves & Parametric Excitation tutorial">
@@ -151,7 +166,8 @@
       <button class="btn active" id="presetParam" type="button">Parametric 2f_k</button>
       <button class="btn" id="presetSub" type="button">Below Thresh</button>
       <button class="btn" id="presetDirect" type="button">Direct RF</button>
-      <button class="btn" id="presetMutual" type="button" title="2-tone delayed nonreciprocity (2 modes, T2 below bare h_th, cross-pump μ_ij moves entire Arnold tongue down)">2-Tone Nonrecip</button>
+      <button class="btn" id="presetMutual" type="button" title="2-tone delayed nonreciprocity via μ_ij cross-pumping (moves entire Arnold tongue down)">2-Tone μᵢⱼ</button>
+      <button class="btn" id="presetNij" type="button" title="d'Aquino 2-tone delayed nonreciprocity via pure n_ij mutual Kerr shift (μ_ij = 0, shifts Arnold tongue horizontally)">2-Tone nᵢⱼ</button>
       <button class="btn" id="btnZeroDrive" type="button">Zero Drive</button>
     </div>
     <div class="sectionLabel">Launch / Inspect Eigenmode (n,m)</div>
@@ -247,6 +263,7 @@
     </div>
     <div class="btnRow">
       <button class="btn" id="btnPause" type="button">Pause</button>
+      <button class="btn" id="btnResetTime" type="button" title="Reset time t = 0 and replay pulse turn-on">Reset t=0</button>
       <button class="btn" id="btnSeed" type="button">Seed Modes</button>
       <button class="btn" id="btnClear" type="button">Calm Spins</button>
       <button class="btn" id="btnFastSS" type="button" title="Fast-forward animation (1 cycle per frame) until steady state">Fast-Fwd → SS</button>
@@ -254,6 +271,17 @@
   </div>
 </details>
 <div id="readoutsDock">
+  <div class="readoutCard" id="hInputBox">
+    <div class="specTitle">
+      <span>h(t) · <b id="hTimeVal">0.0µs</b></span>
+      <span class="hPulseRow">
+        <span id="p1StatusPill" class="pulseTag on">P1 ON</span>
+        <span id="p2StatusPill" class="pulseTag off">P2 OFF</span>
+        <button id="hResetBtn" type="button" title="Reset simulation time t = 0">↺ t=0</button>
+      </span>
+    </div>
+    <canvas id="hInputCanvas" width="280" height="28"></canvas>
+  </div>
   <div class="readoutCard" id="modesBox">
     <div class="specTitle"><span>LIVE EIGENMODES</span><span id="ampTotal">⟨|m_⊥|⟩: 0.000</span></div>
     <div class="modeBars" id="modeBars"></div>
@@ -608,23 +636,25 @@
   const twoModeK1 = new Float64Array(4);
   const twoModeK2 = new Float64Array(4);
 
+  function tone2EnvAt(t = simTime) {
+    if (!dualTone || driveAmp2 <= 0) return 0;
+    if (tone2WaitSS) {
+      if (!tone2Released || t < tone2ReleaseT) return 0;
+      return Math.min(1, (t - tone2ReleaseT) / (0.4 * 2 * Math.PI / FREQ_TO_RAD));
+    }
+    const tDelay = (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD;
+    if (t < tDelay) return 0;
+    return tone2DelayNs > 0 ? Math.min(1, (t - tDelay) / (0.4 * 2 * Math.PI / FREQ_TO_RAD)) : 1;
+  }
+
   function evalTwoModeRates(qy0, qz0, qy1, qz1, t, out) {
     const omega = driveFreq * FREQ_TO_RAD;
     const driveVal1 = driveAmp * Math.cos(omega * t);
     let driveVal2 = 0;
-    if (dualTone && driveAmp2 > 0) {
-      if (tone2WaitSS) {
-        if (tone2Released && t >= tone2ReleaseT) {
-          const env = Math.min(1, (t - tone2ReleaseT) / (0.4 * 2 * Math.PI / FREQ_TO_RAD));
-          driveVal2 = env * driveAmp2 * Math.cos(driveFreq2 * FREQ_TO_RAD * (t - tone2ReleaseT) + drivePhase2);
-        }
-      } else {
-        const tDelay = (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD;
-        if (t >= tDelay) {
-          const env = tone2DelayNs > 0 ? Math.min(1, (t - tDelay) / (0.4 * 2 * Math.PI / FREQ_TO_RAD)) : 1;
-          driveVal2 = env * driveAmp2 * Math.cos(driveFreq2 * FREQ_TO_RAD * (t - tDelay) + drivePhase2);
-        }
-      }
+    const env2 = tone2EnvAt(t);
+    if (env2 > 0) {
+      const tRef = tone2WaitSS ? tone2ReleaseT : (tone2DelayNs * 2 * Math.PI) / FREQ_TO_RAD;
+      driveVal2 = env2 * driveAmp2 * Math.cos(driveFreq2 * FREQ_TO_RAD * (t - tRef) + drivePhase2);
     }
     const invSqrtN = 1 / Math.max(1, sqrtActiveCache);
     qyProj[0] = qy0; qzProj[0] = qz0;
@@ -1591,30 +1621,41 @@
     return steadyStateAmpWithHth(mIdx, fPumpGHz, hPump, effectiveParametricThreshold(mIdx), fMutGHz);
   }
 
-  // d'Aquino 2-mode coupled steady-state solution (A_i, A_j) under dual-tone pumping + μ_ij cross-pumping
+  // d'Aquino 2-mode coupled steady-state solution (A_i, A_j) under dual-tone pumping + n_ij Kerr shift + μ_ij cross-pumping
   function steadyState2Mode(i, j, fp1, hp1, fp2, hp2) {
     const hTh1Bare = parametricThreshold(i), hTh2Bare = parametricThreshold(j);
     const mu12 = Math.abs(muMat[i][j]), mu21 = Math.abs(muMat[j][i]);
-    const isDelayed = tone2WaitSS || tone2DelayNs > 0;
-    if (isDelayed) {
-      // Pulse 1 (fp1, hp1) acts first against bare threshold hTh1Bare while Mode j is unpopulated
-      if (hp1 <= hTh1Bare) {
-        // Sub-threshold Pulse 1 decays to 0 over the delay; delayed Pulse 2 then acts alone on Mode j
-        return [0, steadyStateAmpWithHth(j, fp2, hp2, hTh2Bare, 0)];
-      }
-      const a1Stage1 = steadyStateAmpWithHth(i, fp1, hp1, hTh1Bare, 0);
-      const hTh2Lowered = hTh2Bare / (1 + KAPPA_MU * mu21 * a1Stage1 * a1Stage1);
-      if (hp2 <= hTh2Lowered) return [a1Stage1, 0];
-    } else if (hp1 <= hTh1Bare && hp2 <= hTh2Bare) {
-      return [0, 0];
-    }
-
     const g1 = Math.max(1e-5, modeGamma(i)), g2 = Math.max(1e-5, modeGamma(j));
     const d1 = 0.5 * (fp1 - 2 * modeFreqGHz(i)) * FREQ_TO_RAD;
     const d2 = 0.5 * (fp2 - 2 * modeFreqGHz(j)) * FREQ_TO_RAD;
     const n11 = mutualNfsCoeff(i, i), n12 = mutualNfsCoeff(i, j);
     const n21 = mutualNfsCoeff(j, i), n22 = mutualNfsCoeff(j, j);
     const s1 = n11 >= 0 ? 1 : -1, s2 = n22 >= 0 ? 1 : -1;
+
+    const r1Bare = hp1 > hTh1Bare ? Math.sqrt(Math.max(0, ((g1 / hTh1Bare) * hp1) ** 2 - g1 * g1)) : 0;
+    const r2Bare = hp2 > hTh2Bare ? Math.sqrt(Math.max(0, ((g2 / hTh2Bare) * hp2) ** 2 - g2 * g2)) : 0;
+    const inBare1 = hp1 > hTh1Bare && Math.abs(d1) < r1Bare;
+    const inBare2 = hp2 > hTh2Bare && Math.abs(d2) < r2Bare;
+
+    const isDelayed = tone2WaitSS || tone2DelayNs > 0;
+    if (isDelayed) {
+      // Stage 1: Pulse 1 (fp1, hp1) acts first on Mode i from small seed while Mode j is unpopulated (A_j = 0)
+      if (!inBare1) {
+        // Pulse 1 is outside Mode i's bare instability tongue -> Mode i decays to 0; delayed Pulse 2 acts alone on Mode j
+        return [0, inBare2 ? steadyStateAmpWithHth(j, fp2, hp2, hTh2Bare, 0) : 0];
+      }
+      const a1Stage1 = steadyStateAmpWithHth(i, fp1, hp1, hTh1Bare, 0);
+      // Stage 2: At t = t_delay, Mode i is at a1Stage1; check if Mode j's small seed lies inside its shifted & lowered Arnold tongue
+      const hTh2Lowered = hTh2Bare / (1 + KAPPA_MU * mu21 * a1Stage1 * a1Stage1);
+      if (hp2 <= hTh2Lowered) return [a1Stage1, 0];
+      const r2Stage2 = Math.sqrt(Math.max(0, ((g2 / hTh2Lowered) * hp2) ** 2 - g2 * g2));
+      const d2EffStage2 = d2 - n21 * a1Stage1 * a1Stage1;
+      if (Math.abs(d2EffStage2) >= r2Stage2) {
+        return [a1Stage1, 0];
+      }
+    } else if (!inBare1 && !inBare2) {
+      return [0, 0];
+    }
 
     // Self-consistent fixed-point iteration for cross-pumped thresholds hTh1(a2), hTh2(a1)
     let a1 = steadyStateAmpWithHth(i, fp1, hp1, hTh1Bare, 0);
@@ -1872,18 +1913,125 @@
     arnoldCtx.beginPath(); arnoldCtx.arc(cx, cy, 4, 0, Math.PI * 2); arnoldCtx.fill();
     arnoldCtx.strokeStyle = '#03060d'; arnoldCtx.lineWidth = 1; arnoldCtx.stroke();
 
-    // Tone 2 crosshair when Dual-Tone is active
+    // Tone 2 crosshair when Dual-Tone is active (shows WAIT ring before turn-on, solid glowing dot + ON label when active)
     if (dualTone && driveAmp2 > 0.001) {
       const cx2 = Math.max(2, Math.min(w - 2, toX(driveFreq2)));
       const cy2 = Math.max(2, Math.min(h - 2, toY(driveAmp2)));
-      arnoldCtx.strokeStyle = 'rgba(251,191,36,0.4)';
+      const env2 = tone2EnvAt(simTime);
+      arnoldCtx.strokeStyle = env2 > 0 ? 'rgba(52,211,153,0.55)' : 'rgba(251,191,36,0.4)';
       arnoldCtx.lineWidth = 1;
       arnoldCtx.setLineDash([2, 2]);
       arnoldCtx.beginPath(); arnoldCtx.moveTo(cx2, 0); arnoldCtx.lineTo(cx2, h); arnoldCtx.moveTo(0, cy2); arnoldCtx.lineTo(w, cy2); arnoldCtx.stroke();
       arnoldCtx.setLineDash([]);
-      arnoldCtx.fillStyle = '#fbbf24';
-      arnoldCtx.beginPath(); arnoldCtx.arc(cx2, cy2, 4, 0, Math.PI * 2); arnoldCtx.fill();
-      arnoldCtx.strokeStyle = '#03060d'; arnoldCtx.lineWidth = 1; arnoldCtx.stroke();
+      if (env2 > 0) {
+        arnoldCtx.strokeStyle = 'rgba(52,211,153,0.65)';
+        arnoldCtx.lineWidth = 1.5;
+        arnoldCtx.beginPath(); arnoldCtx.arc(cx2, cy2, 6.5, 0, Math.PI * 2); arnoldCtx.stroke();
+        arnoldCtx.fillStyle = '#34d399';
+        arnoldCtx.beginPath(); arnoldCtx.arc(cx2, cy2, 4, 0, Math.PI * 2); arnoldCtx.fill();
+        arnoldCtx.strokeStyle = '#03060d'; arnoldCtx.lineWidth = 1; arnoldCtx.stroke();
+      } else {
+        arnoldCtx.strokeStyle = '#fbbf24';
+        arnoldCtx.lineWidth = 1.4;
+        arnoldCtx.setLineDash([2, 1.5]);
+        arnoldCtx.beginPath(); arnoldCtx.arc(cx2, cy2, 4.5, 0, Math.PI * 2); arnoldCtx.stroke();
+        arnoldCtx.setLineDash([]);
+      }
+      arnoldCtx.fillStyle = env2 > 0 ? '#6ee7b7' : '#fde68a';
+      arnoldCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
+      const lbl = env2 > 0 ? 'P2 ON' : 'P2 WAIT';
+      const lx = cx2 + 6 < w - 34 ? cx2 + 6 : cx2 - 36;
+      const ly = cy2 > 12 ? cy2 - 5 : cy2 + 10;
+      arnoldCtx.fillText(lbl, lx, ly);
+    }
+  }
+
+  const hInputCanvas = document.getElementById('hInputCanvas');
+  const hInputCtx = hInputCanvas && hInputCanvas.getContext ? hInputCanvas.getContext('2d') : null;
+
+  function drawHInputView() {
+    const tCurUs = (simTime * FREQ_TO_RAD) / (2 * Math.PI);
+    const tValEl = document.getElementById('hTimeVal');
+    if (tValEl) tValEl.textContent = `${tCurUs.toFixed(1)}µs`;
+    const p1El = document.getElementById('p1StatusPill');
+    const p2El = document.getElementById('p2StatusPill');
+    const p1On = driveAmp > 0.001;
+    const env2 = tone2EnvAt(simTime);
+    const p2Configured = dualTone && driveAmp2 > 0.001;
+    if (p1El) {
+      p1El.textContent = p1On ? 'P1 ON' : 'P1 OFF';
+      p1El.className = 'pulseTag ' + (p1On ? 'on' : 'off');
+    }
+    if (p2El) {
+      if (!p2Configured) {
+        p2El.textContent = 'P2 OFF';
+        p2El.className = 'pulseTag off';
+      } else if (env2 > 0) {
+        p2El.textContent = 'P2 ON ●';
+        p2El.className = 'pulseTag p2on';
+      } else {
+        p2El.textContent = 'P2 WAIT';
+        p2El.className = 'pulseTag wait';
+      }
+    }
+    if (!hInputCtx || !hInputCanvas) return;
+    const w = hInputCanvas.width, h = hInputCanvas.height;
+    hInputCtx.clearRect(0, 0, w, h);
+
+    const tOnUs = !p2Configured
+      ? 0
+      : (tone2WaitSS
+        ? (tone2Released ? (tone2ReleaseT * FREQ_TO_RAD) / (2 * Math.PI) : Math.max(tCurUs + 1.0, 5.5))
+        : tone2DelayNs);
+    const tMaxUs = Math.max(10.0, tOnUs * 2.1, Math.min(22.0, tCurUs * 1.15));
+    const midY = h * 0.5;
+    hInputCtx.strokeStyle = 'rgba(190,220,255,0.14)';
+    hInputCtx.lineWidth = 1;
+    hInputCtx.beginPath(); hInputCtx.moveTo(0, midY); hInputCtx.lineTo(w, midY); hInputCtx.stroke();
+
+    const amp1H = Math.min(midY - 2, (driveAmp / 0.30) * (midY - 2));
+    if (p1On) {
+      hInputCtx.fillStyle = 'rgba(56,189,248,0.14)';
+      hInputCtx.fillRect(0, midY - amp1H, w, amp1H * 2);
+      hInputCtx.strokeStyle = 'rgba(124,212,255,0.85)';
+      hInputCtx.lineWidth = 1;
+      hInputCtx.beginPath();
+      for (let x = 0; x <= w; x += 2) {
+        const y = midY - amp1H * Math.cos(x * 0.52 - simTime * 0.35);
+        if (x === 0) hInputCtx.moveTo(x, y); else hInputCtx.lineTo(x, y);
+      }
+      hInputCtx.stroke();
+    }
+
+    if (p2Configured) {
+      const xOn = Math.max(2, Math.min(w - 14, (tOnUs / tMaxUs) * w));
+      const amp2H = Math.min(midY - 2, (driveAmp2 / 0.30) * (midY - 2));
+      hInputCtx.fillStyle = env2 > 0 ? 'rgba(52,211,153,0.22)' : 'rgba(251,191,36,0.10)';
+      hInputCtx.fillRect(xOn, midY - amp2H, w - xOn, amp2H * 2);
+      hInputCtx.strokeStyle = env2 > 0 ? '#34d399' : 'rgba(251,191,36,0.65)';
+      hInputCtx.lineWidth = 1.1;
+      hInputCtx.beginPath();
+      for (let x = Math.round(xOn); x <= w; x += 2) {
+        const ramp = Math.min(1, (x - xOn) / 8);
+        const y = midY - amp2H * ramp * Math.cos((x - xOn) * 0.64 - simTime * 0.42 + drivePhase2);
+        if (x === Math.round(xOn)) hInputCtx.moveTo(x, y); else hInputCtx.lineTo(x, y);
+      }
+      hInputCtx.stroke();
+
+      hInputCtx.strokeStyle = env2 > 0 ? '#34d399' : '#fbbf24';
+      hInputCtx.lineWidth = 1;
+      hInputCtx.setLineDash([2, 2]);
+      hInputCtx.beginPath(); hInputCtx.moveTo(xOn, 0); hInputCtx.lineTo(xOn, h); hInputCtx.stroke();
+      hInputCtx.setLineDash([]);
+    }
+
+    const xPlay = Math.max(2, Math.min(w - 3, (tCurUs / tMaxUs) * w));
+    hInputCtx.strokeStyle = '#ffffff';
+    hInputCtx.lineWidth = 1.3;
+    hInputCtx.beginPath(); hInputCtx.moveTo(xPlay, 0); hInputCtx.lineTo(xPlay, h); hInputCtx.stroke();
+    if (p2Configured && env2 > 0) {
+      hInputCtx.fillStyle = '#34d399';
+      hInputCtx.beginPath(); hInputCtx.arc(xPlay, midY, 2.8, 0, Math.PI * 2); hInputCtx.fill();
     }
   }
 
@@ -1907,7 +2055,7 @@
     let sum = 0, cnt = 0;
     for (let i = 0; i < N; i++) if (activeMask[i]) { sum += Math.hypot(my[i], mz[i]); cnt++; }
     if (cnt && sum / cnt < 0.006) seedSpins(0.025);
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#presetNij,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     syncUi();
     notifySwTutorial('param');
   }
@@ -1983,6 +2131,7 @@
     threshBadge.classList.toggle('warn', driveMode === 'parallel' && ratio > 1.02);
     threshBadge.classList.toggle('active', driveMode === 'transverse');
     updateEigenmodeReadout(meanAmp, activeCount);
+    drawHInputView();
     drawArnoldTongues();
     updateNikMatrix();
   }
@@ -2068,6 +2217,8 @@
   }
   if (controlsPanel.querySelector) {
     makeDraggablePanel(controlsPanel, controlsPanel.querySelector('summary'), true);
+    const hBoxEl = document.getElementById('hInputBox');
+    if (hBoxEl && hBoxEl.querySelector) makeDraggablePanel(readoutsDock, hBoxEl.querySelector('.specTitle'));
     const modesBoxEl = document.getElementById('modesBox');
     if (modesBoxEl && modesBoxEl.querySelector) makeDraggablePanel(readoutsDock, modesBoxEl.querySelector('.specTitle'));
     const specBoxEl = document.getElementById('spectrumBox');
@@ -2130,7 +2281,9 @@
       btnFast.classList.toggle('active', fastForwarding);
     }
     const qNonrecip = document.getElementById('quickNonrecipBtn');
-    if (qNonrecip) qNonrecip.classList.toggle('active', twoModeIsolate);
+    if (qNonrecip) qNonrecip.classList.toggle('active', twoModeIsolate && hasCustomMu);
+    const qNij = document.getElementById('quickNijBtn');
+    if (qNij) qNij.classList.toggle('active', twoModeIsolate && !hasCustomMu);
     const qFast = document.getElementById('quickFastBtn');
     if (qFast) {
       qFast.textContent = fastForwarding ? 'FAST (STOP)' : 'FAST→SS';
@@ -2198,7 +2351,7 @@
   function applyPreset(name) {
     fastForwarding = false;
     twoModeIsolate = false;
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#presetNij,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
       driveMode = 'parallel'; biasH0 = 0.29; damping = 0.040; dualTone = false; driveFreq = 2 * modeFreqGHz(3); driveAmp = 2.2 * parametricThreshold(3);
@@ -2218,6 +2371,7 @@
       twoModeIsolate = true;
       driveMode = 'parallel'; biasH0 = 0.29; damping = 0.040;
       chi4m = -0.45; chi4nr = 0.0; mutualPump = 0.0;
+      for (let i = 0; i < MODE_SPECS.length; i++) nikCustom[i].fill(null);
       zeroMutualNfs();
       for (let i = 0; i < MODE_SPECS.length; i++) muMat[i].fill(0);
       setMuSymmetric(0, 1, 1.20);
@@ -2240,6 +2394,37 @@
         if (!swTutEl.hidden) closeSwTut();
       }
       notifySwTutorial('param');
+    } else if (name === 'nij') {
+      const pNijEl = document.getElementById('presetNij');
+      if (pNijEl) pNijEl.classList.add('active');
+      twoModeIsolate = true;
+      driveMode = 'parallel'; biasH0 = 0.29; damping = 0.025;
+      chi4m = 0.0; chi4nr = 0.0; mutualPump = 0.0;
+      for (let i = 0; i < MODE_SPECS.length; i++) muMat[i].fill(0);
+      refreshHasCustomMu();
+      zeroMutualNfs();
+      setNikSymmetric(0, 0, -2.20);
+      setNikSymmetric(1, 1, -2.20);
+      setNikSymmetric(0, 1, -1.35);
+      activeMat4 = 'n';
+      nikSelPair = [1, 0];
+      dualTone = true;
+      tone2WaitSS = true;
+      tone2DelayNs = 2.0;
+      arnoldTarget = 2;
+      driveFreq = 2 * modeFreqGHz(0) - 0.02;
+      driveAmp = 2.6 * parametricThreshold(0);
+      driveFreq2 = 2 * modeFreqGHz(1) - 0.21;
+      driveAmp2 = 1.35 * parametricThreshold(1);
+      simTime = 0;
+      seedSpins(0.03);
+      if (isCompactViewport() && arnoldBox && tonguesToggleBtn) {
+        arnoldBox.classList.add('mobileOpen');
+        tonguesToggleBtn.classList.add('active');
+        controlsPanel.open = false;
+        if (!swTutEl.hidden) closeSwTut();
+      }
+      notifySwTutorial('param');
     }
     syncUi();
   }
@@ -2249,10 +2434,17 @@
   document.getElementById('presetDirect').addEventListener('click', () => applyPreset('direct'));
   const presetMutualEl = document.getElementById('presetMutual');
   if (presetMutualEl) presetMutualEl.addEventListener('click', () => applyPreset('mutual'));
+  const presetNijEl = document.getElementById('presetNij');
+  if (presetNijEl) presetNijEl.addEventListener('click', () => applyPreset('nij'));
   const quickNonrecipEl = document.getElementById('quickNonrecipBtn');
   if (quickNonrecipEl) quickNonrecipEl.addEventListener('click', () => {
     if (!swTutEl.hidden) closeSwTut();
     applyPreset('mutual');
+  });
+  const quickNijEl = document.getElementById('quickNijBtn');
+  if (quickNijEl) quickNijEl.addEventListener('click', () => {
+    if (!swTutEl.hidden) closeSwTut();
+    applyPreset('nij');
   });
   document.getElementById('btnZeroDrive').addEventListener('click', () => {
     driveAmp = 0; syncUi(); notifySwTutorial('zero');
@@ -2260,7 +2452,7 @@
   document.getElementById('eigenButtons').addEventListener('click', e => {
     const btn = e.target.closest('button[data-mode]');
     if (!btn) return;
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#btnZeroDrive').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetMutual,#presetNij,#btnZeroDrive').forEach(b => b.classList.remove('active'));
     exciteEigenmode(Number(btn.dataset.mode));
     notifySwTutorial('eigen');
   });
@@ -2307,6 +2499,22 @@
   if (btnSwapEl) btnSwapEl.addEventListener('click', swapTonesAction);
   const quickSwapEl = document.getElementById('quickSwapBtn');
   if (quickSwapEl) quickSwapEl.addEventListener('click', swapTonesAction);
+  function resetSimTime() {
+    simTime = 0;
+    fastForwarding = false;
+    paused = false;
+    const pauseEl = document.getElementById('btnPause');
+    if (pauseEl) pauseEl.textContent = 'Pause';
+    seedSpins(twoModeIsolate ? 0.03 : 0.025);
+    syncUi();
+    drawScene();
+  }
+  const btnResetTimeEl = document.getElementById('btnResetTime');
+  if (btnResetTimeEl) btnResetTimeEl.addEventListener('click', resetSimTime);
+  const quickResetTimeEl = document.getElementById('quickResetTimeBtn');
+  if (quickResetTimeEl) quickResetTimeEl.addEventListener('click', resetSimTime);
+  const hResetBtnEl = document.getElementById('hResetBtn');
+  if (hResetBtnEl) hResetBtnEl.addEventListener('click', resetSimTime);
   const arnoldTargetEl = document.getElementById('arnoldTargetBtn');
   if (arnoldTargetEl) arnoldTargetEl.addEventListener('click', () => {
     arnoldTarget = arnoldTarget === 1 ? 2 : 1;
@@ -2350,8 +2558,8 @@
         if (rel > maxRel) maxRel = rel;
       }
       prev = cur;
-      const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + 42);
-      if (k >= 4200 && simTime >= targetSimT && waitReady && maxDiff < 0.0004 && maxRel < 0.006) { if (++stable >= 4) break; } else stable = 0;
+      const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + 64);
+      if (k >= 4200 && simTime >= targetSimT && waitReady && maxDiff < 0.00018 && maxRel < 0.0025) { if (++stable >= 4) break; } else stable = 0;
     }
     updateSpectrum();
     drawScene();
