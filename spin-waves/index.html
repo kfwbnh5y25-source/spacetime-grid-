@@ -50,21 +50,39 @@
   .quickPill.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
   .quickPill.accent { border-color: rgba(110,231,183,.48); color: #a7f3d0; }
   .quickPill.accent.active { background: rgba(16,185,129,.3); border-color: rgba(110,231,183,.85); color: #fff; }
+  .speedGroup { display: inline-flex; align-items: center; gap: 3px; padding: 2px 4px; border: 1px solid rgba(190,220,255,.22); border-radius: 20px; background: rgba(6,12,24,.78); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .speedGroup .speedLbl { padding: 0 5px; font: 8.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .08em; color: rgba(185,212,245,.68); }
+  .spdBtn { min-height: 25px; padding: 0 7px; border-radius: 14px; font-size: 9px; border-color: transparent; background: transparent; }
+  .spdBtn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
   #swTutorialBtn.hidden { display: none; }
   #backBtn:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
-  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(334px,calc(100vw - 28px)); padding: 13px 14px; border: 1px solid rgba(185,218,255,.24); border-radius: 15px; background: rgba(5,10,20,.90); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+  @keyframes coachPulse {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(251,191,36,.95), 0 0 16px rgba(251,191,36,.55); border-color: #fbbf24; }
+    50% { box-shadow: 0 0 0 5px rgba(251,191,36,.32), 0 0 24px rgba(251,191,36,.88); border-color: #fde68a; }
+  }
+  .tutSpotlight { position: relative; animation: coachPulse 1.25s ease-in-out infinite !important; border-color: #fbbf24 !important; color: #fff !important; }
+  .tutSpotlight::after { content: 'PRESS'; position: absolute; top: -8px; right: -4px; padding: 1px 4px; border-radius: 4px; background: #fbbf24; color: #050a14; font: 700 7.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; pointer-events: none; z-index: 20; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+  .sliderRow.tutSpotlight { padding: 4px 6px; border-radius: 8px; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.75); }
+  .sliderRow.tutSpotlight::after { content: 'SLIDE'; top: -7px; right: 4px; }
+  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(94px,calc(env(safe-area-inset-top) + 82px)); width: min(352px,calc(100vw - 28px)); padding: 12px 14px; border: 1px solid rgba(185,218,255,.26); border-radius: 15px; background: rgba(5,10,20,.92); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.60); }
   #swTutorial[hidden] { display: none; }
-  .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; cursor: grab; touch-action: none; }
+  .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; cursor: grab; touch-action: none; }
   .tutHeader:active { cursor: grabbing; }
-  .tutStepTag { font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: #8ec5ff; text-transform: uppercase; }
+  .tutStepTag { font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .11em; color: #8ec5ff; text-transform: uppercase; }
   .tutClose { width: 24px; height: 24px; border: 1px solid rgba(255,255,255,.16); border-radius: 50%; background: rgba(255,255,255,.06); color: rgba(235,243,255,.8); font: 14px/1 system-ui,sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
-  .tutPills { display: flex; gap: 5px; margin-bottom: 9px; }
-  .tutPill { flex: 1; height: 4px; border-radius: 99px; background: rgba(255,255,255,.14); }
+  .tutPills { display: flex; gap: 4px; margin-bottom: 8px; }
+  .tutPill { flex: 1; height: 4px; border-radius: 99px; background: rgba(255,255,255,.14); cursor: pointer; }
   .tutPill.done { background: #63d297; }
   .tutPill.active { background: #8ec5ff; }
   .tutTitle { margin: 0 0 4px; font-size: 13.5px; font-weight: 600; color: #fff; }
-  .tutBody { margin: 0 0 10px; font-size: 11.5px; color: rgba(225,236,255,.82); }
+  .tutBody { margin: 0 0 7px; font-size: 11.5px; color: rgba(225,236,255,.84); }
   .tutFormula { display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 6px; background: rgba(130,185,255,.12); border: 1px solid rgba(130,185,255,.22); font: 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color: #b9dcff; }
+  .tutPromptBox { margin: 0 0 7px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(251,191,36,.45); background: rgba(251,191,36,.10); font-size: 11px; color: #fef3c7; }
+  .tutPromptBox b { color: #fbbf24; }
+  .tutPressLog { margin: 0 0 9px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(110,231,183,.32); background: rgba(16,185,129,.10); font-size: 10.8px; line-height: 1.38; color: rgba(225,250,240,.94); }
+  .tutPressTag { display: inline-block; padding: 1px 6px; margin-right: 4px; border-radius: 5px; background: rgba(52,211,153,.24); border: 1px solid rgba(52,211,153,.55); font: 600 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: #a7f3d0; }
+  #pressToast { position: fixed; z-index: 9; bottom: max(16px,env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); max-width: min(520px, calc(100vw - 260px)); padding: 6px 12px; border: 1px solid rgba(110,231,183,.42); border-radius: 99px; background: rgba(5,12,24,.88); color: #e2f9ef; font: 10.5px/1.3 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); pointer-events: none; opacity: 0; transition: opacity .22s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pressToast.show { opacity: 1; }
   .tutActions { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
   .tutBtnGroup { display: flex; gap: 6px; }
   #arnoldBox { pointer-events: auto; }
@@ -109,9 +127,12 @@
     #arnoldBox { display: none; position: fixed; left: 10px; width: min(344px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); z-index: 9; }
     #arnoldBox.mobileOpen { display: block; }
     .magnonGrid { grid-template-columns: 1fr; gap: 2px; font-size: 8px; }
-    #quickLaunchBar { left: 10px; top: max(62px,calc(env(safe-area-inset-top) + 50px)); gap: 5px; }
-    .quickPill { min-height: 28px; padding: 0 8px; font-size: 8.5px; letter-spacing: .05em; }
-    #swTutorial { left: 10px; width: min(340px,calc(100vw - 20px)); top: max(98px,calc(env(safe-area-inset-top) + 86px)); padding: 10px 12px; }
+    #quickLaunchBar { left: 10px; top: max(62px,calc(env(safe-area-inset-top) + 50px)); gap: 4px; }
+    .quickPill { min-height: 27px; padding: 0 7px; font-size: 8.5px; letter-spacing: .04em; }
+    .speedGroup .speedLbl { display: none; }
+    .spdBtn { min-height: 23px; padding: 0 5px; font-size: 8px; }
+    #swTutorial { left: 10px; width: min(344px,calc(100vw - 20px)); top: max(126px,calc(env(safe-area-inset-top) + 112px)); padding: 10px 12px; }
+    #pressToast { display: none; }
     #tonguesToggleBtn { display: flex; }
     #backBtn { right: 10px; bottom: max(12px,env(safe-area-inset-bottom)); min-height: 32px; padding: 0 11px; font-size: 9px; }
   }
@@ -125,34 +146,50 @@
   <div class="hudPill active" id="domModeBadge">MODE: m13 (1.9739G)</div>
 </div>
 <div id="quickLaunchBar">
-  <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves tutorial">GUIDE ?</button>
+  <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves step-by-step guide">GUIDE ?</button>
   <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
   <button class="quickPill accent" id="quickCoexBtn" type="button" title="Scenario 1 (S_det > 0): coupled c++ coexistence between m13 (+2.99 GHz) & m23 (+0.38 GHz)">COEX c++</button>
   <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Scenario 2 (S_det < 0): 2-Tone 3.0µs Delayed Nonreciprocity on (m13, m16)">3µs NONRECIP</button>
   <button class="quickPill" id="quickSwapBtn" type="button" title="Swap Tone 1 & Tone 2 order (T1→T2 vs T2→T1)">SWAP T1↔T2</button>
   <button class="quickPill" id="quickResetTimeBtn" type="button" title="Reset time t = 0 and replay pulse turn-on">↺ t=0</button>
   <button class="quickPill" id="quickFastBtn" type="button" title="Fast-forward to steady state">FAST→SS</button>
+  <span class="speedGroup" id="speedBtns" title="Playback speed (0.25× ultra-slow up to 150× real-rate)">
+    <span class="speedLbl">SPEED</span>
+    <button class="quickPill spdBtn" data-speed="0.25" type="button">0.25×</button>
+    <button class="quickPill spdBtn active" data-speed="1" type="button">1× SLOW</button>
+    <button class="quickPill spdBtn" data-speed="5" type="button">5×</button>
+    <button class="quickPill spdBtn" data-speed="25" type="button">25×</button>
+    <button class="quickPill spdBtn" data-speed="150" type="button">150×</button>
+  </span>
+  <button class="quickPill" id="quickLogDbBtn" type="button" title="Save complete interaction & physics evaluation log to Supabase database + IndexedDB">LOG DB · 0</button>
 </div>
-<section id="swTutorial" hidden aria-label="d'Aquino 2026 Spin Waves tutorial">
+<div id="pressToast" aria-live="polite"></div>
+<section id="swTutorial" hidden aria-label="d'Aquino 2026 Spin Waves step-by-step guide">
   <div class="tutHeader">
-    <span class="tutStepTag" id="swTutTag">STEP 1 OF 4</span>
-    <button class="tutClose" id="swTutClose" type="button" aria-label="Close tutorial">×</button>
+    <span class="tutStepTag" id="swTutTag">STEP 1 OF 8</span>
+    <button class="tutClose" id="swTutClose" type="button" aria-label="Close guide">×</button>
   </div>
   <div class="tutPills" aria-hidden="true">
     <div class="tutPill" data-step="0"></div>
     <div class="tutPill" data-step="1"></div>
     <div class="tutPill" data-step="2"></div>
     <div class="tutPill" data-step="3"></div>
+    <div class="tutPill" data-step="4"></div>
+    <div class="tutPill" data-step="5"></div>
+    <div class="tutPill" data-step="6"></div>
+    <div class="tutPill" data-step="7"></div>
   </div>
   <h2 class="tutTitle" id="swTutTitle"></h2>
   <p class="tutBody" id="swTutBody"></p>
+  <div class="tutPromptBox" id="swTutPrompt"></div>
+  <div class="tutPressLog" id="swTutPress"><span class="tutPressTag">READY</span>Press any glowing button or slider — I'll tell you what you're pressing and what changes.</div>
   <div class="tutActions">
     <div class="tutBtnGroup">
-      <button class="btn active" id="swTutDemo" type="button">Watch Demo</button>
+      <button class="btn active" id="swTutDemo" type="button">Run This Step</button>
     </div>
     <div class="tutBtnGroup">
       <button class="btn" id="swTutPrev" type="button">Back</button>
-      <button class="btn" id="swTutNext" type="button">Next</button>
+      <button class="btn" id="swTutNext" type="button">Next →</button>
     </div>
   </div>
 </section>
@@ -266,6 +303,16 @@
       <button class="btn" id="btnClear" type="button">Calm Spins</button>
       <button class="btn" id="btnFastSS" type="button" title="Fast-forward to steady state">Fast-Fwd → SS</button>
     </div>
+    <div id="logWrap" style="margin-top:2px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12);">
+      <div style="display:flex;justify-content:space-between;align-items:center;font:9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(210,228,255,.78);margin-bottom:5px;">
+        <span>TELEMETRY &amp; DB EVALUATION</span>
+        <span id="logStatusBadge" style="color:#6ee7b7;">REC · 0 ev</span>
+      </div>
+      <div class="btnRow">
+        <button class="btn tiny active" id="btnSaveLogDb" type="button" title="Upload complete physics & UI trace to Supabase DB + local IndexedDB">Save Log → DB</button>
+        <button class="btn tiny" id="btnExportLog" type="button" title="Download full JSON log for inspection">Export JSON</button>
+      </div>
+    </div>
   </div>
 </details>
 <div id="readoutsDock">
@@ -352,11 +399,14 @@
   const NACT = actPix.length;
   const activeMask = new Uint8Array(N);
   const m0x = new Float32Array(NACT), m0y = new Float32Array(NACT), m0z = new Float32Array(NACT);
+  const m0xFull = new Float32Array(N), m0yFull = new Float32Array(N), m0zFull = new Float32Array(N);
   for (let p = 0; p < NACT; p++) {
-    activeMask[actPix[p]] = 1;
+    const pix = actPix[p];
+    activeMask[pix] = 1;
     m0x[p] = m0i16[p * 3] / 32767.0;
     m0y[p] = m0i16[p * 3 + 1] / 32767.0;
     m0z[p] = m0i16[p * 3 + 2] / 32767.0;
+    m0xFull[pix] = m0x[p]; m0yFull[pix] = m0y[p]; m0zFull[pix] = m0z[p];
   }
   const phiReX = new Float32Array(M * NACT), phiReY = new Float32Array(M * NACT), phiReZ = new Float32Array(M * NACT);
   const phiImX = new Float32Array(M * NACT), phiImY = new Float32Array(M * NACT), phiImZ = new Float32Array(M * NACT);
@@ -432,6 +482,7 @@
   let thermalSeed = 20260101;
   let rngState = thermalSeed >>> 0;
   let paused = false;
+  let playbackSpeed = 1;
   let fastForwarding = false;
   let ffStable = 0, ffFrames = 0;
   let simTime = 0; // dimensionless tau = omega_M * t
@@ -538,12 +589,13 @@
   const t1WaitPrev = new Float32Array(M);
   const ffPrev = new Float32Array(M);
   let modeHistHead = 0, modeHistCount = 0, lastModeSampleT = -1;
+  let visualPeakDyn = 0, lastMeanDynAmp = 0, lastPeakDyn = 0, lastSpecPeakGHz = 0;
 
   function resetModeHistory() {
     modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime; lastSpecSampleT = -1; prevSpecT = -1; prevSpecVal = 0;
     probeSeries.fill(0); probeHead = 0;
     tone2Released = false; tone2ReleaseT = Infinity; t1WaitStable = 0; lastWaitCheckT = simTime;
-    t1WaitPrev.fill(0);
+    t1WaitPrev.fill(0); visualPeakDyn = 0;
   }
 
   function recordModeSample() {
@@ -1051,7 +1103,8 @@
     resetModeHistory();
     recordModeSample();
     reconstructSpatialSpins();
-    document.querySelectorAll('#eigenButtons button').forEach(b => b.classList.toggle('active', Number(b.dataset.mode) === mIdx));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#btnZeroDrive').forEach(b => { if (b && b.classList) b.classList.remove('active'); });
+    document.querySelectorAll('#eigenButtons button').forEach(b => { if (b && b.classList) b.classList.toggle('active', Number(b.dataset.mode) === mIdx); });
     syncUi();
   }
 
@@ -1111,7 +1164,11 @@
     document.addEventListener('gesturestart', e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   }
   let pluckDown = false;
-  fieldCanvas.addEventListener('pointerdown', e => { pluckDown = true; pluckAt(e.clientX, e.clientY); });
+  fieldCanvas.addEventListener('pointerdown', e => {
+    pluckDown = true;
+    pluckAt(e.clientX, e.clientY);
+    announcePress('Pluck YIG Disk', 'Injected a localized transverse kick via exact symplectic projection a_h = ω̄_h(φ_h, B_0 δm) — launching ripples across all 29 modes.', 'pluck');
+  });
   fieldCanvas.addEventListener('pointermove', e => { if (pluckDown) pluckAt(e.clientX, e.clientY); });
   window.addEventListener('pointerup', () => { pluckDown = false; });
 
@@ -1126,7 +1183,11 @@
   const modeBarsEl = document.getElementById('modeBars');
   if (modeBarsEl) modeBarsEl.addEventListener('click', e => {
     const row = e.target && e.target.closest ? e.target.closest('.modeRow[data-m]') : null;
-    if (row) exciteEigenmode(Number(row.dataset.m));
+    if (row) {
+      const mIdx = Number(row.dataset.m);
+      exciteEigenmode(mIdx);
+      announcePress(`Mode Row m${mIdx}`, `Excited normal mode m${mIdx} (${fGhzArr[mIdx].toFixed(4)} GHz, N_mm = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz) cleanly on the disk.`, `m${mIdx}`);
+    }
   });
 
   function updateSpectrum() {
@@ -1190,23 +1251,29 @@
     }
     specCtx.stroke();
     const fPeak = (peakBin / SPEC_LEN) * fsGHz;
+    lastSpecPeakGHz = maxVal > 1e-4 ? +fPeak.toFixed(4) : 0;
     const spEl = document.getElementById('specPeak');
     if (spEl) spEl.textContent = maxVal > 1e-4 ? `f_peak: ${fPeak.toFixed(2)} GHz` : 'f_peak: —';
   }
 
   function updateEigenmodeReadout(meanAmp) {
-    let domIdx = 13, domVal = -1;
+    let domIdx = 13, domVal = -1, secIdx = -1, secVal = -1;
     for (let m = 0; m < M; m++) {
       const amp = cycleAvgModeAmp(m);
       modeAmps[m] = amp;
-      if (amp > domVal) { domVal = amp; domIdx = m; }
+      if (amp > domVal) { secVal = domVal; secIdx = domIdx; domVal = amp; domIdx = m; }
+      else if (amp > secVal) { secVal = amp; secIdx = m; }
       const fill = document.getElementById('mf' + m);
       const val = document.getElementById('mv' + m);
       if (fill) fill.style.width = Math.min(100, (amp / 0.12) * 100).toFixed(0) + '%';
       if (val) val.textContent = amp.toFixed(3);
     }
     const domEl = document.getElementById('domModeBadge');
-    if (domEl) domEl.textContent = domVal > 0.001 ? `MODE: m${domIdx} (${fGhzArr[domIdx].toFixed(4)}G)` : 'MODE: — (EQUILIBRIUM)';
+    if (domEl) {
+      if (domVal <= 0.001) domEl.textContent = 'MODE: — (EQUILIBRIUM m₀)';
+      else if (secVal > 0.004 && secIdx >= 0) domEl.textContent = `TENSOR Σaφ: m${domIdx} (${domVal.toFixed(3)}) + m${secIdx} (${secVal.toFixed(3)})`;
+      else domEl.textContent = `MODE: m${domIdx} (${fGhzArr[domIdx].toFixed(4)}G) · TENSOR φ_${domIdx}`;
+    }
     const ampTotEl = document.getElementById('ampTotal');
     if (ampTotEl) ampTotEl.textContent = `⟨|δm|⟩: ${meanAmp.toFixed(3)}`;
 
@@ -1305,6 +1372,13 @@
     const b = e.target && e.target.closest ? e.target.closest('.nikTab[data-mat]') : null;
     if (!b) return;
     activeMat4 = b.dataset.mat; syncNikConfigUi(); updateNikMatrix();
+    const tabDesc = {
+      n: 'Showing exact 4-wave secular Kerr/NFS shifts N_hk (GHz/|a|²). Positive = hardening, negative = softening.',
+      p: 'Showing non-RWA pair interaction tensor |P_hk| from Eq. (9) — pairs excited off-resonantly in Full NMM.',
+      k: 'Showing Gilbert damping cross-coupling matrix |K+_hk| extracted from tensor eigenmodes.',
+      s: 'Showing Table I Scenario determinant S_det: +S1 allows c++ coexistence, −S2 produces bistable winner-take-all lockout.'
+    };
+    announcePress(`Matrix Tab: ${b.textContent.trim()}`, tabDesc[activeMat4] || 'Switched tensor matrix view.');
   });
   if (nikGridEl) {
     nikGridEl.addEventListener('pointermove', e => {
@@ -1316,6 +1390,10 @@
       const c = e.target && e.target.closest ? e.target.closest('.nikCell') : null;
       if (!c) return;
       nikSelPair = [+c.dataset.i, +c.dataset.k]; syncNikConfigUi(); updateNikMatrix();
+      const [si, sj] = nikSelPair;
+      const n11 = mutualNfsCoeffGHz(si, si), n22 = mutualNfsCoeffGHz(sj, sj), n12 = mutualNfsCoeffGHz(si, sj);
+      const sdet = Math.sign(n11) * Math.sign(n22) * (n11 * n22 - n12 * n12);
+      announcePress(`Tensor Cell (m${si}, m${sj})`, si === sj ? `Self-interaction N_${si},${si} = ${n11 >= 0 ? '+' : ''}${n11.toFixed(2)} GHz.` : `Cross-interaction N_${si},${sj} = ${n12 >= 0 ? '+' : ''}${n12.toFixed(2)} GHz · ${sdet >= 0 ? 'Scenario 1 Coexistence' : 'Scenario 2 Bistable Lockout'}.`);
     });
   }
   const btnPumpPair = document.getElementById('nikBtnPumpPair');
@@ -1330,9 +1408,14 @@
       driveAmp2 = 1.8 * parametricThreshold(sj);
     } else { dualTone = false; driveAmp2 = 0; }
     seedSpins(0.004); syncUi();
+    announcePress(`Pump (m${si}, m${sj})`, si === sj ? `Aimed Tone 1 at 1.8× threshold on mode m${si} (2f = ${driveFreq.toFixed(4)} GHz).` : `Aimed Tone 1 → m${si} & Tone 2 → m${sj} at 1.8× threshold from tensor inspector.`);
   });
   const btnFocus = document.getElementById('nikBtnFocus');
-  if (btnFocus) btnFocus.addEventListener('click', () => exciteEigenmode(nikSelPair[1]));
+  if (btnFocus) btnFocus.addEventListener('click', () => {
+    const k = nikSelPair[1];
+    exciteEigenmode(k);
+    announcePress(`Excite m${k}`, `Loaded exact tensor mode profile φ_${k} (${fGhzArr[k].toFixed(4)} GHz) onto the YIG disk.`, `m${k}`);
+  });
 
   // Arnold Tongues Canvas (3.85..4.16 GHz parametric band, 0..1.5 mT)
   const arnoldCanvas = document.getElementById('arnoldCanvas');
@@ -1536,22 +1619,40 @@
     syncUi();
   }
   let arnoldDrag = false;
-  arnoldCanvas.addEventListener('pointerdown', e => { arnoldDrag = true; selectArnoldAt(e.clientX, e.clientY, e.shiftKey); });
+  arnoldCanvas.addEventListener('pointerdown', e => {
+    arnoldDrag = true;
+    selectArnoldAt(e.clientX, e.clientY, e.shiftKey);
+    const isT2 = e.shiftKey || arnoldTarget === 2;
+    const fp = isT2 ? driveFreq2 : driveFreq;
+    const hp = (isT2 ? driveAmp2 : driveAmp) * MU0_MS_MT;
+    announcePress(`Arnold Map (Tone ${isT2 ? 2 : 1})`, `Set Tone ${isT2 ? 2 : 1} parallel pump directly to f_p = ${fp.toFixed(4)} GHz, μ₀h_p = ${hp.toFixed(2)} mT on the instability diagram.`);
+  });
   arnoldCanvas.addEventListener('pointermove', e => { if (arnoldDrag) selectArnoldAt(e.clientX, e.clientY, e.shiftKey); });
   window.addEventListener('pointerup', () => { arnoldDrag = false; });
 
   function drawScene() {
     reconstructSpatialSpins();
     const data = imgData.data;
-    let ampSum = 0;
+    let ampSum = 0, peakDyn = 0;
+    for (let i = 0; i < N; i++) {
+      if (!activeMask[i]) continue;
+      const dy = my[i] - m0yFull[i], dz = mz[i] - m0zFull[i];
+      const amp = Math.hypot(dy, dz);
+      ampSum += amp;
+      if (amp > peakDyn) peakDyn = amp;
+    }
+    const targetPeak = Math.max(0.06, peakDyn * 1.06);
+    if (visualPeakDyn <= 0 || targetPeak > visualPeakDyn * 2.5) visualPeakDyn = targetPeak;
+    else if (targetPeak > visualPeakDyn) visualPeakDyn += 0.45 * (targetPeak - visualPeakDyn);
+    else visualPeakDyn += 0.14 * (targetPeak - visualPeakDyn);
+    const invScale = 1 / visualPeakDyn;
     for (let i = 0; i < N; i++) {
       const o = i * 4;
       if (!activeMask[i]) { data[o] = 3; data[o + 1] = 6; data[o + 2] = 13; data[o + 3] = 255; continue; }
-      const vy = my[i], vz = mz[i];
-      ampSum += Math.hypot(vy, vz);
-      const val = Math.max(-1, Math.min(1, vy * 7.5));
-      const p = Math.max(0, val), n = Math.max(0, -val), phase = Math.min(1, Math.abs(vz) * 7.0);
-      data[o] = Math.round(14 + p * 235 + phase * 45);
+      const dy = my[i] - m0yFull[i], dz = mz[i] - m0zFull[i];
+      const val = Math.max(-1, Math.min(1, dy * invScale));
+      const p = Math.max(0, val), n = Math.max(0, -val), phase = Math.min(1, Math.abs(dz) * invScale);
+      data[o] = Math.round(14 + p * 235 + phase * 42);
       data[o + 1] = Math.round(22 + p * 120 + n * 165);
       data[o + 2] = Math.round(42 + n * 213 + phase * 55);
       data[o + 3] = 255;
@@ -1560,23 +1661,31 @@
     ctx.fillStyle = '#03060d'; ctx.fillRect(0, 0, width, height);
     const size = Math.min(width, height) * 0.68, x0 = (width - size) * 0.5, y0 = (height - size) * 0.5;
     ctx.save();
+    ctx.beginPath(); ctx.arc(width * 0.5, height * 0.5, size * 0.495, 0, Math.PI * 2); ctx.clip();
     ctx.imageSmoothingEnabled = true; ctx.drawImage(offCanvas, x0, y0, size, size);
-    ctx.strokeStyle = 'rgba(180,215,255,0.28)'; ctx.lineWidth = 1.5;
+    ctx.restore();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(180,215,255,0.32)'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.arc(width * 0.5, height * 0.5, size * 0.495, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = 'rgba(240,248,255,0.42)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(240,248,255,0.52)'; ctx.lineWidth = 1.1;
     const step = 3, cell = size / NX;
+    const arrowScale = cell * 1.42 * invScale;
     ctx.beginPath();
     for (let y = 1; y < NY; y += step) {
       for (let x = 1; x < NX; x += step) {
         const i = y * NX + x;
         if (!activeMask[i]) continue;
+        const dy = my[i] - m0yFull[i], dz = mz[i] - m0zFull[i];
+        const ax = dy * arrowScale, ay = -dz * arrowScale;
+        if (ax * ax + ay * ay < 0.25) continue;
         const sx = x0 + (x + 0.5) * cell, sy = y0 + (y + 0.5) * cell;
-        ctx.moveTo(sx, sy); ctx.lineTo(sx + my[i] * cell * 12, sy - mz[i] * cell * 12);
+        ctx.moveTo(sx, sy); ctx.lineTo(sx + ax, sy + ay);
       }
     }
     ctx.stroke(); ctx.restore();
 
     const meanAmp = ampSum / NACT;
+    lastMeanDynAmp = meanAmp; lastPeakDyn = peakDyn;
     const cm = closestArnoldMode(driveFreq);
     const hThNorm = parametricThreshold(cm);
     const ratio = driveMode === 'parallel' ? driveAmp / hThNorm : 0;
@@ -1618,6 +1727,7 @@
     const open = arnoldBox.classList.toggle('mobileOpen');
     tonguesToggleBtn.classList.toggle('active', open);
     if (open && isCompactViewport()) { controlsPanel.open = false; if (!swTutEl.hidden) closeSwTut(); }
+    announcePress('TONGUES', open ? 'Opened Arnold Instability Tongues diagram — tap any tongue to aim pump.' : 'Closed Arnold Tongues diagram.');
   });
 
   function makeDraggablePanel(getPanelEl, handleEl, isSummary = false) {
@@ -1699,53 +1809,487 @@
     if (qFast) { qFast.textContent = fastForwarding ? 'FAST (STOP)' : 'FAST→SS'; qFast.classList.toggle('active', fastForwarding); }
     document.getElementById('driveParallel').classList.toggle('active', driveMode === 'parallel');
     document.getElementById('driveTransverse').classList.toggle('active', driveMode === 'transverse');
+    document.querySelectorAll('#speedBtns button[data-speed]').forEach(b => {
+      if (b && b.classList) b.classList.toggle('active', Number(b.dataset.speed) === playbackSpeed);
+    });
     syncNikConfigUi();
   }
 
-  // Tutorial
-  const swTutKey = 'spin-waves-tutorial-v2';
+  // Slow-Motion Step-by-Step Interactive Guide + Button Spotlights + "What You're Pressing"
+  const swTutKey = 'spin-waves-tutorial-v3';
   const swTutEl = document.getElementById('swTutorial'), swTutBtn = document.getElementById('swTutorialBtn');
+  const swTutPressEl = document.getElementById('swTutPress');
+  const pressToastEl = document.getElementById('pressToast');
+  let pressToastTimer = null;
+  let lastPressHtml = '<span class="tutPressTag">READY</span>Press any glowing button or slider — I\'ll tell you what you\'re pressing and what changes.';
+
   const swTutSteps = [
-    { tag: 'STEP 1 OF 4 · 29 NORMAL MODES', title: 'Exact YIG 3µm Eigenmodes (>1.6 GHz)', body: 'Modes m0..m28 solve d\'Aquino Eq. (2) on the 150×150 YIG disk at B_DC=27mT. Click m27 (Kittel, softening N=-2.38G) or m13 (bulk, hardening N=+2.99G).', formula: 'a_h = ω̄_h (φ_h, B_0 δm)' },
-    { tag: 'STEP 2 OF 4 · SCENARIO 1 (S_det > 0)', title: 'Coupled Coexistence (Eqs. 55–56)', body: 'Modes m13 (+2.99G) and m23 (+0.38G) have S_det=+1.08>0: c++ coexistence shifts both amplitudes relative to uncoupled Eq. (33).', formula: 'COEX c++ · f_23=2.04G (4.08G AWG)' },
-    { tag: 'STEP 3 OF 4 · SCENARIO 2 (S_det < 0)', title: '1ns Tukey · 3.0µs Delay & 300K Stochasticity', body: 'Modes m13 & m16 have S_det=-12.84<0 (c++ unstable). Under 64GS/s 1ns Tukey pulses, 3.0µs delay locks out the late tone — click SWAP T1↔T2 or vary Δφ & T=300K!', formula: 'T1→T2: (m13, 0) vs T2→T1: (0, m16) · FDT' },
-    { tag: 'STEP 4 OF 4 · RWA vs FULL NMM', title: 'Inspect Non-RWA, 3-Wave & FDT Harmonics', body: 'Toggle RWA Fast (1+2A+4A) vs Full NMM (G3+4B+4C+4D) or pluck the disk to watch 0–6 GHz harmonics (f, 2f, 3f) above the 300K FDT floor.', formula: 'Eq. (9): G1+G2+G3+G4 · ⟨|a|²⟩_eq = k_BT / μ₀M_s²V' }
+    {
+      tag: 'STEP 1 OF 8 · SLOW MOTION & KITTEL MODE',
+      title: 'Slow Down & Watch Uniform Precession',
+      body: 'Spin waves oscillate near 2 GHz, so we set SPEED to <b>1× SLOW</b> (or <b>0.25×</b>) so each wave crest glides gently. Click the glowing <b>m27 Kit</b> button to excite the Kittel uniform mode.',
+      formula: 'm27 Kittel · f = 2.055 GHz · N = −2.38 GHz',
+      prompt: '<b>Press now:</b> Click <b>0.25×</b> (optional ultra-slow) and then click <b>m27 Kit</b> in the controls.',
+      targets: ['#speedBtns button[data-speed="0.25"]', '#eigenButtons button[data-mode="27"]'],
+      actions: ['speed:0.25', 'm27', 'eigen'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 2 OF 8 · BULK STANDING SPIN WAVE',
+      title: 'Compare With Bulk Mode m13 (Rings)',
+      body: 'In <b>m27 Kit</b> all arrows rotated together. Now click <b>m13</b> to see a true spatial standing wave with nodal rings inside the YIG disk and opposite-sign hardening nonlinearity.',
+      formula: 'm13 Bulk · f = 1.974 GHz · N = +2.99 GHz',
+      prompt: '<b>Press now:</b> Click the glowing <b>m13</b> button to load mode 13.',
+      targets: ['#eigenButtons button[data-mode="13"]'],
+      actions: ['m13', 'eigen'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 3 OF 8 · DAMPING vs PUMP THRESHOLD',
+      title: 'Decay Below h_th vs Growth Above h_th',
+      body: 'First click <b>Below h_th</b> (0.35× threshold): Gilbert damping α drains the wave back to zero. Then click <b>m13 Param</b> (1.6× threshold): Tone 1 turns on with a smooth <b>1 ns Tukey ramp</b> and amplifies m13!',
+      formula: 'h_th = Γ_k / v_k · 1ns tukey(128,1)[:64]',
+      prompt: '<b>Press now:</b> Click <b>Below h_th</b> first to watch decay, then click <b>m13 Param</b> to watch growth.',
+      targets: ['#presetSub', '#presetParam'],
+      actions: ['preset:sub', 'preset:param'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 4 OF 8 · RELATIVE PHASE Δφ',
+      title: 'Constructive vs Destructive Phase (Δφ)',
+      body: 'With <b>Dual-Tone: ON</b>, overlapping tones at the same frequency interfere coherently: <b>0°</b> adds amplitudes above threshold while <b>180°</b> cancels to zero.',
+      formula: 'h(t) = h₁ sin(ωt + φ₁) + h₂ sin(ωt + φ₂)',
+      prompt: '<b>Press now:</b> Turn on <b>Dual-Tone</b>, then drag <b>Rel Phase Δφ</b> between 0° and ±180°.',
+      targets: ['#btnDualTone', '#slPhase2'],
+      actions: ['dualTone', 'phase2'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 5 OF 8 · SCENARIO 1 (S_det > 0)',
+      title: 'Coupled 2-Mode Coexistence (COEX c++)',
+      body: 'Modes m13 (+2.99G) & m23 (+0.38G) have <b>S_det = +1.08 > 0</b>: both modes coexist simultaneously at shifted steady-state amplitudes. Watch slowly, or tap <b>25×</b> / <b>FAST→SS</b> to jump ahead.',
+      formula: 'COEX c++ · (m13, m23) stable fixed point',
+      prompt: '<b>Press now:</b> Click <b>COEX c++</b> in the top bar (or <b>Coex (13,23)</b>), then watch the m13 & m23 bars rise.',
+      targets: ['#quickCoexBtn', '#presetCoex'],
+      actions: ['preset:coex', 'coex'],
+      openControls: false
+    },
+    {
+      tag: 'STEP 6 OF 8 · SCENARIO 2 (S_det < 0)',
+      title: '2-Tone 3.0 µs Delayed Nonreciprocity',
+      body: 'Modes m13 & m16 have <b>S_det = −12.84 < 0</b> (mutually exclusive). Tone 1 starts at t = 0 with a 1 ns Tukey ramp; Tone 2 waits until Tone 1 saturates (<b>WAIT T1 SS</b>), then cannot dethrone m13!',
+      formula: 'T1→T2: m13 wins, m16 quenched (~0)',
+      prompt: '<b>Press now:</b> Click <b>3µs NONRECIP</b>, then click <b>FAST→SS</b> (or <b>150×</b>) to watch Tone 2 release after T1 settles.',
+      targets: ['#quickNonrecipBtn', '#quickFastBtn'],
+      actions: ['preset:nonrecip', 'nonrecip', 'fast'],
+      openControls: false
+    },
+    {
+      tag: 'STEP 7 OF 8 · SWAP ORDER & 300 K NOISE',
+      title: 'Flip T1↔T2 Memory & Thermal Bath',
+      body: 'Same two amplitudes, opposite order! Clicking <b>SWAP T1↔T2</b> puts m16 first so m16 locks out m13. At <b>300 K</b>, Brown FDT noise also nucleates modes from 0 and causes stochastic switching when delay = 0.',
+      formula: 'T2→T1: (0, m16) · ⟨|a|²⟩_eq = k_B T / (μ₀ M_s² V)',
+      prompt: '<b>Press now:</b> Click <b>SWAP T1↔T2</b> (and try sliding <b>Thermal Bath T</b> between 0 K and 300 K).',
+      targets: ['#quickSwapBtn', '#slTemp'],
+      actions: ['swap', 'temp'],
+      openControls: false
+    },
+    {
+      tag: 'STEP 8 OF 8 · FULL NMM & HARMONICS',
+      title: 'Switch RWA Fast ↔ Full NMM (0–6.5 GHz)',
+      body: 'RWA Fast keeps resonant core (1+2A+4A). Clicking <b>Full NMM</b> activates all non-RWA & 3-wave Eq. (9) tensors (<b>G3+4B+4C+4D</b>) so <b>f, 2f, 3f</b> harmonics appear on the DFT spectrum!',
+      formula: 'Eq. (9): G1 + G2 + G3 + G4 (29 modes)',
+      prompt: '<b>Press now:</b> Click <b>Full NMM</b> in the controls, or pluck the YIG disk directly to see the spectrum harmonics.',
+      targets: ['#btnNmmFull'],
+      actions: ['nmm:full', 'pluck'],
+      openControls: true
+    }
   ];
-  let swTutState = { step: 0, done: [false, false, false, false], dismissed: false };
-  try { const s = JSON.parse(localStorage.getItem(swTutKey) || 'null'); if (s && typeof s === 'object') swTutState = { ...swTutState, ...s }; } catch (_) {}
+
+  let swTutState = { step: 0, done: Array(swTutSteps.length).fill(false), dismissed: false };
+  try {
+    const s = JSON.parse(localStorage.getItem(swTutKey) || 'null');
+    if (s && typeof s === 'object' && Array.isArray(s.done) && s.done.length === swTutSteps.length) swTutState = { ...swTutState, ...s };
+  } catch (_) {}
   function saveSwTut() { try { localStorage.setItem(swTutKey, JSON.stringify(swTutState)); } catch (_) {} }
+
+  function clearCoachSpotlights() {
+    document.querySelectorAll('.tutSpotlight').forEach(el => { if (el && el.classList) el.classList.remove('tutSpotlight'); });
+  }
+  function applyCoachSpotlights() {
+    clearCoachSpotlights();
+    if (!swTutEl || swTutEl.hidden) return;
+    const s = swTutSteps[swTutState.step] || swTutSteps[0];
+    if (s.openControls && !isCompactViewport() && controlsPanel) controlsPanel.open = true;
+    let scrolled = false;
+    (s.targets || []).forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        if (!el) return;
+        const host = el.tagName === 'INPUT' && el.closest ? (el.closest('label.sliderRow') || el) : el;
+        if (host && host.classList) host.classList.add('tutSpotlight');
+        if (!scrolled && controlsPanel && controlsPanel.contains && controlsPanel.contains(host) && host.scrollIntoView) {
+          host.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          scrolled = true;
+        }
+      });
+    });
+  }
+
+  const SW_DB_URL = 'https://dpnzgpmlbdrlwackyafa.supabase.co/rest/v1/spacetime_feedback_runs';
+  const SW_DB_KEY = 'sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz';
+  const SW_IDB_NAME = 'spacetime-spinwaves-logs';
+  const SW_IDB_STORE = 'sessions';
+  const nowWallMs = () => (typeof performance !== 'undefined' && performance && typeof performance.now === 'function') ? performance.now() : Date.now();
+  function makeLogUuid() {
+    const c = typeof crypto !== 'undefined' ? crypto : (window && window.crypto);
+    if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+    if (c && typeof c.getRandomValues === 'function') {
+      const b = new Uint8Array(16); c.getRandomValues(b);
+      b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+      const h = Array.from(b, v => v.toString(16).padStart(2, '0')).join('');
+      return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+    }
+    return `sw-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  const swLog = {
+    sessionId: makeLogUuid(),
+    appVersion: 'spin-waves-nmm-29m-v2',
+    startedAt: new Date().toISOString(),
+    startedWallMs: nowWallMs(),
+    events: [],
+    samples: [],
+    errors: [],
+    totalEvents: 0,
+    totalSamples: 0,
+    totalErrors: 0,
+    fpsSamples: [],
+    frameCount: 0,
+    lastFrameWallMs: 0,
+    lastFpsCalcMs: 0,
+    currentFps: 0,
+    lastFrameMs: 0,
+    lastSampleWallMs: 0,
+    lastIdbSaveMs: 0,
+    lastUploadedSeq: 0,
+    uploading: false,
+    dbStatus: 'REC',
+    idbDb: null
+  };
+
+  function captureLogState() {
+    const topModes = [];
+    for (let m = 0; m < M; m++) {
+      const amp = cycleAvgModeAmp(m);
+      topModes.push({ m, fGHz: +fGhzArr[m].toFixed(4), amp: +amp.toFixed(5), rms: +modeRmsAmp(m).toFixed(5), nfsMHz: +(modeNfsShiftGHz(m) * 1000).toFixed(2) });
+    }
+    topModes.sort((a, b) => b.amp - a.amp);
+    const activeTop = topModes.slice(0, 6);
+    let theory = null;
+    if (driveMode === 'parallel' && driveAmp > 1e-6) {
+      if (dualTone && driveAmp2 > 1e-6) {
+        const m1 = closestArnoldMode(driveFreq), m2 = closestArnoldMode(driveFreq2);
+        if (m1 !== m2) {
+          const ana = analyzeTwoMode(m1, m2, driveFreq, driveAmp, driveFreq2, driveAmp2, true);
+          theory = { kind: '2mode', m1, m2, scenario: ana.scenario, regime: ana.regime, S_det: +ana.S_det.toFixed(3), pred: [+ana.pred[0].toFixed(5), +ana.pred[1].toFixed(5)], sim: [+cycleAvgModeAmp(m1).toFixed(5), +cycleAvgModeAmp(m2).toFixed(5)] };
+        }
+      } else {
+        const cm = closestArnoldMode(driveFreq);
+        theory = { kind: '1mode', m: cm, ratio: +(driveAmp / parametricThreshold(cm)).toFixed(3), pred: +steadyStateAmp(cm, driveFreq, driveAmp, modeMutualNfsShiftGHz(cm), true).toFixed(5), sim: +cycleAvgModeAmp(cm).toFixed(5) };
+      }
+    }
+    return {
+      simTimeTau: +simTime.toFixed(3),
+      simTimeUs: +simTimeUs().toFixed(5),
+      driveMode,
+      driveFreqGHz: +driveFreq.toFixed(5),
+      driveAmpMT: +(driveAmp * MU0_MS_MT).toFixed(3),
+      dualTone,
+      driveFreq2GHz: +driveFreq2.toFixed(5),
+      driveAmp2MT: +(driveAmp2 * MU0_MS_MT).toFixed(3),
+      tone2DelayUs: +tone2DelayNs.toFixed(2),
+      tone2WaitSS,
+      tone2Released,
+      relPhaseDeg: Math.round((drivePhase2 - drivePhase1) * 180 / Math.PI),
+      damping: +damping.toFixed(5),
+      temperatureK,
+      playbackSpeed,
+      fastForwarding,
+      paused,
+      isRwa: isRwaFast(),
+      tutStep: swTutState.step + 1,
+      tutDoneCount: swTutState.done.filter(Boolean).length,
+      env1: +tone1EnvAt(simTime).toFixed(3),
+      env2: +tone2EnvAt(simTime).toFixed(3),
+      meanDynAmp: +lastMeanDynAmp.toFixed(5),
+      peakDyn: +lastPeakDyn.toFixed(5),
+      fPeakGHz: lastSpecPeakGHz,
+      topModes: activeTop,
+      theory
+    };
+  }
+
+  function updateLogUiBadges() {
+    const qBtn = document.getElementById('quickLogDbBtn');
+    const stEl = document.getElementById('logStatusBadge');
+    const nEv = swLog.totalEvents;
+    if (qBtn) qBtn.textContent = swLog.dbStatus === 'DB SAVED ✓' ? `DB ✓ · ${nEv}` : (swLog.uploading ? `SAVING · ${nEv}` : `LOG DB · ${nEv}`);
+    if (stEl) stEl.textContent = `${swLog.dbStatus} · ${nEv}ev / ${swLog.totalSamples}sp`;
+  }
+
+  function recordLogEvent(type, label, detail = null) {
+    const tMs = Math.round(nowWallMs() - swLog.startedWallMs);
+    const snap = captureLogState();
+    const key = type === 'slider' ? String(label).split(/\s+/).slice(0, 3).join(' ') : null;
+    const lastEv = swLog.events.length ? swLog.events[swLog.events.length - 1] : null;
+    if (type === 'slider' && lastEv && lastEv.type === 'slider' && lastEv._key === key && (tMs - lastEv.tMs) < 600) {
+      lastEv.tMs = tMs; lastEv.label = label; lastEv.detail = detail; lastEv.state = snap;
+      updateLogUiBadges();
+      return;
+    }
+    swLog.totalEvents++;
+    const entry = { seq: swLog.totalEvents, tMs, at: new Date().toISOString(), type, label, detail, state: snap };
+    if (key) entry._key = key;
+    if (swLog.events.length >= 400) swLog.events.splice(40, 1);
+    swLog.events.push(entry);
+    updateLogUiBadges();
+  }
+
+  function recordLogError(kind, msg, extra = null) {
+    swLog.totalErrors++;
+    if (swLog.errors.length >= 80) swLog.errors.shift();
+    swLog.errors.push({ seq: swLog.totalErrors, tMs: Math.round(nowWallMs() - swLog.startedWallMs), at: new Date().toISOString(), kind, msg: String(msg).slice(0, 320), extra });
+  }
+
+  function recordTelemetrySample(force = false) {
+    const nowMs = nowWallMs();
+    if (!force && (nowMs - swLog.lastSampleWallMs) < 1500) return;
+    swLog.lastSampleWallMs = nowMs;
+    for (let m = 0; m < M; m++) {
+      if (!Number.isFinite(aRe[m]) || !Number.isFinite(aIm[m])) {
+        recordLogError('nan_amplitude', `Mode m${m} non-finite at tau=${simTime.toFixed(2)}`);
+        break;
+      }
+    }
+    swLog.totalSamples++;
+    const snap = captureLogState();
+    snap.tMs = Math.round(nowMs - swLog.startedWallMs);
+    snap.fps = +swLog.currentFps.toFixed(1);
+    snap.frameMs = +swLog.lastFrameMs.toFixed(2);
+    if (swLog.samples.length >= 350) swLog.samples.splice(30, 1);
+    swLog.samples.push(snap);
+    updateLogUiBadges();
+  }
+
+  function buildEvaluationReport(reason = 'manual') {
+    const fpsArr = swLog.fpsSamples;
+    const sortedFps = fpsArr.slice().sort((a, b) => a - b);
+    return {
+      protocol: 'spin-waves-evaluation-v1',
+      sessionId: swLog.sessionId,
+      appVersion: swLog.appVersion,
+      reason,
+      startedAt: swLog.startedAt,
+      savedAt: new Date().toISOString(),
+      durationMs: Math.round(nowWallMs() - swLog.startedWallMs),
+      viewport: [width, height, dpr],
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'node',
+      modelMeta: { M, BDC_mT: BDC_MT, mu0Ms_mT: MU0_MS_MT, fM_GHz: F_M, tukeyRampNs: TUKEY_RAMP_NS },
+      counts: { events: swLog.totalEvents, samples: swLog.totalSamples, errors: swLog.totalErrors },
+      fpsStats: sortedFps.length ? {
+        min: +sortedFps[0].toFixed(1),
+        p50: +sortedFps[Math.floor(sortedFps.length * 0.5)].toFixed(1),
+        avg: +(fpsArr.reduce((s, v) => s + v, 0) / fpsArr.length).toFixed(1)
+      } : null,
+      tutorialDone: swTutState.done.slice(),
+      finalState: captureLogState(),
+      events: swLog.events.map(({ _key, ...rest }) => rest),
+      samples: swLog.samples,
+      errors: swLog.errors
+    };
+  }
+
+  function openLogIdb() {
+    if (swLog.idbDb) return Promise.resolve(swLog.idbDb);
+    if (typeof indexedDB === 'undefined' || !indexedDB.open) return Promise.resolve(null);
+    return new Promise(resolve => {
+      try {
+        const req = indexedDB.open(SW_IDB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(SW_IDB_STORE)) db.createObjectStore(SW_IDB_STORE, { keyPath: 'sessionId' });
+        };
+        req.onsuccess = () => { swLog.idbDb = req.result; resolve(swLog.idbDb); };
+        req.onerror = () => resolve(null);
+      } catch (_) { resolve(null); }
+    });
+  }
+
+  async function saveLogToIdb(report) {
+    try {
+      const db = await openLogIdb();
+      if (!db) return false;
+      return await new Promise(resolve => {
+        try {
+          const tx = db.transaction(SW_IDB_STORE, 'readwrite');
+          tx.objectStore(SW_IDB_STORE).put({ sessionId: report.sessionId, savedAt: report.savedAt, report });
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        } catch (_) { resolve(false); }
+      });
+    } catch (_) { return false; }
+  }
+
+  async function uploadSwLog(reason = 'manual', keepalive = false) {
+    const report = buildEvaluationReport(reason);
+    try { localStorage.setItem('spin-waves-last-log-v1', JSON.stringify({ sessionId: report.sessionId, savedAt: report.savedAt, counts: report.counts })); } catch (_) {}
+    await saveLogToIdb(report);
+    if (typeof fetch !== 'function') {
+      swLog.dbStatus = 'LOCAL IDB';
+      updateLogUiBadges();
+      return false;
+    }
+    if (swLog.uploading && !keepalive) return false;
+    swLog.uploading = true;
+    swLog.dbStatus = 'SAVING…';
+    updateLogUiBadges();
+    try {
+      const res = await fetch(SW_DB_URL, {
+        method: 'POST',
+        keepalive,
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SW_DB_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          client_run_id: makeLogUuid(),
+          app_version: swLog.appVersion,
+          report
+        })
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        throw new Error(`HTTP ${res.status} ${detail.slice(0, 120)}`);
+      }
+      swLog.dbStatus = 'DB SAVED ✓';
+      swLog.lastUploadedSeq = swLog.totalEvents + swLog.totalSamples;
+      return true;
+    } catch (err) {
+      swLog.dbStatus = 'LOCAL IDB';
+      recordLogError('db_upload_failed', err && err.message ? err.message : String(err));
+      return false;
+    } finally {
+      swLog.uploading = false;
+      updateLogUiBadges();
+    }
+  }
+
+  function announcePress(btnLabel, explanation, actionKey = null) {
+    lastPressHtml = `<span class="tutPressTag">PRESSED: ${btnLabel}</span>${explanation}`;
+    if (swTutPressEl) swTutPressEl.innerHTML = lastPressHtml;
+    if (pressToastEl && pressToastEl.classList) {
+      pressToastEl.innerHTML = lastPressHtml;
+      if (swTutEl && swTutEl.hidden) {
+        pressToastEl.classList.add('show');
+        if (pressToastTimer) clearTimeout(pressToastTimer);
+        pressToastTimer = setTimeout(() => { if (pressToastEl && pressToastEl.classList) pressToastEl.classList.remove('show'); }, 4500);
+      } else {
+        pressToastEl.classList.remove('show');
+      }
+    }
+    const isSlider = /(Freq|Amp|Delay|Phase|Damping|Thermal Bath)/.test(btnLabel);
+    recordLogEvent(isSlider ? 'slider' : 'action', btnLabel, { explanation, actionKey });
+    if (actionKey) notifySwTutorial(actionKey);
+  }
+
   function renderSwTut() {
     const s = swTutSteps[swTutState.step] || swTutSteps[0];
-    document.getElementById('swTutTag').textContent = swTutState.done.every(Boolean) ? 'ALL CONCEPTS EXPLORED' : s.tag;
+    document.getElementById('swTutTag').textContent = swTutState.done.every(Boolean) ? 'ALL 8 STEPS COMPLETED' : s.tag;
     document.getElementById('swTutTitle').textContent = s.title;
     document.getElementById('swTutBody').innerHTML = s.body + '<br><span class="tutFormula">' + s.formula + '</span>';
+    const pr = document.getElementById('swTutPrompt');
+    if (pr) pr.innerHTML = s.prompt || '';
+    if (swTutPressEl) swTutPressEl.innerHTML = lastPressHtml;
     document.querySelectorAll('#swTutorial .tutPill').forEach((el, idx) => {
+      if (!el || !el.classList) return;
       el.classList.toggle('done', !!swTutState.done[idx]);
       el.classList.toggle('active', idx === swTutState.step && !swTutState.done[idx]);
     });
     document.getElementById('swTutPrev').disabled = swTutState.step === 0;
-    document.getElementById('swTutNext').textContent = swTutState.step === swTutSteps.length - 1 ? 'Done' : 'Next';
+    document.getElementById('swTutNext').textContent = swTutState.step === swTutSteps.length - 1 ? 'Done' : 'Next →';
+    applyCoachSpotlights();
   }
-  function openSwTut() { if (isCompactViewport()) controlsPanel.open = false; swTutState.dismissed = false; swTutEl.hidden = false; swTutBtn.classList.add('hidden'); renderSwTut(); saveSwTut(); }
-  function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); saveSwTut(); }
+  function openSwTut() { if (isCompactViewport()) controlsPanel.open = false; swTutState.dismissed = false; swTutEl.hidden = false; swTutBtn.classList.add('hidden'); if (pressToastEl && pressToastEl.classList) pressToastEl.classList.remove('show'); renderSwTut(); saveSwTut(); }
+  function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); clearCoachSpotlights(); saveSwTut(); }
   function notifySwTutorial(action) {
-    const idx = action === 'eigen' ? 0 : action === 'coex' ? 1 : action === 'nonrecip' ? 2 : action === 'pluck' ? 3 : -1;
-    if (idx >= 0 && !swTutState.done[idx]) {
-      swTutState.done[idx] = true; if (swTutState.step === idx && idx < swTutSteps.length - 1) swTutState.step = idx + 1;
+    const curStep = swTutSteps[swTutState.step];
+    let changed = false;
+    if (curStep && curStep.actions && curStep.actions.includes(action) && !swTutState.done[swTutState.step]) {
+      swTutState.done[swTutState.step] = true;
+      changed = true;
+    } else {
+      for (let i = 0; i < swTutSteps.length; i++) {
+        if (swTutSteps[i].actions && swTutSteps[i].actions.includes(action) && !swTutState.done[i]) {
+          swTutState.done[i] = true;
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (changed) {
       renderSwTut(); saveSwTut();
+      if (swTutState.done.every(Boolean)) {
+        recordLogEvent('tutorial', 'All 8 Guide Steps Completed', { step: swTutState.step + 1 });
+        uploadSwLog('tutorial_complete', false);
+      }
     }
   }
   function runSwTutDemo(step) {
-    if (step === 0) { exciteEigenmode(27); notifySwTutorial('eigen'); }
-    else if (step === 1) { applyPreset('coex'); notifySwTutorial('coex'); }
-    else if (step === 2) { applyPreset('nonrecip'); notifySwTutorial('nonrecip'); }
-    else if (step === 3) { pluckAt(width * 0.54, height * 0.46); notifySwTutorial('pluck'); }
+    if (step === 0) {
+      playbackSpeed = 0.25; exciteEigenmode(27);
+      announcePress('Run Step 1 (m27 Kit at 0.25×)', 'Set speed to 0.25× ultra-slow and excited uniform Kittel mode m27 (2.055 GHz). Watch all spin arrows precess together!', 'm27');
+    } else if (step === 1) {
+      playbackSpeed = 1; exciteEigenmode(13);
+      announcePress('Run Step 2 (m13 Bulk at 1× Slow)', 'Loaded bulk standing mode m13 (1.974 GHz, hardening N = +2.99 GHz). Notice the radial nodal ring!', 'm13');
+    } else if (step === 2) {
+      playbackSpeed = 5; applyPreset('param');
+      announcePress('Run Step 3 (m13 Param at 5×)', 'Applied 1.6× parametric threshold on m13 with a 1 ns Tukey turn-on ramp. Watch the wave grow inside the Arnold tongue!', 'preset:param');
+    } else if (step === 3) {
+      playbackSpeed = 5; temperatureK = 0;
+      driveMode = 'parallel'; damping = 0.0020; dualTone = true; tone2WaitSS = false; tone2DelayNs = 0;
+      const hSub = 0.75 * parametricThreshold(13);
+      driveFreq = 2 * fGhzArr[13]; driveAmp = hSub; driveFreq2 = 2 * fGhzArr[13]; driveAmp2 = hSub;
+      drivePhase1 = 0; drivePhase2 = 0; simTime = 0; seedSpins(0.005, [13]); syncUi();
+      announcePress('Run Step 4 (Δφ = 0° In-Phase)', 'Two sub-threshold tones (0.75·h_th each) overlap at Δφ = 0° → constructive sum 1.50·h_th excites m13! Now slide Δφ to 180° to cancel.', 'dualTone');
+    } else if (step === 4) {
+      playbackSpeed = 25; applyPreset('coex');
+      announcePress('Run Step 5 (COEX c++ at 25×)', 'Scenario 1 (S_det = +1.08 > 0): pumping m13 & m23 simultaneously. Speed set to 25× so both bars climb steadily.', 'preset:coex');
+    } else if (step === 5) {
+      playbackSpeed = 150; applyPreset('nonrecip');
+      announcePress('Run Step 6 (3µs NONRECIP at 150×)', 'Scenario 2 (S_det = −12.84 < 0): m13 starts first while m16 waits (WAIT T1 SS). Click FAST→SS to jump right to release!', 'preset:nonrecip');
+    } else if (step === 6) {
+      playbackSpeed = 150; applyPreset('nonrecip'); swapTonesAction();
+      announcePress('Run Step 7 (SWAP T1↔T2)', 'Reversed pulse arrival order so Tone 1 pumps m16 first and Tone 2 (m13) waits — now m16 wins and locks out m13!', 'swap');
+    } else if (step === 7) {
+      playbackSpeed = 5; setNmmMode(true); pluckAt(width * 0.54, height * 0.46);
+      announcePress('Run Step 8 (Full NMM + Pluck)', 'Enabled all 29-mode Eq. (9) terms (G1+G2+G3+4ABCD) and plucked the disk — watch f, 2f, 3f harmonics in Spectrum!', 'nmm:full');
+    }
   }
-  swTutBtn.addEventListener('click', openSwTut);
-  document.getElementById('swTutClose').addEventListener('click', closeSwTut);
-  document.getElementById('swTutPrev').addEventListener('click', () => { swTutState.step = Math.max(0, swTutState.step - 1); renderSwTut(); saveSwTut(); });
-  document.getElementById('swTutNext').addEventListener('click', () => { if (swTutState.step >= swTutSteps.length - 1) closeSwTut(); else { swTutState.step++; renderSwTut(); saveSwTut(); } });
+  swTutBtn.addEventListener('click', () => { openSwTut(); recordLogEvent('tutorial', 'Opened Guide', { step: swTutState.step + 1 }); });
+  document.getElementById('swTutClose').addEventListener('click', () => { closeSwTut(); recordLogEvent('tutorial', 'Closed Guide', { step: swTutState.step + 1 }); });
+  document.getElementById('swTutPrev').addEventListener('click', () => { swTutState.step = Math.max(0, swTutState.step - 1); renderSwTut(); saveSwTut(); recordLogEvent('tutorial', `Back to Step ${swTutState.step + 1}`); });
+  document.getElementById('swTutNext').addEventListener('click', () => {
+    if (swTutState.step >= swTutSteps.length - 1) { closeSwTut(); recordLogEvent('tutorial', 'Completed Guide Finish'); }
+    else { swTutState.step++; renderSwTut(); saveSwTut(); recordLogEvent('tutorial', `Next to Step ${swTutState.step + 1}`); }
+  });
   document.getElementById('swTutDemo').addEventListener('click', () => runSwTutDemo(swTutState.step));
+  document.querySelectorAll('#swTutorial .tutPill').forEach(pill => {
+    if (pill && pill.addEventListener) pill.addEventListener('click', () => {
+      const idx = Number(pill.dataset.step);
+      if (Number.isFinite(idx)) { swTutState.step = idx; renderSwTut(); saveSwTut(); recordLogEvent('tutorial', `Jumped to Step ${idx + 1}`); }
+    });
+  });
   if (!swTutState.dismissed) openSwTut(); else { swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); }
 
   function applyPreset(name) {
@@ -1796,35 +2340,94 @@
     syncUi();
   }
 
-  document.getElementById('presetParam').addEventListener('click', () => applyPreset('param'));
-  document.getElementById('presetSub').addEventListener('click', () => applyPreset('sub'));
-  document.getElementById('presetDirect').addEventListener('click', () => applyPreset('direct'));
-  document.getElementById('presetCoex').addEventListener('click', () => applyPreset('coex'));
-  document.getElementById('presetOpp').addEventListener('click', () => applyPreset('opp'));
-  document.getElementById('presetNonrecip').addEventListener('click', () => applyPreset('nonrecip'));
-  document.getElementById('quickCoexBtn').addEventListener('click', () => { if (!swTutEl.hidden) closeSwTut(); applyPreset('coex'); });
-  document.getElementById('quickNonrecipBtn').addEventListener('click', () => { if (!swTutEl.hidden) closeSwTut(); applyPreset('nonrecip'); });
-  document.getElementById('btnZeroDrive').addEventListener('click', () => { driveAmp = 0; driveAmp2 = 0; syncUi(); });
-  document.getElementById('eigenButtons').addEventListener('click', e => {
-    const btn = e.target.closest('button[data-mode]');
-    if (!btn) return;
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#btnZeroDrive').forEach(b => b.classList.remove('active'));
-    exciteEigenmode(Number(btn.dataset.mode)); notifySwTutorial('eigen');
+  document.getElementById('presetParam').addEventListener('click', () => {
+    applyPreset('param');
+    announcePress('m13 Param', 'Started parallel pumping of m13 at 1.6× h_th (3.950 GHz) with a 1 ns Tukey turn-on ramp — inside the Arnold tongue so m13 grows!', 'preset:param');
   });
-  document.getElementById('driveParallel').addEventListener('click', () => { driveMode = 'parallel'; syncUi(); });
-  document.getElementById('driveTransverse').addEventListener('click', () => { driveMode = 'transverse'; syncUi(); });
-  document.getElementById('slFreq').addEventListener('input', e => { driveFreq = +e.target.value; syncUi(); });
-  document.getElementById('slAmp').addEventListener('input', e => { driveAmp = (+e.target.value) / MU0_MS_MT; syncUi(); });
+  document.getElementById('presetSub').addEventListener('click', () => {
+    applyPreset('sub');
+    announcePress('Below h_th', 'Lowered pump to 0.35× threshold (< h_th). Watch Gilbert damping α drain m13 steadily back toward equilibrium.', 'preset:sub');
+  });
+  document.getElementById('presetDirect').addEventListener('click', () => {
+    applyPreset('direct');
+    announcePress('Kittel RF', 'Switched to direct transverse RF excitation of Kittel uniform mode m27 at 2.055 GHz (softening shift N = −2.38 GHz).');
+  });
+  document.getElementById('presetCoex').addEventListener('click', () => {
+    applyPreset('coex');
+    announcePress('Coex (13,23)', 'Scenario 1 (S_det = +1.08 > 0): dual parallel pumping of m13 & m23 settles into stable coupled c++ coexistence.', 'preset:coex');
+  });
+  document.getElementById('presetOpp').addEventListener('click', () => {
+    applyPreset('opp');
+    announcePress('Opp (13,27)', 'Scenario 1 opposite-sign hardening (+2.99G) & softening (−2.38G) coexistence on (m13, m27).');
+  });
+  document.getElementById('presetNonrecip').addEventListener('click', () => {
+    applyPreset('nonrecip');
+    announcePress('Nonrecip (13,16)', 'Scenario 2 (S_det = −12.84 < 0): Tone 1 (m13) turns on first; Tone 2 (m16) waits until T1 steady state, then gets locked out.', 'preset:nonrecip');
+  });
+  document.getElementById('quickCoexBtn').addEventListener('click', () => {
+    applyPreset('coex');
+    announcePress('COEX c++', 'Scenario 1 (S_det = +1.08 > 0): both m13 & m23 coexist cleanly at shifted steady-state amplitudes.', 'preset:coex');
+  });
+  document.getElementById('quickNonrecipBtn').addEventListener('click', () => {
+    applyPreset('nonrecip');
+    announcePress('3µs NONRECIP', 'Scenario 2 (S_det = −12.84 < 0): Tone 1 (m13) locks out delayed Tone 2 (m16). Try FAST→SS then SWAP T1↔T2!', 'preset:nonrecip');
+  });
+  document.getElementById('btnZeroDrive').addEventListener('click', () => {
+    driveAmp = 0; driveAmp2 = 0; syncUi();
+    announcePress('Zero Drive', 'Turned both RF pump amplitudes to 0 mT — spin waves now freely relax via Gilbert damping α toward the thermal floor.');
+  });
+  document.getElementById('eigenButtons').addEventListener('click', e => {
+    const btn = e.target && e.target.closest ? e.target.closest('button[data-mode]') : null;
+    if (!btn) return;
+    const mIdx = Number(btn.dataset.mode);
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#btnZeroDrive').forEach(b => b.classList.remove('active'));
+    exciteEigenmode(mIdx);
+    const kind = mIdx === 27 ? 'uniform Kittel mode (all spins rotate together)' : 'bulk spin-wave mode (spatial nodal rings)';
+    announcePress(`m${mIdx}${mIdx === 27 ? ' Kit' : ''}`, `Excited ${kind} at f = ${fGhzArr[mIdx].toFixed(4)} GHz, self-NFS N = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz.`, `m${mIdx}`);
+  });
+  document.getElementById('driveParallel').addEventListener('click', () => {
+    driveMode = 'parallel'; syncUi();
+    announcePress('Parallel Pump (x)', 'Aligned RF drive along static magnetization m₀ (x̂) — drives parametric ω_p ≈ 2ω_k instabilities.');
+  });
+  document.getElementById('driveTransverse').addEventListener('click', () => {
+    driveMode = 'transverse'; syncUi();
+    announcePress('Transverse RF (y)', 'Aligned RF drive perpendicular to m₀ (ŷ) — drives direct linear resonance ω_p ≈ ω_k.');
+  });
+  document.getElementById('slFreq').addEventListener('input', e => {
+    driveFreq = +e.target.value; syncUi();
+    announcePress(`Tone 1 Freq ${driveFreq.toFixed(4)} GHz`, 'Tuned Tone 1 carrier frequency horizontally across the Arnold instability tongues.');
+  });
+  document.getElementById('slAmp').addEventListener('input', e => {
+    driveAmp = (+e.target.value) / MU0_MS_MT; syncUi();
+    announcePress(`Tone 1 Amp ${(driveAmp * MU0_MS_MT).toFixed(2)} mT`, 'Adjusted Tone 1 pump strength vertically relative to parametric threshold h_th.');
+  });
   document.getElementById('btnDualTone').addEventListener('click', () => {
     dualTone = !dualTone;
     if (dualTone && driveAmp2 === 0) { driveFreq2 = 2 * fGhzArr[16]; driveAmp2 = 2.0 * parametricThreshold(16); }
     syncUi();
+    announcePress(`Dual-Tone: ${dualTone ? 'ON' : 'OFF'}`, dualTone ? 'Enabled Tone 2 AWG channel with independent frequency, delay, and phase Δφ.' : 'Disabled Tone 2 — running single-tone Tone 1 drive only.', 'dualTone');
+    if (dualTone && swTutEl && !swTutEl.hidden) applyCoachSpotlights();
   });
-  document.getElementById('slFreq2').addEventListener('input', e => { driveFreq2 = +e.target.value; syncUi(); });
-  document.getElementById('slAmp2').addEventListener('input', e => { driveAmp2 = (+e.target.value) / MU0_MS_MT; syncUi(); });
-  document.getElementById('slDelay2').addEventListener('input', e => { tone2WaitSS = false; tone2DelayNs = +e.target.value; simTime = 0; fastForwarding = false; seedSpins(0.004); syncUi(); });
-  document.getElementById('slPhase2').addEventListener('input', e => { drivePhase2 = (+e.target.value) * Math.PI / 180; syncUi(); });
-  document.getElementById('btnWaitT1SS').addEventListener('click', () => { tone2WaitSS = !tone2WaitSS; if (tone2WaitSS && !dualTone) dualTone = true; simTime = 0; fastForwarding = false; seedSpins(0.004); syncUi(); });
+  document.getElementById('slFreq2').addEventListener('input', e => {
+    driveFreq2 = +e.target.value; syncUi();
+    announcePress(`Tone 2 Freq ${driveFreq2.toFixed(4)} GHz`, 'Tuned Tone 2 carrier frequency to target a second normal mode.');
+  });
+  document.getElementById('slAmp2').addEventListener('input', e => {
+    driveAmp2 = (+e.target.value) / MU0_MS_MT; syncUi();
+    announcePress(`Tone 2 Amp ${(driveAmp2 * MU0_MS_MT).toFixed(2)} mT`, 'Adjusted Tone 2 RF amplitude.');
+  });
+  document.getElementById('slDelay2').addEventListener('input', e => {
+    tone2WaitSS = false; tone2DelayNs = +e.target.value; simTime = 0; fastForwarding = false; seedSpins(0.004); syncUi();
+    announcePress(`Tone 2 Delay ${tone2DelayNs.toFixed(1)} µs`, `Reset t = 0: Tone 2 now turns on smoothly via 1 ns Tukey ramp after ${tone2DelayNs.toFixed(1)} µs.`);
+  });
+  document.getElementById('slPhase2').addEventListener('input', e => {
+    const deg = +e.target.value; drivePhase2 = deg * Math.PI / 180; syncUi();
+    announcePress(`Rel Phase Δφ = ${deg}°`, `Set φ₂ − φ₁ = ${deg}° (0° gives constructive interference on overlapping tones, ±180° cancels destructively).`, 'phase2');
+  });
+  document.getElementById('btnWaitT1SS').addEventListener('click', () => {
+    tone2WaitSS = !tone2WaitSS; if (tone2WaitSS && !dualTone) dualTone = true; simTime = 0; fastForwarding = false; seedSpins(0.004); syncUi();
+    announcePress(`Wait T1 SS: ${tone2WaitSS ? 'ON' : 'OFF'}`, tone2WaitSS ? 'Tone 2 holds off until Tone 1 actually reaches steady state, then ramps on in 1 ns.' : 'Switched back to fixed µs delay timer for Tone 2.');
+  });
   function swapTonesAction() {
     if (!dualTone) applyPreset('nonrecip');
     [driveFreq, driveFreq2] = [driveFreq2, driveFreq];
@@ -1832,29 +2435,75 @@
     [drivePhase1, drivePhase2] = [drivePhase2, drivePhase1];
     simTime = 0; fastForwarding = false; seedSpins(0.004, [13, 16]); syncUi();
   }
-  document.getElementById('btnSwapTones').addEventListener('click', swapTonesAction);
-  document.getElementById('quickSwapBtn').addEventListener('click', swapTonesAction);
+  document.getElementById('btnSwapTones').addEventListener('click', () => {
+    swapTonesAction();
+    announcePress('Swap T1↔T2', 'Swapped Tone 1 and Tone 2 frequencies, amplitudes & phases at t = 0 to test nonreciprocal arrival-order memory!', 'swap');
+  });
+  document.getElementById('quickSwapBtn').addEventListener('click', () => {
+    swapTonesAction();
+    announcePress('SWAP T1↔T2', 'Swapped Tone 1 ↔ Tone 2 order at t = 0 — whichever tone leads now locks out the rival!', 'swap');
+  });
   function resetSimTime() {
     simTime = 0; fastForwarding = false; paused = false;
     document.getElementById('btnPause').textContent = 'Pause';
     seedSpins(0.004); syncUi(); drawScene();
   }
-  document.getElementById('btnResetTime').addEventListener('click', resetSimTime);
-  document.getElementById('quickResetTimeBtn').addEventListener('click', resetSimTime);
-  document.getElementById('hResetBtn').addEventListener('click', resetSimTime);
-  document.getElementById('arnoldTargetBtn').addEventListener('click', () => { arnoldTarget = arnoldTarget === 1 ? 2 : 1; if (arnoldTarget === 2 && !dualTone) dualTone = true; syncUi(); });
-  document.getElementById('slDamp').addEventListener('input', e => { damping = +e.target.value; syncUi(); });
+  document.getElementById('btnResetTime').addEventListener('click', () => { resetSimTime(); announcePress('Reset t=0', 'Rewound AWG pulse timer to t = 0 to replay the 1 ns Tukey turn-on.'); });
+  document.getElementById('quickResetTimeBtn').addEventListener('click', () => { resetSimTime(); announcePress('↺ t=0', 'Rewound AWG pulse timer to t = 0 to replay turn-on from the start.'); });
+  document.getElementById('hResetBtn').addEventListener('click', () => { resetSimTime(); announcePress('↺ t=0', 'Rewound h(t) pulse playhead to t = 0.'); });
+  document.getElementById('arnoldTargetBtn').addEventListener('click', () => {
+    arnoldTarget = arnoldTarget === 1 ? 2 : 1; if (arnoldTarget === 2 && !dualTone) dualTone = true; syncUi();
+    announcePress(`TAP: T${arnoldTarget}`, `Tapping the Arnold diagram now aims Tone ${arnoldTarget}.`);
+  });
+  document.getElementById('slDamp').addEventListener('input', e => {
+    damping = +e.target.value; syncUi();
+    announcePress(`Damping α = ${damping.toFixed(4)}`, 'Adjusted Gilbert damping — higher α raises threshold h_th and speeds up relaxation.');
+  });
   const slTempEl = document.getElementById('slTemp');
-  if (slTempEl) slTempEl.addEventListener('input', e => { temperatureK = +e.target.value; syncUi(); });
-  document.getElementById('btnNmmRwa').addEventListener('click', () => setNmmMode(false));
-  document.getElementById('btnNmmFull').addEventListener('click', () => setNmmMode(true));
+  if (slTempEl) slTempEl.addEventListener('input', e => {
+    temperatureK = +e.target.value; syncUi();
+    announcePress(`Thermal Bath T = ${temperatureK} K`, temperatureK > 0 ? `Brown FDT Langevin fluctuations active (RMS a_th = ${thermalRmsAmp().toExponential(2)}): spontaneous nucleation & stochastic switching.` : 'T = 0 K deterministic limit (zero thermal noise).', 'temp');
+  });
+  document.getElementById('btnNmmRwa').addEventListener('click', () => {
+    setNmmMode(false);
+    announcePress('RWA Fast', 'Enabled secular Rotating-Wave core (1M + 2A + 4A N_hk) — fast & matches analytical Eqs. (33) & (55–57).');
+  });
+  document.getElementById('btnNmmFull').addEventListener('click', () => {
+    setNmmMode(true);
+    announcePress('Full NMM', 'Enabled all 29-mode Eq. (9) interactions (G1 + G2 + G3 + 4ABCD) — reveals 2f & 3f harmonics in the 0–6.5 GHz spectrum!', 'nmm:full');
+  });
   document.getElementById('nmmTermsGrid').addEventListener('change', e => {
     const t = e.target && e.target.dataset ? e.target.dataset.term : null;
-    if (t && t in terms) { terms[t] = !!e.target.checked; syncUi(); }
+    if (t && t in terms) {
+      terms[t] = !!e.target.checked; syncUi();
+      announcePress(`Term ${t}: ${terms[t] ? 'ON' : 'OFF'}`, `Toggled d'Aquino Eq. (9) interaction term "${t}" ${terms[t] ? 'on' : 'off'}.`);
+    }
   });
-  document.getElementById('btnPause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause'; });
-  document.getElementById('btnSeed').addEventListener('click', () => seedSpins('thermal'));
-  document.getElementById('btnClear').addEventListener('click', () => { fastForwarding = false; seedSpins(0.0); syncUi(); });
+  document.getElementById('btnPause').addEventListener('click', e => {
+    paused = !paused; e.target.textContent = paused ? 'Resume' : 'Pause';
+    announcePress(paused ? 'Pause' : 'Resume', paused ? 'Froze spin-wave time evolution so you can inspect spin arrows & mode bars.' : 'Resumed spin-wave precession.');
+  });
+  document.getElementById('btnSeed').addEventListener('click', () => {
+    seedSpins('thermal');
+    announcePress('Seed Thermal', `Initialized all 29 modes from a fresh Gaussian thermal draw at T = ${temperatureK} K.`);
+  });
+  document.getElementById('btnClear').addEventListener('click', () => {
+    fastForwarding = false; seedSpins(0.0); syncUi();
+    announcePress('Calm Spins', 'Reset all 29 modal amplitudes to exact equilibrium a_h = 0 (at T > 0, FDT noise will nucleate spontaneously!).');
+  });
+
+  const speedBtnsEl = document.getElementById('speedBtns');
+  if (speedBtnsEl) speedBtnsEl.addEventListener('click', e => {
+    const b = e.target && e.target.closest ? e.target.closest('button[data-speed]') : null;
+    if (!b) return;
+    playbackSpeed = Number(b.dataset.speed) || 1;
+    fastForwarding = false;
+    syncUi();
+    const desc = playbackSpeed <= 1
+      ? `Set gentle visual speed (${playbackSpeed}×) — spin-wave crests and arrows rotate slowly enough to trace by eye.`
+      : `Set accelerated visual speed (${playbackSpeed}×) to watch pulse envelopes & µs delays unfold faster.`;
+    announcePress(`Speed ${b.textContent.trim()}`, desc, `speed:${playbackSpeed}`);
+  });
 
   function fastForwardStepsPerFrame() { return isRwaFast() ? 900 : 180; }
   function fastForwardSteadyState(maxSteps = 240000) {
@@ -1893,16 +2542,128 @@
     }
     syncUi();
   }
-  document.getElementById('btnFastSS').addEventListener('click', toggleFastForward);
-  document.getElementById('quickFastBtn').addEventListener('click', toggleFastForward);
+  document.getElementById('btnFastSS').addEventListener('click', () => {
+    toggleFastForward();
+    announcePress('Fast-Fwd → SS', fastForwarding ? 'Fast-forwarding through µs transients until all active modes settle at steady state.' : 'Stopped fast-forward and returned to smooth visual playback.', 'fast');
+  });
+  document.getElementById('quickFastBtn').addEventListener('click', () => {
+    toggleFastForward();
+    announcePress('FAST→SS', fastForwarding ? 'Fast-forwarding across µs delays until steady state stabilizes.' : 'Stopped fast-forward.', 'fast');
+  });
+
+  function showLogToast(tag, msg) {
+    lastPressHtml = `<span class="tutPressTag">${tag}</span>${msg}`;
+    if (swTutPressEl) swTutPressEl.innerHTML = lastPressHtml;
+    if (pressToastEl && pressToastEl.classList && swTutEl && swTutEl.hidden) {
+      pressToastEl.innerHTML = lastPressHtml;
+      pressToastEl.classList.add('show');
+      if (pressToastTimer) clearTimeout(pressToastTimer);
+      pressToastTimer = setTimeout(() => { if (pressToastEl && pressToastEl.classList) pressToastEl.classList.remove('show'); }, 4500);
+    }
+  }
+
+  async function handleSaveLogDb(sourceLabel) {
+    recordLogEvent('db_save', sourceLabel, { reason: 'manual' });
+    showLogToast('SAVING LOG…', `Saving ${swLog.totalEvents} events & ${swLog.totalSamples} telemetry samples to Supabase + IndexedDB...`);
+    const ok = await uploadSwLog('manual', false);
+    if (ok) {
+      showLogToast('DB SAVED ✓', `Saved session ${swLog.sessionId.slice(0, 8)} (${swLog.totalEvents} events, ${swLog.totalSamples} samples) to Supabase spacetime_feedback_runs & IndexedDB.`);
+    } else {
+      showLogToast('SAVED LOCAL (IDB)', `Saved locally to IndexedDB (${swLog.totalEvents} events, ${swLog.totalSamples} samples). Supabase upload unavailable — you can still Export JSON.`);
+    }
+  }
+
+  function exportLogJsonFile() {
+    recordLogEvent('export', 'Export JSON', { format: 'json' });
+    const report = buildEvaluationReport('export_json');
+    try {
+      const json = JSON.stringify(report, null, 2);
+      if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `spin-waves-log-${report.sessionId.slice(0, 8)}.json`;
+        if (document.body && document.body.appendChild) document.body.appendChild(a);
+        if (typeof a.click === 'function') a.click();
+        if (a.remove) a.remove();
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
+      }
+      showLogToast('EXPORTED JSON', `Downloaded spin-waves-log-${report.sessionId.slice(0, 8)}.json (${report.counts.events} events, ${report.counts.samples} samples).`);
+    } catch (err) {
+      recordLogError('export_failed', err && err.message ? err.message : String(err));
+    }
+  }
+
+  const quickLogDbBtn = document.getElementById('quickLogDbBtn');
+  if (quickLogDbBtn) quickLogDbBtn.addEventListener('click', () => handleSaveLogDb('LOG DB (Quick Bar)'));
+  const btnSaveLogDb = document.getElementById('btnSaveLogDb');
+  if (btnSaveLogDb) btnSaveLogDb.addEventListener('click', () => handleSaveLogDb('Save Log → DB'));
+  const btnExportLog = document.getElementById('btnExportLog');
+  if (btnExportLog) btnExportLog.addEventListener('click', exportLogJsonFile);
+
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('error', e => {
+      recordLogError('window_error', (e && e.message) ? e.message : 'Uncaught error', e ? { filename: e.filename, lineno: e.lineno, colno: e.colno } : null);
+    });
+    window.addEventListener('unhandledrejection', e => {
+      const r = e ? e.reason : null;
+      recordLogError('unhandled_rejection', (r && r.message) ? r.message : String(r || 'Promise rejected'));
+    });
+    window.addEventListener('pagehide', () => {
+      if (swLog.totalEvents + swLog.totalSamples > swLog.lastUploadedSeq) uploadSwLog('page_hide', true);
+    });
+  }
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden' && (swLog.totalEvents + swLog.totalSamples > swLog.lastUploadedSeq)) {
+        uploadSwLog('visibility_hidden', true);
+      }
+    });
+  }
 
   buildModeBars();
   buildNikMatrix();
   applyPreset('param');
+  drawScene();
+  swLog.lastFpsCalcMs = swLog.startedWallMs;
+  swLog.lastIdbSaveMs = swLog.startedWallMs;
+  recordLogEvent('session_start', 'Session Started (m13 Param @ 1× Slow)', { playbackSpeed });
+  recordTelemetrySample(true);
+  updateLogUiBadges();
 
+  const SPEED_FRAME_STEPS = {
+    0.25: [1, 0.025],
+    1: [1, 0.06],
+    5: [1, 0.30],
+    25: [3, 0.50],
+    150: [18, 0.50]
+  };
+  let fpsWindowFrames = 0;
   function frame() {
+    const t0 = nowWallMs();
+    if (swLog.lastFrameWallMs > 0) {
+      const dtWall = t0 - swLog.lastFrameWallMs;
+      if (dtWall > 0 && dtWall < 2000) {
+        swLog.lastFrameMs = dtWall;
+        swLog.frameCount++;
+        fpsWindowFrames++;
+        const elapsedFpsMs = t0 - swLog.lastFpsCalcMs;
+        if (elapsedFpsMs >= 500) {
+          const fps = (fpsWindowFrames * 1000) / elapsedFpsMs;
+          swLog.currentFps = fps;
+          swLog.fpsSamples.push(fps);
+          if (swLog.fpsSamples.length > 240) swLog.fpsSamples.shift();
+          fpsWindowFrames = 0;
+          swLog.lastFpsCalcMs = t0;
+        }
+      }
+    }
+    swLog.lastFrameWallMs = t0;
+
     if (!paused) {
       const wasReleased = tone2Released;
+      const wasFast = fastForwarding;
       if (fastForwarding) {
         const steps = fastForwardStepsPerFrame();
         for (let s = 0; s < steps; s++) stepLlg(0.65, true);
@@ -1924,13 +2685,27 @@
         } else ffStable = 0;
         if (fastForwarding && ffFrames >= 360) { fastForwarding = false; syncUi(); }
       } else {
-        for (let s = 0; s < 18; s++) stepLlg(0.50, true);
+        const [nSub, hSub] = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
+        for (let s = 0; s < nSub; s++) stepLlg(hSub, true);
         reconstructSpatialSpins();
       }
-      if (tone2WaitSS && !wasReleased && tone2Released) syncUi();
+      if (tone2WaitSS && !wasReleased && tone2Released) {
+        syncUi();
+        recordLogEvent('physics', 'Tone 2 Released at T1 Steady State', { releaseTau: +tone2ReleaseT.toFixed(2) });
+        recordTelemetrySample(true);
+      }
+      if (wasFast && !fastForwarding) {
+        recordLogEvent('physics', 'Fast-Forward Settled', { ffFrames, simTimeUs: +simTimeUs().toFixed(4) });
+        recordTelemetrySample(true);
+      }
       updateSpectrum();
     }
     drawScene();
+    recordTelemetrySample(false);
+    if ((t0 - swLog.lastIdbSaveMs) >= 10000) {
+      swLog.lastIdbSaveMs = t0;
+      saveLogToIdb(buildEvaluationReport('periodic_idb'));
+    }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

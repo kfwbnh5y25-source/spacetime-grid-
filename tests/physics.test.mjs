@@ -394,7 +394,7 @@ function loadSpinWavesContext() {
     `  globalThis.__spin = {
     M, NX, NY, N, BDC_MT, MU0_MS_MT, F_M, FREQ_TO_RAD, SPEC_LEN, SPEC_DT,
     TUKEY_RAMP_NS, TUKEY_RAMP_TAU, THETA_PER_K,
-    NACT, actPix, mx, my, mz, m0x, m0y, m0z, activeMask,
+    NACT, actPix, mx, my, mz, m0x, m0y, m0z, m0xFull, m0yFull, m0zFull, activeMask,
     phiReX, phiReY, phiReZ, phiImX, phiImY, phiImZ,
     aRe, aIm, wBarArr, Kp, Km, N4A, P4B, terms, isRwaFast, setNmmMode,
     MODE_SPECS, spectrum, reconstructSpatialSpins,
@@ -406,7 +406,8 @@ function loadSpinWavesContext() {
     cycleAvgModeAmp, modeRmsAmp,
     selfNfsCoeff, mutualNfsCoeff, mutualNfsCoeffGHz, modeNfsShiftGHz, modeMutualNfsShiftGHz,
     steadyStateAmp, analyzeTwoMode, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
-    applyPreset, swapTonesAction,
+    applyPreset, swapTonesAction, SPEED_FRAME_STEPS,
+    swLog, recordLogEvent, recordTelemetrySample, buildEvaluationReport,
     setState(patch) {
       if ('driveMode' in patch) driveMode = patch.driveMode;
       if ('driveFreq' in patch) driveFreq = patch.driveFreq;
@@ -425,13 +426,14 @@ function loadSpinWavesContext() {
       if ('temperatureK' in patch) temperatureK = patch.temperatureK;
       if ('thermalSeed' in patch) reseedRng(patch.thermalSeed);
       if ('arnoldTarget' in patch) arnoldTarget = patch.arnoldTarget;
+      if ('playbackSpeed' in patch) playbackSpeed = patch.playbackSpeed;
       if ('simTime' in patch) { simTime = patch.simTime; resetModeHistory(); recordModeSample(); }
     },
     getState() {
       return {
         driveMode, driveFreq, driveAmp, damping, simTime, dualTone, driveFreq2, driveAmp2,
         tone2DelayNs, tone2WaitSS, tone2Released, tone2ReleaseT,
-        drivePhase1, drivePhase2, temperatureK, isRwa: isRwaFast()
+        drivePhase1, drivePhase2, temperatureK, playbackSpeed, isRwa: isRwaFast()
       };
     },
     meanTransverseAmp() {
@@ -764,4 +766,61 @@ test('Q. Experimental AWG (1 ns Tukey, relative phase Δφ), Brown FDT (300 K) &
     `Full NMM DFT peak ${fPeak.toFixed(3)} GHz must match m27=${spin.modeFreqGHz(27).toFixed(3)} GHz`);
   spin.setNmmMode(false);
 });
+
+test('R. Slow default playback, dynamic tensor δm = m - m0 profile fidelity & telemetry evaluation logging', () => {
+  // 1. Default playback speed is 1× SLOW (0.06 tau/frame) and 0.25× (0.025 tau/frame)
+  assert.equal(spin.SPEED_FRAME_STEPS[1][1], 0.06);
+  assert.equal(spin.SPEED_FRAME_STEPS[0.25][1], 0.025);
+  spin.applyPreset('param');
+  assert.equal(spin.getState().playbackSpeed, 1, 'Default playback speed must be gentle 1× SLOW');
+
+  // 2. Dynamic perturbation δm = m - m0 is identically zero at equilibrium (no static rim leakage)
+  spin.setState({ temperatureK: 0, driveAmp: 0, dualTone: false, driveAmp2: 0 });
+  spin.seedSpins(0.0);
+  spin.reconstructSpatialSpins();
+  let eqMaxDyn = 0;
+  for (let p = 0; p < spin.NACT; p++) {
+    const pix = spin.actPix[p];
+    const dyn = Math.hypot(spin.my[pix] - spin.m0yFull[pix], spin.mz[pix] - spin.m0zFull[pix]);
+    if (dyn > eqMaxDyn) eqMaxDyn = dyn;
+  }
+  assert.ok(eqMaxDyn < 1e-4, `Equilibrium δm = m - m0 must be ~0 (no 0.384 rim leak), got ${eqMaxDyn}`);
+
+  // 3. Tensor profiles for m13 (bulk standing nodes) vs m27 (uniform Kittel) are distinct & faithful
+  const dynProfileY = (mIdx) => {
+    spin.exciteEigenmode(mIdx, 0.03);
+    const out = new Float64Array(spin.NACT);
+    for (let p = 0; p < spin.NACT; p++) out[p] = spin.my[spin.actPix[p]] - spin.m0yFull[spin.actPix[p]];
+    return out;
+  };
+  const p13 = dynProfileY(13), p23 = dynProfileY(23), p27 = dynProfileY(27);
+  let mean13 = 0, std13 = 0, mean27 = 0, std27 = 0, dot13_23 = 0, n13 = 0, n23 = 0;
+  for (let p = 0; p < spin.NACT; p++) { mean13 += p13[p]; mean27 += p27[p]; }
+  mean13 /= spin.NACT; mean27 /= spin.NACT;
+  for (let p = 0; p < spin.NACT; p++) {
+    std13 += (p13[p] - mean13) ** 2;
+    std27 += (p27[p] - mean27) ** 2;
+    dot13_23 += p13[p] * p23[p];
+    n13 += p13[p] ** 2;
+    n23 += p23[p] ** 2;
+  }
+  const cos13_23 = Math.abs(dot13_23) / Math.sqrt(n13 * n23);
+  assert.ok(Math.sqrt(std13 / spin.NACT) > Math.abs(mean13) * 0.5, 'Bulk mode m13 δmy must exhibit strong spatial nodes');
+  assert.ok(Math.abs(mean27) > Math.sqrt(std27 / spin.NACT), 'Kittel mode m27 δmy must be spatially quasi-uniform');
+  assert.ok(cos13_23 < 0.25, `Tensor modes m13 and m23 δmy profiles must be nearly orthogonal, got cos=${cos13_23.toFixed(3)}`);
+
+  // 4. Telemetry evaluation logger captures events, trajectory samples & analytical theory comparison
+  spin.applyPreset('coex');
+  spin.recordLogEvent('action', 'Test Coex Trigger');
+  spin.recordTelemetrySample(true);
+  const report = spin.buildEvaluationReport('test_suite');
+  assert.equal(report.protocol, 'spin-waves-evaluation-v1');
+  assert.equal(report.appVersion, 'spin-waves-nmm-29m-v2');
+  assert.ok(report.counts.events >= 2 && report.counts.samples >= 2);
+  assert.equal(report.counts.errors, 0);
+  assert.equal(report.finalState.theory?.kind, '2mode');
+  assert.equal(report.finalState.theory?.scenario, 1);
+  assert.ok(Number.isFinite(report.finalState.theory.S_det) && report.finalState.theory.S_det > 0);
+});
+
 
