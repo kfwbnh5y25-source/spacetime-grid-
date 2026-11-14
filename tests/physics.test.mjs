@@ -8,6 +8,7 @@ import { execFileSync } from 'node:child_process';
 const rootDir = path.resolve(import.meta.dirname, '..');
 const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
 const feedbackHtml = fs.readFileSync(path.join(rootDir, 'feedback-lab', 'index.html'), 'utf8');
+const spinWavesHtml = fs.readFileSync(path.join(rootDir, 'spin-waves', 'index.html'), 'utf8');
 const swJs = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
 
 function extractInlineScript(html, label) {
@@ -18,6 +19,7 @@ function extractInlineScript(html, label) {
 
 const siteScript = extractInlineScript(indexHtml, 'index.html');
 const feedbackScript = extractInlineScript(feedbackHtml, 'feedback-lab/index.html');
+const spinWavesScript = extractInlineScript(spinWavesHtml, 'spin-waves/index.html');
 
 function loadPhysicsContext() {
   const noop = () => {};
@@ -216,11 +218,14 @@ test('D. Renderers: WebGL2 GLSL and Canvas 2D share causal Schwarzschild model a
 test('E. Regression: valid JS syntax, bumped SW cache, intact benchmark & Feedback Lab', () => {
   fs.writeFileSync('/tmp/test_site.js', siteScript);
   fs.writeFileSync('/tmp/test_feedback.js', feedbackScript);
+  fs.writeFileSync('/tmp/test_spinwaves.js', spinWavesScript);
   execFileSync(process.execPath, ['--check', '/tmp/test_site.js']);
   execFileSync(process.execPath, ['--check', '/tmp/test_feedback.js']);
+  execFileSync(process.execPath, ['--check', '/tmp/test_spinwaves.js']);
 
   const swMatch = swJs.match(/spacetime-shell-v(\d+)/);
-  assert.ok(swMatch && Number(swMatch[1]) >= 51, `Expected sw.js cache >= v51, got ${swMatch?.[0]}`);
+  assert.ok(swMatch && Number(swMatch[1]) >= 53, `Expected sw.js cache >= v53, got ${swMatch?.[0]}`);
+  assert.match(indexHtml, /\.\/spin-waves\//, 'Spin Waves navigation button preserved');
 
   assert.match(siteScript, /spacetime_benchmarks/, 'Supabase benchmark endpoint preserved');
   assert.match(siteScript, /gesturestart/, 'Mac trackpad gesture handling preserved');

@@ -89,6 +89,8 @@
   @media (pointer:coarse) {
     #orbitTutorial { left:50%; transform:translateX(-50%); width:min(360px,calc(100vw - 24px)); }
   }
+  #spinWavesBtn { position:fixed; z-index:8; right:max(14px,env(safe-area-inset-right)); bottom:max(16px,env(safe-area-inset-bottom)); display:flex; align-items:center; gap:6px; min-height:36px; padding:0 13px; border:1px solid rgba(190,220,255,.28); border-radius:20px; background:rgba(6,12,24,.72); color:rgba(235,245,255,.92); font:10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.12em; text-decoration:none; -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); touch-action:manipulation; -webkit-tap-highlight-color:transparent; transition:background .18s,border-color .18s; }
+  #spinWavesBtn:hover { background:rgba(30,54,90,.78); border-color:rgba(165,210,255,.55); }
 </style>
 </head>
 <body>
@@ -102,6 +104,7 @@
 <button id="resetViewButton" type="button" aria-label="Reset simulation" title="Reset simulation">↺</button>
 <div id="simHud" aria-live="polite">EMPTY SPACE · TAP TO CREATE A MASS</div>
 <button id="orbitTutorialBtn" type="button" aria-label="Open orbital trajectories tutorial">ORBITS ?</button>
+<a id="spinWavesBtn" href="./spin-waves/" aria-label="Open Spin Wave Eigenmodes and Parametric Excitation simulation">SPIN WAVES →</a>
 <section id="orbitTutorial" hidden aria-label="Orbital trajectories tutorial">
   <div class="tutHeader">
     <span class="tutStepTag" id="tutStepTag">STEP 1 OF 4</span>
