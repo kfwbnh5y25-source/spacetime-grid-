@@ -350,7 +350,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   starfield.onerror = () => { imageStatus='failed'; perf.imageLoad=performance.now()-perf.imageStart; };
 
   function buildGeometry() {
-    const step=spacing(), sampleStep=16.0, margin=step*2, xs=[], ys=[], starts=[];
+    const step=spacing(), sampleStep=6.0, margin=step*2, xs=[], ys=[], starts=[];
     for(let x=-margin;x<=width+margin;x+=step){
       starts.push(xs.length);
       for(let y=-margin;y<=height+margin;y+=sampleStep){xs.push(x);ys.push(y);}
@@ -504,7 +504,9 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     let oldTotal=0,oldCx=0,oldCy=0;
     for(const body of persistentMasses){const weight=Math.max(0,body.mass??20);oldTotal+=weight;oldCx+=weight*body.x;oldCy+=weight*body.y;}
     if(oldTotal>0){oldCx/=oldTotal;oldCy/=oldTotal;}
-    persistentMasses.push({x,y,mass,vx,vy,trail:[],trailClock:0,strength:1});
+    const isFirstMass=persistentMasses.length===0;
+    // The first source defines the stationary reference mass for the single-mass setup.
+    persistentMasses.push({x,y,mass,vx:isFirstMass?0:vx,vy:isFirstMass?0:vy,fixed:isFirstMass,trail:[],trailClock:0,strength:1});
     let total=0,cx=0,cy=0;
     for(const body of persistentMasses){const weight=Math.max(0,body.mass??20);total+=weight;cx+=weight*body.x;cy+=weight*body.y;}
     if(total>0){cx/=total;cy/=total;}
@@ -537,10 +539,10 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       // Velocity-Verlet: Newtonian N-body forces with equal-and-opposite pair forces.
       for(let i=0;i<n;i++){const a=massAccelerationAt(i);planetAx[i]=a.x;planetAy[i]=a.y;}
       for(let i=0;i<n;i++){
-        const b=persistentMasses[i];b.vx=(b.vx||0)+.5*planetAx[i]*PLANET_DT;b.vy=(b.vy||0)+.5*planetAy[i]*PLANET_DT;
+        const b=persistentMasses[i];if(b.fixed)continue;b.vx=(b.vx||0)+.5*planetAx[i]*PLANET_DT;b.vy=(b.vy||0)+.5*planetAy[i]*PLANET_DT;
       }
-      for(const b of persistentMasses){b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;}
-      for(let i=0;i<n;i++){const a=massAccelerationAt(i),b=persistentMasses[i];b.vx+=.5*a.x*PLANET_DT;b.vy+=.5*a.y*PLANET_DT;}
+      for(const b of persistentMasses){if(b.fixed)continue;b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;}
+      for(let i=0;i<n;i++){const a=massAccelerationAt(i),b=persistentMasses[i];if(b.fixed)continue;b.vx+=.5*a.x*PLANET_DT;b.vy+=.5*a.y*PLANET_DT;}
       // Store each blue-tail sample in the instantaneous COM-local frame.
       // This removes common translation from the entire historical trajectory,
       // not merely from the current marker at draw time.
