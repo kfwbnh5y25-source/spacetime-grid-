@@ -99,8 +99,43 @@
   .nikCell.activeCol { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
   .nikCell.selected { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; z-index: 3; }
   #nikConfig { margin-top: 6px; padding: 6px 7px; border-radius: 6px; background: rgba(14,26,46,.72); border: 1px solid rgba(130,185,255,.18); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.88); }
-  #arnoldTargetBtn { padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.3); background: rgba(130,185,255,.14); color: #b9dcff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldTargetBtn, #arnoldBandBtn, #specBandBtn { padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.3); background: rgba(130,185,255,.14); color: #b9dcff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #arnoldTargetBtn.t2 { border-color: rgba(251,191,36,.5); background: rgba(251,191,36,.18); color: #fde68a; }
+  #arnoldBandBtn.all, #specBandBtn.modes { border-color: rgba(110,231,183,.45); background: rgba(16,185,129,.16); color: #a7f3d0; }
+  #arnoldTermsNote { margin-top: 3px; font: 8px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,218,250,.76); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #dbDiagBanner { margin-top: 5px; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.14); background: rgba(10,20,38,.7); font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.85); word-break: break-word; }
+  #dbDiagBanner.err { border-color: rgba(251,191,36,.45); color: #fde68a; background: rgba(80,45,10,.35); }
+  #dbDiagBanner.ok { border-color: rgba(52,211,153,.45); color: #a7f3d0; background: rgba(12,60,45,.32); }
+  #verifyModal { position: fixed; z-index: 12; left: 50%; top: max(56px, calc(env(safe-area-inset-top) + 46px)); transform: translateX(-50%); width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 82px); display: flex; flex-direction: column; border: 1px solid rgba(175,215,255,.30); border-radius: 15px; background: rgba(5,11,22,.95); color: #ebf3ff; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 18px 48px rgba(0,0,0,.72); overflow: hidden; }
+  #verifyModal[hidden] { display: none; }
+  .vmHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 13px; border-bottom: 1px solid rgba(190,220,255,.15); background: rgba(9,18,34,.96); cursor: grab; touch-action: none; }
+  .vmHeader:active { cursor: grabbing; }
+  .vmTitle { font: 700 10.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: #9ad8ff; }
+  .vmBody { padding: 11px 13px 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; display: grid; gap: 10px; }
+  .vmTabs { display: flex; gap: 5px; flex-wrap: wrap; }
+  .vmTab { padding: 5px 9px; border-radius: 7px; border: 1px solid rgba(190,220,255,.2); background: rgba(120,165,225,.08); color: rgba(215,232,255,.82); font: 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  .vmTab.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
+  .vmProgressWrap { height: 6px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
+  .vmProgressBar { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #34d399); transition: width .2s ease; }
+  .vmSummaryRow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font: 9.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,235,255,.88); }
+  .vmStageList { display: grid; gap: 5px; }
+  .vmStageCard { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; padding: 7px 9px; border-radius: 9px; border: 1px solid rgba(190,220,255,.15); background: rgba(14,26,46,.62); }
+  .vmStageCard.pass { border-color: rgba(52,211,153,.45); }
+  .vmStageCard.fail { border-color: rgba(251,113,133,.6); }
+  .vmStageName { font: 600 10px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: #f0f7ff; }
+  .vmStageDesc { font: 9.5px/1.3 system-ui,-apple-system,sans-serif; color: rgba(200,220,245,.75); }
+  .vmTable { width: 100%; border-collapse: collapse; font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmTable th, .vmTable td { padding: 4px 5px; border-bottom: 1px solid rgba(190,220,255,.1); text-align: left; vertical-align: top; }
+  .vmTable th { color: rgba(185,212,245,.66); font-weight: 600; }
+  .vmBadge { display: inline-block; padding: 1px 5px; border-radius: 4px; font: 700 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmBadge.pass { background: rgba(16,185,129,.25); color: #6ee7b7; border: 1px solid rgba(52,211,153,.5); }
+  .vmBadge.fail { background: rgba(244,63,94,.24); color: #fda4af; border: 1px solid rgba(251,113,133,.5); }
+  .vmBadge.warn { background: rgba(251,191,36,.2); color: #fde68a; border: 1px solid rgba(251,191,36,.45); }
+  .vmBadge.idle { background: rgba(148,163,184,.18); color: #cbd5e1; border: 1px solid rgba(148,163,184,.35); }
+  .vmInputGrid { display: grid; gap: 6px; }
+  .vmInputRow { display: grid; grid-template-columns: 92px 1fr; gap: 6px; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmInputRow input, .vmCodeBox { width: 100%; padding: 5px 7px; border-radius: 6px; border: 1px solid rgba(190,220,255,.22); background: rgba(4,9,18,.88); color: #ebf3ff; font: 9px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; user-select: text; -webkit-user-select: text; }
+  .vmSessionItem { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(190,220,255,.15); background: rgba(14,26,46,.55); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
   #hInputBox { padding: 5px 8px; }
   #hInputBox .specTitle { align-items: center; margin-bottom: 3px; gap: 4px; }
   #hTimeVal { color: #b9dcff; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -162,6 +197,7 @@
     <button class="quickPill spdBtn" data-speed="25" type="button">25×</button>
     <button class="quickPill spdBtn" data-speed="150" type="button">150×</button>
   </span>
+  <button class="quickPill accent" id="quickVerifyBtn" type="button" title="Open interactive Benchmark, Calibration & Verification Protocol + DB Vault">VERIFY / CAL</button>
   <button class="quickPill" id="quickLogDbBtn" type="button" title="Save complete interaction & physics evaluation log to Supabase database + IndexedDB">LOG DB · 0</button>
 </div>
 <div id="pressToast" aria-live="polite"></div>
@@ -306,13 +342,15 @@
     </div>
     <div id="logWrap" style="margin-top:2px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12);">
       <div style="display:flex;justify-content:space-between;align-items:center;font:9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(210,228,255,.78);margin-bottom:5px;">
-        <span>TELEMETRY &amp; DB EVALUATION</span>
+        <span>TELEMETRY, VERIFY &amp; DB</span>
         <span id="logStatusBadge" style="color:#6ee7b7;">REC · 0 ev</span>
       </div>
       <div class="btnRow">
-        <button class="btn tiny active" id="btnSaveLogDb" type="button" title="Upload complete physics & UI trace to Supabase DB + local IndexedDB">Save Log → DB</button>
-        <button class="btn tiny" id="btnExportLog" type="button" title="Download full JSON log for inspection">Export JSON</button>
+        <button class="btn tiny active" id="btnOpenVerify" type="button" title="Open interactive 7-stage Benchmark, Calibration & Verification Protocol">Verify &amp; Cal</button>
+        <button class="btn tiny" id="btnSaveLogDb" type="button" title="Upload complete physics, verification & UI trace to Supabase DB + local IndexedDB">Save → DB</button>
+        <button class="btn tiny" id="btnExportLog" type="button" title="Download full JSON log for inspection">JSON</button>
       </div>
+      <div id="dbDiagBanner">DB: local IndexedDB active · click Verify &amp; Cal or Save → DB</div>
     </div>
   </div>
 </details>
@@ -340,14 +378,81 @@
     </div>
   </div>
   <div class="readoutCard" id="arnoldBox">
-    <div class="specTitle"><span>ARNOLD TONGUES (B_DC=27mT)</span><button id="arnoldTargetBtn" type="button" title="Toggle tap target between Tone 1 and Tone 2">TAP: T1</button><span id="arnoldHint">tap to pump</span></div>
-    <canvas id="arnoldCanvas" width="296" height="108"></canvas>
+    <div class="specTitle">
+      <span>ARNOLD (29M · 27mT)</span>
+      <span style="display:flex;gap:3px;align-items:center;">
+        <button id="arnoldBandBtn" class="all" type="button" title="Toggle between ALL 29 modes (3.38–4.18 GHz) and BULK zoom (3.88–4.16 GHz)">ALL 29</button>
+        <button id="arnoldTargetBtn" type="button" title="Toggle tap target between Tone 1 and Tone 2">TAP: T1</button>
+      </span>
+      <span id="arnoldHint">tap to pump</span>
+    </div>
+    <canvas id="arnoldCanvas" width="296" height="114"></canvas>
+    <div id="arnoldTermsNote">4A N_hk shift: ON · 4B cross-pump: OFF</div>
   </div>
   <div class="readoutCard" id="spectrumBox">
-    <div class="specTitle"><span>MAGNON SPECTRUM (0–6 GHz)</span><span id="specPeak">f_peak: —</span></div>
-    <canvas id="specCanvas" width="290" height="52"></canvas>
+    <div class="specTitle">
+      <span>SPECTRUM</span>
+      <button id="specBandBtn" class="modes" type="button" title="Toggle between Mode Band (1.5–2.3 GHz, 3.4 MHz FFT resolution) and Wide Harmonics (0–6.5 GHz)">1.5–2.3G</button>
+      <span id="specPeak">f_peak: —</span>
+    </div>
+    <canvas id="specCanvas" width="290" height="68"></canvas>
   </div>
 </div>
+<section id="verifyModal" hidden aria-label="Interactive Benchmark, Calibration, Verification & DB Vault">
+  <div class="vmHeader">
+    <span class="vmTitle">BENCHMARK · CALIBRATION · VERIFICATION · DB</span>
+    <button class="tutClose" id="vmCloseBtn" type="button" aria-label="Close protocol window">×</button>
+  </div>
+  <div class="vmBody">
+    <div class="vmTabs" id="vmTabs">
+      <button class="vmTab active" data-tab="protocol" type="button">PROTOCOL (7 STAGES)</button>
+      <button class="vmTab" data-tab="live" type="button">LIVE CALIBRATION &amp; 4B</button>
+      <button class="vmTab" data-tab="db" type="button">DB VAULT &amp; CONFIG</button>
+    </div>
+    <div id="vmTabProtocol">
+      <div class="btnRow" style="margin-bottom:7px;">
+        <button class="btn active" id="vmRunAllBtn" type="button">▶ Run Full Protocol</button>
+        <button class="btn" id="vmRunBenchBtn" type="button">⚡ Benchmark Speed</button>
+        <button class="btn" id="vmStopBtn" type="button" disabled>Stop</button>
+        <button class="btn" id="vmSaveVerifiedBtn" type="button">Save Report → DB</button>
+      </div>
+      <div class="vmProgressWrap"><div class="vmProgressBar" id="vmProgressBar"></div></div>
+      <div class="vmSummaryRow" style="margin:6px 0 8px;">
+        <span id="vmStatusText">Ready — run all 7 stages or test individual calibration/physics stages below.</span>
+        <span id="vmScoreBadge" class="vmBadge idle">IDLE</span>
+      </div>
+      <div class="vmStageList" id="vmStageList"></div>
+      <div style="margin-top:8px;overflow-x:auto;">
+        <table class="vmTable">
+          <thead><tr><th>Check</th><th>Expected</th><th>Measured</th><th>Status</th></tr></thead>
+          <tbody id="vmCheckRows"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="vmTabLive" hidden>
+      <div class="btnRow" style="margin-bottom:7px;">
+        <button class="btn active" id="vmInspectLiveBtn" type="button">Inspect Live State vs Theory</button>
+        <button class="btn" id="vmProbe4BBtn" type="button">Compare 4A Shift vs 4B Cross-Pump</button>
+      </div>
+      <div id="vmLiveOut" class="vmCodeBox" style="white-space:pre-wrap;min-height:110px;">Click "Inspect Live State vs Theory" to compare current simulation amplitudes against d'Aquino Eqs. (31)–(34) / (55)–(57), check 4A frequency shifts vs 4B parametric cross-pumping (P_hk a_k² a_h*), and log the calibration snapshot.</div>
+    </div>
+    <div id="vmTabDb" hidden>
+      <div class="vmInputGrid">
+        <div class="vmInputRow"><label for="dbUrlInput">REST URL</label><input id="dbUrlInput" type="text" spellcheck="false"></div>
+        <div class="vmInputRow"><label for="dbKeyInput">API Key / JWT</label><input id="dbKeyInput" type="text" spellcheck="false"></div>
+      </div>
+      <div class="btnRow" style="margin:7px 0;">
+        <button class="btn active" id="dbSaveConfigBtn" type="button">Save DB Config</button>
+        <button class="btn" id="dbTestConnBtn" type="button">Test DB Connection</button>
+        <button class="btn" id="dbResetConfigBtn" type="button">Reset Default</button>
+        <button class="btn" id="dbCopyRlsBtn" type="button">Copy RLS SQL Fix</button>
+      </div>
+      <div id="dbModalStatus" class="vmCodeBox" style="margin-bottom:7px;white-space:pre-wrap;">Checking database config...</div>
+      <div class="sectionLabel" style="margin-bottom:4px;">LOCAL INDEXEDDB SESSION VAULT (OFFLINE-SAFE HISTORY)</div>
+      <div id="idbSessionsList" style="display:grid;gap:5px;"></div>
+    </div>
+  </div>
+</section>
 <a id="backBtn" href="../">← SPACETIME</a>
 <script>
 (() => {
@@ -479,6 +584,8 @@
   let drivePhase1 = 0.0;
   let drivePhase2 = 0.0;
   let arnoldTarget = 1;
+  let arnoldBand = 'all'; // 'all' shows all 29 modes (3.38–4.18 GHz); 'bulk' zooms to 3.88–4.16 GHz
+  let specBand = 'modes'; // 'modes' zooms 1.5–2.3 GHz (3.4 MHz/bin); 'wide' shows 0–6.5 GHz harmonics
   let damping = 0.0005;
   let temperatureK = 300; // Room-temperature FDT Langevin fluctuations (0 K = deterministic)
   let thermalSeed = 20260101;
@@ -543,25 +650,85 @@
     return 0.5 * (1 - Math.cos((Math.PI * dtau) / rampTau));
   }
 
-  // 0..6 GHz DFT probe spectrum
-  const SPEC_LEN = 256;
-  const SPEC_DT = 2.21; // omega_M * 0.0713 ns -> fs ~ 14.01 GHz, Nyquist ~ 7.00 GHz
+  // High-resolution 4096-point radix-2 FFT probe spectrum (df = 3.42 MHz, 1.5-2.3 GHz mode band & 0-6.5 GHz wide band)
+  const SPEC_LEN = 4096;
+  const SPEC_DT = 2.21; // omega_M * 0.0713 ns -> fs ~ 14.01 GHz, Nyquist ~ 7.00 GHz, df = 3.42 MHz
   const probeSeries = new Float32Array(SPEC_LEN);
-  let probeHead = 0, lastSpecSampleT = -1, prevSpecT = -1, prevSpecVal = 0;
+  let probeHead = 0, probeCount = 0, lastSpecSampleT = -1, prevSpecT = -1, prevSpecVal = 0;
+  let specSeq = 0, lastSpecFftSeq = -1, specMaxSmooth = 0;
   const spectrum = new Float32Array(SPEC_LEN / 2);
+  const fftRe = new Float64Array(SPEC_LEN), fftIm = new Float64Array(SPEC_LEN);
+  const fftBitRev = new Uint16Array(SPEC_LEN);
+  {
+    const bits = Math.log2(SPEC_LEN) | 0;
+    for (let i = 0; i < SPEC_LEN; i++) {
+      let r = 0, x = i;
+      for (let b = 0; b < bits; b++) { r = (r << 1) | (x & 1); x >>= 1; }
+      fftBitRev[i] = r;
+    }
+  }
+  const probeCoeffRe = new Float64Array(M), probeCoeffIm = new Float64Array(M);
+  {
+    // 5 asymmetric rim + bulk pickup pixels so every mode m0..m28 has strong SNR
+    const pxIdxs = [
+      Math.min(NACT - 1, Math.floor(NACT * 0.03)),
+      Math.min(NACT - 1, Math.floor(NACT * 0.14)),
+      Math.min(NACT - 1, Math.floor(NACT * 0.34)),
+      Math.min(NACT - 1, Math.floor(NACT * 0.57)),
+      Math.min(NACT - 1, Math.floor(NACT * 0.89))
+    ];
+    const pxW = [1.0, 0.83, 0.71, -0.61, 0.91];
+    for (let m = 0; m < M; m++) {
+      let cr = 0, ci = 0;
+      for (let j = 0; j < pxIdxs.length; j++) {
+        const off = m * NACT + pxIdxs[j];
+        const w = pxW[j];
+        cr += w * (phiReY[off] + 0.5 * phiReZ[off]);
+        ci += w * (phiImY[off] + 0.5 * phiImZ[off]);
+      }
+      probeCoeffRe[m] = cr;
+      probeCoeffIm[m] = ci;
+    }
+  }
+
+  function runSpecFft4096() {
+    for (let i = 0; i < SPEC_LEN; i++) {
+      const j = fftBitRev[i];
+      if (i < j) {
+        let t = fftRe[i]; fftRe[i] = fftRe[j]; fftRe[j] = t;
+        t = fftIm[i]; fftIm[i] = fftIm[j]; fftIm[j] = t;
+      }
+    }
+    for (let size = 2; size <= SPEC_LEN; size <<= 1) {
+      const half = size >> 1;
+      const stepAng = (-2 * Math.PI) / size;
+      const wMulR = Math.cos(stepAng), wMulI = Math.sin(stepAng);
+      for (let i = 0; i < SPEC_LEN; i += size) {
+        let wR = 1, wI = 0;
+        for (let k = 0; k < half; k++) {
+          const even = i + k, odd = even + half;
+          const tR = wR * fftRe[odd] - wI * fftIm[odd];
+          const tI = wR * fftIm[odd] + wI * fftRe[odd];
+          fftRe[odd] = fftRe[even] - tR;
+          fftIm[odd] = fftIm[even] - tI;
+          fftRe[even] += tR;
+          fftIm[even] += tI;
+          const nextWR = wR * wMulR - wI * wMulI;
+          wI = wR * wMulI + wI * wMulR;
+          wR = nextWR;
+        }
+      }
+    }
+  }
 
   function sampleProbeSignal() {
-    // Probe localized at bulk off-center pixel on disk (captures f, 2f, 3f harmonics)
-    const probeP = Math.floor(NACT * 0.34);
-    let dmy = 0, dmz = 0;
+    let s = 0;
     for (let m = 0; m < M; m++) {
       const ar = aRe[m], ai = aIm[m];
       if (ar * ar + ai * ai < 1e-12) continue;
-      const off = m * NACT + probeP;
-      dmy += 2 * (ar * phiReY[off] - ai * phiImY[off]);
-      dmz += 2 * (ar * phiReZ[off] - ai * phiImZ[off]);
+      s += 2 * (ar * probeCoeffRe[m] - ai * probeCoeffIm[m]);
     }
-    return dmy + 0.5 * dmz;
+    return s;
   }
 
   function recordSpecSamples(curT) {
@@ -569,7 +736,9 @@
     if (lastSpecSampleT < 0 || curT < lastSpecSampleT || prevSpecT < 0 || curT < prevSpecT) {
       probeSeries[probeHead] = val;
       probeHead = (probeHead + 1) % SPEC_LEN;
+      if (probeCount < SPEC_LEN) probeCount++;
       lastSpecSampleT = curT;
+      specSeq++;
     } else {
       const span = curT - prevSpecT;
       while (lastSpecSampleT + SPEC_DT <= curT + 1e-9) {
@@ -577,7 +746,9 @@
         const frac = span > 1e-12 ? Math.max(0, Math.min(1, (targetT - prevSpecT) / span)) : 1;
         probeSeries[probeHead] = prevSpecVal + frac * (val - prevSpecVal);
         probeHead = (probeHead + 1) % SPEC_LEN;
+        if (probeCount < SPEC_LEN) probeCount++;
         lastSpecSampleT = targetT;
+        specSeq++;
       }
     }
     prevSpecT = curT;
@@ -611,7 +782,19 @@
   const plotHistTau = new Float64Array(PLOT_HIST_CAP);
   const plotHistAmps = new Float32Array(PLOT_HIST_CAP * M);
   let plotHistHead = 0, plotHistCount = 0, lastPlotTau = -1, plotOriginTau = 0;
-  let plotWinTau = 10.8, plotYScale = 0.02, holdPlotWin = false;
+  let plotWinTau = 10.8, plotYScale = 0.02, plotYTarget = 0.02, holdPlotWin = false;
+  let lastPlotDrawMs = 0, lastLegendBuildMs = 0, arnoldHMaxSmooth = 0, lastLegendKey = '';
+
+  function quantizePlotTop(rawVal) {
+    const v = Math.max(0.01, rawVal);
+    const pow10 = Math.pow(10, Math.floor(Math.log10(v)));
+    const norm = v / pow10;
+    const steps = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+    for (const s of steps) {
+      if (norm <= s + 1e-6) return s * pow10;
+    }
+    return 10 * pow10;
+  }
 
   function defaultPlotWinTau() {
     const sp = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
@@ -653,11 +836,12 @@
 
   function resetModeHistory() {
     modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime; lastSpecSampleT = -1; prevSpecT = -1; prevSpecVal = 0;
-    probeSeries.fill(0); probeHead = 0;
+    probeSeries.fill(0); spectrum.fill(0); probeHead = 0; probeCount = 0; specSeq++; lastSpecFftSeq = -1; specMaxSmooth = 0;
     tone2Released = false; tone2ReleaseT = Infinity; t1WaitStable = 0; lastWaitCheckT = simTime;
     t1WaitPrev.fill(0); visualPeakDyn = 0;
     plotHistHead = 0; plotHistCount = 0; lastPlotTau = -1; plotOriginTau = simTime;
-    holdPlotWin = false; plotWinTau = defaultPlotWinTau(); plotYScale = 0.02;
+    holdPlotWin = false; plotWinTau = defaultPlotWinTau(); plotYScale = 0.02; plotYTarget = 0.02;
+    lastPlotDrawMs = 0; lastLegendBuildMs = 0; lastLegendKey = '';
   }
 
   function recordModeSample() {
@@ -713,7 +897,8 @@
   function mutualNfsCoeffGHz(mIdx, jIdx) { return N4A[mIdx * M + jIdx] * F_M; }
   function mutualNfsCoeff(mIdx, jIdx) { return mutualNfsCoeffGHz(mIdx, jIdx) * FREQ_TO_RAD; }
   function selfNfsCoeff(mIdx) { return mutualNfsCoeff(mIdx, mIdx); }
-  function modeNfsShiftGHz(mIdx = 0) {
+  function modeNfsShiftGHz(mIdx = 0, ignoreToggle = false) {
+    if (!ignoreToggle && !terms.t4A) return 0;
     let df = 0;
     for (let j = 0; j < M; j++) {
       const sq = aRe[j] * aRe[j] + aIm[j] * aIm[j];
@@ -721,7 +906,8 @@
     }
     return df;
   }
-  function modeMutualNfsShiftGHz(mIdx = 0) {
+  function modeMutualNfsShiftGHz(mIdx = 0, ignoreToggle = false) {
+    if (!ignoreToggle && !terms.t4A) return 0;
     let df = 0;
     for (let j = 0; j < M; j++) {
       if (j === mIdx) continue;
@@ -730,11 +916,51 @@
     }
     return df;
   }
+  // Exact 4-magnon parametric cross-pumping rate W_4B = sum_{k != m} P_{mk} a_k^2 from Eq. (9) 4B term
+  function crossPump4BGHz(mIdx = 0, fProbeGHz = null) {
+    if (!terms.t4B) return { resRateGHz: 0, totalRateGHz: 0, maxDriver: -1 };
+    let totRe = 0, totIm = 0, resRateGHz = 0, bestContrib = 0, maxDriver = -1;
+    const bw = Math.max(0.008, 3 * modeGammaGHz(mIdx));
+    for (let k = 0; k < M; k++) {
+      if (k === mIdx) continue;
+      const sqk = aRe[k] * aRe[k] + aIm[k] * aIm[k];
+      if (sqk < 1e-8) continue;
+      const hk2 = (mIdx * M + k) * 2;
+      const pAbs = Math.hypot(P4B[hk2], P4B[hk2 + 1]) * F_M;
+      if (pAbs <= 1e-8) continue;
+      const k2R = aRe[k] * aRe[k] - aIm[k] * aIm[k];
+      const k2I = 2 * aRe[k] * aIm[k];
+      const pR = P4B[hk2] * F_M, pI = P4B[hk2 + 1] * F_M;
+      totRe += pR * k2R - pI * k2I;
+      totIm += pR * k2I + pI * k2R;
+      const contrib = pAbs * sqk;
+      if (contrib > bestContrib) { bestContrib = contrib; maxDriver = k; }
+      if (fProbeGHz !== null) {
+        const fkEff = fGhzArr[k] + modeNfsShiftGHz(k);
+        const detK = 0.5 * (fProbeGHz - 2 * fkEff);
+        const overlap = bw / Math.hypot(bw, detK);
+        resRateGHz += contrib * overlap;
+      }
+    }
+    const totalRateGHz = Math.hypot(totRe, totIm);
+    if (fProbeGHz === null) resRateGHz = totalRateGHz;
+    return { resRateGHz: Math.min(resRateGHz, totalRateGHz > 0 ? Math.max(resRateGHz, totalRateGHz * 0.25) : 0), totalRateGHz, maxDriver };
+  }
   function arnoldThresholdMT(mIdx, fPumpGHz, fShiftGHz = 0) {
     const hTh = parametricThresholdMT(mIdx);
     const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fShiftGHz));
     const gamma = modeGammaGHz(mIdx);
     return hTh * Math.hypot(1, delta / gamma);
+  }
+  function instantaneousArnoldThresholdMT(mIdx, fPumpGHz) {
+    const fMut = modeMutualNfsShiftGHz(mIdx); // strictly 0 if 4A N_hk is unchecked!
+    const vm = Math.max(1e-9, vParamGHz_mT(mIdx));
+    const gamma = modeGammaGHz(mIdx);
+    const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fMut));
+    const reqRate = Math.hypot(gamma, delta);
+    const cp = crossPump4BGHz(mIdx, fPumpGHz);
+    if (!terms.t2A) return cp.resRateGHz >= reqRate ? 0 : Infinity;
+    return Math.max(0, reqRate - cp.resRateGHz) / vm;
   }
   function arnoldThreshold(mIdx, fPumpGHz, fShiftGHz = 0) {
     return arnoldThresholdMT(mIdx, fPumpGHz, fShiftGHz) / MU0_MS_MT;
@@ -1238,7 +1464,6 @@
   const modeTimeCanvas = document.getElementById('modeTimeCanvas');
   const modeTimeCtx = modeTimeCanvas && modeTimeCanvas.getContext ? modeTimeCanvas.getContext('2d') : null;
   const modeLegendEl = document.getElementById('modeLegend');
-  let lastLegendKey = '';
 
   function fmtTauTime(tau) {
     const ns = (tau * FREQ_TO_RAD) / (2 * Math.PI);
@@ -1249,6 +1474,10 @@
 
   function drawModeTimePlot() {
     if (!modeTimeCtx || !modeTimeCanvas) return;
+    const nowMs = (typeof performance !== 'undefined' && performance && typeof performance.now === 'function') ? performance.now() : Date.now();
+    const dtSec = lastPlotDrawMs > 0 ? Math.min(0.12, Math.max(0.004, (nowMs - lastPlotDrawMs) / 1000)) : 0.016;
+    lastPlotDrawMs = nowMs;
+
     const w = modeTimeCanvas.width, h = modeTimeCanvas.height;
     modeTimeCtx.clearRect(0, 0, w, h);
     modeTimeCtx.fillStyle = 'rgba(5, 11, 22, 0.88)';
@@ -1293,9 +1522,16 @@
     }
     activeModes.sort((a, b) => peakM[a] - peakM[b]);
     const rawPeak = activeModes.length ? peakM[activeModes[activeModes.length - 1]] : 0;
-    const targetY = Math.max(0.01, rawPeak * 1.15);
-    if (targetY > plotYScale) plotYScale = targetY;
-    else plotYScale += 0.12 * (targetY - plotYScale);
+
+    // Hysteresis + non-instantaneous, frame-rate-bounded smooth axis rescaling
+    const desiredTop = quantizePlotTop(Math.max(0.01, rawPeak * 1.18));
+    if (desiredTop > plotYTarget) plotYTarget = desiredTop;
+    else if (rawPeak < 0.58 * plotYTarget && desiredTop < plotYTarget) plotYTarget = desiredTop;
+    const alphaUp = Math.min(0.22, 1 - Math.exp(-dtSec * 6.5));
+    const alphaDown = Math.min(0.08, 1 - Math.exp(-dtSec * 2.2));
+    const alphaY = plotYTarget > plotYScale ? alphaUp : alphaDown;
+    plotYScale += alphaY * (plotYTarget - plotYScale);
+    if (Math.abs(plotYTarget - plotYScale) < 1e-4) plotYScale = plotYTarget;
 
     const toX = tau => padL + ((tau - tStart) / spanTau) * pw;
     const toY = amp => padT + ph - Math.min(1, Math.max(0, amp / plotYScale)) * ph;
@@ -1359,12 +1595,13 @@
     }
 
     // Axis labels
+    const yPrec = plotYScale >= 0.1 ? 2 : 3;
     modeTimeCtx.fillStyle = 'rgba(195,220,250,0.68)';
     modeTimeCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
     modeTimeCtx.textBaseline = 'top';
-    modeTimeCtx.fillText(plotYScale.toFixed(plotYScale >= 0.1 ? 2 : 3), 2, padT);
+    modeTimeCtx.fillText(plotYScale.toFixed(yPrec), 2, padT);
     modeTimeCtx.textBaseline = 'middle';
-    modeTimeCtx.fillText((plotYScale * 0.5).toFixed(plotYScale >= 0.1 ? 2 : 3), 2, padT + ph * 0.5);
+    modeTimeCtx.fillText((plotYScale * 0.5).toFixed(yPrec), 2, padT + ph * 0.5);
     modeTimeCtx.textBaseline = 'bottom';
     modeTimeCtx.fillText('0', 14, padT + ph);
     modeTimeCtx.fillText(fmtTauTime(tStart), padL, h - 1);
@@ -1380,10 +1617,12 @@
 
     // Update compact clickable legend for top active nonzero modes without DOM thrashing
     if (modeLegendEl) {
-      const descModes = activeModes.slice().reverse().filter(m => peakM[m] >= Math.max(0.0005, rawPeak * 0.04)).slice(0, 6);
+      const chipThresh = Math.max(0.0018, 2.4 * thermalRmsAmp(), rawPeak * 0.05);
+      const descModes = activeModes.slice().reverse().filter(m => peakM[m] >= chipThresh).slice(0, 6);
       const key = descModes.join(',');
-      if (key !== lastLegendKey) {
+      if (key !== lastLegendKey && (lastLegendBuildMs === 0 || (nowMs - lastLegendBuildMs) >= 300)) {
         lastLegendKey = key;
+        lastLegendBuildMs = nowMs;
         if (!descModes.length) {
           modeLegendEl.innerHTML = '<span style="font:8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(185,212,245,.52);">No active nonzero modes yet</span>';
         } else {
@@ -1410,68 +1649,165 @@
 
   function updateSpectrum() {
     const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * SPEC_DT);
-    let maxVal = 1e-7, peakBin = 1;
-    for (let k = 1; k < SPEC_LEN / 2; k++) {
-      let re = 0, im = 0;
-      const w = (2 * Math.PI * k) / SPEC_LEN;
-      for (let n = 0; n < SPEC_LEN; n++) {
-        const s = probeSeries[(probeHead + n) % SPEC_LEN];
-        const hann = 0.5 * (1 - Math.cos((2 * Math.PI * n) / (SPEC_LEN - 1)));
-        re += s * hann * Math.cos(w * n);
-        im -= s * hann * Math.sin(w * n);
+    const nValid = Math.min(probeCount, SPEC_LEN);
+    if (specSeq !== lastSpecFftSeq) {
+      lastSpecFftSeq = specSeq;
+      if (nValid >= 8) {
+        const start = (probeHead - nValid + SPEC_LEN) % SPEC_LEN;
+        let mean = 0;
+        for (let n = 0; n < nValid; n++) mean += probeSeries[(start + n) % SPEC_LEN];
+        mean /= nValid;
+        fftRe.fill(0);
+        fftIm.fill(0);
+        const invNm1 = nValid > 1 ? 1 / (nValid - 1) : 1;
+        for (let n = 0; n < nValid; n++) {
+          const s = probeSeries[(start + n) % SPEC_LEN] - mean;
+          const hann = 0.5 * (1 - Math.cos(2 * Math.PI * n * invNm1));
+          fftRe[n] = s * hann;
+        }
+        runSpecFft4096();
+        for (let k = 1; k < SPEC_LEN / 2; k++) {
+          spectrum[k] = Math.hypot(fftRe[k], fftIm[k]);
+        }
+      } else {
+        spectrum.fill(0);
       }
-      const p = Math.sqrt(re * re + im * im);
-      spectrum[k] = p;
-      if (p > maxVal) { maxVal = p; peakBin = k; }
     }
+
+    const isModes = specBand === 'modes';
+    const fMin = isModes ? 1.5 : 0.0;
+    const fMax = isModes ? 2.3 : 6.5;
+    const kStart = Math.max(1, Math.floor((fMin / fsGHz) * SPEC_LEN));
+    const kEnd = Math.min(SPEC_LEN / 2 - 1, Math.ceil((fMax / fsGHz) * SPEC_LEN));
+
+    let globalMax = 1e-7, globalPeakBin = 1;
+    for (let k = 1; k < SPEC_LEN / 2; k++) {
+      if (spectrum[k] > globalMax) { globalMax = spectrum[k]; globalPeakBin = k; }
+    }
+    let bandMax = 1e-7, bandPeakBin = kStart;
+    for (let k = kStart; k <= kEnd; k++) {
+      if (spectrum[k] > bandMax) { bandMax = spectrum[k]; bandPeakBin = k; }
+    }
+    const useBin = bandMax > 1e-4 ? bandPeakBin : globalPeakBin;
+    const useVal = bandMax > 1e-4 ? bandMax : globalMax;
+    // Quadratic peak interpolation for sub-bin (<1 MHz) accuracy
+    let fracBin = useBin;
+    if (useBin > 1 && useBin < SPEC_LEN / 2 - 2) {
+      const yL = spectrum[useBin - 1], yC = spectrum[useBin], yR = spectrum[useBin + 1];
+      const denom = yL - 2 * yC + yR;
+      if (denom < -1e-12) fracBin += Math.max(-0.5, Math.min(0.5, 0.5 * (yL - yR) / denom));
+    }
+    const fPeak = (fracBin / SPEC_LEN) * fsGHz;
+    lastSpecPeakGHz = globalMax > 1e-4 ? +fPeak.toFixed(4) : 0;
+
+    const targetNorm = Math.max(1e-4, useVal);
+    if (specMaxSmooth <= 0 || targetNorm > specMaxSmooth * 2.2) specMaxSmooth = targetNorm;
+    else specMaxSmooth += 0.28 * (targetNorm - specMaxSmooth);
+    const normMax = Math.max(1e-4, specMaxSmooth);
+
     const sw = specCanvas.width, sh = specCanvas.height;
     specCtx.clearRect(0, 0, sw, sh);
     specCtx.fillStyle = 'rgba(130,185,255,0.08)';
     specCtx.fillRect(0, 0, sw, sh);
 
-    const maxFreq = 6.5;
-    const plotBottom = sh - 11;
-    const plotSpan = Math.max(12, plotBottom - 5);
-    specCtx.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+    const plotTop = 5, plotBottom = sh - 12;
+    const plotSpan = Math.max(14, plotBottom - plotTop);
+    const toX = f => ((f - fMin) / (fMax - fMin)) * sw;
+    specCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
     specCtx.textBaseline = 'bottom';
-    for (let fg = 1; fg <= 6; fg++) {
-      const gx = (fg / maxFreq) * sw;
-      specCtx.strokeStyle = 'rgba(190,220,255,0.11)';
-      specCtx.lineWidth = 1;
-      specCtx.beginPath(); specCtx.moveTo(gx, 2); specCtx.lineTo(gx, plotBottom); specCtx.stroke();
-      specCtx.fillStyle = 'rgba(190,220,255,0.48)';
-      specCtx.fillText(fg + 'G', gx - 6, sh - 1);
+
+    if (isModes) {
+      for (let fg = 1.5; fg <= 2.301; fg += 0.1) {
+        const gx = toX(fg);
+        const major = Math.abs(Math.round(fg * 10) % 2) === 1;
+        specCtx.strokeStyle = major ? 'rgba(190,220,255,0.14)' : 'rgba(190,220,255,0.06)';
+        specCtx.lineWidth = 1;
+        specCtx.beginPath(); specCtx.moveTo(gx, 2); specCtx.lineTo(gx, plotBottom); specCtx.stroke();
+        if (major && gx > 2 && gx < sw - 18) {
+          specCtx.fillStyle = 'rgba(190,220,255,0.56)';
+          specCtx.fillText(fg.toFixed(1) + 'G', gx - 9, sh - 1);
+        }
+      }
+      // 29 exact eigenmode frequency ticks + active mode needles across 1.5-2.3 GHz
+      let maxModeAmp = 0;
+      for (let m = 0; m < M; m++) { const a = cycleAvgModeAmp(m); if (a > maxModeAmp) maxModeAmp = a; }
+      for (let m = 0; m < M; m++) {
+        const fm = fGhzArr[m] + modeNfsShiftGHz(m);
+        if (fm < fMin || fm > fMax) continue;
+        const mxPx = toX(fm);
+        const col = modeColor(m);
+        const amp = cycleAvgModeAmp(m);
+        const isAct = amp > Math.max(0.002, maxModeAmp * 0.08);
+        specCtx.strokeStyle = col;
+        specCtx.globalAlpha = isAct ? 0.65 : 0.35;
+        specCtx.lineWidth = isAct ? 1.3 : 0.8;
+        specCtx.beginPath();
+        const tickTop = isAct ? (plotBottom - Math.max(8, (amp / Math.max(0.01, maxModeAmp)) * (plotSpan * 0.82))) : (plotBottom - 4);
+        specCtx.moveTo(mxPx, plotBottom);
+        specCtx.lineTo(mxPx, tickTop);
+        specCtx.stroke();
+        if (isAct || m === 0 || m === 4 || m === 8 || m === 13 || m === 27 || m === 28) {
+          specCtx.globalAlpha = isAct ? 0.92 : 0.42;
+          specCtx.fillStyle = col;
+          specCtx.textBaseline = 'top';
+          const lblY = isAct ? Math.max(2, tickTop - 8) : 2 + (m % 2) * 8;
+          if (!isAct && (m === 13 || m === 27)) continue;
+          specCtx.fillText(`m${m}`, Math.max(1, Math.min(sw - 16, mxPx - 6)), lblY);
+        }
+      }
+      specCtx.globalAlpha = 1;
+      specCtx.textBaseline = 'bottom';
+    } else {
+      for (let fg = 1; fg <= 6; fg++) {
+        const gx = toX(fg);
+        specCtx.strokeStyle = 'rgba(190,220,255,0.11)';
+        specCtx.lineWidth = 1;
+        specCtx.beginPath(); specCtx.moveTo(gx, 2); specCtx.lineTo(gx, plotBottom); specCtx.stroke();
+        specCtx.fillStyle = 'rgba(190,220,255,0.48)';
+        specCtx.fillText(fg + 'G', gx - 6, sh - 1);
+      }
     }
 
-    const xHalf = ((driveFreq * 0.5) / maxFreq) * sw;
-    const xFp = (driveFreq / maxFreq) * sw;
-    const xThreeHalf = ((driveFreq * 1.5) / maxFreq) * sw;
-    specCtx.strokeStyle = 'rgba(255,205,95,0.55)';
+    const drawRefLine = (fVal, color) => {
+      if (fVal < fMin || fVal > fMax) return;
+      const rx = toX(fVal);
+      specCtx.strokeStyle = color;
+      specCtx.beginPath(); specCtx.moveTo(rx, 2); specCtx.lineTo(rx, plotBottom); specCtx.stroke();
+    };
     specCtx.setLineDash([3, 3]);
-    specCtx.beginPath(); specCtx.moveTo(xHalf, 2); specCtx.lineTo(xHalf, plotBottom); specCtx.stroke();
-    specCtx.strokeStyle = 'rgba(255,130,175,0.45)';
-    specCtx.beginPath(); specCtx.moveTo(xFp, 2); specCtx.lineTo(xFp, plotBottom); specCtx.stroke();
-    if (xThreeHalf < sw - 4) {
-      specCtx.strokeStyle = 'rgba(167,243,208,0.32)';
-      specCtx.beginPath(); specCtx.moveTo(xThreeHalf, 2); specCtx.lineTo(xThreeHalf, plotBottom); specCtx.stroke();
-    }
+    drawRefLine(driveFreq * 0.5, 'rgba(255,205,95,0.58)');
+    if (dualTone && driveAmp2 > 0) drawRefLine(driveFreq2 * 0.5, 'rgba(52,211,153,0.58)');
+    drawRefLine(driveFreq, 'rgba(255,130,175,0.45)');
+    if (!isModes) drawRefLine(driveFreq * 1.5, 'rgba(167,243,208,0.32)');
     specCtx.setLineDash([]);
 
-    specCtx.strokeStyle = '#7cd4ff';
-    specCtx.lineWidth = 1.5;
-    specCtx.beginPath();
-    for (let k = 1; k < SPEC_LEN / 2; k++) {
-      const f = (k / SPEC_LEN) * fsGHz;
-      if (f > maxFreq) break;
-      const x = (f / maxFreq) * sw;
-      const y = plotBottom - (spectrum[k] / maxVal) * plotSpan;
-      if (k === 1) specCtx.moveTo(x, y); else specCtx.lineTo(x, y);
+    if (nValid >= 8 && useVal > 1e-6) {
+      specCtx.strokeStyle = '#7cd4ff';
+      specCtx.lineWidth = 1.5;
+      specCtx.beginPath();
+      let started = false, firstX = 0, lastX = 0;
+      for (let k = kStart; k <= kEnd; k++) {
+        const f = (k / SPEC_LEN) * fsGHz;
+        const x = toX(f);
+        const y = plotBottom - Math.min(1, spectrum[k] / normMax) * plotSpan;
+        if (!started) { specCtx.moveTo(x, y); firstX = x; started = true; } else specCtx.lineTo(x, y);
+        lastX = x;
+      }
+      specCtx.stroke();
+      if (started) {
+        specCtx.lineTo(lastX, plotBottom);
+        specCtx.lineTo(firstX, plotBottom);
+        specCtx.closePath();
+        specCtx.fillStyle = 'rgba(124,212,255,0.14)';
+        specCtx.fill();
+      }
     }
-    specCtx.stroke();
-    const fPeak = (peakBin / SPEC_LEN) * fsGHz;
-    lastSpecPeakGHz = maxVal > 1e-4 ? +fPeak.toFixed(4) : 0;
+
     const spEl = document.getElementById('specPeak');
-    if (spEl) spEl.textContent = maxVal > 1e-4 ? `f_peak: ${fPeak.toFixed(2)} GHz` : 'f_peak: —';
+    if (spEl) {
+      if (useVal > 1e-4) spEl.textContent = `f_peak: ${fPeak.toFixed(isModes ? 4 : 2)} GHz`;
+      else spEl.textContent = nValid < 8 ? 'f_peak: sampling…' : 'f_peak: —';
+    }
   }
 
   function updateEigenmodeReadout(meanAmp) {
@@ -1632,85 +1968,179 @@
     announcePress(`Excite m${k}`, `Loaded exact tensor mode profile φ_${k} (${fGhzArr[k].toFixed(4)} GHz) onto the YIG disk.`, `m${k}`);
   });
 
-  // Arnold Tongues Canvas (3.85..4.16 GHz parametric band, 0..1.5 mT)
+  // Arnold Tongues Canvas (ALL 29 modes 3.38–4.18 GHz or BULK zoom 3.88–4.16 GHz, dynamic mT scale)
   const arnoldCanvas = document.getElementById('arnoldCanvas');
-  const arnoldCtx = arnoldCanvas.getContext('2d');
-  const ARNOLD_F_MIN = 3.88, ARNOLD_F_MAX = 4.15, ARNOLD_H_MAX_MT = 1.40;
+  const arnoldCtx = arnoldCanvas && arnoldCanvas.getContext ? arnoldCanvas.getContext('2d') : null;
+  const ARNOLD_PAD_L = 26, ARNOLD_PAD_R = 5, ARNOLD_PAD_T = 6, ARNOLD_PAD_B = 13;
+
+  function computeArnoldHMaxMT(fMin = 3.38, fMax = 4.18) {
+    let maxTipMT = 0;
+    for (let m = 0; m < M; m++) {
+      const fp0 = 2 * fGhzArr[m];
+      if (fp0 >= fMin - 0.08 && fp0 <= fMax + 0.08) {
+        const tip = parametricThresholdMT(m);
+        if (tip > maxTipMT) maxTipMT = tip;
+      }
+    }
+    const activeDriveMT = Math.max(driveAmp * MU0_MS_MT, (dualTone && driveAmp2 > 0) ? driveAmp2 * MU0_MS_MT : 0);
+    const raw = Math.max(0.8, maxTipMT * 1.65, activeDriveMT * 1.18);
+    return Math.ceil(raw * 10) / 10;
+  }
+
+  function getArnoldRange(snap = false) {
+    const fMin = arnoldBand === 'all' ? 3.38 : 3.88;
+    const fMax = arnoldBand === 'all' ? 4.18 : 4.16;
+    const targetH = computeArnoldHMaxMT(fMin, fMax);
+    if (snap || arnoldHMaxSmooth <= 0) arnoldHMaxSmooth = targetH;
+    else arnoldHMaxSmooth += 0.16 * (targetH - arnoldHMaxSmooth);
+    return { fMin, fMax, hMax: Math.max(0.6, arnoldHMaxSmooth) };
+  }
 
   function drawArnoldTongues() {
-    if (!arnoldCtx) return;
+    if (!arnoldCtx || !arnoldCanvas) return;
     const w = arnoldCanvas.width, h = arnoldCanvas.height;
+    const pw = Math.max(20, w - ARNOLD_PAD_L - ARNOLD_PAD_R);
+    const ph = Math.max(16, h - ARNOLD_PAD_T - ARNOLD_PAD_B);
+    const { fMin, fMax, hMax } = getArnoldRange(false);
+
     arnoldCtx.clearRect(0, 0, w, h);
-    arnoldCtx.fillStyle = 'rgba(8, 16, 30, 0.88)';
+    arnoldCtx.fillStyle = 'rgba(8, 16, 30, 0.90)';
     arnoldCtx.fillRect(0, 0, w, h);
 
-    const toX = f => ((f - ARNOLD_F_MIN) / (ARNOLD_F_MAX - ARNOLD_F_MIN)) * w;
-    const toY = hmt => h - 11 - (hmt / ARNOLD_H_MAX_MT) * (h - 17);
+    const toX = f => ARNOLD_PAD_L + ((f - fMin) / (fMax - fMin)) * pw;
+    const toY = hmt => ARNOLD_PAD_T + ph - (hmt / hMax) * ph;
+
+    // Gridlines & mT / GHz axis ticks so threshold differences are clearly legible
+    arnoldCtx.strokeStyle = 'rgba(190,220,255,0.12)';
+    arnoldCtx.lineWidth = 1;
+    arnoldCtx.beginPath();
+    arnoldCtx.moveTo(ARNOLD_PAD_L, ARNOLD_PAD_T);
+    arnoldCtx.lineTo(ARNOLD_PAD_L, ARNOLD_PAD_T + ph);
+    arnoldCtx.lineTo(ARNOLD_PAD_L + pw, ARNOLD_PAD_T + ph);
+    arnoldCtx.moveTo(ARNOLD_PAD_L, ARNOLD_PAD_T + ph * 0.5);
+    arnoldCtx.lineTo(ARNOLD_PAD_L + pw, ARNOLD_PAD_T + ph * 0.5);
+    arnoldCtx.moveTo(ARNOLD_PAD_L, ARNOLD_PAD_T);
+    arnoldCtx.lineTo(ARNOLD_PAD_L + pw, ARNOLD_PAD_T);
+    arnoldCtx.stroke();
 
     const targetFp = (dualTone && arnoldTarget === 2) ? driveFreq2 : driveFreq;
     const targetHpNorm = (dualTone && arnoldTarget === 2) ? driveAmp2 : driveAmp;
-    const targetHpMT = targetHpNorm * MU0_MS_MT;
     const closestMode = closestArnoldMode(targetFp);
 
-    for (const m of BULK_INSPECT) {
-      const fMut = modeMutualNfsShiftGHz(m);
-      const f2Mut = 2 * (fGhzArr[m] + fMut);
-      const col = TONGUE_COLORS[m] || '#6cb8ff';
-      const hTh = parametricThresholdMT(m);
-      arnoldCtx.save();
+    let minTipMT = Infinity, maxTipMT = 0, maxShiftMHz = 0, maxW4B = 0, maxDh4B = 0;
 
-      if (Math.abs(fMut) > 0.0004) {
+    for (let m = 0; m < M; m++) {
+      const f0 = 2 * fGhzArr[m];
+      if (f0 < fMin - 0.14 || f0 > fMax + 0.14) continue;
+      const fMut = modeMutualNfsShiftGHz(m); // 0 if 4A is OFF
+      const f2Mut = 2 * (fGhzArr[m] + fMut);
+      const col = modeColor(m);
+      const hThStatic = parametricThresholdMT(m);
+      const cp = crossPump4BGHz(m, f2Mut);
+      const hThInst = instantaneousArnoldThresholdMT(m, f2Mut);
+      if (f0 >= fMin && f0 <= fMax) {
+        if (hThStatic < minTipMT) minTipMT = hThStatic;
+        if (hThStatic > maxTipMT) maxTipMT = hThStatic;
+      }
+      if (Math.abs(fMut) * 1000 > maxShiftMHz) maxShiftMHz = Math.abs(fMut) * 1000;
+      if (cp.resRateGHz > maxW4B) maxW4B = cp.resRateGHz;
+      if (Number.isFinite(hThInst) && (hThStatic - hThInst) > maxDh4B) maxDh4B = hThStatic - hThInst;
+
+      arnoldCtx.save();
+      arnoldCtx.beginPath();
+      arnoldCtx.rect(ARNOLD_PAD_L, 0, pw, ARNOLD_PAD_T + ph);
+      arnoldCtx.clip();
+
+      // Static unperturbed reference outline (dashed) whenever shifted by 4A or reduced by 4B
+      if (Math.abs(fMut) > 0.0004 || cp.resRateGHz > 1e-4) {
         arnoldCtx.beginPath();
         let refStarted = false;
-        for (let px = 0; px <= w; px += 3) {
-          const fp = ARNOLD_F_MIN + (px / w) * (ARNOLD_F_MAX - ARNOLD_F_MIN);
+        for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 3) {
+          const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
           const hb = arnoldThresholdMT(m, fp, 0);
-          if (hb <= ARNOLD_H_MAX_MT * 1.15) {
+          if (hb <= hMax * 1.15) {
             const yb = Math.max(0, toY(hb));
             if (!refStarted) { arnoldCtx.moveTo(px, yb); refStarted = true; } else arnoldCtx.lineTo(px, yb);
           }
         }
-        arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.32; arnoldCtx.lineWidth = 1;
+        arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.28; arnoldCtx.lineWidth = 0.9;
         arnoldCtx.setLineDash([2, 3]); arnoldCtx.stroke(); arnoldCtx.setLineDash([]);
       }
 
-      arnoldCtx.beginPath();
-      let started = false;
-      for (let px = 0; px <= w; px += 2) {
-        const fp = ARNOLD_F_MIN + (px / w) * (ARNOLD_F_MAX - ARNOLD_F_MIN);
-        const hT = arnoldThresholdMT(m, fp, fMut);
-        if (hT <= ARNOLD_H_MAX_MT * 1.15) {
-          const y = Math.max(0, toY(hT));
-          if (!started) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); started = true; } else arnoldCtx.lineTo(px, y);
-        } else if (started) { arnoldCtx.lineTo(px, 0); break; }
+      // Instantaneous Arnold tongue curve (reflecting active 4A shift & 4B cross-pumping reduction)
+      if (terms.t2A || cp.resRateGHz > 1e-4) {
+        arnoldCtx.beginPath();
+        let started = false, lastPx = ARNOLD_PAD_L;
+        for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 2) {
+          const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
+          const hT = instantaneousArnoldThresholdMT(m, fp);
+          if (Number.isFinite(hT) && hT <= hMax * 1.12) {
+            const y = Math.max(0, toY(hT));
+            if (!started) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); started = true; } else arnoldCtx.lineTo(px, y);
+            lastPx = px;
+          } else if (started) { arnoldCtx.lineTo(px, 0); lastPx = px; break; }
+        }
+        if (started) {
+          arnoldCtx.lineTo(lastPx, 0); arnoldCtx.closePath();
+          const isKey = m === closestMode || cycleAvgModeAmp(m) > 0.002;
+          arnoldCtx.globalAlpha = isKey ? 0.22 : (arnoldBand === 'all' ? 0.07 : 0.12);
+          arnoldCtx.fillStyle = col; arnoldCtx.fill();
+          arnoldCtx.globalAlpha = isKey ? 0.95 : (arnoldBand === 'all' ? 0.62 : 0.80);
+          arnoldCtx.strokeStyle = col; arnoldCtx.lineWidth = isKey ? 1.5 : 0.85; arnoldCtx.stroke();
+        }
       }
-      if (started) {
-        arnoldCtx.lineTo(w, 0); arnoldCtx.closePath();
-        arnoldCtx.globalAlpha = m === closestMode ? 0.22 : 0.12; arnoldCtx.fillStyle = col; arnoldCtx.fill();
-        arnoldCtx.globalAlpha = 0.88; arnoldCtx.strokeStyle = col; arnoldCtx.lineWidth = m === closestMode ? 1.5 : 1.0; arnoldCtx.stroke();
-      }
-      const tipX = toX(f2Mut), tipY = toY(hTh);
-      if (tipX > 4 && tipX < w - 16) {
-        arnoldCtx.globalAlpha = 0.95; arnoldCtx.fillStyle = col; arnoldCtx.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
-        arnoldCtx.fillText(`m${m}`, tipX - 7, Math.min(h - 2, tipY + 9));
+
+      // Mark each mode's distinct tip vertex + label key modes cleanly
+      if (Number.isFinite(hThInst) && hThInst <= hMax * 1.05) {
+        const tipX = toX(f2Mut), tipY = toY(hThInst);
+        if (tipX >= ARNOLD_PAD_L && tipX <= ARNOLD_PAD_L + pw) {
+          arnoldCtx.globalAlpha = 0.95; arnoldCtx.fillStyle = col;
+          arnoldCtx.beginPath(); arnoldCtx.arc(tipX, tipY, m === closestMode ? 2.1 : 1.35, 0, Math.PI * 2); arnoldCtx.fill();
+          const showLbl = m === closestMode || m === 0 || m === 4 || m === 13 || m === 16 || m === 20 || m === 23 || m === 27 || m === 28 || cycleAvgModeAmp(m) > 0.0025;
+          if (showLbl && tipX > ARNOLD_PAD_L + 4 && tipX < ARNOLD_PAD_L + pw - 14) {
+            arnoldCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
+            const lblY = Math.min(ARNOLD_PAD_T + ph - 2, tipY + (m % 2 === 0 ? 8 : 14));
+            arnoldCtx.fillText(`m${m}`, tipX - 6, lblY);
+          }
+        }
       }
       arnoldCtx.restore();
     }
 
     // Sawtooth |a_k|_ss curve (Eq. 33) for closest mode
-    const ssCol = TONGUE_COLORS[closestMode] || '#6ee7b7';
+    const ssCol = modeColor(closestMode);
     const closestMut = modeMutualNfsShiftGHz(closestMode);
     arnoldCtx.save();
-    arnoldCtx.strokeStyle = ssCol; arnoldCtx.globalAlpha = 0.55; arnoldCtx.lineWidth = 1.2; arnoldCtx.beginPath();
+    arnoldCtx.beginPath();
+    arnoldCtx.rect(ARNOLD_PAD_L, 0, pw, ARNOLD_PAD_T + ph);
+    arnoldCtx.clip();
+    arnoldCtx.strokeStyle = ssCol; arnoldCtx.globalAlpha = 0.52; arnoldCtx.lineWidth = 1.2; arnoldCtx.beginPath();
     let ssStarted = false;
-    for (let px = 0; px <= w; px += 2) {
-      const fp = ARNOLD_F_MIN + (px / w) * (ARNOLD_F_MAX - ARNOLD_F_MIN);
-      const aSS = steadyStateAmp(closestMode, fp, targetHpNorm, closestMut, false);
-      const ySS = h - 4 - Math.min(1, aSS / 0.08) * 26;
+    for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 2) {
+      const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
+      const aSS = terms.t4A ? steadyStateAmp(closestMode, fp, targetHpNorm, closestMut, false) : 0;
+      const ySS = ARNOLD_PAD_T + ph - 2 - Math.min(1, aSS / 0.08) * 24;
       if (!ssStarted) { arnoldCtx.moveTo(px, ySS); ssStarted = true; } else arnoldCtx.lineTo(px, ySS);
     }
     arnoldCtx.stroke();
     arnoldCtx.restore();
+
+    // Axis numeric labels (mT on left, GHz on bottom)
+    arnoldCtx.fillStyle = 'rgba(195,220,250,0.68)';
+    arnoldCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
+    arnoldCtx.textBaseline = 'top';
+    arnoldCtx.fillText(hMax.toFixed(1), 2, ARNOLD_PAD_T);
+    arnoldCtx.textBaseline = 'middle';
+    arnoldCtx.fillText((hMax * 0.5).toFixed(1), 2, ARNOLD_PAD_T + ph * 0.5);
+    arnoldCtx.textBaseline = 'bottom';
+    arnoldCtx.fillText('0mT', 1, ARNOLD_PAD_T + ph);
+    const fTicks = arnoldBand === 'all' ? [3.4, 3.6, 3.8, 4.0] : [3.90, 4.00, 4.10];
+    for (const ft of fTicks) {
+      const tx = toX(ft);
+      if (tx >= ARNOLD_PAD_L + 4 && tx <= ARNOLD_PAD_L + pw - 16) {
+        arnoldCtx.fillText(ft.toFixed(arnoldBand === 'all' ? 1 : 2) + 'G', tx - 9, h - 1);
+      }
+    }
 
     const hintEl = document.getElementById('arnoldHint');
     if (hintEl) {
@@ -1722,7 +2152,7 @@
           const dPhi = drivePhase2 - drivePhase1;
           const hEff = Math.hypot(driveAmp + driveAmp2 * Math.cos(dPhi), driveAmp2 * Math.sin(dPhi));
           const thC = steadyStateAmp(m1, driveFreq, hEff, 0, true);
-          hintEl.textContent = `Δφ=${Math.round(dPhi * 180 / Math.PI)}° m${m1}:${cycleAvgModeAmp(m1).toFixed(3)}(${thC.toFixed(3)})`;
+          hintEl.textContent = `Δφ=${relPhaseDeg()}° m${m1}:${cycleAvgModeAmp(m1).toFixed(3)}(${thC.toFixed(3)})`;
         } else {
           const ana = m1 !== m2 ? analyzeTwoMode(m1, m2, driveFreq, driveAmp, driveFreq2, driveAmp2, true) : null;
           const th1 = ana ? ana.pred[0] : steadyStateAmp(m1, driveFreq, driveAmp, 0, true);
@@ -1733,34 +2163,47 @@
       } else {
         const thSS = steadyStateAmp(closestMode, targetFp, targetHpNorm, closestMut, true);
         const simSS = modeAmps[closestMode] || 0;
-        const hthMT = parametricThresholdMT(closestMode);
+        const hthMT = instantaneousArnoldThresholdMT(closestMode, targetFp);
         hintEl.textContent = thSS > 0
           ? `sim ${simSS.toFixed(4)} / d'Aq ${thSS.toFixed(4)}`
-          : `h_th=${hthMT.toFixed(2)}mT`;
+          : `m${closestMode} h_th=${Number.isFinite(hthMT) ? hthMT.toFixed(2) : '∞'}mT`;
       }
     }
 
+    const termsNoteEl = document.getElementById('arnoldTermsNote');
+    if (termsNoteEl) {
+      const s4A = terms.t4A ? `4A:${maxShiftMHz > 0.05 ? `${maxShiftMHz.toFixed(1)}M` : 'ON'}` : '4A:OFF(pinned)';
+      const s4B = terms.t4B ? (maxW4B > 1e-4 ? `4B:-${maxDh4B.toFixed(2)}mT` : '4B:ON(W=0)') : '4B:OFF';
+      const spreadTxt = Number.isFinite(minTipMT) ? `h_th ${minTipMT.toFixed(2)}..${maxTipMT.toFixed(2)}mT` : '';
+      const extras = [];
+      if (!terms.t2A) extras.push('2A:OFF');
+      if (terms.t2B || terms.t2C) extras.push('2BC');
+      if (terms.g3) extras.push('3M');
+      if (terms.t4C || terms.t4D) extras.push('4CD');
+      termsNoteEl.textContent = `${s4A} · ${s4B} · ${spreadTxt}${extras.length ? ' · ' + extras.join('+') : ''}`;
+    }
+
     // Tone 1 & Tone 2 crosshairs
-    const cx = Math.max(2, Math.min(w - 2, toX(driveFreq)));
-    const cy = Math.max(2, Math.min(h - 2, toY(driveAmp * MU0_MS_MT)));
+    const cx = Math.max(ARNOLD_PAD_L, Math.min(ARNOLD_PAD_L + pw, toX(driveFreq)));
+    const cy = Math.max(ARNOLD_PAD_T, Math.min(ARNOLD_PAD_T + ph, toY(driveAmp * MU0_MS_MT)));
     arnoldCtx.strokeStyle = 'rgba(255,255,255,0.35)'; arnoldCtx.lineWidth = 1; arnoldCtx.setLineDash([2, 2]);
-    arnoldCtx.beginPath(); arnoldCtx.moveTo(cx, 0); arnoldCtx.lineTo(cx, h); arnoldCtx.moveTo(0, cy); arnoldCtx.lineTo(w, cy); arnoldCtx.stroke();
+    arnoldCtx.beginPath(); arnoldCtx.moveTo(cx, ARNOLD_PAD_T); arnoldCtx.lineTo(cx, ARNOLD_PAD_T + ph); arnoldCtx.moveTo(ARNOLD_PAD_L, cy); arnoldCtx.lineTo(ARNOLD_PAD_L + pw, cy); arnoldCtx.stroke();
     arnoldCtx.setLineDash([]);
     arnoldCtx.fillStyle = driveMode === 'parallel' ? '#7cd4ff' : '#94a3b8';
     arnoldCtx.beginPath(); arnoldCtx.arc(cx, cy, 4, 0, Math.PI * 2); arnoldCtx.fill();
 
     if (dualTone && driveAmp2 > 0) {
-      const cx2 = Math.max(2, Math.min(w - 2, toX(driveFreq2)));
-      const cy2 = Math.max(2, Math.min(h - 2, toY(driveAmp2 * MU0_MS_MT)));
+      const cx2 = Math.max(ARNOLD_PAD_L, Math.min(ARNOLD_PAD_L + pw, toX(driveFreq2)));
+      const cy2 = Math.max(ARNOLD_PAD_T, Math.min(ARNOLD_PAD_T + ph, toY(driveAmp2 * MU0_MS_MT)));
       const env2 = tone2EnvAt(simTime);
       arnoldCtx.strokeStyle = env2 > 0 ? 'rgba(52,211,153,0.65)' : 'rgba(251,191,36,0.5)';
       arnoldCtx.lineWidth = 1; arnoldCtx.setLineDash([2, 2]);
-      arnoldCtx.beginPath(); arnoldCtx.moveTo(cx2, 0); arnoldCtx.lineTo(cx2, h); arnoldCtx.moveTo(0, cy2); arnoldCtx.lineTo(w, cy2); arnoldCtx.stroke();
+      arnoldCtx.beginPath(); arnoldCtx.moveTo(cx2, ARNOLD_PAD_T); arnoldCtx.lineTo(cx2, ARNOLD_PAD_T + ph); arnoldCtx.moveTo(ARNOLD_PAD_L, cy2); arnoldCtx.lineTo(ARNOLD_PAD_L + pw, cy2); arnoldCtx.stroke();
       arnoldCtx.setLineDash([]);
       arnoldCtx.fillStyle = env2 > 0 ? '#34d399' : '#fbbf24';
       arnoldCtx.beginPath(); arnoldCtx.arc(cx2, cy2, 4, 0, Math.PI * 2); arnoldCtx.fill();
       arnoldCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
-      arnoldCtx.fillText(env2 > 0 ? 'P2 ON' : 'P2 WAIT', cx2 + 5 < w - 34 ? cx2 + 5 : cx2 - 36, cy2 > 12 ? cy2 - 5 : cy2 + 10);
+      arnoldCtx.fillText(env2 > 0 ? 'P2 ON' : 'P2 WAIT', cx2 + 5 < w - 34 ? cx2 + 5 : cx2 - 36, cy2 > 14 ? cy2 - 5 : cy2 + 10);
     }
   }
 
@@ -1785,8 +2228,9 @@
     const tMaxUs = Math.max(5.0, tOnUs * 1.6, Math.min(12.0, tCurUs * 1.15));
     hInputCtx.strokeStyle = 'rgba(190,220,255,0.14)'; hInputCtx.lineWidth = 1;
     hInputCtx.beginPath(); hInputCtx.moveTo(0, midY); hInputCtx.lineTo(w, midY); hInputCtx.stroke();
-    const a1H = Math.min(midY - 2, ((driveAmp * MU0_MS_MT) / 1.5) * (midY - 2));
-    const a2H = p2Conf ? Math.min(midY - 2, ((driveAmp2 * MU0_MS_MT) / 1.5) * (midY - 2)) : 0;
+    const hNormMax = Math.max(1.5, driveAmp * MU0_MS_MT, p2Conf ? driveAmp2 * MU0_MS_MT : 0);
+    const a1H = Math.min(midY - 2, ((driveAmp * MU0_MS_MT) / hNormMax) * (midY - 2));
+    const a2H = p2Conf ? Math.min(midY - 2, ((driveAmp2 * MU0_MS_MT) / hNormMax) * (midY - 2)) : 0;
     const xOn = p2Conf ? Math.max(2, Math.min(w - 14, (tOnUs / tMaxUs) * w)) : w + 1;
     const rampPx = Math.max(2, (0.001 / tMaxUs) * w);
     if (p1On) {
@@ -1820,11 +2264,15 @@
   function selectArnoldAt(clientX, clientY, forceT2 = false) {
     const rect = arnoldCanvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const nx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const ny = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-    const hPx = ny * arnoldCanvas.height;
-    const hpMT = Math.max(0, Math.min(ARNOLD_H_MAX_MT, ((arnoldCanvas.height - 11 - hPx) / (arnoldCanvas.height - 17)) * ARNOLD_H_MAX_MT));
-    const freq = ARNOLD_F_MIN + nx * (ARNOLD_F_MAX - ARNOLD_F_MIN);
+    const w = arnoldCanvas.width, h = arnoldCanvas.height;
+    const pw = Math.max(20, w - ARNOLD_PAD_L - ARNOLD_PAD_R);
+    const ph = Math.max(16, h - ARNOLD_PAD_T - ARNOLD_PAD_B);
+    const xPx = ((clientX - rect.left) / rect.width) * w;
+    const yPx = ((clientY - rect.top) / rect.height) * h;
+    const nx = Math.max(0, Math.min(1, (xPx - ARNOLD_PAD_L) / pw));
+    const { fMin, fMax, hMax } = getArnoldRange(true);
+    const hpMT = Math.max(0, Math.min(hMax, ((ARNOLD_PAD_T + ph - yPx) / ph) * hMax));
+    const freq = fMin + nx * (fMax - fMin);
     driveMode = 'parallel';
     if (forceT2 || arnoldTarget === 2) { dualTone = true; driveFreq2 = freq; driveAmp2 = hpMT / MU0_MS_MT; }
     else { driveFreq = freq; driveAmp = hpMT / MU0_MS_MT; }
@@ -1983,6 +2431,15 @@
     if (arnoldBox && arnoldBox.querySelector) makeDraggablePanel(() => (isCompactViewport() ? arnoldBox : readoutsDock), arnoldBox.querySelector('.specTitle'));
     const tutEl = document.getElementById('swTutorial');
     if (tutEl && tutEl.querySelector) makeDraggablePanel(tutEl, tutEl.querySelector('.tutHeader'));
+    const vmEl = document.getElementById('verifyModal');
+    if (vmEl && vmEl.querySelector) makeDraggablePanel(vmEl, vmEl.querySelector('.vmHeader'));
+  }
+
+  function relPhaseDeg() {
+    let deg = Math.round(((drivePhase2 - drivePhase1) * 180) / Math.PI) % 360;
+    if (deg > 180) deg -= 360;
+    if (deg < -180) deg += 360;
+    return deg;
   }
 
   function syncUi() {
@@ -2006,9 +2463,13 @@
       if (outD2) outD2.textContent = tone2WaitSS ? (tone2Released ? 'T1 SS GO' : 'WAIT T1 SS') : `${tone2DelayNs.toFixed(1)} µs`;
     }
     const slP2 = document.getElementById('slPhase2');
-    if (slP2) { const deg = Math.round((drivePhase2 - drivePhase1) * 180 / Math.PI); slP2.value = deg; document.getElementById('outPhase2').textContent = `${deg}°`; }
+    if (slP2) { const deg = relPhaseDeg(); slP2.value = deg; document.getElementById('outPhase2').textContent = `${deg}°`; }
     const tBtn = document.getElementById('arnoldTargetBtn');
     if (tBtn) { tBtn.textContent = `TAP: T${arnoldTarget}`; tBtn.classList.toggle('t2', arnoldTarget === 2); }
+    const bBtn = document.getElementById('arnoldBandBtn');
+    if (bBtn) { bBtn.textContent = arnoldBand === 'all' ? 'ALL 29' : 'BULK'; bBtn.classList.toggle('all', arnoldBand === 'all'); }
+    const sbBtn = document.getElementById('specBandBtn');
+    if (sbBtn) { sbBtn.textContent = specBand === 'modes' ? '1.5–2.3G' : '0–6.5G'; sbBtn.classList.toggle('modes', specBand === 'modes'); }
     document.getElementById('slDamp').value = damping;
     document.getElementById('outDamp').textContent = damping.toFixed(4);
     const slT = document.getElementById('slTemp'), outT = document.getElementById('outTemp');
@@ -2149,10 +2610,42 @@
     });
   }
 
-  const SW_DB_URL = 'https://dpnzgpmlbdrlwackyafa.supabase.co/rest/v1/spacetime_feedback_runs';
-  const SW_DB_KEY = 'sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz';
+  const DEFAULT_SW_DB_URL = 'https://dpnzgpmlbdrlwackyafa.supabase.co/rest/v1/spacetime_feedback_runs';
+  const DEFAULT_SW_DB_KEY = 'sb_publishable_838VhmZlihiFPH5OU34shQ_Aaai2Fhz';
+  const SW_DB_CFG_KEY = 'spin-waves-db-config-v1';
   const SW_IDB_NAME = 'spacetime-spinwaves-logs';
   const SW_IDB_STORE = 'sessions';
+  const RLS_SQL_FIX = [
+    'GRANT USAGE ON SCHEMA public TO anon;',
+    'GRANT INSERT, SELECT ON public.spacetime_feedback_runs TO anon;',
+    'ALTER TABLE public.spacetime_feedback_runs ENABLE ROW LEVEL SECURITY;',
+    'CREATE POLICY "allow_anon_insert_runs" ON public.spacetime_feedback_runs FOR INSERT TO anon WITH CHECK (true);',
+    'CREATE POLICY "allow_anon_select_runs" ON public.spacetime_feedback_runs FOR SELECT TO anon USING (true);'
+  ].join('\n');
+
+  function getDbConfig() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SW_DB_CFG_KEY) || 'null');
+      if (raw && typeof raw === 'object') {
+        return {
+          url: (typeof raw.url === 'string' && raw.url.trim()) ? raw.url.trim() : DEFAULT_SW_DB_URL,
+          key: (typeof raw.key === 'string' && raw.key.trim()) ? raw.key.trim() : DEFAULT_SW_DB_KEY
+        };
+      }
+    } catch (_) {}
+    return { url: DEFAULT_SW_DB_URL, key: DEFAULT_SW_DB_KEY };
+  }
+  function saveDbConfig(url, key) {
+    const cleanUrl = String(url || '').trim() || DEFAULT_SW_DB_URL;
+    const cleanKey = String(key || '').trim() || DEFAULT_SW_DB_KEY;
+    try { localStorage.setItem(SW_DB_CFG_KEY, JSON.stringify({ url: cleanUrl, key: cleanKey })); } catch (_) {}
+    return { url: cleanUrl, key: cleanKey };
+  }
+  function resetDbConfig() {
+    try { if (localStorage && localStorage.removeItem) localStorage.removeItem(SW_DB_CFG_KEY); } catch (_) {}
+    return { url: DEFAULT_SW_DB_URL, key: DEFAULT_SW_DB_KEY };
+  }
+
   const nowWallMs = () => (typeof performance !== 'undefined' && performance && typeof performance.now === 'function') ? performance.now() : Date.now();
   function makeLogUuid() {
     const c = typeof crypto !== 'undefined' ? crypto : (window && window.crypto);
@@ -2188,6 +2681,10 @@
     lastUploadedSeq: 0,
     uploading: false,
     dbStatus: 'REC',
+    lastDbAttempt: null,
+    lastVerification: null,
+    lastCalibration: null,
+    lastBenchmark: null,
     idbDb: null
   };
 
@@ -2224,13 +2721,14 @@
       tone2DelayUs: +tone2DelayNs.toFixed(2),
       tone2WaitSS,
       tone2Released,
-      relPhaseDeg: Math.round((drivePhase2 - drivePhase1) * 180 / Math.PI),
+      relPhaseDeg: relPhaseDeg(),
       damping: +damping.toFixed(5),
       temperatureK,
       playbackSpeed,
       fastForwarding,
       paused,
       isRwa: isRwaFast(),
+      terms: { ...terms },
       tutStep: swTutState.step + 1,
       tutDoneCount: swTutState.done.filter(Boolean).length,
       env1: +tone1EnvAt(simTime).toFixed(3),
@@ -2243,12 +2741,28 @@
     };
   }
 
+  function formatDbDiagText() {
+    const a = swLog.lastDbAttempt;
+    if (!a) return 'DB: local IndexedDB active · click Verify & Cal or Save → DB';
+    if (a.ok) return `DB SAVED ✓ (HTTP ${a.status}) · session ${swLog.sessionId.slice(0, 8)} uploaded to Supabase + IndexedDB`;
+    if (a.status === 401 || a.code === '42501') {
+      return `DB ${a.op || 'POST'} blocked: HTTP ${a.status} (${a.code || 'RLS'}) "${a.message || 'row-level security policy'}" — saved to local IndexedDB. Open Verify & Cal → DB Vault for RLS SQL fix.`;
+    }
+    return `DB ${a.op || 'POST'} error: HTTP ${a.status || 'NET'} ${a.code || ''} ${a.message || ''} — saved locally in IndexedDB.`;
+  }
+
   function updateLogUiBadges() {
     const qBtn = document.getElementById('quickLogDbBtn');
     const stEl = document.getElementById('logStatusBadge');
+    const diagEl = document.getElementById('dbDiagBanner');
     const nEv = swLog.totalEvents;
-    if (qBtn) qBtn.textContent = swLog.dbStatus === 'DB SAVED ✓' ? `DB ✓ · ${nEv}` : (swLog.uploading ? `SAVING · ${nEv}` : `LOG DB · ${nEv}`);
+    if (qBtn) qBtn.textContent = swLog.dbStatus === 'DB SAVED ✓' ? `DB ✓ · ${nEv}` : (swLog.uploading ? `SAVING · ${nEv}` : (swLog.dbStatus === 'RLS 401' ? `IDB (401) · ${nEv}` : `LOG DB · ${nEv}`));
     if (stEl) stEl.textContent = `${swLog.dbStatus} · ${nEv}ev / ${swLog.totalSamples}sp`;
+    if (diagEl) {
+      diagEl.textContent = formatDbDiagText();
+      diagEl.classList.toggle('ok', !!(swLog.lastDbAttempt && swLog.lastDbAttempt.ok));
+      diagEl.classList.toggle('err', !!(swLog.lastDbAttempt && !swLog.lastDbAttempt.ok));
+    }
   }
 
   function recordLogEvent(type, label, detail = null) {
@@ -2316,6 +2830,10 @@
         avg: +(fpsArr.reduce((s, v) => s + v, 0) / fpsArr.length).toFixed(1)
       } : null,
       tutorialDone: swTutState.done.slice(),
+      calibration: swLog.lastCalibration,
+      verification: swLog.lastVerification,
+      benchmark: swLog.lastBenchmark,
+      lastDbAttempt: swLog.lastDbAttempt,
       finalState: captureLogState(),
       events: swLog.events.map(({ _key, ...rest }) => rest),
       samples: swLog.samples,
@@ -2354,28 +2872,92 @@
     } catch (_) { return false; }
   }
 
+  async function listIdbSessions() {
+    try {
+      const db = await openLogIdb();
+      if (!db) return [];
+      return await new Promise(resolve => {
+        try {
+          const tx = db.transaction(SW_IDB_STORE, 'readonly');
+          const store = tx.objectStore(SW_IDB_STORE);
+          if (typeof store.getAll === 'function') {
+            const req = store.getAll();
+            req.onsuccess = () => {
+              const items = Array.isArray(req.result) ? req.result : [];
+              items.sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+              resolve(items);
+            };
+            req.onerror = () => resolve([]);
+          } else {
+            const out = [];
+            const cur = store.openCursor();
+            cur.onsuccess = ev => {
+              const c = ev.target.result;
+              if (c) { out.push(c.value); c.continue(); }
+              else { out.sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || ''))); resolve(out); }
+            };
+            cur.onerror = () => resolve(out);
+          }
+        } catch (_) { resolve([]); }
+      });
+    } catch (_) { return []; }
+  }
+
+  async function deleteIdbSession(sessionId) {
+    try {
+      const db = await openLogIdb();
+      if (!db) return false;
+      return await new Promise(resolve => {
+        try {
+          const tx = db.transaction(SW_IDB_STORE, 'readwrite');
+          tx.objectStore(SW_IDB_STORE).delete(sessionId);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        } catch (_) { resolve(false); }
+      });
+    } catch (_) { return false; }
+  }
+
+  function makeDbHeaders(key, extra = {}) {
+    const h = { 'apikey': key, ...extra };
+    if (key && !key.startsWith('sb_publishable_')) h['Authorization'] = `Bearer ${key}`;
+    return h;
+  }
+
+  async function parseSupabaseError(res) {
+    const raw = await res.text().catch(() => '');
+    let code = null, message = raw.slice(0, 160), hint = null;
+    try {
+      const j = JSON.parse(raw);
+      if (j && typeof j === 'object') {
+        code = j.code || null;
+        message = j.message || message;
+        hint = j.hint || null;
+      }
+    } catch (_) {}
+    return { status: res.status, code, message, hint };
+  }
+
   async function uploadSwLog(reason = 'manual', keepalive = false) {
     const report = buildEvaluationReport(reason);
     try { localStorage.setItem('spin-waves-last-log-v1', JSON.stringify({ sessionId: report.sessionId, savedAt: report.savedAt, counts: report.counts })); } catch (_) {}
     await saveLogToIdb(report);
     if (typeof fetch !== 'function') {
       swLog.dbStatus = 'LOCAL IDB';
+      swLog.lastDbAttempt = { ok: false, op: 'POST', status: 0, code: 'NO_FETCH', message: 'fetch unavailable', at: new Date().toISOString(), reason };
       updateLogUiBadges();
       return false;
     }
     if (swLog.uploading && !keepalive) return false;
+    const cfg = getDbConfig();
     swLog.uploading = true;
     swLog.dbStatus = 'SAVING…';
     updateLogUiBadges();
     try {
-      const res = await fetch(SW_DB_URL, {
+      const res = await fetch(cfg.url, {
         method: 'POST',
         keepalive,
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SW_DB_KEY,
-          'Prefer': 'return=minimal'
-        },
+        headers: makeDbHeaders(cfg.key, { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }),
         body: JSON.stringify({
           client_run_id: makeLogUuid(),
           app_version: swLog.appVersion,
@@ -2383,20 +2965,48 @@
         })
       });
       if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        throw new Error(`HTTP ${res.status} ${detail.slice(0, 120)}`);
+        const parsed = await parseSupabaseError(res);
+        swLog.lastDbAttempt = { ok: false, op: 'POST', ...parsed, at: new Date().toISOString(), reason, url: cfg.url };
+        swLog.dbStatus = (parsed.status === 401 || parsed.code === '42501') ? 'RLS 401' : 'LOCAL IDB';
+        throw new Error(`HTTP ${parsed.status}${parsed.code ? ` (${parsed.code})` : ''}: ${parsed.message}`);
       }
+      swLog.lastDbAttempt = { ok: true, op: 'POST', status: res.status, code: null, message: 'OK', at: new Date().toISOString(), reason, url: cfg.url };
       swLog.dbStatus = 'DB SAVED ✓';
       swLog.lastUploadedSeq = swLog.totalEvents + swLog.totalSamples;
       return true;
     } catch (err) {
-      swLog.dbStatus = 'LOCAL IDB';
+      if (!swLog.lastDbAttempt || swLog.lastDbAttempt.ok) {
+        swLog.lastDbAttempt = { ok: false, op: 'POST', status: 0, code: 'ERR', message: err && err.message ? err.message : String(err), at: new Date().toISOString(), reason, url: cfg.url };
+        swLog.dbStatus = 'LOCAL IDB';
+      }
       recordLogError('db_upload_failed', err && err.message ? err.message : String(err));
       return false;
     } finally {
       swLog.uploading = false;
       updateLogUiBadges();
     }
+  }
+
+  async function testDbConnection() {
+    const cfg = getDbConfig();
+    if (typeof fetch !== 'function') {
+      return { readOk: false, writeNote: 'No fetch API in this environment', url: cfg.url };
+    }
+    const readUrl = `${cfg.url}${cfg.url.includes('?') ? '&' : '?'}select=id&limit=1`;
+    let readDiag = null;
+    try {
+      const rRes = await fetch(readUrl, { method: 'GET', headers: makeDbHeaders(cfg.key) });
+      if (rRes.ok) {
+        const rows = await rRes.json().catch(() => []);
+        readDiag = { ok: true, status: rRes.status, count: Array.isArray(rows) ? rows.length : 0 };
+      } else {
+        readDiag = { ok: false, ...(await parseSupabaseError(rRes)) };
+      }
+    } catch (err) {
+      readDiag = { ok: false, status: 0, code: 'NET', message: err && err.message ? err.message : String(err) };
+    }
+    const writeOk = await uploadSwLog('connection_test', false);
+    return { url: cfg.url, readDiag, writeOk, writeDiag: swLog.lastDbAttempt };
   }
 
   function announcePress(btnLabel, explanation, actionKey = null) {
@@ -2541,13 +3151,13 @@
       nikSelPair = [13, 27]; arnoldTarget = 2; simTime = 0; seedSpins(0.005, [13, 27]);
     } else if (name === 'nonrecip' || name === 'nij' || name === 'mutual') {
       document.getElementById('presetNonrecip').classList.add('active');
-      driveMode = 'parallel'; damping = 0.0003; dualTone = true; tone2WaitSS = true; tone2DelayNs = 3.0;
+      driveMode = 'parallel'; damping = 0.0010; dualTone = true; tone2WaitSS = true; tone2DelayNs = 3.0;
       const g1 = modeGammaGHz(13), g2 = modeGammaGHz(16);
-      const hp1 = 2.5 * parametricThresholdMT(13), hp2 = 2.5 * parametricThresholdMT(16);
-      const r1 = Math.sqrt((vParamGHz_mT(13) * hp1) ** 2 - g1 * g1);
-      const r2 = Math.sqrt((vParamGHz_mT(16) * hp2) ** 2 - g2 * g2);
-      driveFreq = 2 * fGhzArr[13] + 2 * (-0.3 * r1); driveAmp = hp1 / MU0_MS_MT;
-      driveFreq2 = 2 * fGhzArr[16] + 2 * (-0.3 * r2); driveAmp2 = hp2 / MU0_MS_MT;
+      const hp1 = 2.4 * parametricThresholdMT(13), hp2 = 2.0 * parametricThresholdMT(16);
+      const r1 = Math.sqrt(Math.max(0, (vParamGHz_mT(13) * hp1) ** 2 - g1 * g1));
+      const r2 = Math.sqrt(Math.max(0, (vParamGHz_mT(16) * hp2) ** 2 - g2 * g2));
+      driveFreq = 2 * fGhzArr[13] + 2 * (0.05 * r1); driveAmp = hp1 / MU0_MS_MT;
+      driveFreq2 = 2 * fGhzArr[16] + 2 * (-0.2 * r2); driveAmp2 = hp2 / MU0_MS_MT;
       nikSelPair = [13, 16]; arnoldTarget = 2; simTime = 0; seedSpins(0.004, [13, 16]);
       notifySwTutorial('nonrecip');
     }
@@ -2635,7 +3245,7 @@
     announcePress(`Tone 2 Delay ${tone2DelayNs.toFixed(1)} µs`, `Reset t = 0: Tone 2 now turns on smoothly via 1 ns Tukey ramp after ${tone2DelayNs.toFixed(1)} µs.`);
   });
   document.getElementById('slPhase2').addEventListener('input', e => {
-    const deg = +e.target.value; drivePhase2 = deg * Math.PI / 180; syncUi();
+    const deg = +e.target.value; drivePhase2 = drivePhase1 + (deg * Math.PI) / 180; syncUi();
     announcePress(`Rel Phase Δφ = ${deg}°`, `Set φ₂ − φ₁ = ${deg}° (0° gives constructive interference on overlapping tones, ±180° cancels destructively).`, 'phase2');
   });
   document.getElementById('btnWaitT1SS').addEventListener('click', () => {
@@ -2668,6 +3278,26 @@
   document.getElementById('arnoldTargetBtn').addEventListener('click', () => {
     arnoldTarget = arnoldTarget === 1 ? 2 : 1; if (arnoldTarget === 2 && !dualTone) dualTone = true; syncUi();
     announcePress(`TAP: T${arnoldTarget}`, `Tapping the Arnold diagram now aims Tone ${arnoldTarget}.`);
+  });
+  const arnoldBandBtnEl = document.getElementById('arnoldBandBtn');
+  if (arnoldBandBtnEl) arnoldBandBtnEl.addEventListener('click', () => {
+    arnoldBand = arnoldBand === 'all' ? 'bulk' : 'all';
+    getArnoldRange(true);
+    syncUi();
+    drawScene();
+    announcePress(`Arnold: ${arnoldBand === 'all' ? 'ALL 29' : 'BULK'}`, arnoldBand === 'all'
+      ? 'Showing all 29 modes m0..m28 (3.38–4.18 GHz) with dynamic mT ceiling so edge & bulk thresholds stay distinct.'
+      : 'Zoomed into bulk spin-wave modes m10..m28 (3.88–4.16 GHz).');
+  });
+  const specBandBtnEl = document.getElementById('specBandBtn');
+  if (specBandBtnEl) specBandBtnEl.addEventListener('click', () => {
+    specBand = specBand === 'modes' ? 'wide' : 'modes';
+    specMaxSmooth = 0;
+    syncUi();
+    updateSpectrum();
+    announcePress(`Spectrum: ${specBand === 'modes' ? '1.5–2.3 GHz' : '0–6.5 GHz'}`, specBand === 'modes'
+      ? 'Zoomed spectrum onto 1.5–2.3 GHz mode band (4096-pt FFT, 3.4 MHz/bin) with all 29 eigenmode frequency markers.'
+      : 'Switched to 0–6.5 GHz wide band to inspect f, 2f, and 3f nonlinear harmonics.');
   });
   document.getElementById('slDamp').addEventListener('input', e => {
     damping = +e.target.value; syncUi();
@@ -2785,13 +3415,15 @@
     if (ok) {
       showLogToast('DB SAVED ✓', `Saved session ${swLog.sessionId.slice(0, 8)} (${swLog.totalEvents} events, ${swLog.totalSamples} samples) to Supabase spacetime_feedback_runs & IndexedDB.`);
     } else {
-      showLogToast('SAVED LOCAL (IDB)', `Saved locally to IndexedDB (${swLog.totalEvents} events, ${swLog.totalSamples} samples). Supabase upload unavailable — you can still Export JSON.`);
+      showLogToast('SAVED LOCAL (IDB)', formatDbDiagText());
     }
+    if (typeof renderDbModalStatus === 'function') renderDbModalStatus();
+    if (typeof refreshIdbVault === 'function') refreshIdbVault();
   }
 
-  function exportLogJsonFile() {
-    recordLogEvent('export', 'Export JSON', { format: 'json' });
-    const report = buildEvaluationReport('export_json');
+  function exportLogJsonFile(customReport = null) {
+    if (!customReport) recordLogEvent('export', 'Export JSON', { format: 'json' });
+    const report = customReport || buildEvaluationReport('export_json');
     try {
       const json = JSON.stringify(report, null, 2);
       if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
@@ -2799,13 +3431,13 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `spin-waves-log-${report.sessionId.slice(0, 8)}.json`;
+        a.download = `spin-waves-log-${String(report.sessionId || 'session').slice(0, 8)}.json`;
         if (document.body && document.body.appendChild) document.body.appendChild(a);
         if (typeof a.click === 'function') a.click();
         if (a.remove) a.remove();
         setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
       }
-      showLogToast('EXPORTED JSON', `Downloaded spin-waves-log-${report.sessionId.slice(0, 8)}.json (${report.counts.events} events, ${report.counts.samples} samples).`);
+      showLogToast('EXPORTED JSON', `Downloaded spin-waves-log-${String(report.sessionId || 'session').slice(0, 8)}.json (${report.counts ? report.counts.events : 0} events, ${report.counts ? report.counts.samples : 0} samples).`);
     } catch (err) {
       recordLogError('export_failed', err && err.message ? err.message : String(err));
     }
@@ -2816,7 +3448,822 @@
   const btnSaveLogDb = document.getElementById('btnSaveLogDb');
   if (btnSaveLogDb) btnSaveLogDb.addEventListener('click', () => handleSaveLogDb('Save Log → DB'));
   const btnExportLog = document.getElementById('btnExportLog');
-  if (btnExportLog) btnExportLog.addEventListener('click', exportLogJsonFile);
+  if (btnExportLog) btnExportLog.addEventListener('click', () => exportLogJsonFile());
+
+  // =========================================================================
+  // Interactive Benchmark, Calibration & Verification Protocol + DB Vault UI
+  // =========================================================================
+  const verifyModalEl = document.getElementById('verifyModal');
+  let verifyAbort = false;
+  let verifyRunning = false;
+  const verifyStageResults = new Array(7).fill(null);
+
+  function saveSimSnapshot() {
+    return {
+      driveMode, driveFreq, driveAmp, dualTone, driveFreq2, driveAmp2,
+      tone2DelayNs, tone2WaitSS, tone2Released, tone2ReleaseT, t1WaitStable, lastWaitCheckT,
+      drivePhase1, drivePhase2, arnoldTarget, arnoldBand, specBand, damping, temperatureK,
+      thermalSeed, rngState, paused, playbackSpeed, fastForwarding, simTime,
+      terms: { ...terms },
+      aRe: Float64Array.from(aRe),
+      aIm: Float64Array.from(aIm)
+    };
+  }
+
+  function restoreSimSnapshot(snap) {
+    if (!snap) return;
+    driveMode = snap.driveMode; driveFreq = snap.driveFreq; driveAmp = snap.driveAmp;
+    dualTone = snap.dualTone; driveFreq2 = snap.driveFreq2; driveAmp2 = snap.driveAmp2;
+    tone2DelayNs = snap.tone2DelayNs; tone2WaitSS = snap.tone2WaitSS;
+    tone2Released = snap.tone2Released; tone2ReleaseT = snap.tone2ReleaseT;
+    t1WaitStable = snap.t1WaitStable; lastWaitCheckT = snap.lastWaitCheckT;
+    drivePhase1 = snap.drivePhase1; drivePhase2 = snap.drivePhase2;
+    arnoldTarget = snap.arnoldTarget; arnoldBand = snap.arnoldBand; specBand = snap.specBand;
+    damping = snap.damping; temperatureK = snap.temperatureK;
+    thermalSeed = snap.thermalSeed; rngState = snap.rngState;
+    paused = snap.paused; playbackSpeed = snap.playbackSpeed; fastForwarding = snap.fastForwarding;
+    simTime = snap.simTime;
+    Object.assign(terms, snap.terms);
+    aRe.set(snap.aRe); aIm.set(snap.aIm);
+    resetModeHistory();
+    recordModeSample();
+    reconstructSpatialSpins();
+    syncUi();
+    drawScene();
+  }
+
+  const VERIFY_STAGES = [
+    {
+      id: 'cal_tensor_symplectic',
+      name: 'Cal 1 · Tensor & Symplectic B₀',
+      desc: '29 modes > 1.6 GHz, equilibrium δm ≡ 0, symplectic B₀ roundtrip (m13, m27), |m| ≡ 1',
+      run() {
+        const checks = [];
+        const minF = Math.min(...fGhzArr), maxF = Math.max(...fGhzArr);
+        checks.push({
+          label: '29 modes f_h > 1.6 GHz',
+          expected: 'M=29, min > 1.60G',
+          measured: `M=${M} (${minF.toFixed(4)}–${maxF.toFixed(4)}G)`,
+          pass: M === 29 && minF > 1.6
+        });
+        temperatureK = 0; driveAmp = 0; dualTone = false; driveAmp2 = 0; damping = 0.002;
+        seedSpins(0.0);
+        reconstructSpatialSpins();
+        let eqMax = 0;
+        for (let p = 0; p < NACT; p++) {
+          const pix = actPix[p];
+          const d = Math.hypot(my[pix] - m0yFull[pix], mz[pix] - m0zFull[pix]);
+          if (d > eqMax) eqMax = d;
+        }
+        checks.push({ label: 'Equilibrium δm = m − m₀', expected: '< 1e-4', measured: eqMax.toExponential(2), pass: eqMax < 1e-4 });
+
+        const invN = 1 / NACT;
+        const projAmp = (mIdx) => {
+          let re = 0, im = 0;
+          const off = mIdx * NACT;
+          for (let p = 0; p < NACT; p++) {
+            const pix = actPix[p];
+            const dmx = mx[pix] - m0x[p], dmy = my[pix] - m0y[p], dmz = mz[pix] - m0z[p];
+            const cx = m0y[p] * dmz - m0z[p] * dmy;
+            const cy = m0z[p] * dmx - m0x[p] * dmz;
+            const cz = m0x[p] * dmy - m0y[p] * dmx;
+            re += -(phiImX[off + p] * cx + phiImY[off + p] * cy + phiImZ[off + p] * cz);
+            im += -(phiReX[off + p] * cx + phiReY[off + p] * cy + phiReZ[off + p] * cz);
+          }
+          return Math.hypot(wBarArr[mIdx] * re * invN, wBarArr[mIdx] * im * invN);
+        };
+        let worstRt = 0;
+        for (const mIdx of [13, 27]) {
+          exciteEigenmode(mIdx, 0.04);
+          const got = projAmp(mIdx);
+          const err = Math.abs(got - 0.04) / 0.04;
+          if (err > worstRt) worstRt = err;
+        }
+        checks.push({ label: 'Symplectic B₀ roundtrip (m13, m27)', expected: '< 5.0% err', measured: `${(worstRt * 100).toFixed(2)}%`, pass: worstRt < 0.05 });
+
+        let maxNormErr = 0;
+        for (const full of [false, true]) {
+          setNmmMode(full);
+          temperatureK = 0; driveMode = 'parallel'; driveFreq = 2 * fGhzArr[13];
+          driveAmp = 1.8 * parametricThreshold(13); damping = 0.002; simTime = 0;
+          seedSpins(0.01);
+          for (let s = 0; s < 250; s++) stepLlg(0.65, true);
+          reconstructSpatialSpins();
+          for (let p = 0; p < NACT; p++) {
+            const pix = actPix[p];
+            const err = Math.abs(Math.hypot(mx[pix], my[pix], mz[pix]) - 1);
+            if (err > maxNormErr) maxNormErr = err;
+          }
+        }
+        setNmmMode(false);
+        checks.push({ label: 'Spin unit norm |m| ≡ 1 (RWA+Full)', expected: '< 1e-5', measured: maxNormErr.toExponential(2), pass: maxNormErr < 1e-5 });
+        return checks;
+      }
+    },
+    {
+      id: 'cal_eigen_damping',
+      name: 'Cal 2 · Linear Eigenmodes & Gilbert α',
+      desc: 'Linear frequencies (<2%), zero cross-mode leakage, exact exp(−Γτ) decay',
+      run() {
+        const checks = [];
+        setNmmMode(false);
+        let maxFreqErr = 0, maxLeak = 0;
+        for (const mIdx of [10, 13, 27]) {
+          exciteEigenmode(mIdx, 0.005);
+          temperatureK = 0; damping = 0; driveAmp = 0; dualTone = false; driveAmp2 = 0; simTime = 0;
+          const crossings = [];
+          let prev = aRe[mIdx];
+          const dt = 0.25;
+          for (let step = 1; step <= 800; step++) {
+            stepLlg(dt, true);
+            const cur = aRe[mIdx];
+            if (prev <= 0 && cur > 0) {
+              crossings.push((step - 1 + (-prev / (cur - prev))) * dt);
+              if (crossings.length >= 6) break;
+            }
+            prev = cur;
+          }
+          const avgP = (crossings[crossings.length - 1] - crossings[0]) / (crossings.length - 1);
+          const fSim = ((2 * Math.PI) / avgP) / FREQ_TO_RAD;
+          const relErr = Math.abs(fSim - fGhzArr[mIdx]) / fGhzArr[mIdx];
+          if (relErr > maxFreqErr) maxFreqErr = relErr;
+          let otherSq = 0;
+          for (let k = 0; k < M; k++) if (k !== mIdx) otherSq += aRe[k] ** 2 + aIm[k] ** 2;
+          const leak = Math.sqrt(otherSq);
+          if (leak > maxLeak) maxLeak = leak;
+        }
+        checks.push({ label: 'Eigenfreq (m10, m13, m27)', expected: '< 2.0%', measured: `${(maxFreqErr * 100).toFixed(3)}%`, pass: maxFreqErr < 0.02 });
+        checks.push({ label: 'Modal orthogonality leakage', expected: '< 1e-5', measured: maxLeak.toExponential(2), pass: maxLeak < 1e-5 });
+
+        exciteEigenmode(13, 0.04);
+        temperatureK = 0; damping = 0.004; driveAmp = 0; simTime = 0;
+        const a0 = cycleAvgModeAmp(13);
+        for (let s = 0; s < 3000; s++) stepLlg(0.65, true);
+        const expDecay = Math.exp(-modeGamma(13) * 1950);
+        const gotDecay = cycleAvgModeAmp(13) / a0;
+        const decayDiff = Math.abs(gotDecay - expDecay);
+        checks.push({
+          label: 'Gilbert decay α=0.004 vs exp(−Γτ)',
+          expected: expDecay.toFixed(4),
+          measured: `${gotDecay.toFixed(4)} (Δ=${decayDiff.toFixed(4)})`,
+          pass: decayDiff < 0.04
+        });
+        return checks;
+      }
+    },
+    {
+      id: 'ver_tukey_thresholds',
+      name: 'Ver 3 · 1ns Tukey, 29-Mode h_th & Growth',
+      desc: 'Exact 1 ns tukey(128,1)[:64], distinct 29-mode thresholds (no 1.4mT clip), sub/super h_th',
+      run() {
+        const checks = [];
+        setNmmMode(false);
+        temperatureK = 0; dualTone = true; driveAmp = 0.005; driveAmp2 = 0.005; tone2DelayNs = 3.0; tone2WaitSS = false; simTime = 0;
+        const envErr = Math.max(
+          Math.abs(tone1EnvAt(0)),
+          Math.abs(tone1EnvAt(nsToTau(0.5)) - 0.5),
+          Math.abs(tone1EnvAt(nsToTau(1.0)) - 1.0),
+          Math.abs(tone2EnvAt(usToTau(2.9))),
+          Math.abs(tone2EnvAt(usToTau(3.0) + nsToTau(0.5)) - 0.5)
+        );
+        checks.push({ label: '1ns Tukey + 3.0µs gate', expected: '< 1e-6 err', measured: envErr.toExponential(2), pass: envErr < 1e-6 });
+
+        damping = 0.0020;
+        let minTh = Infinity, maxTh = 0;
+        for (let m = 0; m < M; m++) {
+          const th = parametricThresholdMT(m);
+          if (th < minTh) minTh = th;
+          if (th > maxTh) maxTh = th;
+        }
+        const hCeil = computeArnoldHMaxMT(3.38, 4.18);
+        damping = 0.0080;
+        let minTh8 = Infinity, maxTh8 = 0;
+        for (let m = 0; m < M; m++) {
+          const th = parametricThresholdMT(m);
+          if (th < minTh8) minTh8 = th;
+          if (th > maxTh8) maxTh8 = th;
+        }
+        const hCeil8 = computeArnoldHMaxMT(3.38, 4.18);
+        damping = 0.0020;
+        checks.push({
+          label: '29-mode h_th spread & Arnold ceiling',
+          expected: 'distinct (>25%) & unclipped',
+          measured: `α=.002: ${minTh.toFixed(3)}–${maxTh.toFixed(3)}mT (ceil ${hCeil.toFixed(1)}) · α=.008: ${minTh8.toFixed(2)}–${maxTh8.toFixed(2)}mT (ceil ${hCeil8.toFixed(1)})`,
+          pass: (maxTh / minTh) > 1.25 && (maxTh - minTh) > 0.10 && hCeil > maxTh * 1.15 && (maxTh8 - minTh8) > 0.40 && hCeil8 > maxTh8 * 1.15
+        });
+
+        driveMode = 'parallel'; dualTone = false; driveAmp2 = 0;
+        const hTh13 = parametricThreshold(13);
+        driveFreq = 2 * fGhzArr[13]; driveAmp = 0.4 * hTh13; simTime = 0;
+        seedSpins(0.005, [13]);
+        for (let s = 0; s < 4000; s++) stepLlg(0.65, true);
+        const subAmp = cycleAvgModeAmp(13);
+
+        driveAmp = 2.0 * hTh13; simTime = 0; seedSpins(0.002, [13]);
+        for (let s = 0; s < 8000; s++) stepLlg(0.65, true);
+        const supAmp = cycleAvgModeAmp(13);
+        checks.push({
+          label: '0.4×h_th decay vs 2.0×h_th growth',
+          expected: '<0.0015 / >0.025',
+          measured: `${subAmp.toFixed(4)} / ${supAmp.toFixed(4)}`,
+          pass: subAmp < 0.0015 && supAmp > 0.025
+        });
+        return checks;
+      }
+    },
+    {
+      id: 'ver_eq33_4a_4b',
+      name: 'Ver 4 · Eq.(33), 4A Shift Lock & 4B Cross-Pump',
+      desc: 'Hardening m13 & softening m27, 4A OFF pins tongues, 4B P_hk reduces h_th & cross-pumps m15',
+      run() {
+        const checks = [];
+        setNmmMode(false);
+        temperatureK = 0; driveMode = 'parallel'; damping = 0.0020; dualTone = false; driveAmp2 = 0; tone2DelayNs = 0; tone2WaitSS = false;
+
+        driveFreq = 2 * fGhzArr[13] + 0.002; driveAmp = 1.6 * parametricThreshold(13); simTime = 0;
+        seedSpins(0.005, [13]);
+        fastForwardSteadyState();
+        const th13 = steadyStateAmp(13, driveFreq, driveAmp, 0, true), sim13 = cycleAvgModeAmp(13);
+        const err13 = Math.abs(sim13 - th13) / Math.max(1e-6, th13);
+
+        driveFreq = 2 * fGhzArr[27] - 0.002; driveAmp = 1.7 * parametricThreshold(27); simTime = 0;
+        seedSpins(0.005, [27]);
+        fastForwardSteadyState();
+        const th27 = steadyStateAmp(27, driveFreq, driveAmp, 0, true), sim27 = cycleAvgModeAmp(27);
+        const err27 = Math.abs(sim27 - th27) / Math.max(1e-6, th27);
+        checks.push({
+          label: "Eq.(33) m13 (+N) & m27 (−N)",
+          expected: '< 5.0% err',
+          measured: `m13 ${(err13 * 100).toFixed(2)}% · m27 ${(err27 * 100).toFixed(2)}%`,
+          pass: err13 < 0.05 && err27 < 0.05
+        });
+
+        // Verify 4A OFF keeps Arnold tongues completely pinned horizontally
+        aRe.fill(0); aIm.fill(0); aRe[13] = 0.05;
+        terms.t4A = true;
+        const shiftOn = modeMutualNfsShiftGHz(15);
+        terms.t4A = false;
+        const shiftOff = modeMutualNfsShiftGHz(15) + modeNfsShiftGHz(15);
+        terms.t4A = true;
+        checks.push({
+          label: '4A N_hk OFF stops tongue drift',
+          expected: '|shift(OFF)| = 0',
+          measured: `ON=${(shiftOn * 1000).toFixed(1)}MHz · OFF=${shiftOff.toFixed(4)}`,
+          pass: Math.abs(shiftOn) > 1e-4 && shiftOff === 0
+        });
+
+        // Verify physical threshold reduction & cross-pumping comes from 4B P_hk a_h* a_k^2
+        damping = 0.0020; temperatureK = 0;
+        aRe.fill(0); aIm.fill(0);
+        const baseTh15 = instantaneousArnoldThresholdMT(15, 2 * fGhzArr[15]);
+        aRe[16] = 0.045;
+        const fTip15 = 2 * (fGhzArr[15] + modeMutualNfsShiftGHz(15));
+        terms.t4B = false;
+        const th15No4B = instantaneousArnoldThresholdMT(15, fTip15);
+        terms.t4B = true;
+        const th15With4B = instantaneousArnoldThresholdMT(15, fTip15);
+        const dh4B = th15No4B - th15With4B;
+
+        // Dynamic 4B cross-pumping on strongly coupled resonant pair (11,12) with ZERO external drive
+        setNmmMode(false); terms.t4A = true; terms.t4B = false;
+        driveAmp = 0; driveAmp2 = 0; dualTone = false; simTime = 0;
+        aRe.fill(0); aIm.fill(0); aRe[12] = 0.045; aRe[11] = 0.002;
+        for (let s = 0; s < 800; s++) stepLlg(0.5, true);
+        const m11Decay = cycleAvgModeAmp(11);
+        simTime = 0; aRe.fill(0); aIm.fill(0); aRe[12] = 0.045; aRe[11] = 0.002;
+        terms.t4B = true;
+        for (let s = 0; s < 800; s++) stepLlg(0.5, true);
+        const m11Cross = cycleAvgModeAmp(11);
+        terms.t4B = false;
+        checks.push({
+          label: '4B P_hk lowers h_th & cross-pumps m11',
+          expected: 'Δh_th > 0.1mT, m11 > 0.004',
+          measured: `Δh(m15)=${dh4B.toFixed(3)}mT · m11=${m11Cross.toFixed(4)} (4A-only ${m11Decay.toFixed(4)})`,
+          pass: Math.abs(th15No4B - baseTh15) < 1e-6 && dh4B > 0.1 && m11Decay < 0.0016 && m11Cross > 0.004
+        });
+        return checks;
+      }
+    },
+    {
+      id: 'ver_two_mode_scenarios',
+      name: 'Ver 5 · Scenarios 1 & 2 (0K/300K + Swap)',
+      desc: 'Scenario 1 c++ (13,23); Scenario 2 nonrecip (13,16) at 0K & 300K + Swap T1↔T2',
+      run() {
+        const checks = [];
+        setNmmMode(false);
+        temperatureK = 0;
+        applyPreset('coex');
+        fastForwardSteadyState();
+        const c13 = cycleAvgModeAmp(13), c23 = cycleAvgModeAmp(23);
+        checks.push({
+          label: 'Scenario 1 Coex (13,23) 0K',
+          expected: 'm13>0.025 & m23>0.080',
+          measured: `(${c13.toFixed(4)}, ${c23.toFixed(4)})`,
+          pass: c13 > 0.025 && c23 > 0.08
+        });
+
+        temperatureK = 0;
+        applyPreset('nonrecip');
+        fastForwardSteadyState();
+        const n13 = cycleAvgModeAmp(13), n16 = cycleAvgModeAmp(16);
+        swapTonesAction();
+        fastForwardSteadyState();
+        const s13 = cycleAvgModeAmp(13), s16 = cycleAvgModeAmp(16);
+        checks.push({
+          label: 'Scenario 2 Nonrecip 0K (T1→T2 / Swap)',
+          expected: 'm13 wins / m16 wins',
+          measured: `T1(${n13.toFixed(3)},${n16.toFixed(3)}) Sw(${s13.toFixed(3)},${s16.toFixed(3)})`,
+          pass: n13 > 0.015 && n16 < 0.001 && s16 > 0.025 && s13 < 0.001
+        });
+
+        temperatureK = 300; reseedRng(20260101);
+        applyPreset('nonrecip');
+        fastForwardSteadyState();
+        const r13 = cycleAvgModeAmp(13), r16 = cycleAvgModeAmp(16);
+        swapTonesAction();
+        fastForwardSteadyState();
+        const rs13 = cycleAvgModeAmp(13), rs16 = cycleAvgModeAmp(16);
+        checks.push({
+          label: 'Scenario 2 Nonrecip 300K (T1→T2 / Swap)',
+          expected: 'm13 wins / m16 wins',
+          measured: `T1(${r13.toFixed(3)},${r16.toFixed(3)}) Sw(${rs13.toFixed(3)},${rs16.toFixed(3)})`,
+          pass: r13 > 0.015 && r16 < 0.003 && rs16 > 0.025 && rs13 < 0.003
+        });
+
+        drivePhase1 = 0; drivePhase2 = 0;
+        swapTonesAction();
+        const pAfterSwap = relPhaseDeg();
+        checks.push({ label: 'Relative Δφ preserved across Swap', expected: '0°', measured: `${pAfterSwap}°`, pass: pAfterSwap === 0 });
+        return checks;
+      }
+    },
+    {
+      id: 'ver_phase_fdt_fft_slew',
+      name: 'Ver 6 · Δφ, FDT 300K, 1.5–2.3G FFT & Smooth Y',
+      desc: '0° vs 180° phase gate, Brown 300K equipartition, 4096-pt 3.4MHz FFT peak & non-instant plot Y slew',
+      run() {
+        const checks = [];
+        setNmmMode(false);
+        damping = 0.002; temperatureK = 0; driveMode = 'parallel';
+        const hSub = 0.75 * parametricThreshold(13);
+        driveFreq = 2 * fGhzArr[13]; driveAmp = hSub;
+        dualTone = true; driveFreq2 = driveFreq; driveAmp2 = hSub;
+        tone2DelayNs = 0; tone2WaitSS = false; drivePhase1 = 0; drivePhase2 = 0; simTime = 0;
+        seedSpins(0.005, [13]); fastForwardSteadyState();
+        const a0deg = cycleAvgModeAmp(13);
+        drivePhase2 = Math.PI; simTime = 0;
+        seedSpins(0.005, [13]); fastForwardSteadyState();
+        const a180deg = cycleAvgModeAmp(13);
+        checks.push({
+          label: 'Relative Phase Δφ (0° vs 180°)',
+          expected: '>0.035 / <1e-4',
+          measured: `${a0deg.toFixed(4)} / ${a180deg.toFixed(5)}`,
+          pass: a0deg > 0.035 && a180deg < 1e-4
+        });
+
+        temperatureK = 300; reseedRng(12345); damping = 0.002; driveAmp = 0; dualTone = false; driveAmp2 = 0; simTime = 0;
+        seedSpins(0.0);
+        let sumSq = 0, nSamp = 0;
+        for (let i = 0; i < 3600; i++) {
+          stepLlg(0.65, true);
+          if (i >= 1800 && i % 20 === 0) {
+            for (let m = 0; m < M; m++) sumSq += aRe[m] * aRe[m] + aIm[m] * aIm[m];
+            nSamp += M;
+          }
+        }
+        const rmsSim = Math.sqrt(sumSq / nSamp), rmsTh = thermalRmsAmp();
+        const ratio = rmsSim / rmsTh;
+        checks.push({
+          label: 'Brown FDT 300 K equipartition RMS',
+          expected: '0.75–1.30 × a_th',
+          measured: `${ratio.toFixed(3)}× (${rmsSim.toExponential(2)})`,
+          pass: ratio > 0.75 && ratio < 1.30
+        });
+
+        setNmmMode(true); temperatureK = 0; damping = 0.002;
+        exciteEigenmode(27, 0.05);
+        for (let i = 0; i < 1200; i++) stepLlg(0.65, true);
+        updateSpectrum();
+        const fErr = Math.abs(lastSpecPeakGHz - fGhzArr[27]);
+        checks.push({
+          label: '4096-pt Full NMM FFT peak (m27)',
+          expected: `${fGhzArr[27].toFixed(4)} ± 0.015G`,
+          measured: `${lastSpecPeakGHz.toFixed(4)} GHz (Δ=${(fErr * 1000).toFixed(1)}MHz)`,
+          pass: fErr < 0.015
+        });
+        setNmmMode(false);
+
+        // Smooth non-instantaneous Y axis rescaling check
+        resetModeHistory();
+        aRe.fill(0); aIm.fill(0); aRe[13] = 0.12;
+        simTime += 0.5; recordPlotSample();
+        lastPlotDrawMs = 0;
+        drawModeTimePlot();
+        const yAfter1 = plotYScale;
+        checks.push({
+          label: 'Non-instantaneous plot Y-axis slew',
+          expected: `0.02 < Y₁ < ${plotYTarget.toFixed(3)}`,
+          measured: `Y₁=${yAfter1.toFixed(4)} → target ${plotYTarget.toFixed(4)}`,
+          pass: yAfter1 > 0.0205 && yAfter1 < plotYTarget * 0.92
+        });
+        return checks;
+      }
+    },
+    {
+      id: 'bench_throughput',
+      name: 'Bench 7 · RK4 Solver & Render Throughput',
+      desc: 'Measures RWA Fast vs Full NMM integration speed (ksteps/s, ns/ms) & spatial render time',
+      run() {
+        const checks = [];
+        setNmmMode(false);
+        temperatureK = 0; driveMode = 'parallel'; driveFreq = 2 * fGhzArr[13];
+        driveAmp = 1.6 * parametricThreshold(13); damping = 0.002; simTime = 0;
+        seedSpins(0.01);
+        const tR0 = nowWallMs();
+        const rwaSteps = 2500;
+        for (let s = 0; s < rwaSteps; s++) stepLlg(0.65, true);
+        const dtRwa = Math.max(0.2, nowWallMs() - tR0);
+        const rwaKps = rwaSteps / dtRwa;
+        const rwaNsPerMs = ((rwaSteps * 0.65 * FREQ_TO_RAD) / (2 * Math.PI)) / dtRwa;
+
+        setNmmMode(true);
+        const tF0 = nowWallMs();
+        const fullSteps = 120;
+        for (let s = 0; s < fullSteps; s++) stepLlg(0.65, true);
+        const dtFull = Math.max(0.2, nowWallMs() - tF0);
+        const fullKps = fullSteps / dtFull;
+
+        const tS0 = nowWallMs();
+        for (let s = 0; s < 40; s++) reconstructSpatialSpins();
+        const spatialMs = Math.max(0.01, nowWallMs() - tS0) / 40;
+        setNmmMode(false);
+
+        swLog.lastBenchmark = {
+          at: new Date().toISOString(),
+          rwaKstepsPerSec: +rwaKps.toFixed(1),
+          rwaNsPerMs: +rwaNsPerMs.toFixed(2),
+          fullNmmKstepsPerSec: +fullKps.toFixed(2),
+          spatialReconMs: +spatialMs.toFixed(3)
+        };
+        checks.push({
+          label: 'RWA Fast RK4 throughput',
+          expected: '> 2.0 ksteps/s',
+          measured: `${rwaKps.toFixed(1)} ksteps/s (${rwaNsPerMs.toFixed(1)} ns/ms)`,
+          pass: Number.isFinite(rwaKps) && rwaKps > 2.0
+        });
+        checks.push({
+          label: 'Full NMM Eq.(9) + Spatial φ_h render',
+          expected: 'finite & interactive',
+          measured: `${fullKps.toFixed(2)} ksteps/s · ${spatialMs.toFixed(2)} ms/frame`,
+          pass: Number.isFinite(fullKps) && Number.isFinite(spatialMs)
+        });
+        return checks;
+      }
+    }
+  ];
+
+  function renderVerifyUi() {
+    const listEl = document.getElementById('vmStageList');
+    const rowsEl = document.getElementById('vmCheckRows');
+    const progEl = document.getElementById('vmProgressBar');
+    const statusEl = document.getElementById('vmStatusText');
+    const badgeEl = document.getElementById('vmScoreBadge');
+    let totalChecks = 0, passedChecks = 0, doneStages = 0;
+    const allRows = [];
+    VERIFY_STAGES.forEach((st, idx) => {
+      const res = verifyStageResults[idx];
+      if (res) {
+        doneStages++;
+        res.checks.forEach(c => { totalChecks++; if (c.pass) passedChecks++; allRows.push(c); });
+      }
+    });
+    if (progEl) progEl.style.width = `${Math.round((doneStages / VERIFY_STAGES.length) * 100)}%`;
+    if (badgeEl) {
+      if (doneStages === 0) { badgeEl.textContent = 'IDLE'; badgeEl.className = 'vmBadge idle'; }
+      else {
+        const allOk = passedChecks === totalChecks;
+        badgeEl.textContent = `${passedChecks}/${totalChecks} ${allOk ? 'PASS' : 'FAIL'}`;
+        badgeEl.className = 'vmBadge ' + (allOk ? 'pass' : 'fail');
+      }
+    }
+    if (statusEl && !verifyRunning) {
+      statusEl.textContent = doneStages === 0
+        ? 'Ready — run all 7 stages or test individual calibration/physics stages below.'
+        : `Completed ${doneStages}/7 stages: ${passedChecks}/${totalChecks} assertions passed.`;
+    }
+    if (listEl) {
+      listEl.innerHTML = VERIFY_STAGES.map((st, idx) => {
+        const r = verifyStageResults[idx];
+        const cls = r ? (r.pass ? 'pass' : 'fail') : '';
+        const bCls = r ? (r.pass ? 'pass' : 'fail') : 'idle';
+        const bTxt = r ? `${r.passed}/${r.total} ${r.pass ? 'PASS' : 'FAIL'}` : 'PENDING';
+        return `<div class="vmStageCard ${cls}"><div><div class="vmStageName">${st.name}</div><div class="vmStageDesc">${st.desc}</div></div><div style="display:flex;align-items:center;gap:5px;"><span class="vmBadge ${bCls}">${bTxt}</span><button class="btn tiny" type="button" data-run-stage="${idx}">Run</button></div></div>`;
+      }).join('');
+    }
+    if (rowsEl) {
+      rowsEl.innerHTML = allRows.map(c =>
+        `<tr><td>${c.label}</td><td>${c.expected}</td><td>${c.measured}</td><td><span class="vmBadge ${c.pass ? 'pass' : 'fail'}">${c.pass ? 'PASS' : 'FAIL'}</span></td></tr>`
+      ).join('');
+    }
+  }
+
+  function runVerificationStage(idx, preserveState = true) {
+    const st = VERIFY_STAGES[idx];
+    if (!st) return null;
+    const snap = preserveState ? saveSimSnapshot() : null;
+    let checks = [];
+    try {
+      checks = st.run();
+    } catch (err) {
+      checks = [{ label: st.name, expected: 'no exception', measured: err && err.message ? err.message : String(err), pass: false }];
+    } finally {
+      if (preserveState && snap) restoreSimSnapshot(snap);
+    }
+    const passed = checks.filter(c => c.pass).length;
+    const out = { id: st.id, name: st.name, passed, total: checks.length, pass: passed === checks.length, checks, at: new Date().toISOString() };
+    verifyStageResults[idx] = out;
+    swLog.lastVerification = {
+      at: new Date().toISOString(),
+      stagesCompleted: verifyStageResults.filter(Boolean).length,
+      passedChecks: verifyStageResults.reduce((s, r) => s + (r ? r.passed : 0), 0),
+      totalChecks: verifyStageResults.reduce((s, r) => s + (r ? r.total : 0), 0),
+      stages: verifyStageResults.filter(Boolean)
+    };
+    recordLogEvent('verify', `Stage ${idx + 1}: ${st.name} (${passed}/${checks.length})`, { pass: out.pass });
+    renderVerifyUi();
+    return out;
+  }
+
+  async function runFullVerificationProtocol() {
+    if (verifyRunning) return swLog.lastVerification;
+    verifyRunning = true;
+    verifyAbort = false;
+    const stopBtn = document.getElementById('vmStopBtn');
+    const statusEl = document.getElementById('vmStatusText');
+    if (stopBtn) stopBtn.disabled = false;
+    const snap = saveSimSnapshot();
+    const yieldFrame = () => (typeof window !== 'undefined' && window.location && typeof setTimeout === 'function')
+      ? new Promise(r => setTimeout(r, 0))
+      : Promise.resolve();
+    try {
+      for (let i = 0; i < VERIFY_STAGES.length; i++) {
+        if (verifyAbort) break;
+        if (statusEl) statusEl.textContent = `Running stage ${i + 1}/7: ${VERIFY_STAGES[i].name}...`;
+        await yieldFrame();
+        runVerificationStage(i, false);
+      }
+    } finally {
+      restoreSimSnapshot(snap);
+      verifyRunning = false;
+      if (stopBtn) stopBtn.disabled = true;
+      renderVerifyUi();
+    }
+    return swLog.lastVerification;
+  }
+
+  function runThroughputBenchmark() {
+    const out = runVerificationStage(6, true);
+    renderVerifyUi();
+    return { benchmark: swLog.lastBenchmark, stage: out };
+  }
+
+  function inspectLiveCalibration() {
+    const active = [];
+    for (let m = 0; m < M; m++) {
+      const a = cycleAvgModeAmp(m);
+      if (a > 1e-4) active.push({ m, fGHz: +fGhzArr[m].toFixed(4), amp: +a.toFixed(5), hThMT: +parametricThresholdMT(m).toFixed(3), shift4AMHz: +(modeNfsShiftGHz(m) * 1000).toFixed(2) });
+    }
+    active.sort((a, b) => b.amp - a.amp);
+    const snap = captureLogState();
+    const cal = {
+      at: new Date().toISOString(),
+      damping,
+      temperatureK,
+      thermalRms: +thermalRmsAmp().toExponential(3),
+      terms: { ...terms },
+      arnoldCeilingMT: computeArnoldHMaxMT(3.38, 4.18),
+      fPeakGHz: lastSpecPeakGHz,
+      activeModes: active.slice(0, 8),
+      theory: snap.theory
+    };
+    swLog.lastCalibration = cal;
+    recordLogEvent('calibration', 'Live State vs Theory Inspection', { theory: cal.theory, fPeakGHz: cal.fPeakGHz });
+    const outEl = document.getElementById('vmLiveOut');
+    if (outEl) {
+      const lines = [
+        `LIVE CALIBRATION SNAPSHOT (${cal.at})`,
+        `  Drive: ${driveMode} · T1=${driveFreq.toFixed(4)}G @ ${(driveAmp * MU0_MS_MT).toFixed(3)}mT · T2=${dualTone ? `${driveFreq2.toFixed(4)}G @ ${(driveAmp2 * MU0_MS_MT).toFixed(3)}mT` : 'OFF'}`,
+        `  Bath: α=${damping.toFixed(4)}, T=${temperatureK}K (RMS a_th=${cal.thermalRms}) · DFT f_peak=${cal.fPeakGHz || '—'} GHz`,
+        `  Active Modes: ${cal.activeModes.map(x => `m${x.m}(${x.fGHz}G, a=${x.amp}, h_th=${x.hThMT}mT, Δ4A=${x.shift4AMHz}MHz)`).join(' | ') || 'none > 1e-4'}`,
+        `  d'Aquino Theory: ${cal.theory ? JSON.stringify(cal.theory) : 'no parallel drive active'}`
+      ];
+      outEl.textContent = lines.join('\n');
+    }
+    return cal;
+  }
+
+  function probe4Avs4BCrossPump() {
+    const snap = saveSimSnapshot();
+    let result;
+    try {
+      setNmmMode(false);
+      temperatureK = 0; damping = 0.0020;
+      aRe.fill(0); aIm.fill(0);
+      const baseTh15 = instantaneousArnoldThresholdMT(15, 2 * fGhzArr[15]);
+      aRe[16] = 0.045;
+      terms.t4A = true; terms.t4B = false;
+      const shift4AMHz = modeMutualNfsShiftGHz(15) * 1000;
+      const fTip15Shift = 2 * (fGhzArr[15] + modeMutualNfsShiftGHz(15));
+      const thWith4AOnly = instantaneousArnoldThresholdMT(15, fTip15Shift);
+      terms.t4A = false;
+      const shift4AOffMHz = modeMutualNfsShiftGHz(15) * 1000;
+      terms.t4A = true;
+      terms.t4B = true;
+      const cp = crossPump4BGHz(15, fTip15Shift);
+      const thWith4B = instantaneousArnoldThresholdMT(15, fTip15Shift);
+
+      // Integrate free cross-pumping on resonant pair m12 (|a12|=0.045) -> m11 with zero RF drive
+      driveAmp = 0; driveAmp2 = 0; dualTone = false; simTime = 0;
+      aRe.fill(0); aIm.fill(0); aRe[12] = 0.045; aRe[11] = 0.002;
+      terms.t4A = true; terms.t4B = false;
+      for (let s = 0; s < 800; s++) stepLlg(0.5, true);
+      const m11After4AOnly = cycleAvgModeAmp(11);
+
+      simTime = 0; aRe.fill(0); aIm.fill(0); aRe[12] = 0.045; aRe[11] = 0.002;
+      terms.t4B = true;
+      for (let s = 0; s < 800; s++) stepLlg(0.5, true);
+      const m11After4B = cycleAvgModeAmp(11);
+
+      result = {
+        p15_16_GHz: +(Math.hypot(P4B[(15 * M + 16) * 2], P4B[(15 * M + 16) * 2 + 1]) * F_M).toFixed(3),
+        p11_12_GHz: +(Math.hypot(P4B[(11 * M + 12) * 2], P4B[(11 * M + 12) * 2 + 1]) * F_M).toFixed(3),
+        baseTh15MT: +baseTh15.toFixed(4),
+        thWith4AOnlyMT: +thWith4AOnly.toFixed(4),
+        shift4AMHz: +shift4AMHz.toFixed(2),
+        shift4AOffMHz: +shift4AOffMHz.toFixed(4),
+        thWith4BMT: +thWith4B.toFixed(4),
+        thresholdReductionMT: +(baseTh15 - thWith4B).toFixed(4),
+        crossPumpRateGHz: +cp.totalRateGHz.toFixed(5),
+        m11Seed: 0.002,
+        m11After4AOnly: +m11After4AOnly.toFixed(5),
+        m11After4B: +m11After4B.toFixed(5)
+      };
+    } finally {
+      restoreSimSnapshot(snap);
+    }
+    const outEl = document.getElementById('vmLiveOut');
+    if (outEl) {
+      outEl.textContent = [
+        '4A N_hk (Frequency Shift) vs 4B P_hk a_h* a_k² (4-Magnon Cross-Pumping) PROBE:',
+        `  Threshold test on m15 (|P_15,16|=${result.p15_16_GHz} GHz, |a16|=0.045):`,
+        `  • Baseline m15 tip threshold:  h_th = ${result.baseTh15MT} mT`,
+        `  • With 4A N_hk ON (at shifted tip): h_th = ${result.thWith4AOnlyMT} mT (UNMOVED! Δf = ${result.shift4AMHz} MHz horizontal only)`,
+        `  • With 4A N_hk OFF:            Δf   = ${result.shift4AOffMHz} MHz (Arnold tongues pinned)`,
+        `  • With 4B P_hk ON:             W_4B = ${result.crossPumpRateGHz} GHz → h_th drops to ${result.thWith4BMT} mT (−${result.thresholdReductionMT} mT)!`,
+        `  • Dynamic h_ext=0 integration on resonant pair (|P_11,12|=${result.p11_12_GHz} GHz, |a12|=0.045, seed m11=0.0020):`,
+        `      4A only → m11 decays to ${result.m11After4AOnly}`,
+        `      4B ON   → m11 cross-pumped to ${result.m11After4B} (physical threshold reduction!)`
+      ].join('\n');
+    }
+    recordLogEvent('calibration', '4A vs 4B Cross-Pumping Probe', result);
+    return result;
+  }
+
+  function renderDbModalStatus(extraMsg = '') {
+    const el = document.getElementById('dbModalStatus');
+    const urlIn = document.getElementById('dbUrlInput');
+    const keyIn = document.getElementById('dbKeyInput');
+    const cfg = getDbConfig();
+    if (urlIn && !urlIn.value) urlIn.value = cfg.url;
+    if (keyIn && !keyIn.value) keyIn.value = cfg.key;
+    if (!el) return;
+    const lines = [
+      `Active URL: ${cfg.url}`,
+      `Key type: ${cfg.key.startsWith('sb_publishable_') ? 'Supabase publishable key (anon)' : 'Custom API Key / JWT'}`,
+      `Last DB Status: ${formatDbDiagText()}`
+    ];
+    if (extraMsg) lines.push('', extraMsg);
+    if (swLog.lastDbAttempt && !swLog.lastDbAttempt.ok && (swLog.lastDbAttempt.status === 401 || swLog.lastDbAttempt.code === '42501')) {
+      lines.push('', 'Supabase SQL to allow anon inserts/reads:', RLS_SQL_FIX);
+    }
+    el.textContent = lines.join('\n');
+  }
+
+  async function refreshIdbVault() {
+    const listEl = document.getElementById('idbSessionsList');
+    if (!listEl) return;
+    const items = await listIdbSessions();
+    if (!items.length) {
+      listEl.innerHTML = '<div class="vmStageDesc">No cached IndexedDB sessions yet — sessions auto-save every 10s or on Save → DB.</div>';
+      return;
+    }
+    listEl.innerHTML = items.slice(0, 12).map(it => {
+      const rep = it.report || {};
+      const cnt = rep.counts || {};
+      const ver = rep.verification ? ` · Ver ${rep.verification.passedChecks}/${rep.verification.totalChecks}` : '';
+      return `<div class="vmSessionItem"><div><div><b>${String(it.sessionId || '').slice(0, 8)}</b> · ${String(it.savedAt || '').replace('T', ' ').slice(0, 19)}</div><div class="vmStageDesc">${cnt.events || 0} ev / ${cnt.samples || 0} sp${ver}</div></div><div style="display:flex;gap:4px;align-items:center;"><button class="btn tiny" type="button" data-idb-export="${it.sessionId}">JSON</button><button class="btn tiny" type="button" data-idb-del="${it.sessionId}">Del</button></div></div>`;
+    }).join('');
+  }
+
+  function openVerifyModal(tabName = 'protocol') {
+    if (!verifyModalEl) return;
+    verifyModalEl.hidden = false;
+    document.querySelectorAll('#vmTabs .vmTab').forEach(b => {
+      if (b && b.classList) b.classList.toggle('active', b.dataset && b.dataset.tab === tabName);
+    });
+    const tP = document.getElementById('vmTabProtocol');
+    const tL = document.getElementById('vmTabLive');
+    const tD = document.getElementById('vmTabDb');
+    if (tP) tP.hidden = tabName !== 'protocol';
+    if (tL) tL.hidden = tabName !== 'live';
+    if (tD) tD.hidden = tabName !== 'db';
+    renderVerifyUi();
+    renderDbModalStatus();
+    if (tabName === 'db') refreshIdbVault();
+  }
+
+  const quickVerifyBtn = document.getElementById('quickVerifyBtn');
+  if (quickVerifyBtn) quickVerifyBtn.addEventListener('click', () => openVerifyModal('protocol'));
+  const btnOpenVerify = document.getElementById('btnOpenVerify');
+  if (btnOpenVerify) btnOpenVerify.addEventListener('click', () => openVerifyModal('protocol'));
+  const vmCloseBtn = document.getElementById('vmCloseBtn');
+  if (vmCloseBtn) vmCloseBtn.addEventListener('click', () => { if (verifyModalEl) verifyModalEl.hidden = true; });
+  const vmTabsEl = document.getElementById('vmTabs');
+  if (vmTabsEl) vmTabsEl.addEventListener('click', e => {
+    const b = e.target && e.target.closest ? e.target.closest('.vmTab[data-tab]') : null;
+    if (b && b.dataset) openVerifyModal(b.dataset.tab);
+  });
+  const vmStageListEl = document.getElementById('vmStageList');
+  if (vmStageListEl) vmStageListEl.addEventListener('click', e => {
+    const b = e.target && e.target.closest ? e.target.closest('button[data-run-stage]') : null;
+    if (b && b.dataset) runVerificationStage(Number(b.dataset.runStage), true);
+  });
+  const vmRunAllBtn = document.getElementById('vmRunAllBtn');
+  if (vmRunAllBtn) vmRunAllBtn.addEventListener('click', () => runFullVerificationProtocol());
+  const vmRunBenchBtn = document.getElementById('vmRunBenchBtn');
+  if (vmRunBenchBtn) vmRunBenchBtn.addEventListener('click', () => runThroughputBenchmark());
+  const vmStopBtn = document.getElementById('vmStopBtn');
+  if (vmStopBtn) vmStopBtn.addEventListener('click', () => { verifyAbort = true; });
+  const vmSaveVerifiedBtn = document.getElementById('vmSaveVerifiedBtn');
+  if (vmSaveVerifiedBtn) vmSaveVerifiedBtn.addEventListener('click', () => handleSaveLogDb('Save Verified Report → DB'));
+  const vmInspectLiveBtn = document.getElementById('vmInspectLiveBtn');
+  if (vmInspectLiveBtn) vmInspectLiveBtn.addEventListener('click', () => inspectLiveCalibration());
+  const vmProbe4BBtn = document.getElementById('vmProbe4BBtn');
+  if (vmProbe4BBtn) vmProbe4BBtn.addEventListener('click', () => probe4Avs4BCrossPump());
+
+  const dbSaveConfigBtn = document.getElementById('dbSaveConfigBtn');
+  if (dbSaveConfigBtn) dbSaveConfigBtn.addEventListener('click', () => {
+    const u = document.getElementById('dbUrlInput'), k = document.getElementById('dbKeyInput');
+    saveDbConfig(u ? u.value : '', k ? k.value : '');
+    renderDbModalStatus('Saved DB config to localStorage.');
+  });
+  const dbResetConfigBtn = document.getElementById('dbResetConfigBtn');
+  if (dbResetConfigBtn) dbResetConfigBtn.addEventListener('click', () => {
+    const cfg = resetDbConfig();
+    const u = document.getElementById('dbUrlInput'), k = document.getElementById('dbKeyInput');
+    if (u) u.value = cfg.url;
+    if (k) k.value = cfg.key;
+    renderDbModalStatus('Reset DB config to default Supabase endpoint.');
+  });
+  const dbTestConnBtn = document.getElementById('dbTestConnBtn');
+  if (dbTestConnBtn) dbTestConnBtn.addEventListener('click', async () => {
+    const u = document.getElementById('dbUrlInput'), k = document.getElementById('dbKeyInput');
+    if (u && k && (u.value || k.value)) saveDbConfig(u.value, k.value);
+    renderDbModalStatus('Testing GET (SELECT) + POST (INSERT)...');
+    const res = await testDbConnection();
+    const rTxt = res.readDiag && res.readDiag.ok ? `GET OK (HTTP ${res.readDiag.status})` : `GET FAILED (HTTP ${res.readDiag ? res.readDiag.status : '?'} ${res.readDiag && res.readDiag.code ? res.readDiag.code : ''}: ${res.readDiag ? res.readDiag.message : ''})`;
+    const wTxt = res.writeOk ? `POST OK (HTTP ${res.writeDiag ? res.writeDiag.status : 201})` : `POST FAILED (${formatDbDiagText()})`;
+    renderDbModalStatus(`TEST RESULT:\n  • ${rTxt}\n  • ${wTxt}`);
+    refreshIdbVault();
+  });
+  const dbCopyRlsBtn = document.getElementById('dbCopyRlsBtn');
+  if (dbCopyRlsBtn) dbCopyRlsBtn.addEventListener('click', async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(RLS_SQL_FIX);
+        renderDbModalStatus('Copied RLS SQL fix to clipboard.');
+      } else {
+        renderDbModalStatus(`Copy this SQL into Supabase SQL Editor:\n${RLS_SQL_FIX}`);
+      }
+    } catch (_) {
+      renderDbModalStatus(`Copy this SQL into Supabase SQL Editor:\n${RLS_SQL_FIX}`);
+    }
+  });
+  const idbSessionsListEl = document.getElementById('idbSessionsList');
+  if (idbSessionsListEl) idbSessionsListEl.addEventListener('click', async e => {
+    const exBtn = e.target && e.target.closest ? e.target.closest('button[data-idb-export]') : null;
+    if (exBtn && exBtn.dataset) {
+      const items = await listIdbSessions();
+      const found = items.find(x => x.sessionId === exBtn.dataset.idbExport);
+      if (found && found.report) exportLogJsonFile(found.report);
+      return;
+    }
+    const delBtn = e.target && e.target.closest ? e.target.closest('button[data-idb-del]') : null;
+    if (delBtn && delBtn.dataset) {
+      await deleteIdbSession(delBtn.dataset.idbDel);
+      refreshIdbVault();
+    }
+  });
 
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('error', e => {
