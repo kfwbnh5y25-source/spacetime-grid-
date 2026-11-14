@@ -388,7 +388,10 @@ function loadSpinWavesContext() {
     mx, my, mz, activeMask, modeTemplates, MODE_SPECS,
     buildMaskAndModes, seedSpins, exciteEigenmode, stepLlg,
     modeFreqGHz, parametricThreshold, arnoldThreshold, cycleAvgModeAmp, besselJ,
-    selfNfsCoeff, mutualNfsCoeff, modeNfsShiftGHz,
+    selfNfsCoeff, mutualNfsCoeff, llgMutualNfsCoeff, modeNfsShiftGHz, modeMutualNfsShiftGHz,
+    modeGamma, steadyStateAmp, steadyState2Mode, fastForwardSteadyState,
+    setNikCustom(i, j, val) { nikCustom[i][j] = val; refreshHasCustomNik(); },
+    resetNikCustom() { for (const r of nikCustom) r.fill(null); refreshHasCustomNik(); },
     setState(patch) {
       if ('geometryMode' in patch) geometryMode = patch.geometryMode;
       if ('driveMode' in patch) driveMode = patch.driveMode;
@@ -398,9 +401,15 @@ function loadSpinWavesContext() {
       if ('damping' in patch) damping = patch.damping;
       if ('chi3m' in patch) chi3m = patch.chi3m;
       if ('chi4m' in patch) chi4m = patch.chi4m;
+      if ('dualTone' in patch) dualTone = patch.dualTone;
+      if ('driveFreq2' in patch) driveFreq2 = patch.driveFreq2;
+      if ('driveAmp2' in patch) driveAmp2 = patch.driveAmp2;
+      if ('tone2DelayNs' in patch) tone2DelayNs = patch.tone2DelayNs;
+      if ('drivePhase2' in patch) drivePhase2 = patch.drivePhase2;
+      if ('arnoldTarget' in patch) arnoldTarget = patch.arnoldTarget;
       if ('simTime' in patch) simTime = patch.simTime;
     },
-    getState() { return { geometryMode, driveMode, driveFreq, driveAmp, biasH0, damping, simTime }; },
+    getState() { return { geometryMode, driveMode, driveFreq, driveAmp, biasH0, damping, simTime, dualTone, driveFreq2, driveAmp2, tone2DelayNs }; },
     meanTransverseAmp() {
       let sum = 0, cnt = 0;
       for (let i = 0; i < N; i++) {
@@ -542,17 +551,48 @@ test("N. Spin-wave model: d'Aquino single-mode steady-state, LLG NFS sign, dynam
   spin.buildMaskAndModes();
   const f0 = spin.modeFreqGHz(0);
 
-  // Pure LLG (chi4m = 0) has negative (softening) nonlinear frequency shift
+  // Pure LLG (chi4m = 0, chi3m = 0) has negative (softening) NFS and ~2.0x cross-mode factor
+  spin.setState({ chi3m: 0.0 });
+  const n0Pure = spin.selfNfsCoeff(0);
+  const n01Pure = spin.mutualNfsCoeff(0, 1);
+  assert.ok(n0Pure < 0, `Pure LLG (chi4m=0) must soften (negative NFS): got ${n0Pure.toFixed(4)}`);
+  assert.ok(Math.abs(n01Pure / n0Pure - 2.0) < 0.15, `Pure LLG cross-mode n_01 should be ~2.0x self n_00: got ${(n01Pure / n0Pure).toFixed(3)}`);
+  spin.setState({ chi3m: 0.16 });
   const n0 = spin.selfNfsCoeff(0);
   const n01 = spin.mutualNfsCoeff(0, 1);
-  assert.ok(n0 < 0, `Pure LLG (chi4m=0) must soften (negative NFS): got ${n0.toFixed(4)}`);
-  assert.ok(Math.abs(n01 / n0 - 1.5) < 0.05, `Cross-mode n_01 should be ~1.5x self n_00: got ${(n01 / n0).toFixed(3)}`);
+  assert.ok(n0 < 0 && n01 / n0 > 1.8 && n01 / n0 < 2.6, `With reactive 3M Kerr (chi3m=0.16), n_01/n_00 should stay near ~2x: got ${(n01 / n0).toFixed(3)}`);
 
   // Exciting mode 1 must shift mode 0's frequency via n_01 * A_1^2 even when mode 0 is unexcited
   spin.exciteEigenmode(1);
   for (let s = 0; s < 50; s++) spin.stepLlg(0.01);
   assert.ok(spin.modeNfsShiftGHz(0) < -0.002, `Exciting mode 1 should soften mode 0 via n_01: got ${spin.modeNfsShiftGHz(0).toFixed(5)} GHz`);
   spin.setState({ driveMode: 'parallel' });
+
+  // Reactive 3-magnon Kerr: increasing chi3m shifts n_00 via virtual 3M process
+  const n0_chi3 = spin.selfNfsCoeff(0);
+  spin.setState({ chi3m: 0.40 });
+  const n0_hiChi3 = spin.selfNfsCoeff(0);
+  assert.ok(Math.abs(n0_hiChi3 - n0_chi3) > 0.01, `Reactive 3M Kerr should modify n_00 when chi3m increases: ${n0_chi3.toFixed(4)} vs ${n0_hiChi3.toFixed(4)}`);
+  spin.setState({ chi3m: 0.16 });
+
+  // Delayed dual-tone nonreciprocity: arrival order of Tone 1 vs Tone 2 (tone2DelayNs > 0) selects different attractors
+  {
+    spin.setState({ driveMode: 'parallel', biasH0: 0.29, damping: 0.045, chi3m: 0.0, chi4m: -0.50 });
+    const h0th = spin.parametricThreshold(0), h1th = spin.parametricThreshold(1);
+    const f1t = spin.modeFreqGHz(1);
+    // Order A: Mode 0 first (t=0), Mode 1 delayed by 1.0 ns -> Mode 0 wins and suppresses Mode 1
+    spin.setState({ driveFreq: 2 * f0 + 0.05, driveAmp: 2.6 * h0th, dualTone: true, driveFreq2: 2 * f1t + 0.05, driveAmp2: 2.6 * h1th, tone2DelayNs: 1.0, drivePhase2: 0, simTime: 0 });
+    spin.seedSpins(0.03);
+    for (let s = 0; s < 4500; s++) spin.stepLlg(0.012);
+    const a0A = spin.cycleAvgModeAmp(0), a1A = spin.cycleAvgModeAmp(1);
+    // Order B (Swap T1<->T2): Mode 1 first (t=0), Mode 0 delayed by 1.0 ns -> Mode 1 wins and suppresses Mode 0
+    spin.setState({ driveFreq: 2 * f1t + 0.05, driveAmp: 2.6 * h1th, dualTone: true, driveFreq2: 2 * f0 + 0.05, driveAmp2: 2.6 * h0th, tone2DelayNs: 1.0, drivePhase2: 0, simTime: 0 });
+    spin.seedSpins(0.03);
+    for (let s = 0; s < 4500; s++) spin.stepLlg(0.012);
+    const a0B = spin.cycleAvgModeAmp(0), a1B = spin.cycleAvgModeAmp(1);
+    assert.ok(a0A > a1A * 1.4 && a1B > a0B * 1.4, `Delayed dual-tone must be nonreciprocal under T1<->T2 swap: A=(${a0A.toFixed(3)},${a1A.toFixed(3)}) vs B=(${a0B.toFixed(3)},${a1B.toFixed(3)})`);
+    spin.setState({ dualTone: false, driveAmp2: 0, tone2DelayNs: 0, damping: 0.040, chi3m: 0.16 });
+  }
 
   // Negative chi4m (-0.35) reverses to hardening (positive NFS); positive chi4m (+0.35) strengthens softening
   spin.setState({ chi4m: -0.35 });
@@ -585,7 +625,7 @@ test("N. Spin-wave model: d'Aquino single-mode steady-state, LLG NFS sign, dynam
   // Inside Arnold tongue -> mode 0 must saturate at a finite steady-state plateau with smooth 1-cycle average
   spin.setState({ driveFreq: 2 * f0 - 0.15, driveAmp: 3.2 * hTip, simTime: 0 });
   spin.seedSpins(0.03);
-  for (let s = 0; s < 8000; s++) spin.stepLlg(0.012);
+  for (let s = 0; s < 11000; s++) spin.stepLlg(0.012);
   const shiftDuringDrive = spin.modeNfsShiftGHz(0);
   assert.ok(shiftDuringDrive > 0.01, `Hardening chi4m=-0.35 at finite steady state should produce positive NFS shift, got ${shiftDuringDrive.toFixed(4)} GHz`);
   const samples = [];
@@ -597,4 +637,47 @@ test("N. Spin-wave model: d'Aquino single-mode steady-state, LLG NFS sign, dynam
   const maxDev = Math.max(...samples.map(v => Math.abs(v - meanSS) / Math.max(1e-6, meanSS)));
   assert.ok(meanSS > 0.04, `Inside Arnold tongue, expected finite steady-state mode 0 amplitude, got ${meanSS.toFixed(4)}`);
   assert.ok(maxDev < 0.08, `1-cycle averaged steady-state amplitude should be smooth (maxDev=${(maxDev * 100).toFixed(1)}%)`);
+});
+
+test("O. Spin-wave Stage 1: Mode 5 seed, Fast-Fwd to SS, custom n_ij matrix, mutual Arnold shift & 2-mode d'Aquino steady state", () => {
+  spin.setState({ geometryMode: 'disk', driveMode: 'parallel', biasH0: 0.29, damping: 0.045, chi3m: 0.0, chi4m: -0.50, dualTone: false, driveAmp2: 0, tone2DelayNs: 0 });
+  spin.buildMaskAndModes();
+  spin.resetNikCustom();
+
+  // Mode 5 must be initialized by seedSpins
+  spin.seedSpins(0.03);
+  assert.ok(spin.modeProjection(5) > 0.01, `seedSpins must excite Mode 5: got ${spin.modeProjection(5).toFixed(4)}`);
+
+  // Custom n_ij matrix override updates mutual shift and restores cleanly
+  spin.exciteEigenmode(1);
+  for (let s = 0; s < 40; s++) spin.stepLlg(0.01);
+  const defaultMutShift = spin.modeMutualNfsShiftGHz(0);
+  spin.setNikCustom(0, 1, -2.5);
+  const customMutShift = spin.modeMutualNfsShiftGHz(0);
+  assert.ok(customMutShift < -0.005 && defaultMutShift > 0.002, `Custom n_01=-2.5 should flip mutual shift negative: default=${defaultMutShift.toFixed(4)} vs custom=${customMutShift.toFixed(4)}`);
+  spin.resetNikCustom();
+  assert.ok(Math.abs(spin.modeMutualNfsShiftGHz(0) - defaultMutShift) < 1e-6, 'resetNikCustom must restore exact LLG mutual shift');
+
+  // Mutual shift also shifts single-mode steadyStateAmp detuning origin
+  const f0 = spin.modeFreqGHz(0), h0 = spin.parametricThreshold(0);
+  const aNoMut = spin.steadyStateAmp(0, 2 * f0 + 0.06, 1.65 * h0, 0);
+  const aPosMut = spin.steadyStateAmp(0, 2 * f0 + 0.06, 1.65 * h0, 0.05);
+  assert.ok(aPosMut < aNoMut, `Positive mutual NFS shift decreases hardening plateau at fixed fp: ${aPosMut.toFixed(4)} < ${aNoMut.toFixed(4)}`);
+
+  // Fast-Fwd -> SS auto-seeds calm spins and converges to d'Aquino steady-state plateau
+  spin.seedSpins(0.0);
+  spin.setState({ driveMode: 'parallel', driveFreq: 2 * f0 + 0.06, driveAmp: 2.2 * h0, simTime: 0 });
+  spin.fastForwardSteadyState(24000);
+  const simSS = spin.cycleAvgModeAmp(0);
+  const thSS = spin.steadyStateAmp(0, 2 * f0 + 0.06, 2.2 * h0);
+  assert.ok(Math.abs(simSS - thSS) / thSS < 0.08, `fastForwardSteadyState should converge near d'Aquino steadyStateAmp: sim=${simSS.toFixed(4)} vs th=${thSS.toFixed(4)}`);
+
+  // 2-mode d'Aquino coexistence pair (2,3) vs suppression pair (3,5)
+  const f2 = spin.modeFreqGHz(2), h2 = spin.parametricThreshold(2);
+  const f3 = spin.modeFreqGHz(3), h3 = spin.parametricThreshold(3);
+  const [c2, c3] = spin.steadyState2Mode(2, 3, 2 * f2 + 0.06, 1.45 * h2, 2 * f3 + 0.06, 1.45 * h3);
+  assert.ok(c2 > 0.08 && c3 > 0.08, `Pair (2,3) should coexist in d'Aquino 2-mode solution: c2=${c2.toFixed(3)}, c3=${c3.toFixed(3)}`);
+  const f5 = spin.modeFreqGHz(5), h5 = spin.parametricThreshold(5);
+  const [s3, s5] = spin.steadyState2Mode(3, 5, 2 * f3 + 0.06, 1.45 * h3, 2 * f5 + 0.06, 1.45 * h5);
+  assert.ok(s3 === 0 && s5 > 0.15, `Pair (3,5) should show Mode 5 suppressing Mode 3: s3=${s3.toFixed(3)}, s5=${s5.toFixed(3)}`);
 });
