@@ -79,12 +79,32 @@ function loadPhysicsContext() {
     STATIC_WELL_PULL_PX,
     STATIC_WELL_SOFTENING_PX,
     CAUSAL_FRONT_WIDTH_PX,
+    SLINGSHOT_SPEED_SCALE,
+    N_BODY_MU_PER_MASS,
+    MAX_GPU_POINTERS,
     staticSchwarzschildDisplacement,
     deformSpacetimePoint,
     runGeodesicValidation,
     geodesicValidation,
     newMassValue,
-    gravityG
+    gravityG,
+    gridCameraState,
+    worldPoint,
+    screenPoint,
+    persistentMasses,
+    createMass,
+    massAccelerationAt,
+    advanceMasses,
+    resetView,
+    get cam() { return { viewX, viewY, viewScale, viewRotation, camComX, camComY, width, height }; },
+    setCam(patch) {
+      if ('viewX' in patch) viewX = patch.viewX;
+      if ('viewY' in patch) viewY = patch.viewY;
+      if ('viewScale' in patch) viewScale = patch.viewScale;
+      if ('viewRotation' in patch) viewRotation = patch.viewRotation;
+      if ('camComX' in patch) camComX = patch.camComX;
+      if ('camComY' in patch) camComY = patch.camComY;
+    }
   };
 })();`
   );
@@ -197,7 +217,7 @@ test('E. Regression: valid JS syntax, bumped SW cache, intact benchmark & Feedba
   execFileSync(process.execPath, ['--check', '/tmp/test_feedback.js']);
 
   const swMatch = swJs.match(/spacetime-shell-v(\d+)/);
-  assert.ok(swMatch && Number(swMatch[1]) >= 48, `Expected sw.js cache >= v48, got ${swMatch?.[0]}`);
+  assert.ok(swMatch && Number(swMatch[1]) >= 51, `Expected sw.js cache >= v51, got ${swMatch?.[0]}`);
 
   assert.match(siteScript, /spacetime_benchmarks/, 'Supabase benchmark endpoint preserved');
   assert.match(siteScript, /gesturestart/, 'Mac trackpad gesture handling preserved');
@@ -205,4 +225,74 @@ test('E. Regression: valid JS syntax, bumped SW cache, intact benchmark & Feedba
   assert.match(siteScript, /resetView/, 'Reset view preserved');
   assert.match(siteScript, /visibilitychange/, 'Battery-saving visibility pause preserved');
   assert.match(siteScript, /serviceWorker\.register/, 'PWA service worker registration preserved');
+});
+
+test('F. Infinite grid: world/screen round-trip, phase snapping, and LOD scaling cover viewport at any pan/zoom/rotation', () => {
+  physics.resetView();
+  physics.setCam({ viewX: 4321, viewY: -2789, viewScale: 0.45, viewRotation: 37, camComX: -1200, camComY: 950 });
+
+  for (const sx of [0, 300, 600, 1200]) {
+    for (const sy of [0, 200, 400, 800]) {
+      const w = physics.worldPoint(sx, sy);
+      const s = physics.screenPoint(w.x, w.y);
+      assert.ok(Math.abs(s.x - sx) < 1e-9, `Round-trip x mismatch: ${s.x} vs ${sx}`);
+      assert.ok(Math.abs(s.y - sy) < 1e-9, `Round-trip y mismatch: ${s.y} vs ${sy}`);
+    }
+  }
+
+  const cam = physics.gridCameraState();
+  assert.equal(cam.lodScale, 2, 'At viewScale=0.45, LOD scale should double to 2');
+  assert.ok(cam.lodScale * physics.cam.viewScale >= 0.72, 'Screen-space LOD spacing must stay >= 0.72x base');
+  const center = physics.worldPoint(physics.cam.width * 0.5, physics.cam.height * 0.5);
+  assert.ok(Math.abs(center.x - cam.originX) <= cam.lodStep + 1e-9, 'Grid originX snapped within 1 lodStep of viewport center');
+  assert.ok(Math.abs(center.y - cam.originY) <= cam.lodStep + 1e-9, 'Grid originY snapped within 1 lodStep of viewport center');
+});
+
+test('G. N-body Newtonian gravity: binary orbit, curvature tracking, and momentum-conserving collision merge', () => {
+  physics.resetView();
+  const m = physics.newMassValue;
+  const r = 120;
+  // Circular binary orbit: v = sqrt(mu / (4 * r)) around COM
+  const mu = physics.N_BODY_MU_PER_MASS * m;
+  const vOrb = Math.sqrt(mu / (2 * (2 * r)));
+  physics.createMass(-r, 0, m, 0, vOrb);
+  physics.createMass(r, 0, m, 0, -vOrb);
+  assert.equal(physics.persistentMasses.length, 2);
+
+  // Advance 20 frames of 16ms (~0.32s)
+  for (let i = 0; i < 20; i++) physics.advanceMasses(16);
+  const b0 = physics.persistentMasses[0];
+  const b1 = physics.persistentMasses[1];
+  const sep = Math.hypot(b1.x - b0.x, b1.y - b0.y);
+  assert.ok(Math.abs(sep - 2 * r) < 25, `Expected near-circular orbit separation ~${2 * r}, got ${sep.toFixed(1)}`);
+  assert.ok(Math.abs(b0.y) > 5 && Math.abs(b1.y) > 5, 'Planets must move along orbit');
+  assert.ok(b0.trail.length >= 2 && b1.trail.length >= 2, 'Orbital trails must be recorded');
+
+  // Verify curvature field updates with moving planet positions
+  const d0 = physics.staticSchwarzschildDisplacement(b0.x - 55, b0.y, 10000, physics.persistentMasses);
+  assert.ok(Math.hypot(d0.x, d0.y) > 10, 'Curvature must track moving planet position');
+
+  // Test momentum-conserving collision merge
+  physics.resetView();
+  physics.createMass(0, 0, m, 100, -40);
+  physics.createMass(3, 0, 2 * m, -20, 50);
+  const pxBefore = m * 100 + 2 * m * (-20);
+  const pyBefore = m * (-40) + 2 * m * 50;
+  physics.advanceMasses(16);
+  assert.equal(physics.persistentMasses.length, 1, 'Colliding planets should merge into 1');
+  const merged = physics.persistentMasses[0];
+  assert.ok(Math.abs(merged.mass - 3 * m) < 1e-12, 'Mass conserved on merge');
+  assert.ok(Math.abs(merged.mass * merged.vx - pxBefore) < 1e-9, 'Linear momentum X conserved on merge');
+  assert.ok(Math.abs(merged.mass * merged.vy - pyBefore) < 1e-9, 'Linear momentum Y conserved on merge');
+});
+
+test('H. Slingshot launch and COM camera preservation on first planet', () => {
+  physics.resetView();
+  physics.setCam({ viewX: 0, viewY: 0, viewScale: 1, viewRotation: 0, camComX: 600, camComY: 400 });
+  const before = physics.screenPoint(320, 240);
+  physics.createMass(320, 240, physics.newMassValue, 45 * physics.SLINGSHOT_SPEED_SCALE, -30 * physics.SLINGSHOT_SPEED_SCALE);
+  const after = physics.screenPoint(320, 240);
+  assert.ok(Math.abs(after.x - before.x) < 1e-9 && Math.abs(after.y - before.y) < 1e-9, 'First planet creation must preserve screen position');
+  assert.equal(physics.cam.camComX, 320, 'camComX initialized to first planet');
+  assert.equal(physics.cam.camComY, 240, 'camComY initialized to first planet');
 });

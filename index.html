@@ -94,12 +94,19 @@
   const gestureStatus=document.getElementById('gestureStatus');
   const persistentMasses=[];
   let gravityG=3,newMassValue=0.002,gravityEnabled=true,trailsEnabled=true;
-  let mouseWorld={x:innerWidth/2,y:innerHeight/2},mousePan=null;
-  let viewScale=1,viewX=0,viewY=0,viewRotation=0,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1:1.5,slowFrames=0,smoothFrames=0;
+  let mouseWorld={x:innerWidth/2,y:innerHeight/2},mousePan=null,launchDrag=null;
+  let viewScale=1,viewX=0,viewY=0,viewRotation=0,camComX=innerWidth/2,camComY=innerHeight/2,paused=false,pauseTime=0,longPressTimer=0,longPressPointer=null,adaptiveDprCap=matchMedia('(pointer:coarse)').matches?1:1.5,slowFrames=0,smoothFrames=0;
   const storageKey='spacetime-grid-state-v1';
   let cameraAnimationRaf=0,cameraAnimationTarget=null,cameraAnimationLast=0;
-  function worldPoint(x,y){const dx=x-width/2-viewX,dy=y-height/2-viewY,a=viewRotation*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);return {x:(dx*c+dy*sn)/viewScale+width/2,y:(-dx*sn+dy*c)/viewScale+height/2};}
-  function applyView(){const v='translate('+viewX+'px,'+viewY+'px) rotate('+viewRotation+'deg) scale('+viewScale+')';canvas.style.transform=v;gpuCanvas.style.transform=v;trajectoryCanvas.style.transform=v;}
+  function worldPoint(x,y){
+    const dx=x-width/2-viewX,dy=y-height/2-viewY,a=viewRotation*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+    return {x:camComX+(dx*c+dy*sn)/viewScale,y:camComY+(-dx*sn+dy*c)/viewScale};
+  }
+  function screenPoint(wx,wy){
+    const dx=(wx-camComX)*viewScale,dy=(wy-camComY)*viewScale,a=viewRotation*Math.PI/180,c=Math.cos(a),sn=Math.sin(a);
+    return {x:width/2+viewX+dx*c-dy*sn,y:height/2+viewY+dx*sn+dy*c};
+  }
+  function applyView(){sceneDirty=true;}
   function stopCameraAnimation(){if(cameraAnimationRaf)cancelAnimationFrame(cameraAnimationRaf);cameraAnimationRaf=0;cameraAnimationTarget=null;cameraAnimationLast=0;}
   function animateCameraTo(target){
     cameraAnimationTarget={viewX:target.viewX,viewY:target.viewY,viewScale:target.viewScale,viewRotation:target.viewRotation};
@@ -128,8 +135,8 @@
   }
   function showStatus(m){gestureStatus.textContent=m;gestureStatus.classList.add('visible');clearTimeout(showStatus.timer);showStatus.timer=setTimeout(()=>gestureStatus.classList.remove('visible'),1300);}
   function saveState(){const state={viewScale,viewX,viewY,viewRotation};try{localStorage.setItem(storageKey,JSON.stringify(state));}catch(_){}try{const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(state))));history.replaceState(null,'',location.pathname+location.search+'#state='+encoded);}catch(_){}}
-  function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.7,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
-  function resetView(){persistentMasses.length=0;sceneDirty=true;document.getElementById('simHud').textContent='EMPTY SPACE · TAP TO CREATE A MASS';updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
+  function restoreState(){try{const hash=new URLSearchParams(location.hash.slice(1)).get('state');const d=hash?JSON.parse(decodeURIComponent(escape(atob(hash)))):JSON.parse(localStorage.getItem(storageKey)||'null');if(d){viewScale=Math.max(.45,Math.min(2.5,d.viewScale||1));viewX=Number(d.viewX)||0;viewY=Number(d.viewY)||0;viewRotation=Number(d.viewRotation)||0;}}catch(_){}}
+  function resetView(){persistentMasses.length=0;launchDrag=null;camComX=width/2;camComY=height/2;sceneDirty=true;document.getElementById('simHud').textContent='EMPTY SPACE · TAP OR SLINGSHOT TO CREATE A MASS';updateCameraTarget({viewScale:1,viewX:0,viewY:0,viewRotation:0});showStatus('VIEW RESET');}
   const gyroButton=document.getElementById('gyroButton');
   let gyroEnabled=false,gyroBaseline=null,gyroTargetX=0,gyroTargetY=0,gyroX=0,gyroY=0,gyroListener=null;
   function handleDeviceOrientation(e){
@@ -162,7 +169,7 @@
   }
   gyroButton.addEventListener('click',toggleGyro);
   document.getElementById('resetViewButton').addEventListener('click',()=>{
-    stopInertia();gestureBase=null;panBase=null;trackpadGestureBase=null;lastTouchSample=null;
+    stopInertia();gestureBase=null;panBase=null;trackpadGestureBase=null;lastTouchSample=null;launchDrag=null;
     for(const [id,p] of pointers){if(p.pointerType==='touch'){p.life=0;p.targetStrength=0;p.down=false;}}
     resetView();
   });
@@ -198,6 +205,19 @@
   const STATIC_WELL_PULL_PX = 42.0;
   const STATIC_WELL_SOFTENING_PX = 45.0;
   const CAUSAL_FRONT_WIDTH_PX = 28.0;
+  const SLINGSHOT_SPEED_SCALE = 1.25;
+  const N_BODY_MU_PER_MASS = 7.5e8;
+
+  function gridCameraState(){
+    const baseStep=spacing();
+    const lodPow=Math.max(0,Math.ceil(-Math.log2(Math.max(.25,viewScale))-.45));
+    const lodScale=Math.pow(2,lodPow);
+    const lodStep=baseStep*lodScale;
+    const center=worldPoint(width*.5,height*.5);
+    const originX=Math.floor(center.x/lodStep)*lodStep;
+    const originY=Math.floor(center.y/lodStep)*lodStep;
+    return {baseStep,lodScale,lodStep,originX,originY};
+  }
 
   function initGpu(){
     if(!gl)return false;
@@ -209,6 +229,12 @@ layout(location=2) in float a_side;
 layout(location=3) in float a_end;
 uniform vec2 u_resolution;
 uniform vec2 u_frameOffset;
+uniform vec2 u_gridOrigin;
+uniform float u_lodScale;
+uniform vec2 u_camCom;
+uniform vec2 u_viewOffset;
+uniform float u_viewScale;
+uniform vec2 u_viewCosSin;
 uniform vec2 u_pointer[24];
 uniform float u_rS[24];
 uniform float u_createdAt[24];
@@ -248,15 +274,21 @@ vec2 deformSpacetimePoint(vec2 p){
  return p+staticSchwarzschildDisplacement(p);
 }
 
+vec2 worldToScreen(vec2 w){
+ vec2 d=(w-u_camCom)*u_viewScale;
+ return u_resolution*0.5+u_viewOffset+vec2(d.x*u_viewCosSin.x-d.y*u_viewCosSin.y,d.x*u_viewCosSin.y+d.y*u_viewCosSin.x);
+}
+
 void main(){
- vec2 base=a_xy+u_frameOffset;
+ vec2 worldBase=u_gridOrigin+a_xy*u_lodScale+u_frameOffset;
  vec2 dir=normalize(a_other);
- vec2 deformed=deformSpacetimePoint(base);
- float eps=2.0;
- vec2 tangentVec=deformSpacetimePoint(base+dir*eps)-deformSpacetimePoint(base-dir*eps);
- vec2 tangent=length(tangentVec)>0.00001?normalize(tangentVec):dir;
+ vec2 deformedWorld=deformSpacetimePoint(worldBase);
+ float eps=2.5*u_lodScale;
+ vec2 tangentWorld=deformSpacetimePoint(worldBase+dir*eps)-deformSpacetimePoint(worldBase-dir*eps);
+ vec2 tangentScreen=vec2(tangentWorld.x*u_viewCosSin.x-tangentWorld.y*u_viewCosSin.y,tangentWorld.x*u_viewCosSin.y+tangentWorld.y*u_viewCosSin.x);
+ vec2 tangent=length(tangentScreen)>0.00001?normalize(tangentScreen):vec2(dir.x*u_viewCosSin.x-dir.y*u_viewCosSin.y,dir.x*u_viewCosSin.y+dir.y*u_viewCosSin.x);
  vec2 normal=vec2(-tangent.y,tangent.x);
- vec2 p=deformed+normal*a_side*1.2;
+ vec2 p=worldToScreen(deformedWorld)+normal*a_side*1.2;
  gl_Position=vec4(2.0*p.x/u_resolution.x-1.0,1.0-2.0*p.y/u_resolution.y,0.0,1.0);
  v_edge=a_side;
 }`;
@@ -273,6 +305,12 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   const gpuUniforms=gpuEnabled?{
     resolution:gl.getUniformLocation(gpuProgram,'u_resolution'),
     frameOffset:gl.getUniformLocation(gpuProgram,'u_frameOffset'),
+    gridOrigin:gl.getUniformLocation(gpuProgram,'u_gridOrigin'),
+    lodScale:gl.getUniformLocation(gpuProgram,'u_lodScale'),
+    camCom:gl.getUniformLocation(gpuProgram,'u_camCom'),
+    viewOffset:gl.getUniformLocation(gpuProgram,'u_viewOffset'),
+    viewScale:gl.getUniformLocation(gpuProgram,'u_viewScale'),
+    viewCosSin:gl.getUniformLocation(gpuProgram,'u_viewCosSin'),
     softening:gl.getUniformLocation(gpuProgram,'u_softening'),
     displayScale:gl.getUniformLocation(gpuProgram,'u_displayScale'),
     staticPull:gl.getUniformLocation(gpuProgram,'u_staticPull'),
@@ -309,9 +347,16 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   }
   function drawGpu(t){
     if(!gpuEnabled)return;
+    const cam=gridCameraState(),rad=viewRotation*Math.PI/180;
     gl.viewport(0,0,gpuCanvas.width,gpuCanvas.height);gl.clear(gl.COLOR_BUFFER_BIT);gl.useProgram(gpuProgram);
     gl.uniform2f(gpuUniforms.resolution,width,height);
     gl.uniform2f(gpuUniforms.frameOffset,geodesicFrameOffsetX,geodesicFrameOffsetY);
+    gl.uniform2f(gpuUniforms.gridOrigin,cam.originX,cam.originY);
+    gl.uniform1f(gpuUniforms.lodScale,cam.lodScale);
+    gl.uniform2f(gpuUniforms.camCom,camComX,camComY);
+    gl.uniform2f(gpuUniforms.viewOffset,viewX,viewY);
+    gl.uniform1f(gpuUniforms.viewScale,viewScale);
+    gl.uniform2f(gpuUniforms.viewCosSin,Math.cos(rad),Math.sin(rad));
     gl.uniform1f(gpuUniforms.softening,STATIC_WELL_SOFTENING_PX);
     gl.uniform1f(gpuUniforms.displayScale,DISPLAY_SCHWARZSCHILD_SCALE);
     gl.uniform1f(gpuUniforms.staticPull,STATIC_WELL_PULL_PX);
@@ -343,15 +388,17 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   starfield.onerror = () => { imageStatus='failed'; perf.imageLoad=performance.now()-perf.imageStart; };
 
   function buildGeometry() {
-    const step=spacing(), sampleStep=4.0, margin=step*2, xs=[], ys=[], starts=[];
-    for(let x=-margin;x<=width+margin;x+=step){
+    const step=spacing(), sampleStep=5.0;
+    const halfSpan=Math.ceil((Math.hypot(width,height)*.75+step*4)/step)*step;
+    const xs=[], ys=[], starts=[];
+    for(let x=-halfSpan;x<=halfSpan;x+=step){
       starts.push(xs.length);
-      for(let y=-margin;y<=height+margin;y+=sampleStep){xs.push(x);ys.push(y);}
+      for(let y=-halfSpan;y<=halfSpan;y+=sampleStep){xs.push(x);ys.push(y);}
     }
     const verticalLineCount=starts.length;
-    for(let y=-margin;y<=height+margin;y+=step){
+    for(let y=-halfSpan;y<=halfSpan;y+=step){
       starts.push(xs.length);
-      for(let x=-margin;x<=width+margin;x+=sampleStep){xs.push(x);ys.push(y);}
+      for(let x=-halfSpan;x<=halfSpan;x+=sampleStep){xs.push(x);ys.push(y);}
     }
     const x=new Float32Array(xs), y=new Float32Array(ys);
     geometry={x,y,starts:new Uint32Array(starts),verticalLineCount};
@@ -396,11 +443,22 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   }
   function drawMassOverlay(t){
     trajectoryCtx.clearRect(0,0,width,height);
+    const maxViewportRadius=Math.hypot(width,height)+120;
     for(const body of persistentMasses){
-      const pos={x:body.x,y:body.y};
+      if(trailsEnabled&&body.trail&&body.trail.length>1){
+        trajectoryCtx.beginPath();
+        for(let i=0;i<body.trail.length;i++){
+          const pt=screenPoint(body.trail[i].x,body.trail[i].y);
+          if(i===0)trajectoryCtx.moveTo(pt.x,pt.y);else trajectoryCtx.lineTo(pt.x,pt.y);
+        }
+        const cur=screenPoint(body.x,body.y);
+        trajectoryCtx.lineTo(cur.x,cur.y);
+        trajectoryCtx.strokeStyle='rgba(120,185,255,.32)';trajectoryCtx.lineWidth=1.4;
+        trajectoryCtx.stroke();
+      }
+      const pos=screenPoint(body.x,body.y);
       const age=Math.max(0,t*.001-(body.createdAt??0));
-      const frontRadius=180*age;
-      const maxViewportRadius=Math.hypot(width,height)+120;
+      const frontRadius=180*age*viewScale;
       const ringAlpha=frontRadius<=0?0:Math.max(0,1-Math.max(0,frontRadius-maxViewportRadius*.7)/(maxViewportRadius*.35));
       if(frontRadius>0&&ringAlpha>.005){
         trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,frontRadius,0,Math.PI*2);
@@ -412,7 +470,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
         trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,Math.max(0,frontRadius-3),0,Math.PI*2);
         trajectoryCtx.strokeStyle='rgba(190,225,255,'+(.28*ringAlpha).toFixed(3)+')';trajectoryCtx.lineWidth=1;trajectoryCtx.stroke();
       }
-      const radius=Math.max(4,Math.min(22,3+Math.sqrt(Math.max(0,body.mass??20))*1.45));
+      const baseRadius=Math.max(4.5,Math.min(22,4.5+Math.sqrt(Math.max(0,body.mass??newMassValue)/newMassValue)*1.5));
+      const radius=Math.max(3,baseRadius*Math.sqrt(viewScale));
       const glow=trajectoryCtx.createRadialGradient(pos.x-radius*.28,pos.y-radius*.3,1,pos.x,pos.y,radius*2.2);
       glow.addColorStop(0,'rgba(255,255,255,.98)');glow.addColorStop(.22,'rgba(188,220,255,.98)');
       glow.addColorStop(.62,'rgba(77,133,205,.9)');glow.addColorStop(1,'rgba(44,86,145,0)');
@@ -421,25 +480,106 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       trajectoryCtx.fillStyle='rgba(225,239,255,.95)';
       trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,radius*.62,0,Math.PI*2);trajectoryCtx.fill();
     }
+    if(launchDrag){
+      const anchor=screenPoint(launchDrag.startWorld.x,launchDrag.startWorld.y);
+      const pull=screenPoint(launchDrag.currentWorld.x,launchDrag.currentWorld.y);
+      const dx=launchDrag.startWorld.x-launchDrag.currentWorld.x,dy=launchDrag.startWorld.y-launchDrag.currentWorld.y;
+      const tip=screenPoint(launchDrag.startWorld.x+dx,launchDrag.startWorld.y+dy);
+      trajectoryCtx.save();
+      trajectoryCtx.setLineDash([4,4]);
+      trajectoryCtx.strokeStyle='rgba(165,210,255,.45)';trajectoryCtx.lineWidth=1.5;
+      trajectoryCtx.beginPath();trajectoryCtx.moveTo(pull.x,pull.y);trajectoryCtx.lineTo(anchor.x,anchor.y);trajectoryCtx.stroke();
+      trajectoryCtx.setLineDash([]);
+      if(Math.hypot(dx,dy)>4){
+        trajectoryCtx.strokeStyle='rgba(165,220,255,.9)';trajectoryCtx.lineWidth=2;
+        trajectoryCtx.beginPath();trajectoryCtx.moveTo(anchor.x,anchor.y);trajectoryCtx.lineTo(tip.x,tip.y);trajectoryCtx.stroke();
+        const ang=Math.atan2(tip.y-anchor.y,tip.x-anchor.x);
+        trajectoryCtx.beginPath();
+        trajectoryCtx.moveTo(tip.x,tip.y);
+        trajectoryCtx.lineTo(tip.x-10*Math.cos(ang-.42),tip.y-10*Math.sin(ang-.42));
+        trajectoryCtx.moveTo(tip.x,tip.y);
+        trajectoryCtx.lineTo(tip.x-10*Math.cos(ang+.42),tip.y-10*Math.sin(ang+.42));
+        trajectoryCtx.stroke();
+      }
+      trajectoryCtx.beginPath();trajectoryCtx.arc(anchor.x,anchor.y,6,0,Math.PI*2);
+      trajectoryCtx.fillStyle='rgba(210,235,255,.85)';trajectoryCtx.fill();
+      trajectoryCtx.restore();
+    }
   }
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
-    if(persistentMasses.length>=24)persistentMasses.shift();
-    // Express only the incoming body's velocity relative to the existing
-    // system's mass-weighted mean velocity. Never rewrite old velocities,
-    // positions, or trail samples when a body is inserted.
-    // Rebase the existing local histories from the old COM to the new COM
-    // without changing their world positions or erasing their blue tails.
-    if(persistentMasses.length)return;
-    // One fixed source: the first tap creates the only mass and it never moves.
-    persistentMasses.push({x,y,mass,fixed:true,strength:1,createdAt:elapsed*.001});
+    if(persistentMasses.length>=MAX_GPU_POINTERS)persistentMasses.shift();
+    if(persistentMasses.length===0){
+      const before=screenPoint(x,y);
+      camComX=x;camComY=y;
+      const after=screenPoint(x,y);
+      viewX+=before.x-after.x;viewY+=before.y-after.y;
+    }
+    persistentMasses.push({x,y,vx,vy,mass,strength:1,createdAt:elapsed*.001,trail:[{x,y}],trailClock:0});
     sceneDirty=true;
+    const speed=Math.hypot(vx,vy);
     document.getElementById('simHud').textContent='CURVATURE FRONT · c';
-    showStatus('MASS CREATED · CURVATURE PROPAGATING');
+    showStatus(speed>5?'PLANET LAUNCHED · N-BODY ORBIT':'PLANET CREATED · CURVATURE PROPAGATING');
+  }
+  const PLANET_DT=1/1200;
+  const planetAx=new Float64Array(MAX_GPU_POINTERS),planetAy=new Float64Array(MAX_GPU_POINTERS);
+  let planetAccumulator=0;
+  function massAccelerationAt(index){
+    const body=persistentMasses[index];let ax=0,ay=0;
+    for(let j=0;j<persistentMasses.length;j++){
+      if(j===index)continue;
+      const other=persistentMasses[j],dx=other.x-body.x,dy=other.y-body.y;
+      const r2=dx*dx+dy*dy+196;
+      const scale=N_BODY_MU_PER_MASS*(other.mass??newMassValue)/(r2*Math.sqrt(r2));
+      ax+=scale*dx;ay+=scale*dy;
+    }
+    return {x:ax,y:ay};
+  }
+  function advanceMasses(frameMs){
+    if(paused||!persistentMasses.length)return;
+    planetAccumulator+=Math.min(50,Math.max(0,frameMs))*.001;
+    let steps=0;
+    while(planetAccumulator+1e-12>=PLANET_DT&&steps<60){
+      const n=persistentMasses.length;
+      if(n>1){
+        for(let i=0;i<n;i++){const a=massAccelerationAt(i);planetAx[i]=a.x;planetAy[i]=a.y;}
+        for(let i=0;i<n;i++){const b=persistentMasses[i];b.vx=(b.vx||0)+.5*planetAx[i]*PLANET_DT;b.vy=(b.vy||0)+.5*planetAy[i]*PLANET_DT;}
+        for(let i=0;i<n;i++){const b=persistentMasses[i];b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;}
+        for(let i=0;i<n;i++){const a=massAccelerationAt(i),b=persistentMasses[i];b.vx+=.5*a.x*PLANET_DT;b.vy+=.5*a.y*PLANET_DT;}
+      }else{
+        const b=persistentMasses[0];b.x+=(b.vx||0)*PLANET_DT;b.y+=(b.vy||0)*PLANET_DT;
+      }
+      for(const b of persistentMasses){
+        b.trailClock=(b.trailClock||0)+PLANET_DT;
+        const last=b.trail[b.trail.length-1];
+        if(b.trailClock>=.05&&(!last||Math.hypot(b.x-last.x,b.y-last.y)>1.5)){
+          b.trail.push({x:b.x,y:b.y});b.trailClock=0;if(b.trail.length>220)b.trail.shift();
+        }
+      }
+      planetAccumulator-=PLANET_DT;steps++;
+    }
+    if(steps>=60)planetAccumulator=Math.min(planetAccumulator,PLANET_DT);
+    for(let i=0;i<persistentMasses.length;i++)for(let j=i+1;j<persistentMasses.length;j++){
+      const a=persistentMasses[i],b=persistentMasses[j],ma=a.mass??newMassValue,mb=b.mass??newMassValue;
+      const ra=4.5+Math.sqrt(ma/newMassValue)*1.5,rb=4.5+Math.sqrt(mb/newMassValue)*1.5,dx=b.x-a.x,dy=b.y-a.y;
+      if(dx*dx+dy*dy<(ra+rb)*(ra+rb)){
+        const m=ma+mb;
+        a.x=(a.x*ma+b.x*mb)/m;a.y=(a.y*ma+b.y*mb)/m;
+        a.vx=((a.vx||0)*ma+(b.vx||0)*mb)/m;a.vy=((a.vy||0)*ma+(b.vy||0)*mb)/m;
+        a.mass=m;a.createdAt=Math.min(a.createdAt??0,b.createdAt??0);
+        a.trail=(a.trail||[]).concat(b.trail||[]).slice(-220);
+        persistentMasses.splice(j,1);j--;sceneDirty=true;
+      }
+    }
   }
   function pointerDown(e){
     if(e.pointerType==="mouse"){
       if(e.button===2){e.preventDefault();stopInertia();mousePan={x:e.clientX,y:e.clientY,viewX,viewY};canvas.setPointerCapture?.(e.pointerId);}
-      else if(e.button===0&&persistentMasses.length===0){e.preventDefault();const w=worldPoint(e.clientX,e.clientY);createMass(w.x,w.y);}
+      else if(e.button===0){
+        e.preventDefault();const w=worldPoint(e.clientX,e.clientY);
+        launchDrag={pointerId:e.pointerId,startWorld:w,currentWorld:w};
+        canvas.setPointerCapture?.(e.pointerId);sceneDirty=true;
+        hint.classList.add('hidden');clearTimeout(hintTimer);
+      }
       return;
     }
     e.preventDefault();canvas.setPointerCapture?.(e.pointerId);
@@ -447,9 +587,12 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     const p={x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:1,life:1,down:true,pointerType:e.pointerType,
       startX:w.x,startY:w.y,samples:[{t:now,x:w.x,y:w.y}],travel:0,massPlaced:false,multiTouch:false};
     if(e.pointerType==='touch'){
+      let activeTouchCount=0;
       for(const other of pointers.values()){
-        if(other.down&&other.pointerType==='touch'){other.multiTouch=true;p.multiTouch=true;}
+        if(other.down&&other.pointerType==='touch'){other.multiTouch=true;p.multiTouch=true;activeTouchCount++;}
       }
+      if(activeTouchCount===0){launchDrag={pointerId:e.pointerId,startWorld:w,currentWorld:w};sceneDirty=true;}
+      else{launchDrag=null;sceneDirty=true;}
     }
     pointers.set(e.pointerId,p);
     hint.classList.add('hidden');clearTimeout(hintTimer);
@@ -459,22 +602,44 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       planetCursor.style.transform=`translate3d(${e.clientX-9}px,${e.clientY-9}px,0)`;planetCursor.classList.add("visible");
       mouseWorld=worldPoint(e.clientX,e.clientY);
       if(mousePan&&(e.buttons&2)){viewX=mousePan.viewX+(e.clientX-mousePan.x);viewY=mousePan.viewY+(e.clientY-mousePan.y);applyView();return;}
+      if(launchDrag&&launchDrag.pointerId===e.pointerId){launchDrag.currentWorld=mouseWorld;sceneDirty=true;return;}
     }
     const w=worldPoint(e.clientX,e.clientY),p=pointers.get(e.pointerId);
     if(p){
       p.tx=w.x;p.ty=w.y;
-      if(p.down&&p.pointerType==='touch')addFingerSample(p,w,performance.now());
+      if(p.down&&p.pointerType==='touch'){
+        addFingerSample(p,w,performance.now());
+        if(launchDrag&&launchDrag.pointerId===e.pointerId&&!p.multiTouch){launchDrag.currentWorld=w;sceneDirty=true;}
+      }
     }else if(e.pointerType==='mouse')pointers.set(e.pointerId,{x:w.x,y:w.y,tx:w.x,ty:w.y,strength:0,targetStrength:.72,life:1,hover:true,pointerType:e.pointerType});
   }
   function pointerEnd(e){
-    if(e.pointerType==='mouse'){if(mousePan){mousePan=null;scheduleViewSave();}return;}
+    if(e.pointerType==='mouse'){
+      if(mousePan){mousePan=null;scheduleViewSave();}
+      if(launchDrag&&launchDrag.pointerId===e.pointerId){
+        const dx=launchDrag.startWorld.x-launchDrag.currentWorld.x,dy=launchDrag.startWorld.y-launchDrag.currentWorld.y;
+        const dist=Math.hypot(dx,dy);
+        if(e.type==='pointerup'){
+          if(dist<=6)createMass(launchDrag.startWorld.x,launchDrag.startWorld.y,newMassValue,0,0);
+          else createMass(launchDrag.startWorld.x,launchDrag.startWorld.y,newMassValue,dx*SLINGSHOT_SPEED_SCALE,dy*SLINGSHOT_SPEED_SCALE);
+        }
+        launchDrag=null;sceneDirty=true;
+      }
+      return;
+    }
     const p=pointers.get(e.pointerId);
     if(p?.hover||p?.pointerType==='mouse'||!p?.down)return;
-    if(e.type==='pointerup'&&!p.multiTouch&&p.travel<=14&&persistentMasses.length===0){
-      // Use the exact world-space point captured at touch-down. Pointer-up can
-      // be offset by browser gesture handling; the mass and its wave share this anchor.
-      createMass(p.startX,p.startY);
+    if(e.type==='pointerup'&&!p.multiTouch){
+      if(launchDrag&&launchDrag.pointerId===e.pointerId){
+        const dx=launchDrag.startWorld.x-launchDrag.currentWorld.x,dy=launchDrag.startWorld.y-launchDrag.currentWorld.y;
+        if(p.travel<=14)createMass(p.startX,p.startY,newMassValue,0,0);
+        else createMass(p.startX,p.startY,newMassValue,dx*SLINGSHOT_SPEED_SCALE,dy*SLINGSHOT_SPEED_SCALE);
+      }else if(p.travel<=14){
+        createMass(p.startX,p.startY,newMassValue,0,0);
+      }
     }
+    if(launchDrag&&launchDrag.pointerId===e.pointerId)launchDrag=null;
+    sceneDirty=true;
     p.life=0;p.targetStrength=0;p.down=false;
   }
   document.addEventListener('contextmenu',e=>e.preventDefault());
@@ -516,7 +681,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     canvas.addEventListener('gesturechange',e=>{
       if(!trackpadGestureBase)return;e.preventDefault();
       const factor=Number.isFinite(e.scale)?e.scale:1,turn=Number.isFinite(e.rotation)?e.rotation:0;
-      const nextScale=Math.max(.7,Math.min(2.5,trackpadGestureBase.scale*factor));
+      const nextScale=Math.max(.45,Math.min(2.5,trackpadGestureBase.scale*factor));
       applyGestureTransform(trackpadGestureBase,trackpadGestureBase.x,trackpadGestureBase.y,nextScale,trackpadGestureBase.rotation+turn);
     },{passive:false});
     canvas.addEventListener('gestureend',()=>{
@@ -540,6 +705,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
   }
   canvas.addEventListener('touchstart',e=>{
     stopInertia();stopCameraAnimation();lastTouchSample=null;
+    if(e.touches.length>=2){launchDrag=null;sceneDirty=true;}
     if(e.touches.length===2){
       const a=e.touches[0],b=e.touches[1],x=(a.clientX+b.clientX)/2,y=(a.clientY+b.clientY)/2;
       gestureBase={idA:a.identifier,idB:b.identifier,distance:Math.max(1,Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)),angle:touchAngle(a,b),scale:viewScale,rotation:viewRotation,x,y,viewX,viewY};
@@ -551,7 +717,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       const a=touchById(e.touches,gestureBase.idA),b=touchById(e.touches,gestureBase.idB);
       if(!a||!b)return;e.preventDefault();
       const dist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2;
-      const nextScale=Math.max(.7,Math.min(2.5,gestureBase.scale*dist/gestureBase.distance));
+      const nextScale=Math.max(.45,Math.min(2.5,gestureBase.scale*dist/gestureBase.distance));
       const nextRotation=gestureBase.rotation+angleDelta(touchAngle(a,b),gestureBase.angle)*180/Math.PI;
       sampleGestureMotion(mx,my);applyGestureTransform(gestureBase,mx,my,nextScale,nextRotation);
     }else if(e.touches.length===1&&panBase){
@@ -574,7 +740,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(e.ctrlKey){
       if(trackpadGestureBase)return;
       const dy=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*height:e.deltaY;
-      const old=viewScale,next=Math.max(.7,Math.min(2.5,old*Math.exp(-dy*.002))),ratio=next/old;
+      const old=viewScale,next=Math.max(.45,Math.min(2.5,old*Math.exp(-dy*.002))),ratio=next/old;
       viewScale=next;
       viewX=viewX*ratio+(1-ratio)*(e.clientX-width/2);
       viewY=viewY*ratio+(1-ratio)*(e.clientY-height/2);
@@ -596,7 +762,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       updateCameraTarget({viewScale:Math.min(2.5,base.viewScale*1.12)});
     }else if(e.key==='-'){
       e.preventDefault();const base=cameraAnimationTarget||{viewX,viewY,viewScale,viewRotation};
-      updateCameraTarget({viewScale:Math.max(.7,base.viewScale/1.12)});
+      updateCameraTarget({viewScale:Math.max(.45,base.viewScale/1.12)});
     }else if(e.key.startsWith('Arrow')){
       e.preventDefault();stopInertia();
       const base=cameraAnimationTarget||{viewX,viewY,viewScale,viewRotation};
@@ -725,9 +891,13 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       note:"Static background: isotropic Schwarzschild spatial conformal contraction projected locally onto the 2D grid with explicit display scaling, turned on smoothly behind an outgoing causal front at c when the mass is created."};
   }
   const geodesicValidation=runGeodesicValidation();
-  function warpVertex(g,i,t){
-    const pt=deformSpacetimePoint(g.x[i]+geodesicFrameOffsetX,g.y[i]+geodesicFrameOffsetY,t);
-    warpedX=pt.x;warpedY=pt.y;
+  function warpVertex(g,i,t,cam){
+    const c=cam||gridCameraState();
+    const worldX=c.originX+g.x[i]*c.lodScale+geodesicFrameOffsetX;
+    const worldY=c.originY+g.y[i]*c.lodScale+geodesicFrameOffsetY;
+    const pt=deformSpacetimePoint(worldX,worldY,t);
+    const sp=screenPoint(pt.x,pt.y);
+    warpedX=sp.x;warpedY=sp.y;
   }
   function percentile(a,p){if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor((s.length-1)*p))];}
   function report(){
@@ -798,21 +968,39 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     if(perf.firstFrame===null)perf.firstFrame=now;
     const t=paused?pauseTime:elapsed;
     const maxViewportRadius=Math.hypot(width,height)+120;
-    let frontActive=false;
+    advanceMasses(dt);
+    let systemsMoving=false;
     if(persistentMasses.length){
-      const age=Math.max(0,t*.001-(persistentMasses[0].createdAt??0));
-      frontActive=180*age<=maxViewportRadius+CAUSAL_FRONT_WIDTH_PX*2;
+      let totalM=0,cx=0,cy=0;
+      for(const m of persistentMasses){
+        const w=Math.max(0,m.mass??newMassValue);totalM+=w;cx+=w*m.x;cy+=w*m.y;
+        if(Math.hypot(m.vx||0,m.vy||0)>.05)systemsMoving=true;
+      }
+      if(totalM>0){
+        cx/=totalM;cy/=totalM;
+        const follow=1-Math.exp(-dt/120);
+        if(Math.hypot(cx-camComX,cy-camComY)>.02){
+          camComX+=(cx-camComX)*follow;camComY+=(cy-camComY)*follow;
+          sceneDirty=true;
+        }
+      }
+      if(persistentMasses.length>1)systemsMoving=true;
+    }
+    let frontActive=false;
+    for(const m of persistentMasses){
+      const age=Math.max(0,t*.001-(m.createdAt??0));
+      if(180*age*viewScale<=maxViewportRadius+CAUSAL_FRONT_WIDTH_PX*2*viewScale){frontActive=true;break;}
     }
     if(now-lastCausalHudUpdate>100){
       lastCausalHudUpdate=now;
-      let nextHud='EMPTY SPACE · TAP TO CREATE A MASS';
+      let nextHud='EMPTY SPACE · TAP OR SLINGSHOT TO CREATE A MASS';
       if(persistentMasses.length){
-        const age=Math.max(0,t*.001-(persistentMasses[0].createdAt??0)),radius=180*age;
-        if(radius<=maxViewportRadius){
+        const latest=persistentMasses[persistentMasses.length-1];
+        const age=Math.max(0,t*.001-(latest.createdAt??0)),radius=180*age*viewScale;
+        if(persistentMasses.length===1&&radius<=maxViewportRadius){
           nextHud='CURVATURE FRONT · c · '+radius.toFixed(0)+' PX · '+age.toFixed(1)+' S';
         }else{
-          const m0=persistentMasses[0],rsRaw=2*(gravityEnabled?gravityG*100:0)*Math.max(0,m0.mass??(m0.strength*.25));
-          nextHud='STATIC SCHWARZSCHILD CURVATURE · r_s '+(rsRaw*DISPLAY_SCHWARZSCHILD_SCALE).toFixed(0)+' PX';
+          nextHud=persistentMasses.length+' PLANET'+(persistentMasses.length>1?'S · N-BODY COM TRACKED':' · STATIC SCHWARZSCHILD CURVATURE');
         }
       }
       const hudEl=document.getElementById('simHud');
@@ -825,20 +1013,18 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       if(p.life<=0&&p.strength<.012)pointers.delete(id);
     }
     gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
-    // Keep geodesic integration anchors in screen coordinates. Only the mass sources move;
-    // the grid itself must never follow the centre of mass.
     geodesicFrameOffsetX=0;
     geodesicFrameOffsetY=0;
     for(const m of persistentMasses)fields.push(gyroEnabled?{...m,x:m.x+gyroX,y:m.y+gyroY}:m);
-    const needsDraw=benchMode||sceneDirty||frontActive||gyroEnabled;
+    const needsDraw=benchMode||sceneDirty||frontActive||systemsMoving||!!launchDrag||gyroEnabled;
     if(needsDraw){
       if(gpuEnabled)drawGpu(t);
       drawMassOverlay(t);
       if(!gpuEnabled){
         ctx.drawImage(background,0,0,width,height);
-        const g=geometry;
+        const g=geometry,cam=gridCameraState();
         ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
-        for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length,horizontal=line>=g.verticalLineCount;for(let i=from;i<to;i++){warpVertex(g,i,t,horizontal);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
+        for(let line=0;line<g.starts.length;line++){const from=g.starts[line],to=line+1<g.starts.length?g.starts[line+1]:g.x.length;for(let i=from;i<to;i++){warpVertex(g,i,t,cam);if(i===from)ctx.moveTo(warpedX,warpedY);else ctx.lineTo(warpedX,warpedY);}}
         ctx.stroke();
       }
       sceneDirty=false;
@@ -847,12 +1033,12 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     perf.renderMs.push(renderCost);if(perf.renderMs.length>18000)perf.renderMs.shift();
     if(benchMode){let touchPointers=0,downPointers=0;for(const p of pointers.values()){if(p.down){downPointers++;if(p.pointerType==='touch')touchPointers++;}}perf.frameLog.push({t:+(now-perf.started).toFixed(1),intervalMs:+frameDelta.toFixed(2),renderCpuMs:+renderCost.toFixed(2),activePointers:pointers.size,downPointers,touchPointers,dpr,frameCapHz:frameCap});if(perf.frameLog.length>18000)perf.frameLog.shift();}
     if(benchMode&&now-perf.lastReport>1000){perf.lastReport=now;const r=report();reportText.textContent=
-      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nPHYSICS CHECKS ${r.geodesicValidation.passed}/${r.geodesicValidation.total} passed\n${r.geodesicValidation.checks.map(c=>(c.pass?'PASS ':'FAIL ')+c.name+' · '+Number(c.value).toExponential(2)).join('\n')}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nRadiation ${r.geodesicValidation.radiation}\nSchwarzschild background · linearized quadrupolar GW (display amplified)\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
+      `Renderer ${gpuEnabled?'WebGL 2':'Canvas 2D fallback'}${gpuError?' · '+gpuError:''}\nSession ${r.session.seconds}s · ${r.session.observedFps} FPS · ${r.session.frames} frames\nGrid vertices ${r.interaction.gridVertices}\nStatic mass sources ${r.interaction.persistentMasses}\nPHYSICS CHECKS ${r.geodesicValidation.passed}/${r.geodesicValidation.total} passed\n${r.geodesicValidation.checks.map(c=>(c.pass?'PASS ':'FAIL ')+c.name+' · '+Number(c.value).toExponential(2)).join('\n')}\nWeak-field deflection error ${r.geodesicValidation.weakFieldRelativeError.toExponential(2)}\nRadiation ${r.geodesicValidation.radiation}\nSchwarzschild background · N-body Newtonian orbits\nFrame interval p50/p95/p99 ${r.frameIntervalMs.p50}/${r.frameIntervalMs.p95}/${r.frameIntervalMs.p99} ms\nRender CPU mean/p95 ${r.renderCpuMs.mean}/${r.renderCpuMs.p95} ms\nMissed-frame estimate ${r.session.estimatedDroppedFrames} · baseline ${r.session.baselineFrameIntervalMs??'calibrating'} ms\nImage ${r.startup.backgroundImage} · ${r.startup.imageLoadMs??'…'} ms\nLong tasks ${r.session.longTasks}\nDPR ${r.device.effectiveDpr} · pointers ${r.interaction.activePointers}`;
     }
     raf=0;if(!document.hidden)raf=requestAnimationFrame(render);
   }
   function start(){if(!document.hidden&&!raf)raf=requestAnimationFrame(render);}
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){persistentMasses.length=0;if(raf)cancelAnimationFrame(raf);raf=0;last=0;lastFrame=0;}else start();});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){persistentMasses.length=0;launchDrag=null;camComX=width/2;camComY=height/2;sceneDirty=true;if(raf)cancelAnimationFrame(raf);raf=0;last=0;lastFrame=0;}else start();});
   reducedMotion.addEventListener?.('change',start);
   if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
   start();
