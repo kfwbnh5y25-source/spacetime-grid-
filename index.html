@@ -213,8 +213,6 @@ out float v_edge;
 // in isotropic coordinates: dl² = psi^4 (dx²+dy²), psi=1+r_s/(4r).
 // Multiple sources use the conformal-factor superposition (Brill-Lindquist
 // initial-data form); this is a spatial-slice model, not a full 4-D orbit.
-uniform float u_time;
-uniform float u_waveStart;
 vec2 gradLogConformal(vec2 p){
  float psi=1.0;
  vec2 gradPsi=vec2(0.0);
@@ -222,19 +220,10 @@ vec2 gradLogConformal(vec2 p){
   if(i>=u_pointerCount)break;
   vec2 d=p-u_pointer[i];
   float r=sqrt(dot(d,d)+u_softening*u_softening);
-  float rs=0.02*u_rS[i];
+  float rs=u_rS[i];
   psi+=rs/(4.0*r);
   gradPsi-=rs*d/(4.0*r*r*r);
   // The pulse is centred on the same source position as the static mass.
-  float rr=max(length(d),1.0);
-  float age=max(0.0,u_time-u_waveStart);
-  float q=rr-220.0*age;
-  float envelope=exp(-(q*q)/(2.0*28.0*28.0));
-  float phase=q*0.18;
-  float amplitude=0.08;
-  psi+=amplitude*envelope*sin(phase);
-  float radialDerivative=amplitude*envelope*(0.18*cos(phase)-(q/(28.0*28.0))*sin(phase));
-  gradPsi+=radialDerivative*d/rr;
  }
  return 2.0*gradPsi/psi; // grad(log(psi²))
 }
@@ -315,8 +304,6 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_resolution'),width,height);
     gl.uniform2f(gl.getUniformLocation(gpuProgram,'u_frameOffset'),geodesicFrameOffsetX,geodesicFrameOffsetY);
     gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_softening'),9.0);
-    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_time'),t*0.001);
-    gl.uniform1f(gl.getUniformLocation(gpuProgram,'u_waveStart'),persistentMasses.length?persistentMasses[0].waveStartTime:0);
     const xy=new Float32Array(48),rS=new Float32Array(24);let count=0;
     for(const p of fields){if(count>=MAX_GPU_POINTERS)break;xy[count*2]=p.x+geodesicFrameOffsetX;xy[count*2+1]=p.y+geodesicFrameOffsetY;const mass=p.mass??(p.strength*.25);rS[count]=2*(gravityEnabled?gravityG*100:0)*Math.max(0,mass);count++;}
     gl.uniform1i(gl.getUniformLocation(gpuProgram,'u_pointerCount'),count);
@@ -384,184 +371,32 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     while(p.samples.length>2&&(p.samples.length>8||now-p.samples[0].t>120))p.samples.shift();
     p.travel=Math.max(p.travel,Math.hypot(w.x-p.startX,w.y-p.startY));
   }
-  function fingerReleaseVelocity(p){
-    const samples=p.samples;
-    if(samples.length<2)return {vx:0,vy:0,speed:0};
-    const t0=samples[0].t,ts=samples.map(q=>(q.t-t0)*0.001);
-    const meanT=ts.reduce((a,b)=>a+b,0)/ts.length;
-    const meanX=samples.reduce((a,b)=>a+b.x,0)/samples.length;
-    const meanY=samples.reduce((a,b)=>a+b.y,0)/samples.length;
-    let denom=0,nx=0,ny=0;
-    for(let i=0;i<samples.length;i++){const dt=ts[i]-meanT;denom+=dt*dt;nx+=dt*(samples[i].x-meanX);ny+=dt*(samples[i].y-meanY);}
-    if(denom<1e-7)return {vx:0,vy:0,speed:0};
-    const vx=nx/denom,vy=ny/denom;
-    return {vx,vy,speed:Math.hypot(vx,vy)};
-  }
-  function launchNewtonProbe(p){
-    const v=fingerReleaseVelocity(p);
-    if(v.speed<35)return;
-    const speedScale=.35;
-    createMass(p.startX,p.startY,newMassValue,v.vx*speedScale,v.vy*speedScale);
-    showStatus('PLANET SHOT · '+Math.round(v.speed*speedScale)+' PX/S');
-  }
-  function newtonAcceleration(x,y){
-    let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
-    for(const mass of persistentMasses){
-      const dx=mass.x-x,dy=mass.y-y,r2=dx*dx+dy*dy+64;
-      const mu=gravityG*100*Math.max(0,mass.mass??mass.strength??1),scale=mu/(r2*Math.sqrt(r2));
-      ax+=scale*dx;ay+=scale*dy;
-    }
-    return {x:ax,y:ay};
-  }
-  function stepNewtonProbe(frameMs){
-    const p=phoneProbe;if(!p||!p.active||paused)return;
-    p.accumulator+=Math.min(50,Math.max(0,frameMs))*0.001;
-    const h=1/2400;let steps=0;
-    while(p.accumulator>=h&&steps<120){
-      const a0=newtonAcceleration(p.x,p.y);
-      p.vx+=0.5*a0.x*h;p.vy+=0.5*a0.y*h;
-      p.x+=p.vx*h;p.y+=p.vy*h;
-      const a1=newtonAcceleration(p.x,p.y);
-      p.vx+=0.5*a1.x*h;p.vy+=0.5*a1.y*h;
-      p.accumulator-=h;p.age+=h;steps++;
-      for(const mass of persistentMasses){
-        if(Math.hypot(p.x-mass.x,p.y-mass.y)<=NEWTON_BODY_RADIUS){p.active=false;p.captured=true;break;}
-      }
-      if(!p.active)break;
-      if(p.x< -width*2||p.x>width*3||p.y< -height*2||p.y>height*3||p.age>30){p.active=false;break;}
-    }
-    if(steps>=120)p.accumulator=0;
-    if(p.active){
-      const last=p.trail[p.trail.length-1];
-      if(!last||Math.hypot(p.x-last.x,p.y-last.y)>1.5)p.trail.push({x:p.x,y:p.y});
-      if(p.trail.length>900)p.trail.shift();
-    }
-  }
-  let trailFrameX=null,trailFrameY=null;
-  function drawNewtonProbe(frameMs=16){
-    trajectoryCtx.clearRect(0,0,width,height);trajectoryCtx.save();
-    trajectoryCtx.lineCap='round';trajectoryCtx.lineJoin='round';
-    // Planet positions are projected into the current COM-local frame.
-    let totalMass=0,comX=0,comY=0;
+  function drawMassOverlay(){
+    trajectoryCtx.clearRect(0,0,width,height);
     for(const body of persistentMasses){
-      const weight=Math.max(0,body.mass??20);
-      totalMass+=weight;comX+=weight*body.x;comY+=weight*body.y;
-    }
-    if(totalMass>0){comX/=totalMass;comY/=totalMass;}
-    else{comX=width*.5;comY=height*.5;}
-    const localPoint=q=>({x:q.x-comX+width*.5,y:q.y-comY+height*.5});
-    for(const body of persistentMasses){
-      const pos=localPoint(body);
-      if(trailsEnabled&&body.trail?.length>1){
-        trajectoryCtx.beginPath();
-        for(let i=0;i<body.trail.length;i++){
-          const q=body.trail[i];
-          if(i===0)trajectoryCtx.moveTo(width*.5+q.x,height*.5+q.y);else trajectoryCtx.lineTo(width*.5+q.x,height*.5+q.y);
-        }
-        trajectoryCtx.strokeStyle='rgba(118,174,255,.36)';trajectoryCtx.lineWidth=1.35;trajectoryCtx.stroke();
-      }
+      const pos={x:body.x,y:body.y};
       const radius=Math.max(4,Math.min(22,3+Math.sqrt(Math.max(0,body.mass??20))*1.45));
       const glow=trajectoryCtx.createRadialGradient(pos.x-radius*.28,pos.y-radius*.3,1,pos.x,pos.y,radius*2.2);
-      glow.addColorStop(0,'rgba(255,255,255,.98)');glow.addColorStop(.22,'rgba(188,220,255,.98)');glow.addColorStop(.62,'rgba(77,133,205,.9)');glow.addColorStop(1,'rgba(44,86,145,0)');
+      glow.addColorStop(0,'rgba(255,255,255,.98)');glow.addColorStop(.22,'rgba(188,220,255,.98)');
+      glow.addColorStop(.62,'rgba(77,133,205,.9)');glow.addColorStop(1,'rgba(44,86,145,0)');
       trajectoryCtx.fillStyle=glow;trajectoryCtx.shadowColor='rgba(120,180,255,.85)';trajectoryCtx.shadowBlur=12;
       trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,radius*2.2,0,Math.PI*2);trajectoryCtx.fill();
       trajectoryCtx.shadowBlur=0;trajectoryCtx.fillStyle='rgba(225,239,255,.95)';
       trajectoryCtx.beginPath();trajectoryCtx.arc(pos.x,pos.y,radius*.62,0,Math.PI*2);trajectoryCtx.fill();
-      if((body.mass??0)>=45){
-        trajectoryCtx.strokeStyle='rgba(190,220,255,.55)';trajectoryCtx.lineWidth=1;
-        trajectoryCtx.beginPath();trajectoryCtx.ellipse(pos.x,pos.y,radius*1.65,radius*.58,-.35,0,Math.PI*2);trajectoryCtx.stroke();
-      }
     }
-    // The legacy probe is an inertial-frame Newtonian path, not a local-frame
-    // geodesic, so deliberately do not display its blue trajectory.
-    trajectoryCtx.restore();
   }
   function createMass(x,y,mass=newMassValue,vx=0,vy=0){
     if(persistentMasses.length>=24)persistentMasses.shift();
     // Express only the incoming body's velocity relative to the existing
     // system's mass-weighted mean velocity. Never rewrite old velocities,
     // positions, or trail samples when a body is inserted.
-    if(phonePhysics&&persistentMasses.length){
-      let total=0,meanVx=0,meanVy=0;
-      for(const body of persistentMasses){
-        const weight=Math.max(0,body.mass??20);
-        total+=weight;meanVx+=weight*(body.vx||0);meanVy+=weight*(body.vy||0);
-      }
-      if(total>0){vx-=meanVx/total;vy-=meanVy/total;}
-    }
     // Rebase the existing local histories from the old COM to the new COM
     // without changing their world positions or erasing their blue tails.
-    let oldTotal=0,oldCx=0,oldCy=0;
-    for(const body of persistentMasses){const weight=Math.max(0,body.mass??20);oldTotal+=weight;oldCx+=weight*body.x;oldCy+=weight*body.y;}
-    if(oldTotal>0){oldCx/=oldTotal;oldCy/=oldTotal;}
     if(persistentMasses.length)return;
     // One fixed source: the first tap creates the only mass and it never moves.
-    persistentMasses.push({x,y,mass,vx:0,vy:0,fixed:true,trail:[],trailClock:0,strength:1,waveStartTime:elapsed*0.001});
-    let total=0,cx=0,cy=0;
-    for(const body of persistentMasses){const weight=Math.max(0,body.mass??20);total+=weight;cx+=weight*body.x;cy+=weight*body.y;}
-    if(total>0){cx/=total;cy/=total;}
-    const shiftX=oldTotal>0?oldCx-cx:0,shiftY=oldTotal>0?oldCy-cy:0;
-    for(let i=0;i<persistentMasses.length;i++){
-      const body=persistentMasses[i];
-      if(i===persistentMasses.length-1)body.trail=[{x:body.x-cx,y:body.y-cy}];
-      else for(const sample of body.trail){sample.x+=shiftX;sample.y+=shiftY;}
-    }
-    document.getElementById('simHud').textContent='ONE STATIONARY MASS · OUTWARD CURVATURE PULSE';
-    showStatus('STATIONARY MASS · CURVATURE PULSE');
-  }
-  function massAccelerationAt(index){
-    const body=persistentMasses[index];let ax=0,ay=0;if(!gravityEnabled)return {x:0,y:0};
-    for(let j=0;j<persistentMasses.length;j++){
-      if(j===index)continue;const other=persistentMasses[j],dx=other.x-body.x,dy=other.y-body.y,r2=dx*dx+dy*dy+64;
-      const scale=gravityG*100*(other.mass??20)/(r2*Math.sqrt(r2));ax+=scale*dx;ay+=scale*dy;
-    }
-    return {x:ax,y:ay};
-  }
-  const PLANET_DT=1/2400;
-  const planetAx=new Float64Array(24),planetAy=new Float64Array(24);
-  let planetAccumulator=0;
-  function advanceMasses(frameMs){
-    if(paused)return;
-    planetAccumulator+=Math.min(50,Math.max(0,frameMs))*.001;
-    let steps=0;
-    while(planetAccumulator+1e-12>=PLANET_DT&&steps<120){
-      const n=persistentMasses.length;
-      if(!n){planetAccumulator=0;break;}
-      // Velocity-Verlet: Newtonian N-body forces with equal-and-opposite pair forces.
-      for(let i=0;i<n;i++){const a=massAccelerationAt(i);planetAx[i]=a.x;planetAy[i]=a.y;}
-      for(let i=0;i<n;i++){
-        const b=persistentMasses[i];if(b.fixed)continue;b.vx=(b.vx||0)+.5*planetAx[i]*PLANET_DT;b.vy=(b.vy||0)+.5*planetAy[i]*PLANET_DT;
-      }
-      for(const b of persistentMasses){if(b.fixed)continue;b.x+=b.vx*PLANET_DT;b.y+=b.vy*PLANET_DT;}
-      for(let i=0;i<n;i++){const a=massAccelerationAt(i),b=persistentMasses[i];if(b.fixed)continue;b.vx+=.5*a.x*PLANET_DT;b.vy+=.5*a.y*PLANET_DT;}
-      // Store each blue-tail sample in the instantaneous COM-local frame.
-      // This removes common translation from the entire historical trajectory,
-      // not merely from the current marker at draw time.
-      let totalTrailMass=0,trailComX=0,trailComY=0;
-      for(const body of persistentMasses){
-        const weight=Math.max(0,body.mass??20);
-        totalTrailMass+=weight;trailComX+=weight*body.x;trailComY+=weight*body.y;
-      }
-      if(totalTrailMass>0){trailComX/=totalTrailMass;trailComY/=totalTrailMass;}
-      for(const b of persistentMasses){
-        b.trailClock=(b.trailClock||0)+PLANET_DT;
-        const localX=b.x-trailComX,localY=b.y-trailComY,last=b.trail.at(-1);
-        if(b.trailClock>=.05&&(!last||Math.hypot(localX-last.x,localY-last.y)>1)){
-          b.trail.push({x:localX,y:localY});b.trailClock=0;if(b.trail.length>520)b.trail.shift();
-        }
-      }
-      planetAccumulator-=PLANET_DT;steps++;
-    }
-    if(steps>=120)planetAccumulator=Math.min(planetAccumulator,PLANET_DT);
-    for(let i=0;i<persistentMasses.length;i++)for(let j=i+1;j<persistentMasses.length;j++){
-      const a=persistentMasses[i],b=persistentMasses[j],ma=a.mass??20,mb=b.mass??20;
-      const ra=3+Math.sqrt(ma)*1.45,rb=3+Math.sqrt(mb)*1.45,dx=b.x-a.x,dy=b.y-a.y;
-      if(dx*dx+dy*dy<(ra+rb)*(ra+rb)){
-        const m=ma+mb;a.x=(a.x*ma+b.x*mb)/m;a.y=(a.y*ma+b.y*mb)/m;
-        a.vx=((a.vx||0)*ma+(b.vx||0)*mb)/m;a.vy=((a.vy||0)*ma+(b.vy||0)*mb)/m;
-        a.mass=m;a.trail=(a.trail||[]).concat(b.trail||[]).slice(-520);persistentMasses.splice(j,1);j--;
-      }
-    }
+    persistentMasses.push({x,y,mass,fixed:true,strength:1});
+    document.getElementById('simHud').textContent='ONE STATIONARY MASS · STATIC SCHWARZSCHILD CURVATURE';
+    showStatus('STATIONARY MASS · STATIC CURVATURE');
   }
   function pointerDown(e){
     if(e.pointerType==="mouse"){
@@ -742,13 +577,8 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     let psi=1,gx=0,gy=0;
     for(let j=0;j<Math.min(sourceList.length,MAX_GPU_POINTERS);j++){
       const m=sourceList[j],dx=x-(m.x+geodesicFrameOffsetX),dy=y-(m.y+geodesicFrameOffsetY),r=Math.sqrt(dx*dx+dy*dy+softening*softening);
-      const rs=Number.isFinite(m.rS)?m.rS:.02*2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
+      const rs=Number.isFinite(m.rS)?m.rS:2*gravityG*100*Math.max(0,m.mass??(m.strength*.25));
       psi+=rs/(4*r);gx-=rs*dx/(4*r*r*r);gy-=rs*dy/(4*r*r*r);
-      const rr=Math.max(Math.hypot(dx,dy),1),age=Math.max(0,elapsed*.001-(m.waveStartTime??0)),q=rr-220*age;
-      const envelope=Math.exp(-(q*q)/(2*28*28)),phase=q*.18,amplitude=.08;
-      psi+=amplitude*envelope*Math.sin(phase);
-      const radialDerivative=amplitude*envelope*(.18*Math.cos(phase)-(q/(28*28))*Math.sin(phase));
-      gx+=radialDerivative*dx/rr;gy+=radialDerivative*dy/rr;
     }
     return {x:2*gx/psi,y:2*gy/psi};
   }
@@ -934,7 +764,6 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
       if(p.life<=0&&p.strength<.012)pointers.delete(id);
     }
     gyroX=smooth(gyroX,gyroTargetX,1-Math.exp(-dt/110));gyroY=smooth(gyroY,gyroTargetY,1-Math.exp(-dt/110));
-    advanceMasses(dt);
     // Keep geodesic integration anchors in screen coordinates. Only the mass sources move;
     // the grid itself must never follow the centre of mass.
     geodesicFrameOffsetX=0;
@@ -943,7 +772,7 @@ void main(){float edge=abs(v_edge);float aa=max(fwidth(edge),0.001);float covera
     // A synthetic source exists only in the benchmark URL; it never enters saved app state.
     if(benchMode&&benchParams.has('probe'))fields.push({x:width*.5,y:height*.5,strength:1,benchmarkProbe:true});
     if(gpuEnabled)drawGpu(t);
-    stepNewtonProbe(dt);drawNewtonProbe(dt);
+    drawMassOverlay();
     if(!gpuEnabled){
       const g=geometry;
       ctx.lineWidth=2.0;ctx.strokeStyle='rgba(235,242,255,.34)';ctx.beginPath();
