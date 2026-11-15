@@ -7,58 +7,88 @@
 <title>Spin Waves — d'Aquino (2026) Normal Modes Model</title>
 <style>
   * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; touch-action: none; background: #03060d; color: #ebf3ff; font: 12px/1.4 system-ui,-apple-system,sans-serif; }
-  canvas#fieldCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
-  #topHud { position: fixed; z-index: 6; top: max(12px,env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; pointer-events: none; width: min(880px, calc(100vw - 24px)); }
-  .hudPill { padding: 5px 11px; border: 1px solid rgba(190,220,255,.2); border-radius: 99px; background: rgba(4,9,18,.76); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .07em; color: rgba(235,245,255,.88); white-space: nowrap; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #03060d; color: #ebf3ff; font: 12px/1.4 system-ui,-apple-system,sans-serif; }
+  body { display: grid; grid-template-rows: auto auto 1fr; }
+  input, pre, .vmCodeBox { user-select: text; -webkit-user-select: text; }
+
+  #topHud { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; padding: max(8px,env(safe-area-inset-top)) 12px 4px; background: rgba(3,6,13,.94); border-bottom: 1px solid rgba(190,220,255,.10); z-index: 6; }
+  .hudPill { padding: 4px 10px; border: 1px solid rgba(190,220,255,.22); border-radius: 99px; background: rgba(8,15,28,.85); font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; color: rgba(235,245,255,.90); white-space: nowrap; }
   .hudPill.warn { border-color: rgba(255,200,95,.55); color: #ffd479; }
   .hudPill.active { border-color: rgba(110,225,175,.55); color: #8af0c4; }
   .hudPill.cedric { pointer-events: auto; cursor: pointer; border-color: rgba(244,114,182,.65); background: linear-gradient(135deg, rgba(64,16,42,.88), rgba(32,18,58,.86)); color: #fbcfe8; animation: cedricPulse 2.4s ease-in-out infinite; }
   .hudPill.cedric.on { border-color: #f9a8d4; box-shadow: 0 0 18px rgba(244,114,182,.65); color: #fff; }
   @keyframes cedricPulse { 0%, 100% { box-shadow: 0 0 6px rgba(244,114,182,.25); } 50% { box-shadow: 0 0 16px rgba(244,114,182,.62); } }
-  #controlsPanel { position: fixed; z-index: 8; top: max(54px,calc(env(safe-area-inset-top) + 42px)); right: max(14px,env(safe-area-inset-right)); width: min(344px,calc(100vw - 28px)); max-height: calc(100vh - 122px); overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(190,220,255,.2); border-radius: 14px; background: rgba(5,10,20,.86); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
-  #controlsPanel summary { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: grab; touch-action: none; padding: 10px 12px; background: rgba(5,10,20,.96); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .10em; color: rgba(225,238,255,.92); }
-  #controlsPanel summary:active { cursor: grabbing; }
+
+  #quickLaunchBar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: center; padding: 4px 12px 6px; background: rgba(4,9,18,.90); border-bottom: 1px solid rgba(190,220,255,.12); z-index: 7; }
+  .quickPill { display: inline-flex; align-items: center; gap: 5px; min-height: 27px; padding: 0 9px; border: 1px solid rgba(190,220,255,.26); border-radius: 18px; background: rgba(10,19,36,.84); color: rgba(235,245,255,.94); font: 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; cursor: pointer; text-decoration: none; }
+  .quickPill:hover { background: rgba(30,54,90,.85); border-color: rgba(165,210,255,.55); }
+  .quickPill.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
+  .quickPill.accent { border-color: rgba(110,231,183,.48); color: #a7f3d0; }
+  .quickPill.accent.active { background: rgba(16,185,129,.3); border-color: rgba(110,231,183,.85); color: #fff; }
+  .speedGroup { display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px; border: 1px solid rgba(190,220,255,.22); border-radius: 18px; background: rgba(10,19,36,.84); }
+  .speedGroup .speedLbl { padding: 0 4px; font: 8.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .07em; color: rgba(185,212,245,.68); }
+  .spdBtn { min-height: 22px; padding: 0 6px; border-radius: 12px; font-size: 8.5px; border-color: transparent; background: transparent; }
+  .spdBtn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
+  #swTutorialBtn.hidden { display: none; }
+  #backBtn { margin-left: auto; border-color: rgba(190,220,255,.3); }
+
+  #dashShell { display: grid; grid-template-columns: minmax(310px, .92fr) minmax(420px, 1.38fr) 360px; gap: 10px; padding: 8px 12px 10px; min-height: 0; overflow: hidden; align-items: stretch; }
+  #diskColumn { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+  #diskStage { position: relative; flex: 1 1 auto; min-height: 240px; border: 1px solid rgba(190,220,255,.20); border-radius: 14px; background: radial-gradient(circle at center, #081225 0%, #03060d 78%); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  canvas#fieldCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+  .diskCaption { position: absolute; left: 10px; bottom: 8px; padding: 2px 7px; border-radius: 6px; background: rgba(3,7,15,.72); border: 1px solid rgba(190,220,255,.16); font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(200,222,248,.78); pointer-events: none; }
+
+  #readoutsDock { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; overflow-y: auto; padding-right: 2px; }
+  .readoutCard { padding: 8px 10px; border: 1px solid rgba(190,220,255,.20); border-radius: 12px; background: rgba(7,13,25,.88); display: flex; flex-direction: column; min-width: 0; }
+  .specTitle { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .07em; color: rgba(215,232,255,.84); margin-bottom: 5px; gap: 4px; }
+  #arnoldBox { flex: 1.25 1 220px; min-height: 215px; }
+  canvas#arnoldCanvas { display: block; width: 100%; flex: 1 1 auto; min-height: 150px; height: 168px; cursor: crosshair; touch-action: none; border-radius: 6px; }
+  #modesBox { flex: 1.15 1 215px; min-height: 210px; }
+  canvas#modeTimeCanvas { display: block; width: 100%; flex: 1 1 auto; min-height: 112px; height: 124px; border-radius: 5px; background: rgba(3,7,15,.65); cursor: ew-resize; touch-action: pan-y; }
+  #spectrumBox { flex: 0.72 0 auto; min-height: 105px; }
+  canvas#specCanvas { display: block; width: 100%; height: 74px; border-radius: 5px; }
+
+  .modeLegend { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; min-height: 16px; }
+  .modeChip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px; border-radius: 5px; border: 1px solid rgba(190,220,255,.18); background: rgba(15,28,50,.68); font: 8.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(230,242,255,.92); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .modeChip:hover { background: rgba(120,175,255,.20); border-color: rgba(165,215,255,.55); }
+  .modeChip.pinned { border-color: #34d399; background: rgba(16,185,129,.22); color: #d1fae5; }
+  .modeChipDot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+
+  .timeCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.82); }
+  .timeRangeWrap { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+  .timeStatsStrip { margin-top: 5px; padding: 5px 7px; border-radius: 7px; border: 1px solid rgba(130,185,255,.18); background: rgba(5,11,22,.78); font: 8.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,234,255,.9); display: grid; gap: 3px; }
+  .timeStatsHead { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .timeStatsRows { display: grid; gap: 2px; max-height: 54px; overflow-y: auto; }
+  .timeStatRow { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-variant-numeric: tabular-nums; color: rgba(210,228,255,.86); }
+
+  .magnonGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 6px; padding: 7px 10px; border: 1px solid rgba(190,220,255,.18); border-radius: 10px; background: rgba(7,13,25,.86); font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,226,255,.82); }
+  .magnonGrid b { color: #9ad8ff; font-weight: 600; }
+
+  #controlsPanel { min-height: 0; min-width: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(190,220,255,.20); border-radius: 14px; background: rgba(7,13,25,.90); }
+  #controlsPanel summary { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; padding: 9px 12px; background: rgba(6,12,23,.97); font: 9.5px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: rgba(225,238,255,.94); }
   #controlsPanel summary::-webkit-details-marker { display: none; }
   #controlsPanel[open] summary { border-bottom: 1px solid rgba(190,220,255,.14); }
   .ctrlToggleHint { font-size: 11px; opacity: .75; }
-  .ctrlBody { padding: 11px 12px 13px; display: grid; gap: 10px; touch-action: pan-y; }
-  .sectionLabel { font: 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; color: rgba(185,212,245,.62); text-transform: uppercase; }
+  .ctrlBody { padding: 10px 11px 14px; display: grid; gap: 9px; touch-action: pan-y; }
+  .sectionLabel { font: 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .11em; color: rgba(185,212,245,.66); text-transform: uppercase; }
+  .subCard { padding: 8px 9px; border-radius: 10px; border: 1px solid rgba(130,185,255,.20); background: rgba(11,21,39,.72); display: grid; gap: 6px; }
+  .rfGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,236,255,.88); font-variant-numeric: tabular-nums; }
+  .rfInputRow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .rfMiniLbl { display: grid; gap: 2px; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(185,212,245,.74); }
+  .rfMiniLbl input { width: 100%; padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(190,220,255,.24); background: rgba(4,9,18,.88); color: #ebf3ff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .rfWarnNote { padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(251,191,36,.40); background: rgba(251,191,36,.09); font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: #fde68a; }
+
   .btnRow { display: flex; gap: 5px; flex-wrap: wrap; }
   .btn { min-height: 27px; padding: 4px 8px; border: 1px solid rgba(190,220,255,.22); border-radius: 8px; background: rgba(120,165,225,.13); color: #eef5ff; font: 9.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .03em; cursor: pointer; }
   .btn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.68); color: #fff; }
   .btn.tiny { min-height: 22px; padding: 2px 6px; font-size: 8.5px; border-radius: 6px; }
-  .sliderRow { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; align-items: center; font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.80); }
+  .sliderRow { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; align-items: center; font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.84); }
   .sliderRow output { color: #fff; font-variant-numeric: tabular-nums; }
   .sliderRow input { grid-column: 1 / -1; width: 100%; accent-color: #8ec5ff; margin: 0; }
   .nmmTermsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
   .termChk { display: flex; align-items: center; gap: 4px; padding: 3px 5px; border-radius: 6px; border: 1px solid rgba(190,220,255,.16); background: rgba(18,32,56,.45); font: 8.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,232,255,.88); cursor: pointer; }
   .termChk input { accent-color: #6cb8ff; margin: 0; }
-  #readoutsDock { position: fixed; z-index: 7; left: max(14px,env(safe-area-inset-left)); bottom: max(16px,env(safe-area-inset-bottom)); display: grid; gap: 7px; width: min(334px,calc(100vw - 145px)); pointer-events: none; }
-  .readoutCard { padding: 8px 10px; border: 1px solid rgba(190,220,255,.2); border-radius: 12px; background: rgba(5,10,20,.80); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); pointer-events: auto; }
-  .specTitle { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .08em; color: rgba(215,232,255,.78); margin-bottom: 5px; cursor: grab; touch-action: none; gap: 4px; }
-  .specTitle:active { cursor: grabbing; }
-  canvas#specCanvas { display: block; width: 100%; height: 52px; }
-  canvas#modeTimeCanvas { display: block; width: 100%; height: 106px; border-radius: 5px; background: rgba(3,7,15,.65); }
-  .modeLegend { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; min-height: 15px; }
-  .modeChip { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(190,220,255,.18); background: rgba(15,28,50,.65); font: 8px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(230,242,255,.92); cursor: pointer; font-variant-numeric: tabular-nums; }
-  .modeChip:hover { background: rgba(120,175,255,.18); border-color: rgba(165,215,255,.5); }
-  .modeChipDot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
-  .magnonGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(190,220,255,.12); font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,226,255,.78); }
-  .magnonGrid b { color: #9ad8ff; font-weight: 600; }
-  #backBtn { position: fixed; z-index: 9; right: max(14px,env(safe-area-inset-right)); bottom: max(16px,env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 13px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.78); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .12em; text-decoration: none; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-  #quickLaunchBar { position: fixed; z-index: 9; left: max(14px,env(safe-area-inset-left)); top: max(54px,calc(env(safe-area-inset-top) + 42px)); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-width: calc(100vw - 28px); }
-  .quickPill { display: flex; align-items: center; gap: 5px; min-height: 31px; padding: 0 10px; border: 1px solid rgba(190,220,255,.28); border-radius: 20px; background: rgba(6,12,24,.78); color: rgba(235,245,255,.94); font: 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .07em; cursor: pointer; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-  .quickPill:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
-  .quickPill.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
-  .quickPill.accent { border-color: rgba(110,231,183,.48); color: #a7f3d0; }
-  .quickPill.accent.active { background: rgba(16,185,129,.3); border-color: rgba(110,231,183,.85); color: #fff; }
-  .speedGroup { display: inline-flex; align-items: center; gap: 3px; padding: 2px 4px; border: 1px solid rgba(190,220,255,.22); border-radius: 20px; background: rgba(6,12,24,.78); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-  .speedGroup .speedLbl { padding: 0 5px; font: 8.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .08em; color: rgba(185,212,245,.68); }
-  .spdBtn { min-height: 25px; padding: 0 7px; border-radius: 14px; font-size: 9px; border-color: transparent; background: transparent; }
-  .spdBtn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
-  #swTutorialBtn.hidden { display: none; }
-  #backBtn:hover { background: rgba(30,54,90,.82); border-color: rgba(165,210,255,.55); }
+
   @keyframes coachPulse {
     0%, 100% { box-shadow: 0 0 0 2px rgba(251,191,36,.95), 0 0 16px rgba(251,191,36,.55); border-color: #fbbf24; }
     50% { box-shadow: 0 0 0 5px rgba(251,191,36,.32), 0 0 24px rgba(251,191,36,.88); border-color: #fde68a; }
@@ -67,7 +97,7 @@
   .tutSpotlight::after { content: 'PRESS'; position: absolute; top: -8px; right: -4px; padding: 1px 4px; border-radius: 4px; background: #fbbf24; color: #050a14; font: 700 7.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; pointer-events: none; z-index: 20; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
   .sliderRow.tutSpotlight { padding: 4px 6px; border-radius: 8px; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.75); }
   .sliderRow.tutSpotlight::after { content: 'SLIDE'; top: -7px; right: 4px; }
-  #swTutorial { position: fixed; z-index: 10; left: max(14px,env(safe-area-inset-left)); top: max(94px,calc(env(safe-area-inset-top) + 82px)); width: min(352px,calc(100vw - 28px)); padding: 12px 14px; border: 1px solid rgba(185,218,255,.26); border-radius: 15px; background: rgba(5,10,20,.92); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.60); }
+  #swTutorial { position: fixed; z-index: 20; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(356px,calc(100vw - 24px)); padding: 12px 14px; border: 1px solid rgba(185,218,255,.26); border-radius: 15px; background: rgba(5,10,20,.94); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.64); }
   #swTutorial[hidden] { display: none; }
   .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; cursor: grab; touch-action: none; }
   .tutHeader:active { cursor: grabbing; }
@@ -84,12 +114,11 @@
   .tutPromptBox b { color: #fbbf24; }
   .tutPressLog { margin: 0 0 9px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(110,231,183,.32); background: rgba(16,185,129,.10); font-size: 10.8px; line-height: 1.38; color: rgba(225,250,240,.94); }
   .tutPressTag { display: inline-block; padding: 1px 6px; margin-right: 4px; border-radius: 5px; background: rgba(52,211,153,.24); border: 1px solid rgba(52,211,153,.55); font: 600 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: #a7f3d0; }
-  #pressToast { position: fixed; z-index: 9; bottom: max(16px,env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); max-width: min(520px, calc(100vw - 260px)); padding: 6px 12px; border: 1px solid rgba(110,231,183,.42); border-radius: 99px; background: rgba(5,12,24,.88); color: #e2f9ef; font: 10.5px/1.3 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); pointer-events: none; opacity: 0; transition: opacity .22s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #pressToast { position: fixed; z-index: 18; bottom: max(14px,env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); max-width: min(560px, calc(100vw - 24px)); padding: 6px 12px; border: 1px solid rgba(110,231,183,.42); border-radius: 99px; background: rgba(5,12,24,.90); color: #e2f9ef; font: 10.5px/1.3 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); pointer-events: none; opacity: 0; transition: opacity .22s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #pressToast.show { opacity: 1; }
   .tutActions { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
   .tutBtnGroup { display: flex; gap: 6px; }
-  #arnoldBox { pointer-events: auto; }
-  canvas#arnoldCanvas { display: block; width: 100%; height: 108px; cursor: crosshair; touch-action: none; border-radius: 6px; }
+
   #nikWrap { margin-top: 2px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
   #nikHeader { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.78); margin-bottom: 5px; }
   .nikTabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-bottom: 5px; }
@@ -102,23 +131,26 @@
   .nikCell.activeCol { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
   .nikCell.selected { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; z-index: 3; }
   #nikConfig { margin-top: 6px; padding: 6px 7px; border-radius: 6px; background: rgba(14,26,46,.72); border: 1px solid rgba(130,185,255,.18); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.88); }
-  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #specBandBtn { padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(130,185,255,.3); background: rgba(130,185,255,.14); color: #b9dcff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
-  #arnoldTargetBtn.t2, #arnoldPanBtn.active { border-color: rgba(251,191,36,.55); background: rgba(251,191,36,.2); color: #fde68a; }
-  #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes { border-color: rgba(110,231,183,.5); background: rgba(16,185,129,.18); color: #a7f3d0; }
+
+  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #arnoldExpBtn, #specBandBtn, #timeEnvBtn, #timeModeBtn, #timeExportBtn { padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.32); background: rgba(130,185,255,.14); color: #b9dcff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldTargetBtn.t2, #arnoldPanBtn.active, #arnoldExpBtn.active { border-color: rgba(251,191,36,.60); background: rgba(251,191,36,.22); color: #fde68a; }
+  #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes, #timeEnvBtn.active, #timeModeBtn.active { border-color: rgba(110,231,183,.55); background: rgba(16,185,129,.20); color: #a7f3d0; }
   canvas#arnoldCanvas.panMode { cursor: grab; }
   canvas#arnoldCanvas.panning { cursor: grabbing; }
-  .arnoldNavBar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 4px; }
-  .arnoldNavCtrl { display: grid; gap: 1px; font: 7.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.78); }
+  .arnoldNavBar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+  .arnoldNavCtrl { display: grid; gap: 1px; font: 8px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.80); }
   .arnoldNavHead { display: flex; justify-content: space-between; align-items: center; gap: 2px; }
   .arnoldNavHead output { color: #b9dcff; font-weight: 600; }
-  .arnoldNavCtrl input[type=range] { width: 100%; height: 12px; margin: 0; accent-color: #7cd4ff; cursor: pointer; }
-  #arnoldTermsNote { margin-top: 3px; font: 8px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,218,250,.76); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .arnoldNavCtrl input[type=range] { width: 100%; height: 13px; margin: 0; accent-color: #7cd4ff; cursor: pointer; }
+  #arnoldTermsNote { margin-top: 4px; font: 8.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,218,250,.78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
   #dbDiagBanner { margin-top: 5px; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.14); background: rgba(10,20,38,.7); font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.85); word-break: break-word; }
   #dbDiagBanner.err { border-color: rgba(251,191,36,.45); color: #fde68a; background: rgba(80,45,10,.35); }
   #dbDiagBanner.ok { border-color: rgba(52,211,153,.45); color: #a7f3d0; background: rgba(12,60,45,.32); }
-  #verifyModal { position: fixed; z-index: 12; left: 50%; top: max(56px, calc(env(safe-area-inset-top) + 46px)); transform: translateX(-50%); width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 82px); display: flex; flex-direction: column; border: 1px solid rgba(175,215,255,.30); border-radius: 15px; background: rgba(5,11,22,.95); color: #ebf3ff; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 18px 48px rgba(0,0,0,.72); overflow: hidden; }
+
+  #verifyModal { position: fixed; z-index: 25; left: 50%; top: max(48px, calc(env(safe-area-inset-top) + 38px)); transform: translateX(-50%); width: min(760px, calc(100vw - 20px)); max-height: calc(100vh - 68px); display: flex; flex-direction: column; border: 1px solid rgba(175,215,255,.30); border-radius: 15px; background: rgba(5,11,22,.96); color: #ebf3ff; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 18px 48px rgba(0,0,0,.76); overflow: hidden; }
   #verifyModal[hidden] { display: none; }
-  #whatsNewModal { position: fixed; z-index: 15; left: 50%; top: max(56px, calc(env(safe-area-inset-top) + 46px)); transform: translateX(-50%); width: min(560px, calc(100vw - 24px)); max-height: calc(100vh - 82px); display: flex; flex-direction: column; border: 1px solid rgba(130,220,255,.38); border-radius: 15px; background: rgba(5,11,22,.96); color: #ebf3ff; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 20px 52px rgba(0,0,0,.78); overflow: hidden; }
+  #whatsNewModal { position: fixed; z-index: 28; left: 50%; top: max(48px, calc(env(safe-area-inset-top) + 38px)); transform: translateX(-50%); width: min(600px, calc(100vw - 20px)); max-height: calc(100vh - 68px); display: flex; flex-direction: column; border: 1px solid rgba(130,220,255,.38); border-radius: 15px; background: rgba(5,11,22,.97); color: #ebf3ff; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 20px 52px rgba(0,0,0,.80); overflow: hidden; }
   #whatsNewModal[hidden] { display: none; }
   .wnGrid { display: grid; gap: 6px; }
   .wnCard { padding: 7px 9px; border-radius: 9px; border: 1px solid rgba(190,220,255,.16); background: rgba(14,26,46,.65); font: 11px/1.38 system-ui,-apple-system,sans-serif; color: rgba(220,235,255,.88); }
@@ -149,9 +181,10 @@
   .vmBadge.idle { background: rgba(148,163,184,.18); color: #cbd5e1; border: 1px solid rgba(148,163,184,.35); }
   .vmInputGrid { display: grid; gap: 6px; }
   .vmInputRow { display: grid; grid-template-columns: 92px 1fr; gap: 6px; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
-  .vmInputRow input, .vmCodeBox { width: 100%; padding: 5px 7px; border-radius: 6px; border: 1px solid rgba(190,220,255,.22); background: rgba(4,9,18,.88); color: #ebf3ff; font: 9px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; user-select: text; -webkit-user-select: text; }
+  .vmInputRow input, .vmCodeBox { width: 100%; padding: 5px 7px; border-radius: 6px; border: 1px solid rgba(190,220,255,.22); background: rgba(4,9,18,.88); color: #ebf3ff; font: 9px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
   .vmSessionItem { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(190,220,255,.15); background: rgba(14,26,46,.55); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
-  #hInputBox { padding: 5px 8px; }
+
+  #hInputBox { padding: 6px 9px; flex: 0 0 auto; }
   #hInputBox .specTitle { align-items: center; margin-bottom: 3px; gap: 4px; }
   #hTimeVal { color: #b9dcff; font-weight: 600; font-variant-numeric: tabular-nums; }
   .hPulseRow { display: flex; align-items: center; gap: 4px; }
@@ -161,36 +194,37 @@
   .pulseTag.p2on { border-color: rgba(52,211,153,.85); background: rgba(16,185,129,.28); color: #a7f3d0; box-shadow: 0 0 8px rgba(52,211,153,.35); font-weight: 600; }
   #hResetBtn { padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(190,220,255,.28); background: rgba(120,165,225,.16); color: #eef5ff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #hResetBtn:hover { background: rgba(120,165,225,.3); border-color: rgba(165,215,255,.6); }
-  canvas#hInputCanvas { display: block; width: 100%; height: 26px; border-radius: 4px; background: rgba(3,7,15,.65); }
-  #tonguesToggleBtn { display: none; }
-  @media (pointer:coarse), (max-width: 760px) {
-    #topHud { gap: 4px; width: calc(100vw - 16px); }
-    .hudPill { padding: 3px 7px; font-size: 8.5px; letter-spacing: .04em; white-space: normal; text-align: center; }
-    #controlsPanel { top: auto; right: 10px; width: min(344px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); max-height: 48vh; }
-    #controlsPanel:not([open]) { left: auto; width: auto; }
-    #readoutsDock { left: 10px; bottom: max(12px,env(safe-area-inset-bottom)); width: min(228px,calc(100vw - 132px)); gap: 5px; }
-    .readoutCard { padding: 6px 8px; }
-    #hInputBox { padding: 4px 7px; }
-    canvas#hInputCanvas { height: 22px; }
-    canvas#modeTimeCanvas { height: 78px; }
-    .modeChip { font-size: 7.5px; padding: 1px 4px; }
-    #spectrumBox { display: none; }
-    #arnoldBox { display: none; position: fixed; left: 10px; width: min(344px,calc(100vw - 20px)); bottom: max(58px,calc(env(safe-area-inset-bottom) + 50px)); z-index: 9; }
-    #arnoldBox.mobileOpen { display: block; }
-    .magnonGrid { grid-template-columns: 1fr; gap: 2px; font-size: 8px; }
-    #quickLaunchBar { left: 8px; top: max(82px,calc(env(safe-area-inset-top) + 70px)); gap: 4px; max-width: calc(100vw - 16px); }
-    .quickPill { min-height: 27px; padding: 0 7px; font-size: 8.5px; letter-spacing: .04em; }
+  canvas#hInputCanvas { display: block; width: 100%; height: 28px; border-radius: 4px; background: rgba(3,7,15,.65); }
+
+  @media (pointer:coarse), (max-width: 1023px) {
+    html, body { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; }
+    body { display: block; }
+    #topHud { gap: 4px; padding: max(8px,env(safe-area-inset-top)) 8px 5px; }
+    .hudPill { padding: 4px 8px; font-size: 9px; letter-spacing: .03em; white-space: normal; text-align: center; }
+    #quickLaunchBar { gap: 4px; padding: 5px 8px; justify-content: flex-start; }
+    .quickPill { min-height: 28px; padding: 0 8px; font-size: 8.5px; letter-spacing: .04em; }
     .speedGroup .speedLbl { display: none; }
-    .spdBtn { min-height: 23px; padding: 0 5px; font-size: 8px; }
-    #swTutorial { left: 10px; width: min(344px,calc(100vw - 20px)); top: max(146px,calc(env(safe-area-inset-top) + 132px)); padding: 10px 12px; }
+    .spdBtn { min-height: 24px; padding: 0 6px; font-size: 8.5px; }
+    #dashShell { display: flex; flex-direction: column; gap: 10px; padding: 8px 10px max(24px,env(safe-area-inset-bottom)); overflow: visible; }
+    #diskStage { height: min(78vw, 310px); min-height: 230px; flex: none; }
+    .magnonGrid { grid-template-columns: repeat(2, 1fr); }
+    #readoutsDock { overflow: visible; gap: 10px; padding-right: 0; }
+    #arnoldBox { min-height: 215px; flex: none; display: flex !important; }
+    canvas#arnoldCanvas { height: 170px; min-height: 155px; }
+    #modesBox { min-height: 215px; flex: none; }
+    canvas#modeTimeCanvas { height: 125px; min-height: 115px; }
+    #spectrumBox { display: flex !important; min-height: 104px; flex: none; }
+    canvas#specCanvas { height: 76px; }
+    #controlsPanel { overflow: visible; max-height: none; width: 100%; }
+    #swTutorial { left: 10px; right: 10px; width: auto; top: max(96px,calc(env(safe-area-inset-top) + 84px)); }
     #pressToast { display: none; }
-    #tonguesToggleBtn { display: flex; }
-    #backBtn { right: 10px; bottom: max(12px,env(safe-area-inset-bottom)); min-height: 32px; padding: 0 11px; font-size: 9px; }
+  }
+  @media (pointer:coarse) and (orientation: landscape) and (max-height: 500px) {
+    #diskStage { height: 240px; min-height: 220px; }
   }
 </style>
 </head>
 <body>
-<canvas id="fieldCanvas" aria-label="d'Aquino 2026 Normal Modes Model YIG 3um disk spin-wave simulation. Tap or drag to pluck modes."></canvas>
 <div id="topHud">
   <div class="hudPill" id="modeBadge">d'AQUINO NMM · UNIFORM H</div>
   <div class="hudPill" id="threshBadge">h_p / h_th: 1.00</div>
@@ -198,9 +232,9 @@
 </div>
 <div id="quickLaunchBar">
   <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves step-by-step guide">GUIDE ?</button>
-  <button class="quickPill accent" id="quickWhatsNewBtn" type="button" title="Summary of recent physics, controls & 10+ µs benchmark updates">WHAT'S NEW</button>
+  <button class="quickPill accent" id="quickWhatsNewBtn" type="button" title="Summary of experimental calibration, CSI2 analysis & dashboard updates">WHAT'S NEW</button>
   <button class="quickPill cedric" id="cedricEggBtn" type="button" title="Click for a special spin-wave surprise">♥ FOR CÉDRIC</button>
-  <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Toggle Arnold Tongues map">TONGUES</button>
+  <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Scroll to Arnold Tongues map">TONGUES</button>
   <button class="quickPill accent" id="quickCoexBtn" type="button" title="Scenario 1 (S_det > 0): coupled c++ coexistence between m13 (+2.99 GHz) & m23 (+0.38 GHz)">COEX c++</button>
   <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Scenario 2 (S_det < 0): 2-Tone 3.0µs Delayed Nonreciprocity on (m13, m16)">3µs NONRECIP</button>
   <button class="quickPill" id="quickSwapBtn" type="button" title="Swap Tone 1 & Tone 2 order (T1→T2 vs T2→T1)">SWAP T1↔T2</button>
@@ -214,8 +248,9 @@
     <button class="quickPill spdBtn" data-speed="25" type="button">25×</button>
     <button class="quickPill spdBtn" data-speed="150" type="button">150×</button>
   </span>
-  <button class="quickPill accent" id="quickVerifyBtn" type="button" title="Open interactive Benchmark, Calibration & Verification Protocol + DB Vault">VERIFY / CAL</button>
+  <button class="quickPill accent" id="quickVerifyBtn" type="button" title="Open interactive Benchmark, Calibration, Exp Data & DB Vault">VERIFY / EXP</button>
   <button class="quickPill" id="quickLogDbBtn" type="button" title="Save complete interaction & physics evaluation log to Supabase database + IndexedDB">LOG DB · 0</button>
+  <a class="quickPill" id="backBtn" href="../">← SPACETIME</a>
 </div>
 <div id="pressToast" aria-live="polite"></div>
 <section id="swTutorial" hidden aria-label="d'Aquino 2026 Spin Waves step-by-step guide">
@@ -247,6 +282,101 @@
     </div>
   </div>
 </section>
+<main id="dashShell">
+<section id="diskColumn" aria-label="YIG 3um disk live spin-wave field and pulse sequence">
+  <div class="readoutCard" id="hInputBox">
+    <div class="specTitle">
+      <span>h(t) 1ns Tukey AWG · <b id="hTimeVal">0.00µs</b></span>
+      <span class="hPulseRow">
+        <span id="p1StatusPill" class="pulseTag on">P1 ON</span>
+        <span id="p2StatusPill" class="pulseTag off">P2 OFF</span>
+        <button id="hResetBtn" type="button" title="Reset simulation time t = 0">↺ t=0</button>
+      </span>
+    </div>
+    <canvas id="hInputCanvas" width="290" height="28"></canvas>
+  </div>
+  <div id="diskStage">
+    <canvas id="fieldCanvas" aria-label="d'Aquino 2026 Normal Modes Model YIG 3um disk spin-wave simulation. Tap or drag to pluck modes."></canvas>
+    <div class="diskCaption">YIG 3 µm × 50 nm · B_DC = 27.0 mT · tap disk to pluck (B₀ δm)</div>
+  </div>
+  <div class="magnonGrid" id="magnonTerms">
+    <div><b>1M</b> Direct: <span id="m1Val">0.00</span></div>
+    <div><b>2M</b> h/h_th: <span id="m2Val">0.00</span></div>
+    <div><b>4M</b> Δf_tot: <span id="m3Val">0.0M</span></div>
+    <div><b>N_mm</b> <span id="m4Val">+2.99G</span></div>
+  </div>
+</section>
+<div id="readoutsDock">
+  <div class="readoutCard" id="arnoldBox">
+    <div class="specTitle">
+      <span>ARNOLD INSTABILITY MAP</span>
+      <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
+        <button id="arnoldAutoBtn" class="active" type="button" title="Auto-follow active &amp; shifted Arnold tongues so none leave the frame">AUTO</button>
+        <button id="arnoldPanBtn" type="button" title="Toggle canvas drag to pan H/V (or hold Alt+drag / two-finger trackpad scroll &amp; pinch zoom)">PAN</button>
+        <button id="arnoldFitBtn" type="button" title="Reset Zoom 1×, h₀=0 and fit active tongues">FIT</button>
+        <button id="arnoldBandBtn" class="all" type="button" title="Toggle between ALL 29 modes (3.38–4.18 GHz) and BULK zoom (3.88–4.16 GHz)">ALL 29</button>
+        <button id="arnoldExpBtn" class="active" type="button" title="Overlay experimentally observed resonance ticks (3788.6–4224 MHz) & calibrated k_eff threshold markers if provided">EXP</button>
+        <button id="arnoldTargetBtn" type="button" title="Toggle tap target between Tone 1 and Tone 2">TAP: T1</button>
+      </span>
+      <span id="arnoldHint">tap to pump</span>
+    </div>
+    <canvas id="arnoldCanvas" width="460" height="175"></canvas>
+    <div class="arnoldNavBar" id="arnoldNavBar">
+      <label class="arnoldNavCtrl" title="Zoom into/out of the Arnold instability map (or pinch on trackpad)">
+        <span class="arnoldNavHead"><span>Zoom</span><output id="outArnoldZoom">1.0×</output></span>
+        <input id="slArnoldZoom" type="range" min="1" max="8" step="0.05" value="1">
+      </label>
+      <label class="arnoldNavCtrl" title="Horizontal frequency slide f_c across Arnold tongues (or horizontal trackpad swipe)">
+        <span class="arnoldNavHead"><span>f_c</span><output id="outArnoldPanF">3.78G</output></span>
+        <input id="slArnoldPanF" type="range" min="3.10" max="4.40" step="0.005" value="3.78">
+      </label>
+      <label class="arnoldNavCtrl" title="Vertical amplitude floor h₀ in mT (or vertical trackpad swipe)">
+        <span class="arnoldNavHead"><span>h₀</span><output id="outArnoldPanH">0.0mT</output></span>
+        <input id="slArnoldPanH" type="range" min="0" max="2.50" step="0.01" value="0">
+      </label>
+    </div>
+    <div id="arnoldTermsNote">4A N_hk shift: ON · 4B cross-pump: OFF</div>
+  </div>
+  <div class="readoutCard" id="modesBox">
+    <div class="specTitle">
+      <span>TIME-DEPENDENT MODE ANALYSIS |a_h(t)|</span>
+      <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
+        <button id="timeEnvBtn" class="active" type="button" title="Overlay normalized h₁(t) / h₂(t) AWG envelope tracks on the time plot">ENV</button>
+        <button id="timeModeBtn" class="active" type="button" title="Toggle between Auto Scrolling Window, Full History, and Custom Zoom/Pan Window">AUTO</button>
+        <button id="timeExportBtn" type="button" title="Export recorded mode time-traces & window metrics as JSON">TRACE</button>
+      </span>
+      <span id="modeWinSpan" style="color:#8ec5ff;">0.35ns</span>
+      <span id="ampTotal">⟨|δm|⟩: 0.000</span>
+    </div>
+    <canvas id="modeTimeCanvas" width="460" height="130"></canvas>
+    <div class="timeRangeWrap">
+      <label class="arnoldNavCtrl" title="Adjust inspection window width across recorded trace history">
+        <span class="arnoldNavHead"><span>Window</span><output id="outTimeZoom">AUTO</output></span>
+        <input id="slTimeZoom" type="range" min="10" max="100" step="2" value="100">
+      </label>
+      <label class="arnoldNavCtrl" title="Pan inspection start/end window across recorded history">
+        <span class="arnoldNavHead"><span>Pan t</span><output id="outTimePan">LIVE</output></span>
+        <input id="slTimePan" type="range" min="0" max="100" step="1" value="100">
+      </label>
+    </div>
+    <div class="modeLegend" id="modeLegend"></div>
+    <div class="timeStatsStrip" id="timeStatsBox">
+      <div class="timeStatsHead">
+        <span id="timeStatsSpan">Window [0.00–0.00 µs] · Mean / RMS / σ / γ_eff</span>
+        <span id="timeConvBadge" class="vmBadge idle">IDLE</span>
+      </div>
+      <div class="timeStatsRows" id="timeStatsRows">Run or FAST→SS to compute steady-state convergence &amp; onset rates.</div>
+    </div>
+  </div>
+  <div class="readoutCard" id="spectrumBox">
+    <div class="specTitle">
+      <span>DFT SPECTRUM (4096-PT)</span>
+      <button id="specBandBtn" class="modes" type="button" title="Toggle between Mode Band (1.5–2.3 GHz, 3.4 MHz FFT resolution) and Wide Harmonics (0–6.5 GHz)">1.5–2.3G</button>
+      <span id="specPeak">f_peak: —</span>
+    </div>
+    <canvas id="specCanvas" width="460" height="74"></canvas>
+  </div>
+</div>
 <details id="controlsPanel" open>
   <summary><span>YIG 3µm×50nm · 27mT (29 MODES &gt;1.6G)</span><span class="ctrlToggleHint" id="ctrlToggleHint">✕</span></summary>
   <div class="ctrlBody">
@@ -362,6 +492,51 @@
       <button class="btn" id="btnClear" type="button">Calm Spins</button>
       <button class="btn" id="btnFastSS" type="button" title="Fast-forward to steady state">Fast-Fwd → SS</button>
     </div>
+    <div class="subCard" id="rfCalCard">
+      <div class="sectionLabel" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>RF AMPLITUDE &amp; REF BYPASS CAL (50 Ω)</span>
+        <span id="rfCalBadge" class="vmBadge warn">AWG ONLY</span>
+      </div>
+      <div class="rfGrid" id="rfCalRows">
+        <div>V_pk (V_pp/2): <b id="rfVpkVal">—</b></div>
+        <div>P_AWG (50 Ω): <b id="rfPawgVal">—</b></div>
+        <div>G_ref(f_p1): <b id="rfGrefVal">—</b></div>
+        <div>P_SA,ref: <b id="rfPsarefVal">—</b></div>
+        <div>Tone 2 / Sum: <b id="rfT2SumVal">OFF</b></div>
+        <div>Floor (3σ/10σ): <b id="rfFloorVal">-70.9 / -66.2 dBm</b></div>
+      </div>
+      <div class="rfInputRow">
+        <label class="rfMiniLbl" title="Optional additional RF chain gain/loss ΔG (dB) relative to reference bypass G_ref(f)">
+          <span>Extra Chain ΔG (dB)</span>
+          <input id="rfChainGainIn" type="number" step="0.1" value="0.0">
+        </label>
+        <label class="rfMiniLbl" title="Optional antenna conversion efficiency k_eff in mT per V_pk (leave blank if uncalibrated)">
+          <span>k_eff (mT/V_pk, opt)</span>
+          <input id="rfKEffIn" type="number" step="0.01" min="0" placeholder="uncalibrated">
+        </label>
+      </div>
+      <div class="rfInputRow">
+        <label class="rfMiniLbl" title="Convert an AWG peak voltage amplitude V_pk = V_pp/2 (mV into 50 Ω) to mW, dBm & bypass P_SA,ref">
+          <span>Convert V_pk (mV = V_pp/2)</span>
+          <input id="rfVpkTargetIn" type="number" step="1" min="0" value="250">
+        </label>
+        <div class="rfMiniLbl">
+          <span>Converted (50 Ω + G_ref)</span>
+          <div id="rfTargetOut" style="padding:3px 6px;border-radius:5px;border:1px solid rgba(190,220,255,.18);background:rgba(4,9,18,.75);color:#bae6fd;min-height:22px;font:8px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;">—</div>
+        </div>
+      </div>
+      <div id="rfSampleWarn" class="rfWarnNote">⚠ Sample-plane μ₀h_p &amp; P_sample UNCALIBRATED (unknown antenna Oersted conversion k_eff, S₁₁ &amp; input cable loss vs bypass). Reporting generator (50 Ω) &amp; SA bypass only unless k_eff is entered.</div>
+    </div>
+    <div class="subCard" id="expSummaryCard">
+      <div class="sectionLabel" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>EXP MODE ID (27 mT) &amp; CSI2</span>
+        <button class="btn tiny active" id="btnOpenExpTab" type="button">Full Exp Data ↗</button>
+      </div>
+      <div style="font:8.5px/1.38 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(215,234,255,.88);">
+        <b>B_cal = 27.0 mT retained</b> (29-mode fit 26.995 ± 0.10 mT, RMS 3.01 MHz; 80-mode 26.990 mT; all |δf_h| ≤ 7.5 MHz &lt; 15 MHz bound).<br>
+        <b>CSI2 Downshift:</b> −25 to −55 mV (−0.7 to −1.7 dB), +13.5–20 dB (4068–4190 MHz) · <span style="color:#fde68a;">Partially compatible</span> (coupled 4B cross-pumping P_hk + nonuniform CPW excitation of p_x=−1 dark modes).
+      </div>
+    </div>
     <div id="logWrap" style="margin-top:2px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12);">
       <div style="display:flex;justify-content:space-between;align-items:center;font:9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(210,228,255,.78);margin-bottom:5px;">
         <span>TELEMETRY, VERIFY &amp; DB</span>
@@ -376,76 +551,17 @@
     </div>
   </div>
 </details>
-<div id="readoutsDock">
-  <div class="readoutCard" id="hInputBox">
-    <div class="specTitle">
-      <span>h(t) 1ns Tukey · <b id="hTimeVal">0.00µs</b></span>
-      <span class="hPulseRow">
-        <span id="p1StatusPill" class="pulseTag on">P1 ON</span>
-        <span id="p2StatusPill" class="pulseTag off">P2 OFF</span>
-        <button id="hResetBtn" type="button" title="Reset simulation time t = 0">↺ t=0</button>
-      </span>
-    </div>
-    <canvas id="hInputCanvas" width="290" height="28"></canvas>
-  </div>
-  <div class="readoutCard" id="modesBox">
-    <div class="specTitle"><span>NONZERO MODES |a(t)|</span><span id="modeWinSpan" style="color:#8ec5ff;">0.35ns</span><span id="ampTotal">⟨|δm|⟩: 0.000</span></div>
-    <canvas id="modeTimeCanvas" width="290" height="106"></canvas>
-    <div class="modeLegend" id="modeLegend"></div>
-    <div class="magnonGrid" id="magnonTerms">
-      <div><b>1M</b> Direct: <span id="m1Val">0.00</span></div>
-      <div><b>2M</b> h/h_th: <span id="m2Val">0.00</span></div>
-      <div><b>4M</b> Δf_tot: <span id="m3Val">0.0M</span></div>
-      <div><b>N_mm</b> <span id="m4Val">+2.99G</span></div>
-    </div>
-  </div>
-  <div class="readoutCard" id="arnoldBox">
-    <div class="specTitle">
-      <span>ARNOLD</span>
-      <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
-        <button id="arnoldAutoBtn" class="active" type="button" title="Auto-follow active &amp; shifted Arnold tongues so none leave the frame">AUTO</button>
-        <button id="arnoldPanBtn" type="button" title="Toggle canvas drag to pan H/V (or hold Alt+drag / two-finger trackpad scroll &amp; pinch zoom)">PAN</button>
-        <button id="arnoldFitBtn" type="button" title="Reset Zoom 1×, h₀=0 and fit active tongues">FIT</button>
-        <button id="arnoldBandBtn" class="all" type="button" title="Toggle between ALL 29 modes (3.38–4.18 GHz) and BULK zoom (3.88–4.16 GHz)">ALL 29</button>
-        <button id="arnoldTargetBtn" type="button" title="Toggle tap target between Tone 1 and Tone 2">TAP: T1</button>
-      </span>
-      <span id="arnoldHint">tap to pump</span>
-    </div>
-    <canvas id="arnoldCanvas" width="296" height="114"></canvas>
-    <div class="arnoldNavBar" id="arnoldNavBar">
-      <label class="arnoldNavCtrl" title="Zoom into/out of the Arnold instability map (or pinch on trackpad)">
-        <span class="arnoldNavHead"><span>Zoom</span><output id="outArnoldZoom">1.0×</output></span>
-        <input id="slArnoldZoom" type="range" min="1" max="8" step="0.05" value="1">
-      </label>
-      <label class="arnoldNavCtrl" title="Horizontal frequency slide f_c across Arnold tongues (or horizontal trackpad swipe)">
-        <span class="arnoldNavHead"><span>f_c</span><output id="outArnoldPanF">3.78G</output></span>
-        <input id="slArnoldPanF" type="range" min="3.10" max="4.40" step="0.005" value="3.78">
-      </label>
-      <label class="arnoldNavCtrl" title="Vertical amplitude floor h₀ in mT (or vertical trackpad swipe)">
-        <span class="arnoldNavHead"><span>h₀</span><output id="outArnoldPanH">0.0mT</output></span>
-        <input id="slArnoldPanH" type="range" min="0" max="2.50" step="0.01" value="0">
-      </label>
-    </div>
-    <div id="arnoldTermsNote">4A N_hk shift: ON · 4B cross-pump: OFF</div>
-  </div>
-  <div class="readoutCard" id="spectrumBox">
-    <div class="specTitle">
-      <span>SPECTRUM</span>
-      <button id="specBandBtn" class="modes" type="button" title="Toggle between Mode Band (1.5–2.3 GHz, 3.4 MHz FFT resolution) and Wide Harmonics (0–6.5 GHz)">1.5–2.3G</button>
-      <span id="specPeak">f_peak: —</span>
-    </div>
-    <canvas id="specCanvas" width="290" height="68"></canvas>
-  </div>
-</div>
+</main>
 <section id="verifyModal" hidden aria-label="Interactive Benchmark, Calibration, Verification & DB Vault">
   <div class="vmHeader">
-    <span class="vmTitle">BENCHMARK · CALIBRATION · VERIFICATION · DB</span>
+    <span class="vmTitle">BENCHMARK · CALIBRATION · EXP DATA · VERIFICATION · DB</span>
     <button class="tutClose" id="vmCloseBtn" type="button" aria-label="Close protocol window">×</button>
   </div>
   <div class="vmBody">
     <div class="vmTabs" id="vmTabs">
       <button class="vmTab active" data-tab="protocol" type="button">PROTOCOL (8 STAGES)</button>
       <button class="vmTab" data-tab="live" type="button">LIVE CALIBRATION &amp; 4B</button>
+      <button class="vmTab" data-tab="exp" type="button">EXP DATA &amp; CSI2</button>
       <button class="vmTab" data-tab="handout" type="button">BENCHMARK HANDOUT</button>
       <button class="vmTab" data-tab="db" type="button">DB VAULT &amp; CONFIG</button>
     </div>
@@ -475,6 +591,56 @@
         <button class="btn" id="vmProbe4BBtn" type="button">Compare 4A Shift vs 4B Cross-Pump</button>
       </div>
       <div id="vmLiveOut" class="vmCodeBox" style="white-space:pre-wrap;min-height:110px;">Click "Inspect Live State vs Theory" to compare current simulation amplitudes against d'Aquino Eqs. (31)–(34) / (55)–(57), check 4A frequency shifts vs 4B parametric cross-pumping (P_hk a_k² a_h*), and log the calibration snapshot.</div>
+    </div>
+    <div id="vmTabExp" hidden>
+      <div class="sectionLabel">1. Experimental Mode Identification &amp; Hellmann–Feynman Bias-Field Fit (B_cal = 27.0 mT Retained)</div>
+      <div class="vmCodeBox" style="margin:4px 0 8px;white-space:pre-wrap;">Model B₀ = 27.0 mT · First-order Zeeman perturbation from 80-mode NPZ tensor: df_h/dB ≈ 36.2–39.7 MHz/mT.
+Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode anchors (m7,m9,m13,m16,m21,m27,m28) B_cal = 26.995 ± 0.10 mT (RMS 3.01 MHz) | 80-mode anchors (+npz35,37,42) B_cal = 26.990 mT (RMS 2.64 MHz). Conclusion: B₀ = 27.0 mT is physically verified; all residuals |δf_h| ≤ 7.5 MHz are consistent with sample imperfections (&lt; 15 MHz bound).</div>
+      <div style="overflow-x:auto;">
+        <table class="vmTable">
+          <thead><tr><th>Mode (NPZ)</th><th>Symmetry / |b_y|</th><th>f_NMM (GHz)</th><th>2f_NMM (MHz)</th><th>2f_exp (MHz)</th><th>δf_h (MHz)</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td>m7 (npz13)</td><td>p_x=−1, p_y=+1 · 0.000</td><td>1.8943</td><td>3788.6</td><td>~3780.0 (edge)</td><td>−4.3</td><td><span class="vmBadge warn">MED</span></td></tr>
+            <tr><td>m9 (npz15)</td><td>p_x=+1, p_y=+1 · 0.017</td><td>1.9448</td><td>3889.6</td><td>~3905.0 (ovlp m8)</td><td>+7.7</td><td><span class="vmBadge warn">MED</span></td></tr>
+            <tr><td>m13 (npz19)</td><td>p_x=+1, p_y=+1 · 0.054</td><td>1.9739</td><td>3947.9</td><td>3941.0</td><td>−3.4</td><td><span class="vmBadge pass">HIGH</span></td></tr>
+            <tr><td>m16 / m15</td><td>p_x=−1 · dark (CPW)</td><td>1.9992</td><td>3998.3</td><td>3997.3</td><td>−0.5</td><td><span class="vmBadge pass">HIGH</span></td></tr>
+            <tr><td>m21 / m22</td><td>bulk zoom doublet</td><td>2.0339 / 2.0356</td><td>4067.8 / 4071.1</td><td>4072.0</td><td>+0.5..+2.1</td><td><span class="vmBadge pass">HIGH</span></td></tr>
+            <tr><td>m27 (Kittel)</td><td>p_x=+1, p_y=+1 · 0.242</td><td>2.0546</td><td>4109.2</td><td>4109.5–4110.0</td><td>+0.2..+0.4</td><td><span class="vmBadge pass">HIGH</span></td></tr>
+            <tr><td>m28 / npz35</td><td>80-mode continuation</td><td>2.0689 / 2.0713</td><td>4137.8 / 4142.7</td><td>4145.0</td><td>+1.2 (npz35)</td><td><span class="vmBadge pass">HIGH</span></td></tr>
+            <tr><td>npz37 (80m)</td><td>outside 29-mode set</td><td>2.0930</td><td>4186.0</td><td>4182.3</td><td>−1.8</td><td><span class="vmBadge pass">HIGH</span></td></tr>
+            <tr><td>npz42 (80m)</td><td>outside 29-mode set</td><td>2.1121</td><td>4224.1</td><td>4223.2</td><td>−0.5</td><td><span class="vmBadge pass">HIGH</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sectionLabel" style="margin-top:8px;">2. Linear-Power Noise Floor &amp; Experimental Thresholds (halfaverage, −6.30 dB RBW corr, V_pk = V_pp/2 into 50 Ω)</div>
+      <div class="vmCodeBox" style="margin:4px 0 6px;white-space:pre-wrap;">Background linear power (3770–3830 MHz &amp; a=0–160 mV): mean = 1.273e-8 mW (−78.95 dBm), std = 2.270e-8 mW · 3σ threshold = 8.083e-8 mW (−70.92 dBm) · SNR=10 = 2.397e-7 mW (−66.20 dBm). Note: Sample-plane power P_sample and μ₀h_p remain UNCALIBRATED (unknown antenna k_eff &amp; input S11/loss vs bypass G_ref).</div>
+      <div style="overflow-x:auto;">
+        <table class="vmTable">
+          <thead><tr><th>Mode</th><th>2f_exp (MHz)</th><th>a_3σ (mV_pk)</th><th>a_10σ (mV_pk)</th><th>Knee (mV_pk)</th><th>P_AWG(10σ)</th><th>G_ref (dB)</th></tr></thead>
+          <tbody>
+            <tr><td>m9/m8</td><td>3905.0</td><td>237.3</td><td>251.2</td><td>264.2</td><td>0.631 mW (−2.00 dBm)</td><td>−20.93</td></tr>
+            <tr><td>m13</td><td>3941.0</td><td>246.3</td><td>249.3</td><td>245.8</td><td>0.621 mW (−2.07 dBm)</td><td>−21.19</td></tr>
+            <tr><td>m16/m15</td><td>3997.3</td><td>295.5</td><td>297.0</td><td>283.1</td><td>0.882 mW (−0.54 dBm)</td><td>−21.44</td></tr>
+            <tr><td>m21–23</td><td>4072.0</td><td>284.6</td><td>295.5</td><td>251.2 (263–270)</td><td>0.873 mW (−0.59 dBm)</td><td>−21.68</td></tr>
+            <tr><td>m27 Kit</td><td>4109.5</td><td>260.7</td><td>277.6</td><td>273.6</td><td>0.771 mW (−1.13 dBm)</td><td>−21.32</td></tr>
+            <tr><td>m28/npz35</td><td>4145.0</td><td>265.1</td><td>309.5</td><td>271.1</td><td>0.958 mW (−0.19 dBm)</td><td>−21.74</td></tr>
+            <tr><td>npz37</td><td>4182.3</td><td>256.8</td><td>314.9</td><td>312.9</td><td>0.992 mW (−0.04 dBm)</td><td>−22.06</td></tr>
+            <tr><td>npz42</td><td>4223.2</td><td>267.9</td><td>298.5</td><td>287.1</td><td>0.891 mW (−0.50 dBm)</td><td>−22.10</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="sectionLabel" style="margin-top:8px;">3. CSI2.png Threshold Downshift &amp; Controlled NMM Ablation Verdict</div>
+      <div style="overflow-x:auto;">
+        <table class="vmTable">
+          <thead><tr><th>Aspect / Ablation</th><th>Observation / Finding</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>CSI2.png Middle Panel</td><td>+13.5 to +20.0 dB scattered enhancement at 223–320 mV across 4068–4190 MHz: −25 to −55 mV (−0.7 to −1.7 dB) threshold downshift &amp; +15–25 MHz broadening.</td><td><span class="vmBadge warn">EXP SHIFT</span></td></tr>
+            <tr><td>Isolated Single-Mode</td><td>Full NMM vs no-4B vs no-4A produce identical thresholds (zero isolated shift).</td><td><span class="vmBadge idle">NO SHIFT</span></td></tr>
+            <tr><td>Coupled Pairs (m22+24, 25+26, 15+16)</td><td>4B P_hk a_h* a_k² induces real sub-threshold onset &amp; phase-gated hysteresis down to 0.65–0.88× h_th; 4A N_hk shifts frequency/stabilizes saturation.</td><td><span class="vmBadge pass">4B DRIVEN</span></td></tr>
+            <tr><td>Uniform vs CPW Validity</td><td>Standard NMM assumes spatially uniform field (|b_y|=0 for p_x=−1 modes like m16), whereas experimental CPW antenna has strong nonuniform Oersted gradients exciting p_x=−1 dark modes.</td><td><span class="vmBadge warn">PARTIAL</span></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     <div id="vmTabHandout" hidden>
       <div class="btnRow" style="margin-bottom:7px;justify-content:space-between;align-items:center;">
@@ -524,27 +690,26 @@
     </div>
   </div>
 </section>
-<section id="whatsNewModal" hidden aria-label="What's New in Spin Waves v79">
+<section id="whatsNewModal" hidden aria-label="What's New in Spin Waves Dashboard">
   <div class="vmHeader">
-    <span class="vmTitle">WHAT'S NEW · SPIN WAVES v79 (d'AQUINO 2026 NMM)</span>
+    <span class="vmTitle">WHAT'S NEW · SCIENTIFIC DASHBOARD &amp; EXP CALIBRATION</span>
     <button class="tutClose" id="wnCloseBtn" type="button" aria-label="Close what's new summary">×</button>
   </div>
   <div class="vmBody">
     <div class="wnGrid">
-      <div class="wnCard"><b>1 · 4B Downward Arnold &amp; φ₁ Phase Gate</b><br>New <code>4B Down+φ</code> preset &amp; Tone 1 Phase <code>φ₁</code> slider show unmodified <code>P_hk a_h* a_k²</code> cross-pumping: sub-threshold <code>m15</code> ignites below <code>h_th</code> (<code>11.00×</code> transient <code>0°/180°</code> contrast; continuous dual-tone sustains down to <code>0.65× h_th</code> for <code>10 µs</code>).</div>
-      <div class="wnCard"><b>2 · Arnold Viewport (AUTO / PAN / FIT / Zoom / f_c / h₀)</b><br>Auto-follow keeps <code>4A</code>-shifted tongues in frame; pinch-to-zoom, two-finger trackpad scroll, <code>PAN</code> / <code>Alt+drag</code>, and sliders zoom <code>1×–8×</code> across all 29 modes.</div>
-      <div class="wnCard"><b>3 · Smooth FAST→SS &amp; Adaptive High-Amp RK4</b><br>Animated <code>FAST→SS</code> stepping (<code>49 τ/frame</code>) plus adaptive RK4 step control stay bounded at <code>3.0–3.5× h_th</code> and reveal multi-µs dense-mode competition.</div>
-      <div class="wnCard"><b>4 · 8-Stage Verify &amp; 10–12 µs Benchmark Handout</b><br>Added Stage 8 long-term verification, embedded <code>BENCHMARK HANDOUT</code> tab, exact SI/NMM telemetry, and full <a href="./BENCHMARK_HANDOUT.md" target="_blank" rel="noopener" style="color:#9ad8ff;">BENCHMARK_HANDOUT.md</a>.</div>
+      <div class="wnCard"><b>1 · Non-Overlapping Scientific Dashboard (Desktop + Mobile)</b><br>Full responsive grid separating the YIG disk canvas, enlarged Arnold Instability Map (with <code>[EXP]</code> experimental peak overlay), Time-Dependent Mode Analysis, 4096-pt Spectrum, and NMM Controls.</div>
+      <div class="wnCard"><b>2 · Time-Dependent Mode Analysis (Window Stats, Convergence &amp; Pin)</b><br>2048-pt trace history, zoom/pan window sliders, <code>ENV</code> h₁/h₂ overlay, per-mode Mean / RMS / σ / Drift / Onset / γ_eff convergence detector (<code>CONVERGED</code> / <code>GROWING</code> / <code>OSCILLATING</code>), click chip to pin, and JSON trace export.</div>
+      <div class="wnCard"><b>3 · RF 50 Ω Amplitude &amp; Reference Bypass Calibration</b><br>Live <code>V_pk = V_pp/2</code> ↔ <code>mW / dBm</code> + 50-pt <code>G_ref(f)</code> bypass transfer &amp; noise-floor thresholds (<code>3σ = −70.92 dBm</code>), while keeping uncalibrated sample-plane <code>k_eff</code> explicit.</div>
+      <div class="wnCard"><b>4 · Exp Mode ID (B_cal = 27 mT), CSI2 &amp; NMM Ablation Tab</b><br>New <code>EXP DATA &amp; CSI2</code> tab in <code>VERIFY / EXP</code> summarizes Hellmann–Feynman <code>B_cal = 27.0 mT</code> fits, linear-power thresholds, and controlled <code>4A / 4B</code> downshift ablations.</div>
     </div>
     <div class="btnRow" style="justify-content:flex-end;">
-      <button class="btn" id="wnOpenGuideBtn" type="button">Open Guide</button>
+      <button class="btn" id="wnOpenExpBtn" type="button">View Exp Data &amp; CSI2</button>
       <button class="btn" id="wnOpenVerifyBtn" type="button">Run 8-Stage Verify</button>
       <button class="btn" id="wnOpenHandoutBtn" type="button">View Handout</button>
       <button class="btn active" id="wnGotItBtn" type="button">Got it</button>
     </div>
   </div>
 </section>
-<a id="backBtn" href="../">← SPACETIME</a>
 <script>
 (() => {
   'use strict';
@@ -688,6 +853,144 @@
   let simTime = 0; // dimensionless tau = omega_M * t
   let activeMat4 = 'n';
   let nikSelPair = [13, 23];
+  let showExpMarkers = true;
+  let plotShowEnv = true;
+  let plotViewMode = 'auto'; // 'auto' | 'full' | 'window'
+  let timeZoomPct = 100;
+  let timePanPct = 100;
+  const pinnedModes = new Set();
+  let rfChainGainDB = 0.0;
+  let rfKEffMTPerV = null; // null = uncalibrated sample-plane Oersted conversion
+
+  function prepHiDpiCanvas(canvas, ctx2d, fallbackW = 460, fallbackH = 140) {
+    if (!canvas) return { w: fallbackW, h: fallbackH, scale: 1 };
+    let w = canvas.width || fallbackW;
+    let h = canvas.height || fallbackH;
+    let scale = 1;
+    if (typeof canvas.getBoundingClientRect === 'function') {
+      const rect = canvas.getBoundingClientRect();
+      if (rect && rect.width > 16 && rect.height > 12) {
+        w = Math.round(rect.width);
+        h = Math.round(rect.height);
+        scale = Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 2);
+        const pw = Math.round(w * scale);
+        const ph = Math.round(h * scale);
+        if (canvas.width !== pw || canvas.height !== ph) {
+          canvas.width = pw;
+          canvas.height = ph;
+        }
+        if (ctx2d && typeof ctx2d.setTransform === 'function') ctx2d.setTransform(scale, 0, 0, scale, 0, 0);
+        return { w, h, scale };
+      }
+    }
+    if (ctx2d && typeof ctx2d.setTransform === 'function') ctx2d.setTransform(1, 0, 0, 1, 0, 0);
+    return { w, h, scale: 1 };
+  }
+
+  // Experimental 50-point bypass transfer calibration G_ref(f) = P_SA,ref - P_AWG (dB, -3.31 dB RBW corr) for 3760..4250 MHz @ 10 MHz step
+  const G_REF_50PTS = [
+    -21.38, -21.38, -21.30, -21.16, -20.98, -20.80, -20.79, -20.90, -21.13, -21.29,
+    -21.14, -21.01, -20.89, -20.81, -20.87, -20.97, -21.15, -21.23, -21.20, -21.15,
+    -21.11, -21.09, -21.20, -21.34, -21.49, -21.53, -21.47, -21.42, -21.42, -21.47,
+    -21.58, -21.67, -21.65, -21.54, -21.44, -21.33, -21.30, -21.41, -21.62, -21.86,
+    -22.09, -22.12, -22.06, -22.04, -22.05, -22.07, -22.10, -22.05, -21.86, -21.71
+  ];
+  function interpolateGrefDB(freqGHz) {
+    const fMHz = Number(freqGHz) * 1000;
+    const inBand = fMHz >= 3760 && fMHz <= 4250;
+    const u = Math.max(0, Math.min(G_REF_50PTS.length - 1, (fMHz - 3760) / 10));
+    const i0 = Math.floor(u), i1 = Math.min(G_REF_50PTS.length - 1, i0 + 1);
+    const t = u - i0;
+    return { gRefDB: +(G_REF_50PTS[i0] * (1 - t) + G_REF_50PTS[i1] * t).toFixed(3), inBand };
+  }
+  const RF_NOISE_FLOOR = {
+    meanMW: 1.273e-8,
+    stdMW: 2.270e-8,
+    meanDBm: -78.95,
+    thresh3SigmaMW: 8.083e-8,
+    thresh3SigmaDBm: -70.92,
+    threshSnr10MW: 2.397e-7,
+    threshSnr10DBm: -66.20,
+    thresh2xMeanDBm: -75.94,
+    rbwCorrHalfAvgDB: -6.30,
+    rbwCorrRefDB: -3.31
+  };
+  const EXP_BCAL_SUMMARY = {
+    nominalMT: 27.0,
+    radiativeAnchorsFitMT: 26.975,
+    radiativeRmsMHz: 1.63,
+    fit29ModesMT: 26.995,
+    rms29ModesMHz: 3.01,
+    fit80ModesMT: 26.990,
+    rms80ModesMHz: 2.64,
+    statUncertMT: 0.029,
+    imperfectionUncertMT: 0.10,
+    retainedMT: 27.0,
+    maxResidualMHz: 7.5
+  };
+  const EXP_ANCHORS_29 = [
+    { m: 7, fSimGHz: 1.89432, f2ExpMHz: 3780.0, residualMHz: -4.3, a3SigMV: null, a10SigMV: null, kneeMV: null, conf: 'MED', note: 'edge' },
+    { m: 9, fSimGHz: 1.94478, f2ExpMHz: 3905.0, residualMHz: 7.7, a3SigMV: 237.3, a10SigMV: 251.2, kneeMV: 264.2, conf: 'MED', note: 'ovlp m8' },
+    { m: 13, fSimGHz: 1.97395, f2ExpMHz: 3941.0, residualMHz: -3.4, a3SigMV: 246.3, a10SigMV: 249.3, kneeMV: 245.8, conf: 'HIGH', note: '|by|=0.054' },
+    { m: 16, fSimGHz: 1.99915, f2ExpMHz: 3997.3, residualMHz: -0.5, a3SigMV: 295.5, a10SigMV: 297.0, kneeMV: 283.1, conf: 'HIGH', note: 'px=-1 CPW' },
+    { m: 21, fSimGHz: 2.03390, f2ExpMHz: 4072.0, residualMHz: 2.1, a3SigMV: 284.6, a10SigMV: 295.5, kneeMV: 251.2, conf: 'HIGH', note: 'm21/22 zoom' },
+    { m: 27, fSimGHz: 2.05460, f2ExpMHz: 4109.7, residualMHz: 0.25, a3SigMV: 260.7, a10SigMV: 277.6, kneeMV: 273.6, conf: 'HIGH', note: 'Kittel |by|=0.242' },
+    { m: 28, fSimGHz: 2.06890, f2ExpMHz: 4145.0, residualMHz: 3.6, a3SigMV: 265.1, a10SigMV: 309.5, kneeMV: 271.1, conf: 'HIGH', note: 'ovlp npz35' }
+  ];
+  const EXP_ANCHORS_80_EXTRA = [
+    { npz: 35, fSimGHz: 2.07135, f2ExpMHz: 4145.0, residualMHz: 1.2, a3SigMV: 265.1, a10SigMV: 309.5, kneeMV: 271.1 },
+    { npz: 37, fSimGHz: 2.09300, f2ExpMHz: 4182.3, residualMHz: -1.8, a3SigMV: 256.8, a10SigMV: 314.9, kneeMV: 312.9 },
+    { npz: 42, fSimGHz: 2.11205, f2ExpMHz: 4223.2, residualMHz: -0.5, a3SigMV: 267.9, a10SigMV: 298.5, kneeMV: 287.1 }
+  ];
+  const CSI2_ABLATION_DATA = {
+    observedShiftMV: [-55, -25],
+    observedShiftDB: [-1.7, -0.7],
+    enhancementDB: [13.5, 20.0],
+    bandMHz: [4068, 4190],
+    broadeningMHz: [15, 25],
+    verdict: 'Partially compatible',
+    reason: 'Isolated Full/no-4B/no-4A produce zero shift; coupled pairs (m22+m24, m25+m26, m15+m16) show real 4B P_hk downshift & 4A N_hk stabilization, while CPW Oersted gradients break uniform-field px=-1 selection.'
+  };
+
+  function awgVpkToUnits(vPkMV, freqGHz = driveFreq, chainGainDB = rfChainGainDB, kEff = rfKEffMTPerV) {
+    const vpk = Math.max(0, Number(vPkMV) || 0);
+    const vpp = 2 * vpk;
+    const vrms = vpk / Math.SQRT2;
+    const pAwgMW = (vpk * vpk) / 100000;
+    const pAwgDBm = pAwgMW > 0 ? 10 * Math.log10(pAwgMW) : -Infinity;
+    const { gRefDB, inBand } = interpolateGrefDB(freqGHz);
+    const extraG = Number.isFinite(Number(chainGainDB)) ? Number(chainGainDB) : 0;
+    const pSaRefDBm = pAwgMW > 0 ? (pAwgDBm + gRefDB + extraG) : -Infinity;
+    const pSaRefMW = pAwgMW > 0 ? Math.pow(10, pSaRefDBm / 10) : 0;
+    const validKEff = typeof kEff === 'number' && Number.isFinite(kEff) && kEff > 0;
+    const hSampleMT = validKEff ? (vpk * 1e-3) * kEff : null;
+    return {
+      vPkMV: vpk, vppMV: vpp, vRmsMV: vrms,
+      pAwgMW, pAwgDBm, gRefDB, gRefInBand: inBand,
+      pSaRefDBm, pSaRefMW, hSampleMT, sampleCalibrated: validKEff
+    };
+  }
+  function mtToAwgVpk(hMT, kEff = rfKEffMTPerV) {
+    const validKEff = typeof kEff === 'number' && Number.isFinite(kEff) && kEff > 0;
+    if (!validKEff) return { calibrated: false, vPkMV: null, vppMV: null, vRmsMV: null, pAwgMW: null, pAwgDBm: null };
+    const vPkMV = (Math.max(0, Number(hMT) || 0) / kEff) * 1000;
+    const pAwgMW = (vPkMV * vPkMV) / 100000;
+    return {
+      calibrated: true,
+      vPkMV, vppMV: 2 * vPkMV, vRmsMV: vPkMV / Math.SQRT2,
+      pAwgMW, pAwgDBm: pAwgMW > 0 ? 10 * Math.log10(pAwgMW) : -Infinity
+    };
+  }
+  function dualToneRfSummary(v1PkMV, f1GHz, v2PkMV, f2GHz, chainGainDB = rfChainGainDB) {
+    const t1 = awgVpkToUnits(v1PkMV, f1GHz, chainGainDB);
+    const t2 = awgVpkToUnits(v2PkMV, f2GHz, chainGainDB);
+    const pTotAwgMW = t1.pAwgMW + t2.pAwgMW;
+    const pTotAwgDBm = pTotAwgMW > 0 ? 10 * Math.log10(pTotAwgMW) : -Infinity;
+    const pTotSaRefMW = t1.pSaRefMW + t2.pSaRefMW;
+    const pTotSaRefDBm = pTotSaRefMW > 0 ? 10 * Math.log10(pTotSaRefMW) : -Infinity;
+    const vRmsSumMV = Math.hypot(t1.vRmsMV, t2.vRmsMV);
+    return { t1, t2, pTotAwgMW, pTotAwgDBm, pTotSaRefMW, pTotSaRefDBm, vRmsSumMV };
+  }
 
   // Physical 3 um x 50 nm YIG disk Brown FDT energy scale
   const DISK_VOL_M3 = Math.PI * (1.5e-6) ** 2 * 50e-9;
@@ -869,9 +1172,11 @@
   let modeHistHead = 0, modeHistCount = 0, lastModeSampleT = -1;
   let visualPeakDyn = 0, lastMeanDynAmp = 0, lastPeakDyn = 0, lastSpecPeakGHz = 0;
 
-  const PLOT_HIST_CAP = 512;
+  const PLOT_HIST_CAP = 2048;
   const plotHistTau = new Float64Array(PLOT_HIST_CAP);
   const plotHistAmps = new Float32Array(PLOT_HIST_CAP * M);
+  const plotHistEnv1 = new Float32Array(PLOT_HIST_CAP);
+  const plotHistEnv2 = new Float32Array(PLOT_HIST_CAP);
   let plotHistHead = 0, plotHistCount = 0, lastPlotTau = -1, plotOriginTau = 0;
   let plotWinTau = 10.8, plotYScale = 0.02, plotYTarget = 0.02, holdPlotWin = false;
   let lastPlotDrawMs = 0, lastLegendBuildMs = 0, arnoldHMaxSmooth = 0, arnoldHMinSmooth = 0, lastLegendKey = '';
@@ -894,20 +1199,28 @@
     return Math.max(0.5, sp[0] * sp[1] * 180);
   }
 
+  function tauToUs(tau) { return (tau * FREQ_TO_RAD * 1e-3) / (2 * Math.PI); }
+
   function recordPlotSample() {
     const minDt = plotWinTau / 360;
+    const env1MT = driveAmp > 1e-6 ? tone1EnvAt(simTime) * (driveAmp * MU0_MS_MT) : 0;
+    const env2MT = (dualTone && driveAmp2 > 1e-6) ? tone2EnvAt(simTime) * (driveAmp2 * MU0_MS_MT) : 0;
     if (plotHistCount > 0 && simTime < lastPlotTau - 1e-9) {
       plotHistHead = 0; plotHistCount = 0; plotOriginTau = simTime;
     }
     if (plotHistCount > 0 && (simTime - lastPlotTau) < minDt) {
       const slot = (plotHistHead - 1 + PLOT_HIST_CAP) % PLOT_HIST_CAP;
       plotHistTau[slot] = simTime;
+      plotHistEnv1[slot] = env1MT;
+      plotHistEnv2[slot] = env2MT;
       const off = slot * M;
       for (let m = 0; m < M; m++) plotHistAmps[off + m] = Math.hypot(aRe[m], aIm[m]);
       lastPlotTau = simTime;
       return;
     }
     plotHistTau[plotHistHead] = simTime;
+    plotHistEnv1[plotHistHead] = env1MT;
+    plotHistEnv2[plotHistHead] = env2MT;
     const off = plotHistHead * M;
     for (let m = 0; m < M; m++) plotHistAmps[off + m] = Math.hypot(aRe[m], aIm[m]);
     plotHistHead = (plotHistHead + 1) % PLOT_HIST_CAP;
@@ -919,7 +1232,7 @@
     if (fastForwarding) {
       holdPlotWin = false;
       const ffSpan = Math.max(stepTau * 140, (simTime - plotOriginTau) * 1.04);
-      plotWinTau = Math.min(usToTau(8.0), Math.max(plotWinTau, ffSpan));
+      plotWinTau = Math.min(usToTau(12.0), Math.max(plotWinTau, ffSpan));
     } else if (!holdPlotWin) {
       const targetWin = Math.max(0.5, stepTau * 180);
       if (targetWin > plotWinTau * 1.35) plotWinTau += 0.25 * (targetWin - plotWinTau);
@@ -935,6 +1248,124 @@
     plotHistHead = 0; plotHistCount = 0; lastPlotTau = -1; plotOriginTau = simTime;
     holdPlotWin = false; plotWinTau = defaultPlotWinTau(); plotYScale = 0.02; plotYTarget = 0.02;
     lastPlotDrawMs = 0; lastLegendBuildMs = 0; lastLegendKey = '';
+  }
+
+  function computeTimeWindowMetrics(startFrac = 0, endFrac = 1) {
+    if (plotHistCount <= 0) {
+      return { tStartUs: 0, tEndUs: simTimeUs(), spanUs: 0, sampleCount: 0, dominantStatus: 'IDLE', modes: [] };
+    }
+    const allSlots = [];
+    for (let k = 0; k < plotHistCount; k++) {
+      allSlots.push((plotHistHead - plotHistCount + k + PLOT_HIST_CAP) % PLOT_HIST_CAP);
+    }
+    const tau0 = plotHistTau[allSlots[0]];
+    const tau1 = plotHistTau[allSlots[allSlots.length - 1]];
+    const totTau = Math.max(1e-9, tau1 - tau0);
+    const f0 = Math.max(0, Math.min(1, Number(startFrac) || 0));
+    const f1 = Math.max(f0, Math.min(1, Number(endFrac) || 1));
+    const wStartTau = tau0 + f0 * totTau;
+    const wEndTau = tau0 + f1 * totTau;
+    const vis = allSlots.filter(slot => plotHistTau[slot] >= wStartTau - 1e-9 && plotHistTau[slot] <= wEndTau + 1e-9);
+    const useSlots = vis.length >= 2 ? vis : allSlots;
+    const tStartUs = tauToUs(plotHistTau[useSlots[0]]);
+    const tEndUs = tauToUs(plotHistTau[useSlots[useSlots.length - 1]]);
+    const spanUs = Math.max(0, tEndUs - tStartUs);
+    const n = useSlots.length;
+    const halfIdx = Math.max(1, Math.floor(n * 0.5));
+    const q3Start = Math.max(1, Math.floor(n * 0.5));
+    const q4Start = Math.max(q3Start + 1, Math.floor(n * 0.75));
+    const modes = [];
+    for (let m = 0; m < M; m++) {
+      let sum = 0, sumSq = 0, minV = Infinity, maxV = 0;
+      let sumH1 = 0, sumQ3 = 0, cntQ3 = 0, sumQ4 = 0, sumSqQ4 = 0, cntQ4 = 0;
+      let sx = 0, sy = 0, sxx = 0, sxy = 0, nLog = 0;
+      for (let i = 0; i < n; i++) {
+        const slot = useSlots[i];
+        const v = plotHistAmps[slot * M + m];
+        const tUs = tauToUs(plotHistTau[slot]) - tStartUs;
+        sum += v; sumSq += v * v;
+        if (v < minV) minV = v;
+        if (v > maxV) maxV = v;
+        if (i < halfIdx) sumH1 += v;
+        if (i >= q3Start && i < q4Start) { sumQ3 += v; cntQ3++; }
+        if (i >= q4Start) { sumQ4 += v; sumSqQ4 += v * v; cntQ4++; }
+        if (v > 1e-6) {
+          const ly = Math.log(v);
+          sx += tUs; sy += ly; sxx += tUs * tUs; sxy += tUs * ly; nLog++;
+        }
+      }
+      if (maxV < 1e-4 && !pinnedModes.has(m)) continue;
+      const mean = sum / n;
+      const rms = Math.sqrt(sumSq / n);
+      const stdDev = Math.sqrt(Math.max(0, sumSq / n - mean * mean));
+      const relStd = mean > 1e-6 ? stdDev / mean : 0;
+      const meanH1 = sumH1 / halfIdx;
+      const meanQ3 = cntQ3 > 0 ? sumQ3 / cntQ3 : meanH1;
+      const meanQ4 = cntQ4 > 0 ? sumQ4 / cntQ4 : mean;
+      const stdQ4 = cntQ4 > 0 ? Math.sqrt(Math.max(0, sumSqQ4 / cntQ4 - meanQ4 * meanQ4)) : stdDev;
+      const relStdQ4 = meanQ4 > 1e-5 ? stdQ4 / meanQ4 : 0;
+      const driftPct = ((meanQ4 - meanQ3) / Math.max(0.002, maxV)) * 100;
+      const denom = nLog * sxx - sx * sx;
+      const gammaEffPerUs = (nLog >= 3 && Math.abs(denom) > 1e-12) ? (nLog * sxy - sx * sy) / denom : 0;
+      let onsetUs = null;
+      const onsetThresh = Math.max(0.004, 0.25 * maxV);
+      if (maxV >= 0.004) {
+        for (let i = 0; i < n; i++) {
+          if (plotHistAmps[useSlots[i] * M + m] >= onsetThresh) {
+            onsetUs = tauToUs(plotHistTau[useSlots[i]]);
+            break;
+          }
+        }
+      }
+      let status = 'CONVERGED';
+      if (n < 4) status = 'SAMPLING';
+      else if (maxV < 0.0015) status = 'EQUILIBRIUM';
+      else if (meanQ4 < meanH1 * 0.78 && gammaEffPerUs < -0.05) status = 'DECAYING';
+      else if (driftPct > 3.5 && gammaEffPerUs > 0.05) status = 'GROWING';
+      else if (relStdQ4 > 0.035) status = 'OSCILLATING';
+      modes.push({
+        m, mean, rms, stdDev, relStd, min: minV, max: maxV,
+        driftPct, onsetUs, gammaEffPerUs, status, pinned: pinnedModes.has(m)
+      });
+    }
+    modes.sort((a, b) => (b.pinned - a.pinned) || (b.max - a.max));
+    const dominantStatus = modes.length ? modes[0].status : 'EQUILIBRIUM';
+    return { tStartUs, tEndUs, spanUs, sampleCount: n, dominantStatus, modes };
+  }
+
+  function buildTimeTraceExport() {
+    const samples = [];
+    for (let k = 0; k < plotHistCount; k++) {
+      const slot = (plotHistHead - plotHistCount + k + PLOT_HIST_CAP) % PLOT_HIST_CAP;
+      const row = { tau: +plotHistTau[slot].toFixed(3), tUs: +tauToUs(plotHistTau[slot]).toFixed(5), h1MT: +plotHistEnv1[slot].toFixed(4), h2MT: +plotHistEnv2[slot].toFixed(4), amps: {} };
+      const off = slot * M;
+      for (let m = 0; m < M; m++) {
+        if (plotHistAmps[off + m] > 1e-4 || pinnedModes.has(m)) row.amps[`m${m}`] = +plotHistAmps[off + m].toFixed(5);
+      }
+      samples.push(row);
+    }
+    return {
+      exportedAt: new Date().toISOString(),
+      model: 'dAquino-2026-NMM-29m',
+      B_DC_mT: BDC_MT,
+      metrics: computeTimeWindowMetrics(0, 1),
+      samples
+    };
+  }
+  function exportTraceJson() {
+    const payload = buildTimeTraceExport();
+    try {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `spin-waves-trace-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (_) {}
+    return payload;
   }
 
   function recordModeSample() {
@@ -1531,10 +1962,18 @@
 
   // Exact d'Aquino Eq. (S12) symplectic projection of a spatial Gaussian pluck
   function pluckAt(clientX, clientY) {
-    const size = Math.min(width, height) * 0.68;
-    const x0 = (width - size) * 0.5, y0 = (height - size) * 0.5;
-    const gx = ((clientX - x0) / size) * NX;
-    const gy = ((clientY - y0) / size) * NY;
+    let localX = clientX, localY = clientY;
+    if (fieldCanvas && typeof fieldCanvas.getBoundingClientRect === 'function') {
+      const r = fieldCanvas.getBoundingClientRect();
+      if (r && r.width > 10 && r.height > 10) {
+        localX = ((clientX - r.left) / r.width) * diskW;
+        localY = ((clientY - r.top) / r.height) * diskH;
+      }
+    }
+    const size = Math.min(diskW, diskH) * 0.84;
+    const x0 = (diskW - size) * 0.5, y0 = (diskH - size) * 0.5;
+    const gx = ((localX - x0) / size) * NX;
+    const gy = ((localY - y0) / size) * NY;
     if (gx < 0 || gx >= NX || gy < 0 || gy >= NY) return;
     const dmY = new Float64Array(NACT), dmZ = new Float64Array(NACT);
     let any = false;
@@ -1570,7 +2009,7 @@
     notifySwTutorial('pluck');
   }
 
-  let width = 0, height = 0, dpr = 1, lastQuickTopPx = -1;
+  let width = 0, height = 0, diskW = 520, diskH = 520, dpr = 1, lastQuickTopPx = -1;
   function syncTopBarsLayout() {
     const th = document.getElementById('topHud');
     const qb = document.getElementById('quickLaunchBar');
@@ -1587,8 +2026,19 @@
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     width = window.innerWidth; height = window.innerHeight;
-    fieldCanvas.width = Math.round(width * dpr);
-    fieldCanvas.height = Math.round(height * dpr);
+    const stageEl = typeof document.getElementById === 'function' ? document.getElementById('diskStage') : null;
+    if (stageEl && typeof stageEl.getBoundingClientRect === 'function') {
+      const sr = stageEl.getBoundingClientRect();
+      if (sr && sr.width > 40 && sr.height > 40) {
+        diskW = Math.round(sr.width);
+        diskH = Math.round(sr.height);
+      }
+    } else if (width > 0 && height > 0) {
+      diskW = Math.min(520, width);
+      diskH = Math.min(520, height);
+    }
+    fieldCanvas.width = Math.round(diskW * dpr);
+    fieldCanvas.height = Math.round(diskH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     syncTopBarsLayout();
   }
@@ -1610,6 +2060,7 @@
   const modeTimeCanvas = document.getElementById('modeTimeCanvas');
   const modeTimeCtx = modeTimeCanvas && modeTimeCanvas.getContext ? modeTimeCanvas.getContext('2d') : null;
   const modeLegendEl = document.getElementById('modeLegend');
+  let lastStatsBuildMs = 0;
 
   function fmtTauTime(tau) {
     const ns = (tau * FREQ_TO_RAD) / (2 * Math.PI);
@@ -1624,24 +2075,50 @@
     const dtSec = lastPlotDrawMs > 0 ? Math.min(0.12, Math.max(0.004, (nowMs - lastPlotDrawMs) / 1000)) : 0.016;
     lastPlotDrawMs = nowMs;
 
-    const w = modeTimeCanvas.width, h = modeTimeCanvas.height;
+    const { w, h } = prepHiDpiCanvas(modeTimeCanvas, modeTimeCtx, 460, 130);
     modeTimeCtx.clearRect(0, 0, w, h);
     modeTimeCtx.fillStyle = 'rgba(5, 11, 22, 0.88)';
     modeTimeCtx.fillRect(0, 0, w, h);
 
-    const padL = 30, padR = 7, padT = 8, padB = 14;
+    const padL = 32, padR = 7, padT = 8, padB = 14;
     const pw = Math.max(20, w - padL - padR), ph = Math.max(16, h - padT - padB);
+    const oldestSlot = plotHistCount > 0 ? ((plotHistHead - plotHistCount + PLOT_HIST_CAP) % PLOT_HIST_CAP) : -1;
+    const newestSlot = plotHistCount > 0 ? ((plotHistHead - 1 + PLOT_HIST_CAP) % PLOT_HIST_CAP) : -1;
+    const tFirstRec = oldestSlot >= 0 ? plotHistTau[oldestSlot] : plotOriginTau;
     const tEnd = Math.max(simTime, lastPlotTau >= 0 ? lastPlotTau : simTime);
-    const winTau = Math.max(0.5, plotWinTau);
-    const isScrolling = (tEnd - plotOriginTau) > winTau;
-    const tStart = isScrolling ? (tEnd - winTau) : plotOriginTau;
-    const tRight = isScrolling ? tEnd : (plotOriginTau + winTau);
+    const totalHistSpan = Math.max(0.5, tEnd - tFirstRec);
+
+    let tStart, tRight, metStartFrac = 0, metEndFrac = 1;
+    if (plotViewMode === 'full' && plotHistCount >= 2) {
+      tStart = tFirstRec;
+      tRight = Math.max(tFirstRec + 0.5, tEnd);
+    } else if (plotViewMode === 'window' && plotHistCount >= 2) {
+      const zFrac = Math.max(0.10, Math.min(1.0, timeZoomPct / 100));
+      const pFrac = Math.max(0, Math.min(1, timePanPct / 100));
+      metStartFrac = pFrac * (1 - zFrac);
+      metEndFrac = metStartFrac + zFrac;
+      tStart = tFirstRec + metStartFrac * totalHistSpan;
+      tRight = Math.max(tStart + 0.25, tFirstRec + metEndFrac * totalHistSpan);
+    } else {
+      const winTau = Math.max(0.5, plotWinTau);
+      const isScrolling = (tEnd - plotOriginTau) > winTau;
+      tStart = isScrolling ? (tEnd - winTau) : plotOriginTau;
+      tRight = isScrolling ? tEnd : (plotOriginTau + winTau);
+      if (plotHistCount >= 2) {
+        metStartFrac = Math.max(0, Math.min(1, (tStart - tFirstRec) / totalHistSpan));
+        metEndFrac = Math.max(metStartFrac, Math.min(1, (tRight - tFirstRec) / totalHistSpan));
+      }
+    }
     const spanTau = Math.max(1e-6, tRight - tStart);
 
     const winEl = document.getElementById('modeWinSpan');
-    if (winEl) winEl.textContent = `win ${fmtTauTime(winTau)}`;
+    if (winEl) {
+      winEl.textContent = plotViewMode === 'full'
+        ? `all ${fmtTauTime(spanTau)}`
+        : (plotViewMode === 'window' ? `win ${fmtTauTime(spanTau)}` : `win ${fmtTauTime(Math.max(0.5, plotWinTau))}`);
+    }
 
-    // Collect sample indices inside [tStart, tEnd] plus 1 prior anchor for smooth left entry
+    // Collect sample indices inside [tStart, tRight] plus 1 prior anchor for smooth left entry
     const visSlots = [];
     let anchorSlot = -1;
     for (let k = 0; k < plotHistCount; k++) {
@@ -1652,19 +2129,23 @@
     }
     if (anchorSlot >= 0 && visSlots.length > 0) visSlots.unshift(anchorSlot);
 
-    // Find all nonzero modes inside the window (or right now)
+    // Find all nonzero or pinned modes inside the window (or right now)
     const peakM = new Float32Array(M);
     for (let m = 0; m < M; m++) peakM[m] = modeAmps[m];
+    let envMaxMT = 0;
     for (let s = 0; s < visSlots.length; s++) {
-      const off = visSlots[s] * M;
+      const slot = visSlots[s];
+      const off = slot * M;
       for (let m = 0; m < M; m++) {
         const v = plotHistAmps[off + m];
         if (v > peakM[m]) peakM[m] = v;
       }
+      if (plotHistEnv1[slot] > envMaxMT) envMaxMT = plotHistEnv1[slot];
+      if (plotHistEnv2[slot] > envMaxMT) envMaxMT = plotHistEnv2[slot];
     }
     const activeModes = [];
     for (let m = 0; m < M; m++) {
-      if (peakM[m] > 1e-4) activeModes.push(m);
+      if (peakM[m] > 1e-4 || pinnedModes.has(m)) activeModes.push(m);
     }
     activeModes.sort((a, b) => peakM[a] - peakM[b]);
     const rawPeak = activeModes.length ? peakM[activeModes[activeModes.length - 1]] : 0;
@@ -1691,6 +2172,27 @@
     modeTimeCtx.moveTo(padL, padT); modeTimeCtx.lineTo(padL + pw, padT);
     modeTimeCtx.stroke();
 
+    // Optional normalized AWG h1(t) / h2(t) envelope overlay
+    if (plotShowEnv && envMaxMT > 1e-4 && visSlots.length >= 2) {
+      const drawEnv = (arr, strokeCol) => {
+        modeTimeCtx.save();
+        modeTimeCtx.strokeStyle = strokeCol;
+        modeTimeCtx.lineWidth = 1.05;
+        modeTimeCtx.setLineDash([3, 3]);
+        modeTimeCtx.beginPath();
+        for (let s = 0; s < visSlots.length; s++) {
+          const slot = visSlots[s];
+          const x = Math.max(padL, Math.min(padL + pw, toX(plotHistTau[slot])));
+          const y = padT + ph - (arr[slot] / envMaxMT) * (ph * 0.85);
+          if (s === 0) modeTimeCtx.moveTo(x, y); else modeTimeCtx.lineTo(x, y);
+        }
+        modeTimeCtx.stroke();
+        modeTimeCtx.restore();
+      };
+      drawEnv(plotHistEnv1, 'rgba(124,212,255,0.34)');
+      if (dualTone) drawEnv(plotHistEnv2, 'rgba(52,211,153,0.38)');
+    }
+
     // Tone 2 release / delay marker if visible inside moving window
     if (dualTone && driveAmp2 > 1e-6) {
       const t2Tau = tone2WaitSS ? (tone2Released ? tone2ReleaseT : -1) : usToTau(tone2DelayNs);
@@ -1708,15 +2210,16 @@
       }
     }
 
-    // Plot curves for every nonzero mode
+    // Plot curves for every nonzero or pinned mode
     if (visSlots.length >= 1) {
       for (const m of activeModes) {
-        const faint = activeModes.length > 8 && peakM[m] < Math.max(0.002, rawPeak * 0.06);
+        const isPinned = pinnedModes.has(m);
+        const faint = !isPinned && activeModes.length > 8 && peakM[m] < Math.max(0.002, rawPeak * 0.06);
         const col = modeColor(m);
         modeTimeCtx.save();
         modeTimeCtx.strokeStyle = col;
-        modeTimeCtx.globalAlpha = faint ? 0.28 : 0.94;
-        modeTimeCtx.lineWidth = faint ? 0.9 : 1.55;
+        modeTimeCtx.globalAlpha = isPinned ? 1.0 : (faint ? 0.28 : 0.92);
+        modeTimeCtx.lineWidth = isPinned ? 2.15 : (faint ? 0.9 : 1.5);
         modeTimeCtx.beginPath();
         let lastX = padL, lastY = padT + ph;
         for (let s = 0; s < visSlots.length; s++) {
@@ -1726,7 +2229,7 @@
           if (s === 0) modeTimeCtx.moveTo(x, y); else modeTimeCtx.lineTo(x, y);
           lastX = x; lastY = y;
         }
-        if (simTime >= lastPlotTau && simTime <= tRight + 1e-9) {
+        if (plotViewMode === 'auto' && simTime >= lastPlotTau && simTime <= tRight + 1e-9) {
           lastX = Math.max(padL, Math.min(padL + pw, toX(simTime)));
           lastY = toY(modeAmps[m]);
           modeTimeCtx.lineTo(lastX, lastY);
@@ -1734,7 +2237,7 @@
         modeTimeCtx.stroke();
         if (!faint) {
           modeTimeCtx.fillStyle = col;
-          modeTimeCtx.beginPath(); modeTimeCtx.arc(lastX, lastY, 2.3, 0, Math.PI * 2); modeTimeCtx.fill();
+          modeTimeCtx.beginPath(); modeTimeCtx.arc(lastX, lastY, isPinned ? 2.8 : 2.2, 0, Math.PI * 2); modeTimeCtx.fill();
         }
         modeTimeCtx.restore();
       }
@@ -1761,19 +2264,19 @@
       modeTimeCtx.fillText('all a_h = 0 (equilibrium)', padL + 16, padT + ph * 0.5);
     }
 
-    // Update compact clickable legend for top active nonzero modes without DOM thrashing
+    // Update compact clickable legend (click to pin/unpin, Shift+click to excite)
     if (modeLegendEl) {
       const chipThresh = Math.max(0.0018, 2.4 * thermalRmsAmp(), rawPeak * 0.05);
-      const descModes = activeModes.slice().reverse().filter(m => peakM[m] >= chipThresh).slice(0, 6);
-      const key = descModes.join(',');
-      if (key !== lastLegendKey && (lastLegendBuildMs === 0 || (nowMs - lastLegendBuildMs) >= 300)) {
+      const descModes = activeModes.slice().reverse().filter(m => pinnedModes.has(m) || peakM[m] >= chipThresh).slice(0, 7);
+      const key = descModes.map(m => `${m}${pinnedModes.has(m) ? '*' : ''}`).join(',');
+      if (key !== lastLegendKey && (lastLegendBuildMs === 0 || (nowMs - lastLegendBuildMs) >= 240)) {
         lastLegendKey = key;
         lastLegendBuildMs = nowMs;
         if (!descModes.length) {
           modeLegendEl.innerHTML = '<span style="font:8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(185,212,245,.52);">No active nonzero modes yet</span>';
         } else {
           modeLegendEl.innerHTML = descModes.map(m =>
-            `<button class="modeChip" type="button" data-m="${m}" title="m${m}: f=${fGhzArr[m].toFixed(4)} GHz, N=${mutualNfsCoeffGHz(m, m).toFixed(2)} GHz — click to excite"><span class="modeChipDot" style="background:${modeColor(m)}"></span><span>m${m}</span><span id="mcVal_${m}">${modeAmps[m].toFixed(3)}</span></button>`
+            `<button class="modeChip${pinnedModes.has(m) ? ' pinned' : ''}" type="button" data-m="${m}" title="m${m}: f=${fGhzArr[m].toFixed(4)} GHz, N=${mutualNfsCoeffGHz(m, m).toFixed(2)} GHz — click to pin, Shift+click to excite"><span class="modeChipDot" style="background:${modeColor(m)}"></span><span>m${m}</span><span id="mcVal_${m}">${modeAmps[m].toFixed(3)}</span></button>`
           ).join('');
         }
       } else {
@@ -1783,14 +2286,86 @@
         }
       }
     }
+
+    // Update quantitative window statistics strip (Mean / RMS / sigma / drift / gamma_eff / Convergence)
+    if (lastStatsBuildMs === 0 || (nowMs - lastStatsBuildMs) >= 220) {
+      lastStatsBuildMs = nowMs;
+      const statsSpanEl = document.getElementById('timeStatsSpan');
+      const convBadgeEl = document.getElementById('timeConvBadge');
+      const statsRowsEl = document.getElementById('timeStatsRows');
+      if (statsSpanEl || convBadgeEl || statsRowsEl) {
+        const metrics = computeTimeWindowMetrics(metStartFrac, metEndFrac);
+        if (statsSpanEl) statsSpanEl.textContent = `Window [${metrics.tStartUs.toFixed(2)}–${metrics.tEndUs.toFixed(2)} µs] · ${metrics.sampleCount} pts`;
+        if (convBadgeEl) {
+          convBadgeEl.textContent = metrics.dominantStatus;
+          convBadgeEl.className = 'vmBadge ' + (
+            metrics.dominantStatus === 'CONVERGED' ? 'pass' :
+            (metrics.dominantStatus === 'OSCILLATING' || metrics.dominantStatus === 'GROWING' ? 'warn' : 'idle')
+          );
+        }
+        if (statsRowsEl) {
+          if (!metrics.modes.length) {
+            statsRowsEl.textContent = 'Run or FAST→SS to compute steady-state convergence & onset rates.';
+          } else {
+            statsRowsEl.innerHTML = metrics.modes.slice(0, 3).map(rm => {
+              const gStr = `${rm.gammaEffPerUs >= 0 ? '+' : ''}${rm.gammaEffPerUs.toFixed(2)}/µs`;
+              const dStr = `${rm.driftPct >= 0 ? '+' : ''}${rm.driftPct.toFixed(1)}%`;
+              const onset = rm.onsetUs !== null ? ` on=${rm.onsetUs.toFixed(2)}µs` : '';
+              return `<div style="color:${modeColor(rm.m)};">m${rm.m}: μ=${rm.mean.toFixed(4)} rms=${rm.rms.toFixed(4)} σ=${rm.stdDev.toFixed(4)} Δ=${dStr} γ=${gStr}${onset} [${rm.status}]</div>`;
+            }).join('');
+          }
+        }
+      }
+    }
   }
 
   if (modeLegendEl) modeLegendEl.addEventListener('click', e => {
     const chip = e.target && e.target.closest ? e.target.closest('.modeChip[data-m]') : null;
     if (!chip) return;
     const mIdx = Number(chip.dataset.m);
-    exciteEigenmode(mIdx);
-    announcePress(`Mode Trace m${mIdx}`, `Excited normal mode m${mIdx} (${fGhzArr[mIdx].toFixed(4)} GHz, N_mm = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz) from time-trace legend.`, `m${mIdx}`);
+    if (e.shiftKey) {
+      exciteEigenmode(mIdx);
+      announcePress(`Mode Trace m${mIdx}`, `Excited normal mode m${mIdx} (${fGhzArr[mIdx].toFixed(4)} GHz, N_mm = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz) from time-trace legend.`, `m${mIdx}`);
+    } else {
+      if (pinnedModes.has(mIdx)) pinnedModes.delete(mIdx); else pinnedModes.add(mIdx);
+      lastLegendKey = ''; lastStatsBuildMs = 0;
+      drawModeTimePlot();
+      announcePress(`Pin m${mIdx}`, `${pinnedModes.has(mIdx) ? 'Pinned' : 'Unpinned'} m${mIdx} on the time-trace plot (Shift+click any chip to excite it).`, `m${mIdx}`);
+    }
+  });
+  const timeEnvBtnEl = document.getElementById('timeEnvBtn');
+  if (timeEnvBtnEl) timeEnvBtnEl.addEventListener('click', () => {
+    plotShowEnv = !plotShowEnv;
+    timeEnvBtnEl.classList.toggle('active', plotShowEnv);
+    drawModeTimePlot();
+  });
+  const timeModeBtnEl = document.getElementById('timeModeBtn');
+  if (timeModeBtnEl) timeModeBtnEl.addEventListener('click', () => {
+    plotViewMode = plotViewMode === 'auto' ? 'full' : (plotViewMode === 'full' ? 'window' : 'auto');
+    syncUi();
+    lastStatsBuildMs = 0;
+    drawModeTimePlot();
+  });
+  const timeExportBtnEl = document.getElementById('timeExportBtn');
+  if (timeExportBtnEl) timeExportBtnEl.addEventListener('click', () => {
+    const exp = exportTraceJson();
+    announcePress('TRACE JSON', `Exported ${exp.samples.length} time-trace samples & window metrics.`);
+  });
+  const slTimeZoomEl = document.getElementById('slTimeZoom');
+  if (slTimeZoomEl) slTimeZoomEl.addEventListener('input', e => {
+    timeZoomPct = Math.max(10, Math.min(100, Number(e.target.value) || 100));
+    plotViewMode = 'window';
+    syncUi();
+    lastStatsBuildMs = 0;
+    drawModeTimePlot();
+  });
+  const slTimePanEl = document.getElementById('slTimePan');
+  if (slTimePanEl) slTimePanEl.addEventListener('input', e => {
+    timePanPct = Math.max(0, Math.min(100, Number(e.target.value) || 100));
+    plotViewMode = 'window';
+    syncUi();
+    lastStatsBuildMs = 0;
+    drawModeTimePlot();
   });
 
   function updateSpectrum() {
@@ -1851,7 +2426,7 @@
     else specMaxSmooth += 0.28 * (targetNorm - specMaxSmooth);
     const normMax = Math.max(1e-4, specMaxSmooth);
 
-    const sw = specCanvas.width, sh = specCanvas.height;
+    const { w: sw, h: sh } = prepHiDpiCanvas(specCanvas, specCtx, 460, 74);
     specCtx.clearRect(0, 0, sw, sh);
     specCtx.fillStyle = 'rgba(130,185,255,0.08)';
     specCtx.fillRect(0, 0, sw, sh);
@@ -2256,7 +2831,7 @@
 
   function drawArnoldTongues() {
     if (!arnoldCtx || !arnoldCanvas) return;
-    const w = arnoldCanvas.width, h = arnoldCanvas.height;
+    const { w, h } = prepHiDpiCanvas(arnoldCanvas, arnoldCtx, 460, 175);
     const pw = Math.max(20, w - ARNOLD_PAD_L - ARNOLD_PAD_R);
     const ph = Math.max(16, h - ARNOLD_PAD_T - ARNOLD_PAD_B);
     const { fMin, fMax, hMin, hMax } = getArnoldRange(false);
@@ -2372,6 +2947,46 @@
           }
         }
       }
+      arnoldCtx.restore();
+    }
+
+    // Optional experimental resonance ticks (29-mode + 80-mode NPZ anchors) and k_eff-calibrated threshold diamonds
+    if (showExpMarkers) {
+      arnoldCtx.save();
+      arnoldCtx.beginPath();
+      arnoldCtx.rect(ARNOLD_PAD_L, ARNOLD_PAD_T, pw, ph);
+      arnoldCtx.clip();
+      const validKEff = typeof rfKEffMTPerV === 'number' && Number.isFinite(rfKEffMTPerV) && rfKEffMTPerV > 0;
+      const drawExpAnchor = (fExpMHz, a10SigMV, col, tag) => {
+        const fx = fExpMHz * 1e-3;
+        if (fx < fMin || fx > fMax) return;
+        const ex = toX(fx);
+        arnoldCtx.strokeStyle = col;
+        arnoldCtx.lineWidth = 1.2;
+        arnoldCtx.beginPath();
+        arnoldCtx.moveTo(ex, ARNOLD_PAD_T + ph - 10);
+        arnoldCtx.lineTo(ex, ARNOLD_PAD_T + ph);
+        arnoldCtx.stroke();
+        arnoldCtx.fillStyle = col;
+        arnoldCtx.font = '7px ui-monospace,SFMono-Regular,Menlo,monospace';
+        arnoldCtx.textBaseline = 'bottom';
+        arnoldCtx.fillText(tag, Math.max(ARNOLD_PAD_L + 2, Math.min(ARNOLD_PAD_L + pw - 18, ex - 6)), ARNOLD_PAD_T + ph - 10);
+        if (validKEff && a10SigMV) {
+          const hExpMT = (a10SigMV * 1e-3) * rfKEffMTPerV;
+          if (hExpMT >= hMin && hExpMT <= hMax) {
+            const ey = toY(hExpMT);
+            arnoldCtx.beginPath();
+            arnoldCtx.moveTo(ex, ey - 4);
+            arnoldCtx.lineTo(ex + 4, ey);
+            arnoldCtx.lineTo(ex, ey + 4);
+            arnoldCtx.lineTo(ex - 4, ey);
+            arnoldCtx.closePath();
+            arnoldCtx.fill();
+          }
+        }
+      };
+      for (const r of EXP_ANCHORS_29) drawExpAnchor(r.f2ExpMHz, r.a10SigMV, 'rgba(251,191,36,0.86)', `e${r.m}`);
+      for (const r of EXP_ANCHORS_80_EXTRA) drawExpAnchor(r.f2ExpMHz, r.a10SigMV, 'rgba(244,114,182,0.85)', `n${r.npz}`);
       arnoldCtx.restore();
     }
 
@@ -2493,7 +3108,8 @@
       else { p2El.textContent = 'P2 WAIT'; p2El.className = 'pulseTag wait'; }
     }
     if (!hInputCtx || !hInputCanvas) return;
-    const w = hInputCanvas.width, h = hInputCanvas.height, midY = h * 0.5;
+    const { w, h } = prepHiDpiCanvas(hInputCanvas, hInputCtx, 290, 28);
+    const midY = h * 0.5;
     hInputCtx.clearRect(0, 0, w, h);
     const tOnUs = !p2Conf ? 0 : (tone2WaitSS ? (tone2Released ? (tone2ReleaseT * FREQ_TO_RAD * 1e-3) / (2 * Math.PI) : Math.max(tCurUs + 0.5, tone2DelayNs)) : tone2DelayNs);
     const tMaxUs = Math.max(5.0, tOnUs * 1.6, Math.min(12.0, tCurUs * 1.15));
@@ -2535,11 +3151,11 @@
   function selectArnoldAt(clientX, clientY, forceT2 = false) {
     const rect = arnoldCanvas.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const w = arnoldCanvas.width, h = arnoldCanvas.height;
+    const w = Math.round(rect.width), h = Math.round(rect.height);
     const pw = Math.max(20, w - ARNOLD_PAD_L - ARNOLD_PAD_R);
     const ph = Math.max(16, h - ARNOLD_PAD_T - ARNOLD_PAD_B);
-    const xPx = ((clientX - rect.left) / rect.width) * w;
-    const yPx = ((clientY - rect.top) / rect.height) * h;
+    const xPx = clientX - rect.left;
+    const yPx = clientY - rect.top;
     const nx = Math.max(0, Math.min(1, (xPx - ARNOLD_PAD_L) / pw));
     const { fMin, fMax, hMin, hMax } = getArnoldRange(true);
     const hpMT = Math.max(hMin, Math.min(hMax, hMin + ((ARNOLD_PAD_T + ph - yPx) / ph) * (hMax - hMin)));
@@ -2693,15 +3309,15 @@
       data[o + 3] = 255;
     }
     offCtx.putImageData(imgData, 0, 0);
-    ctx.fillStyle = '#03060d'; ctx.fillRect(0, 0, width, height);
-    const size = Math.min(width, height) * 0.68, x0 = (width - size) * 0.5, y0 = (height - size) * 0.5;
+    ctx.fillStyle = '#03060d'; ctx.fillRect(0, 0, diskW, diskH);
+    const size = Math.min(diskW, diskH) * 0.84, x0 = (diskW - size) * 0.5, y0 = (diskH - size) * 0.5;
     ctx.save();
-    ctx.beginPath(); ctx.arc(width * 0.5, height * 0.5, size * 0.495, 0, Math.PI * 2); ctx.clip();
+    ctx.beginPath(); ctx.arc(diskW * 0.5, diskH * 0.5, size * 0.495, 0, Math.PI * 2); ctx.clip();
     ctx.imageSmoothingEnabled = true; ctx.drawImage(offCanvas, x0, y0, size, size);
     ctx.restore();
     ctx.save();
     ctx.strokeStyle = 'rgba(180,215,255,0.32)'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(width * 0.5, height * 0.5, size * 0.495, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(diskW * 0.5, diskH * 0.5, size * 0.495, 0, Math.PI * 2); ctx.stroke();
     ctx.strokeStyle = 'rgba(240,248,255,0.52)'; ctx.lineWidth = 1.1;
     const step = 3, cell = size / NX;
     const arrowScale = cell * 1.42 * invScale;
@@ -2718,7 +3334,7 @@
       }
     }
     ctx.stroke(); ctx.restore();
-    if (cedricHeartMode && ctx && typeof ctx.save === 'function') drawCedricOverlay(width * 0.5, height * 0.5, size * 0.495);
+    if (cedricHeartMode && ctx && typeof ctx.save === 'function') drawCedricOverlay(diskW * 0.5, diskH * 0.5, size * 0.495);
 
     const meanAmp = ampSum / NACT;
     lastMeanDynAmp = meanAmp; lastPeakDyn = peakDyn;
@@ -2756,14 +3372,14 @@
     syncCtrlHint();
     if (controlsPanel.open && isCompactViewport()) {
       if (!swTutEl.hidden) closeSwTut();
-      arnoldBox.classList.remove('mobileOpen'); tonguesToggleBtn.classList.remove('active');
     }
   });
   tonguesToggleBtn.addEventListener('click', () => {
-    const open = arnoldBox.classList.toggle('mobileOpen');
-    tonguesToggleBtn.classList.toggle('active', open);
-    if (open && isCompactViewport()) { controlsPanel.open = false; if (!swTutEl.hidden) closeSwTut(); }
-    announcePress('TONGUES', open ? 'Opened Arnold Instability Tongues diagram — tap any tongue to aim pump.' : 'Closed Arnold Tongues diagram.');
+    const active = tonguesToggleBtn.classList.toggle('active');
+    if (arnoldBox && typeof arnoldBox.scrollIntoView === 'function') {
+      arnoldBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    announcePress('TONGUES', active ? 'Centered Arnold Instability Tongues diagram — tap any tongue to aim pump.' : 'Returned focus from Arnold Tongues diagram.');
   });
 
   function makeDraggablePanel(getPanelEl, handleEl, isSummary = false) {
@@ -2797,12 +3413,7 @@
     handleEl.addEventListener('touchend', endDrag); handleEl.addEventListener('touchcancel', endDrag);
     if (isSummary) handleEl.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } });
   }
-  if (controlsPanel.querySelector) {
-    makeDraggablePanel(controlsPanel, controlsPanel.querySelector('summary'), true);
-    ['hInputBox', 'modesBox', 'spectrumBox'].forEach(id => {
-      const el = document.getElementById(id); if (el && el.querySelector) makeDraggablePanel(readoutsDock, el.querySelector('.specTitle'));
-    });
-    if (arnoldBox && arnoldBox.querySelector) makeDraggablePanel(() => (isCompactViewport() ? arnoldBox : readoutsDock), arnoldBox.querySelector('.specTitle'));
+  if (typeof document !== 'undefined') {
     const tutEl = document.getElementById('swTutorial');
     if (tutEl && tutEl.querySelector) makeDraggablePanel(tutEl, tutEl.querySelector('.tutHeader'));
     const vmEl = document.getElementById('verifyModal');
@@ -2819,6 +3430,50 @@
   function phase1Deg() { return phaseDegNorm(drivePhase1); }
 
   function relPhaseDeg() { return phaseDegNorm(drivePhase2 - drivePhase1); }
+
+  let rfVpkTargetMV = 250;
+  function syncRfCalUi() {
+    const g1 = interpolateGrefDB(driveFreq);
+    const grefEl = document.getElementById('rfGrefVal');
+    if (grefEl) grefEl.textContent = `${g1.gRefDB.toFixed(2)} dB${g1.inBand ? '' : ' (OOB)'}`;
+    const targetOutEl = document.getElementById('rfTargetOut');
+    const tInfo = awgVpkToUnits(rfVpkTargetMV, driveFreq, rfChainGainDB, rfKEffMTPerV);
+    if (targetOutEl) {
+      targetOutEl.textContent = `${tInfo.vPkMV.toFixed(1)}mV (${tInfo.vppMV.toFixed(0)}pp) = ${tInfo.pAwgMW.toFixed(3)} mW (${tInfo.pAwgDBm.toFixed(2)} dBm) → SA_ref ${tInfo.pSaRefDBm.toFixed(2)} dBm${tInfo.sampleCalibrated ? ` | h_p=${tInfo.hSampleMT.toFixed(3)} mT` : ''}`;
+    }
+    const badgeEl = document.getElementById('rfCalBadge');
+    const vpkEl = document.getElementById('rfVpkVal');
+    const pawgEl = document.getElementById('rfPawgVal');
+    const psaEl = document.getElementById('rfPsarefVal');
+    const t2El = document.getElementById('rfT2SumVal');
+    const warnEl = document.getElementById('rfSampleWarn');
+    const calibrated = typeof rfKEffMTPerV === 'number' && Number.isFinite(rfKEffMTPerV) && rfKEffMTPerV > 0;
+    if (calibrated) {
+      const c1 = mtToAwgVpk(driveAmp * MU0_MS_MT, rfKEffMTPerV);
+      const u1 = awgVpkToUnits(c1.vPkMV, driveFreq, rfChainGainDB, rfKEffMTPerV);
+      if (badgeEl) { badgeEl.textContent = 'k_eff CALIBRATED'; badgeEl.className = 'vmBadge pass'; }
+      if (vpkEl) vpkEl.textContent = `${u1.vPkMV.toFixed(1)} mV (${u1.vppMV.toFixed(0)}pp)`;
+      if (pawgEl) pawgEl.textContent = `${u1.pAwgMW.toFixed(3)} mW (${u1.pAwgDBm.toFixed(2)} dBm)`;
+      if (psaEl) psaEl.textContent = `${u1.pSaRefDBm.toFixed(2)} dBm`;
+      if (t2El) {
+        if (dualTone) {
+          const c2 = mtToAwgVpk(driveAmp2 * MU0_MS_MT, rfKEffMTPerV);
+          const ds = dualToneRfSummary(c1.vPkMV, driveFreq, c2.vPkMV, driveFreq2, rfChainGainDB);
+          t2El.textContent = `${c2.vPkMV.toFixed(1)}mV | Σ ${ds.pTotAwgDBm.toFixed(2)} dBm`;
+        } else {
+          t2El.textContent = 'OFF';
+        }
+      }
+      if (warnEl) warnEl.hidden = true;
+    } else {
+      if (badgeEl) { badgeEl.textContent = 'AWG ONLY'; badgeEl.className = 'vmBadge warn'; }
+      if (vpkEl) vpkEl.textContent = 'Uncal (need k_eff)';
+      if (pawgEl) pawgEl.textContent = 'Uncal (need k_eff)';
+      if (psaEl) psaEl.textContent = 'Uncal (need k_eff)';
+      if (t2El) t2El.textContent = dualTone ? 'Dual ON (uncal k_eff)' : 'OFF';
+      if (warnEl) warnEl.hidden = false;
+    }
+  }
 
   function syncUi() {
     document.getElementById('slFreq').value = driveFreq;
@@ -2848,6 +3503,8 @@
     if (tBtn) { tBtn.textContent = `TAP: T${arnoldTarget}`; tBtn.classList.toggle('t2', arnoldTarget === 2); }
     const bBtn = document.getElementById('arnoldBandBtn');
     if (bBtn) { bBtn.textContent = arnoldBand === 'all' ? 'ALL 29' : 'BULK'; bBtn.classList.toggle('all', arnoldBand === 'all'); }
+    const expBtn = document.getElementById('arnoldExpBtn');
+    if (expBtn && expBtn.classList) expBtn.classList.toggle('active', showExpMarkers);
     const autoBtn = document.getElementById('arnoldAutoBtn');
     if (autoBtn) autoBtn.classList.toggle('active', arnoldAutoFollow);
     const panBtn = document.getElementById('arnoldPanBtn');
@@ -2862,6 +3519,19 @@
     const slAH = document.getElementById('slArnoldPanH'), outAH = document.getElementById('outArnoldPanH');
     if (slAH) slAH.value = arnoldBaseMT.toFixed(2);
     if (outAH) outAH.textContent = `${arnoldBaseMT.toFixed(1)}mT`;
+    const envBtn = document.getElementById('timeEnvBtn');
+    if (envBtn && envBtn.classList) envBtn.classList.toggle('active', plotShowEnv);
+    const modeBtn = document.getElementById('timeModeBtn');
+    if (modeBtn) {
+      modeBtn.textContent = plotViewMode === 'auto' ? 'AUTO' : (plotViewMode === 'full' ? 'FULL' : 'WIN');
+      if (modeBtn.classList) modeBtn.classList.toggle('active', plotViewMode !== 'auto');
+    }
+    const slTZ = document.getElementById('slTimeZoom'), outTZ = document.getElementById('outTimeZoom');
+    if (slTZ) slTZ.value = timeZoomPct;
+    if (outTZ) outTZ.textContent = `${timeZoomPct}%`;
+    const slTP = document.getElementById('slTimePan'), outTP = document.getElementById('outTimePan');
+    if (slTP) slTP.value = timePanPct;
+    if (outTP) outTP.textContent = `${timePanPct}%`;
     const sbBtn = document.getElementById('specBandBtn');
     if (sbBtn) { sbBtn.textContent = specBand === 'modes' ? '1.5–2.3G' : '0–6.5G'; sbBtn.classList.toggle('modes', specBand === 'modes'); }
     document.getElementById('slDamp').value = damping;
@@ -2881,6 +3551,7 @@
     document.querySelectorAll('#speedBtns button[data-speed]').forEach(b => {
       if (b && b.classList) b.classList.toggle('active', Number(b.dataset.speed) === playbackSpeed);
     });
+    syncRfCalUi();
     syncNikConfigUi();
   }
 
@@ -3705,6 +4376,39 @@
     announcePress(`Arnold: ${arnoldBand === 'all' ? 'ALL 29' : 'BULK'}`, arnoldBand === 'all'
       ? 'Showing all 29 modes m0..m28 (3.38–4.18 GHz) with dynamic mT ceiling so edge & bulk thresholds stay distinct.'
       : 'Zoomed into bulk spin-wave modes m10..m28 (3.88–4.16 GHz).');
+  });
+  const arnoldExpBtnEl = document.getElementById('arnoldExpBtn');
+  if (arnoldExpBtnEl) arnoldExpBtnEl.addEventListener('click', () => {
+    showExpMarkers = !showExpMarkers;
+    syncUi();
+    drawArnoldTongues();
+    announcePress(`Arnold EXP: ${showExpMarkers ? 'ON' : 'OFF'}`, showExpMarkers
+      ? 'Overlaying 29-mode & 80-mode NPZ experimental peak anchors (and k_eff diamonds when calibrated).'
+      : 'Hid experimental peak anchors on the Arnold map.');
+  });
+  const rfChainGainEl = document.getElementById('rfChainGainIn');
+  if (rfChainGainEl) rfChainGainEl.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    rfChainGainDB = Number.isFinite(v) ? v : 0;
+    syncRfCalUi();
+  });
+  const rfKEffEl = document.getElementById('rfKEffIn');
+  if (rfKEffEl) rfKEffEl.addEventListener('input', e => {
+    const raw = parseFloat(e.target.value);
+    rfKEffMTPerV = Number.isFinite(raw) && raw > 0 ? raw : null;
+    syncRfCalUi();
+    drawArnoldTongues();
+  });
+  const rfVpkTargetEl = document.getElementById('rfVpkTargetIn');
+  if (rfVpkTargetEl) rfVpkTargetEl.addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    rfVpkTargetMV = Number.isFinite(v) && v >= 0 ? v : 0;
+    syncRfCalUi();
+  });
+  const btnOpenExpTabEl = document.getElementById('btnOpenExpTab');
+  if (btnOpenExpTabEl) btnOpenExpTabEl.addEventListener('click', () => {
+    openVerifyModal('exp');
+    announcePress('EXP DATA & CSI2', 'Opened Mode Identification (27 mT), Linear-Power Thresholds, and CSI2 Ablation Verdict.');
   });
   const arnoldAutoBtnEl = document.getElementById('arnoldAutoBtn');
   if (arnoldAutoBtnEl) arnoldAutoBtnEl.addEventListener('click', () => {
@@ -4707,10 +5411,12 @@
     });
     const tP = document.getElementById('vmTabProtocol');
     const tL = document.getElementById('vmTabLive');
+    const tE = document.getElementById('vmTabExp');
     const tH = document.getElementById('vmTabHandout');
     const tD = document.getElementById('vmTabDb');
     if (tP) tP.hidden = tabName !== 'protocol';
     if (tL) tL.hidden = tabName !== 'live';
+    if (tE) tE.hidden = tabName !== 'exp';
     if (tH) tH.hidden = tabName !== 'handout';
     if (tD) tD.hidden = tabName !== 'db';
     renderVerifyUi();
@@ -4718,7 +5424,7 @@
     if (tabName === 'db') refreshIdbVault();
   }
 
-  const APP_RELEASE_VERSION = 'spacetime-shell-v80';
+  const APP_RELEASE_VERSION = 'spacetime-shell-v81';
   const WHATS_NEW_KEY = 'spin-waves-whatsnew-seen-version';
   const whatsNewModalEl = document.getElementById('whatsNewModal');
   function shouldShowWhatsNew() {
@@ -4739,6 +5445,8 @@
   if (wnGotItBtn) wnGotItBtn.addEventListener('click', () => dismissWhatsNew(true));
   const wnOpenGuideBtn = document.getElementById('wnOpenGuideBtn');
   if (wnOpenGuideBtn) wnOpenGuideBtn.addEventListener('click', () => { dismissWhatsNew(true); openSwTut(); });
+  const wnOpenExpBtn = document.getElementById('wnOpenExpBtn');
+  if (wnOpenExpBtn) wnOpenExpBtn.addEventListener('click', () => { dismissWhatsNew(true); openVerifyModal('exp'); });
   const wnOpenVerifyBtn = document.getElementById('wnOpenVerifyBtn');
   if (wnOpenVerifyBtn) wnOpenVerifyBtn.addEventListener('click', () => { dismissWhatsNew(true); openVerifyModal('protocol'); });
   const wnOpenHandoutBtn = document.getElementById('wnOpenHandoutBtn');

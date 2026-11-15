@@ -358,7 +358,7 @@ function loadSpinWavesContext(seedStorage = {}) {
     remove: noop,
     contains: () => false,
     dataset: {},
-    hidden: id === 'whatsNewModal' || id === 'verifyModal' || id === 'vmTabHandout' || id === 'vmTabLive' || id === 'vmTabDb',
+    hidden: id === 'whatsNewModal' || id === 'verifyModal' || id === 'vmTabHandout' || id === 'vmTabLive' || id === 'vmTabDb' || id === 'vmTabExp',
     textContent: '',
     innerHTML: '',
     value: 0,
@@ -434,6 +434,9 @@ function loadSpinWavesContext(seedStorage = {}) {
     getElHidden: id => !!document.getElementById(id).hidden,
     VERIFY_STAGES, runVerificationStage, runFullVerificationProtocol, runThroughputBenchmark,
     inspectLiveCalibration, probe4Avs4BCrossPump,
+    G_REF_50PTS, interpolateGrefDB, RF_NOISE_FLOOR, EXP_BCAL_SUMMARY, EXP_ANCHORS_29, EXP_ANCHORS_80_EXTRA, CSI2_ABLATION_DATA,
+    awgVpkToUnits, mtToAwgVpk, dualToneRfSummary, syncRfCalUi,
+    computeTimeWindowMetrics, buildTimeTraceExport,
     drawModeTimePlot, updatePlotWindow, recordPlotSample,
     getPlotStats: () => ({ count: plotHistCount, winTau: plotWinTau, originTau: plotOriginTau, lastPlotTau, plotYScale, plotYTarget }),
     setState(patch) {
@@ -462,6 +465,10 @@ function loadSpinWavesContext(seedStorage = {}) {
       if ('arnoldBaseMT' in patch) arnoldBaseMT = patch.arnoldBaseMT;
       if ('specBand' in patch) specBand = patch.specBand;
       if ('playbackSpeed' in patch) playbackSpeed = patch.playbackSpeed;
+      if ('showExpMarkers' in patch) showExpMarkers = patch.showExpMarkers;
+      if ('rfChainGainDB' in patch) rfChainGainDB = patch.rfChainGainDB;
+      if ('rfKEffMTPerV' in patch) rfKEffMTPerV = patch.rfKEffMTPerV;
+      if ('rfVpkTargetMV' in patch) rfVpkTargetMV = patch.rfVpkTargetMV;
       if ('simTime' in patch) { simTime = patch.simTime; resetModeHistory(); recordModeSample(); }
     },
     getState() {
@@ -1145,11 +1152,16 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
   assert.equal(spin.getElHidden('vmTabHandout'), false);
   assert.equal(spin.getElHidden('vmTabProtocol'), true);
   assert.equal(spin.getElHidden('vmTabLive'), true);
+  assert.equal(spin.getElHidden('vmTabExp'), true);
   assert.equal(spin.getElHidden('vmTabDb'), true);
+
+  spin.openVerifyModal('exp');
+  assert.equal(spin.getElHidden('vmTabExp'), false);
+  assert.equal(spin.getElHidden('vmTabHandout'), true);
 
   // 2. Launch "What's New" gating (shows once per release version)
   const freshCtx = loadSpinWavesContext();
-  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v80');
+  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v81');
   assert.equal(freshCtx.shouldShowWhatsNew(), true);
   assert.equal(freshCtx.getElHidden('whatsNewModal'), false, 'Fresh launch must auto-open #whatsNewModal');
   freshCtx.dismissWhatsNew(true);
@@ -1162,9 +1174,9 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
   seenCtx.openWhatsNew();
   assert.equal(seenCtx.getElHidden('whatsNewModal'), false, 'WHAT\'S NEW button must reopen #whatsNewModal');
 
-  // 3. Service Worker v80 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
+  // 3. Service Worker v81 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
   const swSrc = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
-  assert.ok(swSrc.includes("'spacetime-shell-v80'"), 'sw.js must use spacetime-shell-v80');
+  assert.ok(swSrc.includes("'spacetime-shell-v81'"), 'sw.js must use spacetime-shell-v81');
   assert.ok(swSrc.includes('./spin-waves/BENCHMARK_HANDOUT.md'), 'sw.js must precache BENCHMARK_HANDOUT.md');
   const htmlSrc = fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
   const qbSlice = htmlSrc.slice(htmlSrc.indexOf('<div id="quickLaunchBar">'), htmlSrc.indexOf('<div id="readoutsDock">'));
@@ -1191,5 +1203,102 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
   const handoutMd = fs.readFileSync(path.join(rootDir, 'spin-waves/BENCHMARK_HANDOUT.md'), 'utf8');
   assert.ok(handoutMd.includes('3.09911309e+10') && handoutMd.includes('4.7543e-7') && handoutMd.includes('tukey(128,1)[:64]'));
   assert.ok(handoutMd.includes('Verbatim Physical Prints'));
+});
+
+test('Y. Experimental RF 50-Ohm Calibration, G_ref Bypass Curve, Mode ID Tables, CSI2 Verdict & Time-Window Stats', () => {
+  // 1. 50-Ohm V_pk = V_pp / 2 math & 50-pt G_ref(f) interpolator
+  assert.equal(spin.G_REF_50PTS.length, 50);
+  const u1V = spin.awgVpkToUnits(1000, 4.11, 0, null);
+  assert.equal(u1V.vppMV, 2000);
+  assert.ok(Math.abs(u1V.vRmsMV - 1000 / Math.SQRT2) < 1e-9);
+  assert.ok(Math.abs(u1V.pAwgMW - 10.0) < 1e-9, `1000 mV_pk into 50 Ohm must equal 10.0 mW, got ${u1V.pAwgMW}`);
+  assert.ok(Math.abs(u1V.pAwgDBm - 10.0) < 1e-9, `10 mW must equal +10.0 dBm, got ${u1V.pAwgDBm}`);
+  assert.equal(u1V.gRefInBand, true);
+  assert.ok(Math.abs(u1V.gRefDB - (-21.33)) < 1e-6, `Expected G_ref(4110 MHz) = -21.33 dB, got ${u1V.gRefDB}`);
+  assert.ok(Math.abs(u1V.pSaRefDBm - (-11.33)) < 1e-6);
+  assert.equal(u1V.sampleCalibrated, false);
+  assert.equal(u1V.hSampleMT, null);
+
+  // Out-of-band clamping check
+  const oob = spin.interpolateGrefDB(3.50);
+  assert.equal(oob.inBand, false);
+  assert.equal(oob.gRefDB, spin.G_REF_50PTS[0]);
+
+  // 2. Uncalibrated vs calibrated k_eff guard (never fabricate sample-plane h_p)
+  const uncal = spin.mtToAwgVpk(0.62, null);
+  assert.equal(uncal.calibrated, false);
+  assert.equal(uncal.vPkMV, null);
+
+  const cal = spin.mtToAwgVpk(0.62, 1.5);
+  assert.equal(cal.calibrated, true);
+  assert.ok(Math.abs(cal.vPkMV - (0.62 / 1.5) * 1000) < 1e-9);
+  const dual = spin.dualToneRfSummary(250, 3.941, 250, 4.110, 0);
+  assert.ok(Math.abs(dual.pTotAwgMW - (dual.t1.pAwgMW + dual.t2.pAwgMW)) < 1e-12);
+  assert.ok(Math.abs(dual.pTotAwgMW - 1.25) < 1e-9);
+
+  // syncRfCalUi toggles calibrated badge cleanly
+  spin.setState({ rfKEffMTPerV: null, rfChainGainDB: 0, rfVpkTargetMV: 250 });
+  spin.syncRfCalUi();
+  assert.equal(spin.getElHidden('rfSampleWarn'), false);
+  spin.setState({ rfKEffMTPerV: 1.5 });
+  spin.syncRfCalUi();
+  assert.equal(spin.getElHidden('rfSampleWarn'), true);
+  spin.setState({ rfKEffMTPerV: null });
+
+  // 3. Linear-power noise floor, 27 mT B_cal retention, 29+80 mode ID & CSI2 verdict
+  assert.ok(Math.abs(spin.RF_NOISE_FLOOR.thresh3SigmaDBm - (-70.92)) < 0.02);
+  assert.ok(Math.abs(spin.RF_NOISE_FLOOR.threshSnr10DBm - (-66.20)) < 0.02);
+  assert.equal(spin.EXP_BCAL_SUMMARY.retainedMT, 27.0);
+  assert.ok(Math.abs(spin.EXP_BCAL_SUMMARY.fit29ModesMT - 26.995) < 1e-6);
+  assert.equal(spin.EXP_ANCHORS_29.length, 7);
+  assert.equal(spin.EXP_ANCHORS_80_EXTRA.length, 3);
+  assert.equal(spin.CSI2_ABLATION_DATA.verdict, 'Partially compatible');
+
+  // 4. Time-Dependent Mode Analysis window stats & trace export
+  const m13 = 13;
+  const f13 = 2 * spin.modeFreqGHz(m13) + 0.003;
+  const h13 = 1.6 * spin.parametricThreshold(m13);
+  spin.setNmmMode(false);
+  spin.setState({ temperatureK: 0, damping: 0.0020, driveMode: 'parallel', dualTone: false, driveFreq: f13, driveAmp: h13, simTime: 0 });
+  spin.seedSpins(0.004, [m13]);
+  spin.fastForwardSteadyState();
+  for (let i = 0; i < 40; i++) {
+    for (let s = 0; s < 20; s++) spin.stepLlg(0.35, true);
+    spin.updatePlotWindow(20 * 0.35);
+    spin.recordPlotSample();
+  }
+  const ssMetrics = spin.computeTimeWindowMetrics(0.5, 1.0);
+  assert.ok(ssMetrics.sampleCount >= 16);
+  const row13 = ssMetrics.modes.find(r => r.m === m13);
+  assert.ok(row13 && row13.mean > 0.03 && row13.status === 'CONVERGED',
+    `Expected steady-state m13 CONVERGED in Time Analysis, got ${JSON.stringify(row13)}`);
+  const trace = spin.buildTimeTraceExport();
+  assert.equal(trace.model, 'dAquino-2026-NMM-29m');
+  assert.equal(trace.B_DC_mT, 27);
+  assert.ok(trace.samples.length >= 20 && trace.metrics.sampleCount >= 20);
+
+  // Verify DECAYING detection when pump turns off
+  spin.setState({ driveAmp: 0, simTime: 0 });
+  spin.seedSpins(0.05, [m13]);
+  for (let i = 0; i < 40; i++) {
+    for (let s = 0; s < 30; s++) spin.stepLlg(0.35, true);
+    spin.updatePlotWindow(30 * 0.35);
+    spin.recordPlotSample();
+  }
+  const decayMetrics = spin.computeTimeWindowMetrics(0, 1);
+  const decay13 = decayMetrics.modes.find(r => r.m === m13);
+  assert.ok(decay13 && decay13.status === 'DECAYING',
+    `Expected unpumped m13 to classify DECAYING, got ${JSON.stringify(decay13)}`);
+
+  // 5. HTML DOM structural integrity: single script block, zero duplicate element IDs
+  const htmlSrc = fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
+  const scriptMatches = htmlSrc.match(/<script\b/g) || [];
+  assert.equal(scriptMatches.length, 1, `Expected single <script> tag in spin-waves/index.html, found ${scriptMatches.length}`);
+  const idMatches = [...htmlSrc.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
+  const dupIds = idMatches.filter((id, idx) => idMatches.indexOf(id) !== idx);
+  assert.deepEqual(dupIds, [], `Duplicate DOM id(s) found: ${dupIds.join(', ')}`);
+  for (const reqId of ['rfCalCard', 'vmTabExp', 'timeEnvBtn', 'timeModeBtn', 'slTimeZoom', 'slTimePan', 'arnoldExpBtn']) {
+    assert.ok(idMatches.includes(reqId), `Missing expected UI element #${reqId}`);
+  }
 });
 
