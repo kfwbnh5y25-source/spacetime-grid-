@@ -393,6 +393,7 @@ function loadSpinWavesContext(seedStorage = {}) {
       setItem: (k, v) => lsStore.set(k, String(v)),
       removeItem: k => lsStore.delete(k)
     },
+    fetch: typeof seedStorage.__fetch === 'function' ? seedStorage.__fetch : undefined,
     navigator: { userAgent: 'node-test' },
     setTimeout: () => 0,
     clearTimeout: noop,
@@ -423,13 +424,13 @@ function loadSpinWavesContext(seedStorage = {}) {
     tukeyRamp, tone1EnvAt, tone2EnvAt,
     seedSpins, exciteEigenmode, pluckAt, stepLlg, updateSpectrum,
     modeFreqGHz, modeGammaGHz, modeGamma, parametricThreshold, parametricThresholdMT, arnoldThreshold,
-    crossPump4BGHz, instantaneousArnoldThresholdMT, computeArnoldHMaxMT, getArnoldRange, arnoldZoomAt, arnoldPanBy, arnoldResetAuto, phase1Deg, relPhaseDeg,
+    crossPump4BGHz, instantaneousArnoldThresholdMT, computeArnoldHMaxMT, getArnoldRange, arnoldZoomAt, arnoldPanBy, arnoldResetAuto, drawArnoldTongues, phase1Deg, relPhaseDeg,
     cycleAvgModeAmp, modeRmsAmp,
     selfNfsCoeff, mutualNfsCoeff, mutualNfsCoeffGHz, modeNfsShiftGHz, modeMutualNfsShiftGHz,
     steadyStateAmp, analyzeTwoMode, steadyState2Mode, fastForwardSteadyState, fastForwardStepsPerFrame,
     applyPreset, swapTonesAction, SPEED_FRAME_STEPS,
     swLog, recordLogEvent, recordTelemetrySample, buildEvaluationReport,
-    getDbConfig, saveDbConfig, resetDbConfig, formatDbDiagText,
+    RLS_SQL_FIX, getDbConfig, saveDbConfig, resetDbConfig, uploadSwLog, getDbRlsBlockedUrl: () => dbRlsBlockedUrl, formatDbDiagText,
     APP_RELEASE_VERSION, WHATS_NEW_KEY, shouldShowWhatsNew, openWhatsNew, dismissWhatsNew, openVerifyModal,
     getElHidden: id => !!document.getElementById(id).hidden,
     VERIFY_STAGES, runVerificationStage, runFullVerificationProtocol, runThroughputBenchmark,
@@ -1161,7 +1162,7 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
 
   // 2. Launch "What's New" gating (shows once per release version)
   const freshCtx = loadSpinWavesContext();
-  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v81');
+  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v82');
   assert.equal(freshCtx.shouldShowWhatsNew(), true);
   assert.equal(freshCtx.getElHidden('whatsNewModal'), false, 'Fresh launch must auto-open #whatsNewModal');
   freshCtx.dismissWhatsNew(true);
@@ -1174,9 +1175,9 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
   seenCtx.openWhatsNew();
   assert.equal(seenCtx.getElHidden('whatsNewModal'), false, 'WHAT\'S NEW button must reopen #whatsNewModal');
 
-  // 3. Service Worker v81 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
+  // 3. Service Worker v82 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
   const swSrc = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
-  assert.ok(swSrc.includes("'spacetime-shell-v81'"), 'sw.js must use spacetime-shell-v81');
+  assert.ok(swSrc.includes("'spacetime-shell-v82'"), 'sw.js must use spacetime-shell-v82');
   assert.ok(swSrc.includes('./spin-waves/BENCHMARK_HANDOUT.md'), 'sw.js must precache BENCHMARK_HANDOUT.md');
   const htmlSrc = fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
   const qbSlice = htmlSrc.slice(htmlSrc.indexOf('<div id="quickLaunchBar">'), htmlSrc.indexOf('<div id="readoutsDock">'));
@@ -1300,5 +1301,73 @@ test('Y. Experimental RF 50-Ohm Calibration, G_ref Bypass Curve, Mode ID Tables,
   for (const reqId of ['rfCalCard', 'vmTabExp', 'timeEnvBtn', 'timeModeBtn', 'slTimeZoom', 'slTimePan', 'arnoldExpBtn']) {
     assert.ok(idMatches.includes(reqId), `Missing expected UI element #${reqId}`);
   }
+});
+
+test('Z. Smooth Dynamic Arnold Tongues at simTime > 0 & Idempotent Supabase RLS 401 Handling', async () => {
+  // 1. Dynamic Arnold tongue threshold with fixed driver reference frequency stays smooth at simTime > 0
+  spin.setNmmMode(false);
+  spin.applyPreset('cross4b');
+  const st4b = spin.getState();
+  const driveF = st4b.driveFreq;
+  const fStart = 3.92, fEnd = 4.02, step = 0.001;
+  for (const tauTarget of [0, 2000, 30000]) {
+    spin.applyPreset('cross4b');
+    while (spin.getState().simTime < tauTarget) spin.stepLlg(0.65, true);
+    let maxStepMT = 0;
+    let prev = null;
+    for (let fp = fStart; fp <= fEnd + 1e-9; fp += step) {
+      const hTh = spin.instantaneousArnoldThresholdMT(15, fp, st4b.drivePhase1, driveF);
+      assert.ok(Number.isFinite(hTh) && hTh >= 0, `Non-finite threshold at tau=${tauTarget}, fp=${fp}`);
+      if (prev !== null) {
+        const diff = Math.abs(hTh - prev);
+        if (diff > maxStepMT) maxStepMT = diff;
+      }
+      prev = hTh;
+    }
+    assert.ok(maxStepMT < 0.25,
+      `Dynamic Arnold curve at tau=${tauTarget} must stay smooth (max 1 MHz step=${maxStepMT.toFixed(4)} mT)`);
+    assert.doesNotThrow(() => spin.drawArnoldTongues(), `drawArnoldTongues() threw at tau=${tauTarget}`);
+  }
+
+  // 2. Idempotent RLS SQL fix + uploadSwLog 401 (42501) resilience & recovery
+  assert.ok(spin.RLS_SQL_FIX.includes('DROP POLICY IF EXISTS "allow_anon_insert_runs"'));
+  assert.ok(spin.RLS_SQL_FIX.includes('DROP POLICY IF EXISTS "allow_anon_select_runs"'));
+  assert.ok(spin.RLS_SQL_FIX.includes('NOTIFY pgrst'));
+
+  let fetchCount = 0;
+  let nextStatus = 401;
+  const rlsCtx = loadSpinWavesContext({
+    __fetch: async () => {
+      fetchCount++;
+      if (nextStatus === 401) {
+        return {
+          ok: false,
+          status: 401,
+          text: async () => JSON.stringify({ code: '42501', message: 'new row violates row-level security policy for table "spacetime_feedback_runs"' })
+        };
+      }
+      return { ok: true, status: 201, text: async () => '' };
+    }
+  });
+
+  const ok1 = await rlsCtx.uploadSwLog('manual', false);
+  assert.equal(ok1, false);
+  assert.equal(fetchCount, 1);
+  assert.equal(rlsCtx.swLog.dbStatus, 'RLS 401');
+  assert.ok(rlsCtx.getDbRlsBlockedUrl() && rlsCtx.getDbRlsBlockedUrl().includes('spacetime_feedback_runs'));
+
+  // Background auto-uploads skip network spam once URL is marked RLS 401
+  const okBg = await rlsCtx.uploadSwLog('visibility_hidden', true);
+  assert.equal(okBg, false);
+  assert.equal(fetchCount, 1, 'Background retry must be suppressed after RLS 401 on same URL');
+  assert.equal(rlsCtx.swLog.dbStatus, 'RLS 401');
+
+  // Explicit manual retry still probes the server and clears block when fixed (HTTP 201)
+  nextStatus = 201;
+  const okFixed = await rlsCtx.uploadSwLog('manual', false);
+  assert.equal(okFixed, true);
+  assert.equal(fetchCount, 2);
+  assert.equal(rlsCtx.swLog.dbStatus, 'DB SAVED ✓');
+  assert.equal(rlsCtx.getDbRlsBlockedUrl(), null);
 });
 
