@@ -442,6 +442,14 @@
       <button class="btn active" id="driveParallel" type="button">Parallel Pump (x)</button>
       <button class="btn" id="driveTransverse" type="button">Transverse RF (y)</button>
     </div>
+    <div class="btnRow" style="align-items:center;">
+      <button class="btn tiny active" id="btnApplyMode" type="button" title="Toggle Live Smooth updates vs Staged edits applied on Apply Now">Apply: Live Smooth</button>
+      <button class="btn tiny" id="btnApplyNow" type="button" title="Apply parameter edits smoothly preserving simTime, modal amplitudes & carrier phase">Apply Now</button>
+    </div>
+    <label class="sliderRow" title="Smooth linear ramp duration when changing frequency, amplitude or phase at t > 0">
+      <span>Param Ramp τ_ramp (ns)</span><output id="outRampNs">20 ns</output>
+      <input id="slRampNs" type="range" min="0" max="500" step="5" value="20">
+    </label>
     <label class="sliderRow">
       <span>Tone 1 Freq f_p1</span><output id="outFreq">3.950 GHz</output>
       <input id="slFreq" type="range" min="1.65" max="4.30" step="0.0005" value="3.950">
@@ -476,7 +484,8 @@
       </label>
       <div class="btnRow">
         <button class="btn" id="btnWaitT1SS" type="button" title="Hold Tone 2 until Tone 1 reaches steady state">Wait T1 SS: OFF</button>
-        <button class="btn" id="btnSwapTones" type="button" title="Swap Tone 1 & Tone 2 order">Swap T1↔T2</button>
+        <button class="btn" id="btnSwapTones" type="button" title="Restart sequence from t = 0 with swapped Tone 1 ↔ Tone 2">Swap &amp; Restart</button>
+        <button class="btn" id="btnLiveSwapTones" type="button" title="Swap Tone 1 ↔ Tone 2 live preserving simTime, spins & carrier phase">Live Swap</button>
       </div>
     </div>
     <label class="sliderRow">
@@ -525,7 +534,8 @@
     </div>
     <div class="btnRow">
       <button class="btn" id="btnPause" type="button">Pause</button>
-      <button class="btn" id="btnResetTime" type="button" title="Reset time t = 0">Reset t=0</button>
+      <button class="btn" id="btnResetTime" type="button" title="Restart AWG pulse sequence from t = 0 while preserving current spin state">Restart Sequence</button>
+      <button class="btn" id="btnResetSim" type="button" title="Reset entire simulation to t = 0, initial/thermal spins & clear trace history">Reset Simulation</button>
       <button class="btn" id="btnSeed" type="button">Seed Thermal</button>
       <button class="btn" id="btnClear" type="button">Calm Spins</button>
       <button class="btn" id="btnFastSS" type="button" title="Fast-forward to steady state">Fast-Fwd → SS</button>
@@ -972,6 +982,13 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   let fastForwarding = false;
   let ffStable = 0, ffFrames = 0;
   let simTime = 0; // dimensionless tau = omega_M * t
+  let carrierPhase1 = 0, carrierPhase2 = 0; // continuous accumulated carrier phase integral int 2*pi*f(s) ds
+  let carrierAnchorTau1 = 0, carrierAnchorPhi1 = 0, carrierAnchorTau2 = 0, carrierAnchorPhi2 = 0;
+  let paramRampNs = 20; // configurable smooth parameter transition ramp (ns)
+  let liveApplyMode = true; // true: edits ramp immediately preserving state; false: stage until Apply Now
+  const ramp1 = { active: false, t0: 0, dur: 0, f0: 0, f1: 0, h0: 0, h1: 0, p0: 0, p1: 0 };
+  const ramp2 = { active: false, t0: 0, dur: 0, f0: 0, f1: 0, h0: 0, h1: 0, p0: 0, p1: 0 };
+  const stagedParams = { dirty: false, driveFreq: null, driveAmp: null, drivePhase1: null, driveFreq2: null, driveAmp2: null, drivePhase2: null };
   let activeMat4 = 'n';
   let nikSelPair = [13, 23];
   let showExpMarkers = true;
@@ -1164,6 +1181,135 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (dtau <= 0) return 0;
     if (dtau >= rampTau) return 1;
     return 0.5 * (1 - Math.cos((Math.PI * dtau) / rampTau));
+  }
+
+  // Continuous carrier phase integrator phi(t) = phi(t0) + int 2*pi*f(s) ds & smooth parameter ramps
+  function evalRampVal(v0, v1, t0, dur, tau) {
+    if (dur <= 0 || tau >= t0 + dur) return v1;
+    if (tau <= t0) return v0;
+    return v0 + (v1 - v0) * ((tau - t0) / dur);
+  }
+  function integrateRampFreq(tA, tB, r, fConst) {
+    const dt = tB - tA;
+    if (dt <= 0) return 0;
+    if (!r.active || r.dur <= 0) return fConst * dt;
+    const tEnd = r.t0 + r.dur;
+    let integral = 0;
+    if (tA < r.t0) {
+      integral += r.f0 * (Math.min(tB, r.t0) - tA);
+    }
+    const segA = Math.max(tA, r.t0), segB = Math.min(tB, tEnd);
+    if (segB > segA) {
+      const fa = evalRampVal(r.f0, r.f1, r.t0, r.dur, segA);
+      const fb = evalRampVal(r.f0, r.f1, r.t0, r.dur, segB);
+      integral += 0.5 * (fa + fb) * (segB - segA);
+    }
+    if (tB > tEnd) {
+      integral += r.f1 * (tB - Math.max(tA, tEnd));
+    }
+    return integral;
+  }
+  function channelStateAt(ch, tau) {
+    const isT2 = ch === 2;
+    const r = isT2 ? ramp2 : ramp1;
+    const ancTau = isT2 ? carrierAnchorTau2 : carrierAnchorTau1;
+    const ancPhi = isT2 ? carrierAnchorPhi2 : carrierAnchorPhi1;
+    const fDef = isT2 ? driveFreq2 : driveFreq;
+    const hDef = isT2 ? driveAmp2 : driveAmp;
+    const pDef = isT2 ? drivePhase2 : drivePhase1;
+    const f = r.active ? evalRampVal(r.f0, r.f1, r.t0, r.dur, tau) : fDef;
+    const h = r.active ? evalRampVal(r.h0, r.h1, r.t0, r.dur, tau) : hDef;
+    const pOff = r.active ? evalRampVal(r.p0, r.p1, r.t0, r.dur, tau) : pDef;
+    const phi = (!r.active && ancTau === 0 && ancPhi === 0)
+      ? (fDef * FREQ_TO_RAD) * tau
+      : ancPhi + FREQ_TO_RAD * integrateRampFreq(ancTau, tau, r, fDef);
+    return { freq: f, amp: h, phaseOff: pOff, phi, theta: phi + pOff };
+  }
+  function syncCarrierPhaseToSimTime(tau = simTime) {
+    ramp1.active = false;
+    ramp2.active = false;
+    carrierAnchorTau1 = tau; carrierAnchorPhi1 = (driveFreq * FREQ_TO_RAD) * tau;
+    carrierAnchorTau2 = tau; carrierAnchorPhi2 = (driveFreq2 * FREQ_TO_RAD) * tau;
+    carrierPhase1 = carrierAnchorPhi1;
+    carrierPhase2 = carrierAnchorPhi2;
+    stagedParams.dirty = false;
+    stagedParams.driveFreq = null; stagedParams.driveAmp = null; stagedParams.drivePhase1 = null;
+    stagedParams.driveFreq2 = null; stagedParams.driveAmp2 = null; stagedParams.drivePhase2 = null;
+  }
+  function rampDriveParams(patch = {}, rampNs = paramRampNs) {
+    const dur = nsToTau(Math.max(0, Number.isFinite(rampNs) ? rampNs : 0));
+    const cur1 = channelStateAt(1, simTime);
+    const cur2 = channelStateAt(2, simTime);
+    const nf1 = 'driveFreq' in patch ? Number(patch.driveFreq) : (ramp1.active ? ramp1.f1 : cur1.freq);
+    const nh1 = 'driveAmp' in patch ? Number(patch.driveAmp) : (ramp1.active ? ramp1.h1 : cur1.amp);
+    const np1 = 'drivePhase1' in patch ? Number(patch.drivePhase1) : (ramp1.active ? ramp1.p1 : cur1.phaseOff);
+    const nf2 = 'driveFreq2' in patch ? Number(patch.driveFreq2) : (ramp2.active ? ramp2.f1 : cur2.freq);
+    const nh2 = 'driveAmp2' in patch ? Number(patch.driveAmp2) : (ramp2.active ? ramp2.h1 : cur2.amp);
+    const np2 = 'drivePhase2' in patch ? Number(patch.drivePhase2) : (ramp2.active ? ramp2.p1 : cur2.phaseOff);
+
+    const t1Changed = Math.abs(nf1 - cur1.freq) > 1e-12 || Math.abs(nh1 - cur1.amp) > 1e-12 || Math.abs(np1 - cur1.phaseOff) > 1e-12;
+    const t2Changed = Math.abs(nf2 - cur2.freq) > 1e-12 || Math.abs(nh2 - cur2.amp) > 1e-12 || Math.abs(np2 - cur2.phaseOff) > 1e-12;
+
+    if (t1Changed) {
+      carrierAnchorTau1 = simTime; carrierAnchorPhi1 = cur1.phi; carrierPhase1 = cur1.phi;
+      if (dur <= 0) {
+        driveFreq = nf1; driveAmp = nh1; drivePhase1 = np1; ramp1.active = false;
+      } else {
+        ramp1.active = true; ramp1.t0 = simTime; ramp1.dur = dur;
+        ramp1.f0 = cur1.freq; ramp1.f1 = nf1;
+        ramp1.h0 = cur1.amp; ramp1.h1 = nh1;
+        ramp1.p0 = cur1.phaseOff; ramp1.p1 = np1;
+        driveFreq = cur1.freq; driveAmp = cur1.amp; drivePhase1 = cur1.phaseOff;
+      }
+    }
+    if (t2Changed) {
+      carrierAnchorTau2 = simTime; carrierAnchorPhi2 = cur2.phi; carrierPhase2 = cur2.phi;
+      if (dur <= 0) {
+        driveFreq2 = nf2; driveAmp2 = nh2; drivePhase2 = np2; ramp2.active = false;
+      } else {
+        ramp2.active = true; ramp2.t0 = simTime; ramp2.dur = dur;
+        ramp2.f0 = cur2.freq; ramp2.f1 = nf2;
+        ramp2.h0 = cur2.amp; ramp2.h1 = nh2;
+        ramp2.p0 = cur2.phaseOff; ramp2.p1 = np2;
+        driveFreq2 = cur2.freq; driveAmp2 = cur2.amp; drivePhase2 = cur2.phaseOff;
+      }
+    }
+    if ('driveMode' in patch) driveMode = patch.driveMode;
+    if ('dualTone' in patch) dualTone = !!patch.dualTone;
+    if ('tone2DelayNs' in patch) tone2DelayNs = Number(patch.tone2DelayNs);
+    if ('tone2WaitSS' in patch) tone2WaitSS = !!patch.tone2WaitSS;
+  }
+  function advanceCarrierPhases(tau0, tau1) {
+    if (ramp1.active) {
+      const s1 = channelStateAt(1, tau1);
+      if (tau1 >= ramp1.t0 + ramp1.dur - 1e-12) {
+        const tEnd = ramp1.t0 + ramp1.dur;
+        carrierAnchorTau1 = tEnd;
+        carrierAnchorPhi1 = carrierAnchorPhi1 + FREQ_TO_RAD * 0.5 * (ramp1.f0 + ramp1.f1) * ramp1.dur;
+        driveFreq = ramp1.f1; driveAmp = ramp1.h1; drivePhase1 = ramp1.p1; ramp1.active = false;
+        carrierPhase1 = carrierAnchorPhi1 + FREQ_TO_RAD * driveFreq * (tau1 - tEnd);
+      } else {
+        driveFreq = s1.freq; driveAmp = s1.amp; drivePhase1 = s1.phaseOff;
+        carrierPhase1 = s1.phi;
+      }
+    } else {
+      carrierPhase1 = carrierAnchorPhi1 + FREQ_TO_RAD * driveFreq * (tau1 - carrierAnchorTau1);
+    }
+    if (ramp2.active) {
+      const s2 = channelStateAt(2, tau1);
+      if (tau1 >= ramp2.t0 + ramp2.dur - 1e-12) {
+        const tEnd = ramp2.t0 + ramp2.dur;
+        carrierAnchorTau2 = tEnd;
+        carrierAnchorPhi2 = carrierAnchorPhi2 + FREQ_TO_RAD * 0.5 * (ramp2.f0 + ramp2.f1) * ramp2.dur;
+        driveFreq2 = ramp2.f1; driveAmp2 = ramp2.h1; drivePhase2 = ramp2.p1; ramp2.active = false;
+        carrierPhase2 = carrierAnchorPhi2 + FREQ_TO_RAD * driveFreq2 * (tau1 - tEnd);
+      } else {
+        driveFreq2 = s2.freq; driveAmp2 = s2.amp; drivePhase2 = s2.phaseOff;
+        carrierPhase2 = s2.phi;
+      }
+    } else {
+      carrierPhase2 = carrierAnchorPhi2 + FREQ_TO_RAD * driveFreq2 * (tau1 - carrierAnchorTau2);
+    }
   }
 
   // High-resolution 4096-point radix-2 FFT probe spectrum (df = 3.42 MHz, 1.5-2.3 GHz mode band & 0-6.5 GHz wide band)
@@ -1363,6 +1509,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   }
 
   function resetModeHistory() {
+    syncCarrierPhaseToSimTime(simTime);
     modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime; lastSpecSampleT = -1; prevSpecT = -1; prevSpecVal = 0;
     probeSeries.fill(0); spectrum.fill(0); probeHead = 0; probeCount = 0; specSeq++; lastSpecFftSeq = -1; specMaxSmooth = 0;
     tone2Released = false; tone2ReleaseT = Infinity; t1WaitStable = 0; lastWaitCheckT = simTime;
@@ -1604,7 +1751,12 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         const fp = (typeof pumpRefFreqGHz === 'number' && Number.isFinite(pumpRefFreqGHz))
           ? pumpRefFreqGHz
           : (fProbeGHz !== null ? fProbeGHz : 2 * fGhzArr[mIdx]);
-        const thP = (fp * FREQ_TO_RAD) * simTime + pumpPhaseRad;
+        const curF1 = ramp1.active ? channelStateAt(1, simTime).freq : driveFreq;
+        const curF2 = ramp2.active ? channelStateAt(2, simTime).freq : driveFreq2;
+        const useC1 = !ramp1.active && Math.abs(fp - curF1) < 1e-6;
+        const useC2 = dualTone && !ramp2.active && Math.abs(fp - curF2) < 1e-6;
+        const thBase = useC1 ? carrierPhase1 : (useC2 ? carrierPhase2 : (fp * FREQ_TO_RAD) * simTime);
+        const thP = thBase + pumpPhaseRad;
         // Exact Eq. (9) 2A rotating sideband multiplying a_h*: (-i Q2x / |Q2x|) * e^{i(omega_p tau + phi_p)}
         const c = Math.cos(thP), s = Math.sin(thP);
         const uR = (qI * c + qR * s) / qMag;
@@ -1777,12 +1929,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   }
 
   function tone1EnvAt(tau = simTime) {
-    if (driveAmp <= 0 || tau < 0) return 0;
+    const h1 = ramp1.active ? channelStateAt(1, tau).amp : driveAmp;
+    if (h1 <= 0 || tau < 0) return 0;
     return tukeyRamp(tau);
   }
 
   function tone2EnvAt(tau = simTime) {
-    if (!dualTone || driveAmp2 <= 0) return 0;
+    const h2 = ramp2.active ? channelStateAt(2, tau).amp : driveAmp2;
+    if (!dualTone || h2 <= 0) return 0;
     if (tone2WaitSS) {
       if (!tone2Released || tau < tone2ReleaseT) return 0;
       return tukeyRamp(tau - tone2ReleaseT);
@@ -1794,11 +1948,16 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   function fieldComponentsAt(tau) {
     const env1 = tone1EnvAt(tau);
-    const val1 = env1 > 0 ? env1 * driveAmp * Math.sin((driveFreq * FREQ_TO_RAD) * tau + drivePhase1) : 0;
+    let val1 = 0;
+    if (env1 > 0) {
+      const ch1 = channelStateAt(1, tau);
+      val1 = env1 * ch1.amp * Math.sin(ch1.theta);
+    }
     let val2 = 0;
     const env2 = tone2EnvAt(tau);
     if (env2 > 0) {
-      val2 = env2 * driveAmp2 * Math.sin((driveFreq2 * FREQ_TO_RAD) * tau + drivePhase2);
+      const ch2 = channelStateAt(2, tau);
+      val2 = env2 * ch2.amp * Math.sin(ch2.theta);
     }
     const tot = val1 + val2;
     return driveMode === 'parallel' ? [tot, 0] : [0, tot];
@@ -2011,13 +2170,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
           aIm[m] += thSigI[m] * v * fac;
         }
       }
+      advanceCarrierPhases(tau, tau + h);
       simTime += h;
       if (lastSpecSampleT < 0 || simTime < lastSpecSampleT || simTime - lastSpecSampleT >= SPEC_DT) {
         recordSpecSamples(simTime);
       }
     }
     if (simTime < lastModeSampleT || simTime - lastModeSampleT >= 8.0 || modeHistCount === 0) recordModeSample();
-    if (dualTone && tone2WaitSS && !tone2Released && driveAmp2 > 0 && simTime - lastWaitCheckT >= 200) {
+    if (dualTone && tone2WaitSS && !tone2Released && driveAmp2 > 0 && simTime - lastWaitCheckT >= 450) {
       let maxDiff = 0, maxRel = 0;
       const noiseFloor = temperatureK > 0 ? Math.max(1e-4, 1.5 * thermalRmsAmp()) : 1e-4;
       for (let m = 0; m < M; m++) {
@@ -2031,16 +2191,18 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       lastWaitCheckT = simTime;
       const m1Wait = closestArnoldMode(driveFreq);
       const t1Target = driveMode === 'parallel' ? steadyStateAmp(m1Wait, driveFreq, driveAmp, 0, true) : 0;
-      const t1Ready = t1Target <= 0 || modeRmsAmp(m1Wait) >= 0.88 * t1Target;
+      let peakActiveAmp = 0;
+      for (let m = 0; m < M; m++) peakActiveAmp = Math.max(peakActiveAmp, modeRmsAmp(m));
+      const t1SettledAtAttractor = t1Target > 0
+        ? (modeRmsAmp(m1Wait) >= 0.85 * t1Target || peakActiveAmp >= 0.005)
+        : (driveMode === 'transverse' || peakActiveAmp < 0.002);
       const minWaitTau = usToTau(0.8);
-      if (simTime >= minWaitTau && t1Ready && maxDiff < noiseFloor && maxRel < 0.005) {
+      if (simTime >= minWaitTau && t1SettledAtAttractor && maxDiff < noiseFloor && maxRel < 0.005) {
         if (++t1WaitStable >= 4) { tone2Released = true; tone2ReleaseT = simTime; }
       } else {
         t1WaitStable = 0;
       }
-      if (!tone2Released && simTime >= usToTau(Math.max(3.0, tone2DelayNs))) {
-        tone2Released = true; tone2ReleaseT = simTime;
-      }
+      // Strictly never force-release Tone 2 on a blind timeout; Wait T1 SS stays held until real T1 convergence.
     }
     if (!skipSpatial) reconstructSpatialSpins();
   }
@@ -3411,11 +3573,13 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const { fMin, fMax, hMin, hMax } = getArnoldRange(true);
     const hpMT = Math.max(hMin, Math.min(hMax, hMin + ((ARNOLD_PAD_T + ph - yPx) / ph) * (hMax - hMin)));
     const freq = fMin + nx * (fMax - fMin);
-    driveMode = 'parallel';
-    if (forceT2 || arnoldTarget === 2) { dualTone = true; driveFreq2 = freq; driveAmp2 = hpMT / MU0_MS_MT; }
-    else { driveFreq = freq; driveAmp = hpMT / MU0_MS_MT; }
-    let maxA = 0; for (let m = 0; m < M; m++) maxA = Math.max(maxA, cycleAvgModeAmp(m));
-    if (maxA < 0.002) seedSpins(0.004);
+    const patch = { driveMode: 'parallel' };
+    if (forceT2 || arnoldTarget === 2) {
+      patch.dualTone = true; patch.driveFreq2 = freq; patch.driveAmp2 = hpMT / MU0_MS_MT;
+    } else {
+      patch.driveFreq = freq; patch.driveAmp = hpMT / MU0_MS_MT;
+    }
+    rampDriveParams(patch);
     syncUi();
   }
   let arnoldDrag = false, arnoldPanDrag = null, arnoldGestureStartZoom = 1;
@@ -3728,19 +3892,36 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   }
 
   function syncUi() {
-    document.getElementById('slFreq').value = driveFreq;
-    document.getElementById('outFreq').textContent = `${driveFreq.toFixed(4)} GHz`;
-    document.getElementById('slAmp').value = (driveAmp * MU0_MS_MT).toFixed(2);
-    document.getElementById('outAmp').textContent = `${(driveAmp * MU0_MS_MT).toFixed(2)} mT (${driveAmp.toFixed(4)})`;
+    const dispF1 = stagedParams.driveFreq !== null ? stagedParams.driveFreq : (ramp1.active ? ramp1.f1 : driveFreq);
+    const dispA1 = stagedParams.driveAmp !== null ? stagedParams.driveAmp : (ramp1.active ? ramp1.h1 : driveAmp);
+    const dispP1 = stagedParams.drivePhase1 !== null ? stagedParams.drivePhase1 : (ramp1.active ? ramp1.p1 : drivePhase1);
+    const dispF2 = stagedParams.driveFreq2 !== null ? stagedParams.driveFreq2 : (ramp2.active ? ramp2.f1 : driveFreq2);
+    const dispA2 = stagedParams.driveAmp2 !== null ? stagedParams.driveAmp2 : (ramp2.active ? ramp2.h1 : driveAmp2);
+    const dispP2 = stagedParams.drivePhase2 !== null ? stagedParams.drivePhase2 : (ramp2.active ? ramp2.p1 : drivePhase2);
+    const deg1Disp = Math.round((((dispP1 * 180) / Math.PI) % 360 + 540) % 360 - 180);
+    const relDegDisp = Math.round(((((dispP2 - dispP1) * 180) / Math.PI) % 360 + 540) % 360 - 180);
+
+    const slRN = document.getElementById('slRampNs'), outRN = document.getElementById('outRampNs');
+    if (slRN) slRN.value = paramRampNs;
+    if (outRN) outRN.textContent = `${paramRampNs} ns`;
+    const btnAM = document.getElementById('btnApplyMode');
+    if (btnAM) { btnAM.textContent = liveApplyMode ? 'Apply: Live Smooth' : 'Apply: Staged'; btnAM.classList.toggle('active', liveApplyMode); }
+    const btnAN = document.getElementById('btnApplyNow');
+    if (btnAN) btnAN.classList.toggle('active', stagedParams.dirty || ramp1.active || ramp2.active);
+
+    document.getElementById('slFreq').value = dispF1;
+    document.getElementById('outFreq').textContent = `${dispF1.toFixed(4)} GHz${stagedParams.driveFreq !== null ? ' *' : ''}`;
+    document.getElementById('slAmp').value = (dispA1 * MU0_MS_MT).toFixed(2);
+    document.getElementById('outAmp').textContent = `${(dispA1 * MU0_MS_MT).toFixed(2)} mT (${dispA1.toFixed(4)})${stagedParams.driveAmp !== null ? ' *' : ''}`;
     const slP1 = document.getElementById('slPhase1');
-    if (slP1) { const deg1 = phase1Deg(); slP1.value = deg1; document.getElementById('outPhase1').textContent = `${deg1}°`; }
+    if (slP1) { slP1.value = deg1Disp; document.getElementById('outPhase1').textContent = `${deg1Disp}°${stagedParams.drivePhase1 !== null ? ' *' : ''}`; }
     const btnDual = document.getElementById('btnDualTone'), dualGrp = document.getElementById('dualToneGroup');
     if (btnDual) { btnDual.textContent = `Dual-Tone: ${dualTone ? 'ON' : 'OFF'}`; btnDual.classList.toggle('active', dualTone); }
     if (dualGrp) dualGrp.hidden = !dualTone;
     const slF2 = document.getElementById('slFreq2');
-    if (slF2) { slF2.value = driveFreq2; document.getElementById('outFreq2').textContent = `${driveFreq2.toFixed(4)} GHz`; }
+    if (slF2) { slF2.value = dispF2; document.getElementById('outFreq2').textContent = `${dispF2.toFixed(4)} GHz${stagedParams.driveFreq2 !== null ? ' *' : ''}`; }
     const slA2 = document.getElementById('slAmp2');
-    if (slA2) { slA2.value = (driveAmp2 * MU0_MS_MT).toFixed(2); document.getElementById('outAmp2').textContent = `${(driveAmp2 * MU0_MS_MT).toFixed(2)} mT (${driveAmp2.toFixed(4)})`; }
+    if (slA2) { slA2.value = (dispA2 * MU0_MS_MT).toFixed(2); document.getElementById('outAmp2').textContent = `${(dispA2 * MU0_MS_MT).toFixed(2)} mT (${dispA2.toFixed(4)})${stagedParams.driveAmp2 !== null ? ' *' : ''}`; }
     const btnWait = document.getElementById('btnWaitT1SS');
     if (btnWait) { btnWait.textContent = tone2WaitSS ? (tone2Released ? 'Wait T1 SS: ON (GO)' : 'Wait T1 SS: ON') : 'Wait T1 SS: OFF'; btnWait.classList.toggle('active', tone2WaitSS); }
     const slD2 = document.getElementById('slDelay2');
@@ -3750,7 +3931,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       if (outD2) outD2.textContent = tone2WaitSS ? (tone2Released ? 'T1 SS GO' : 'WAIT T1 SS') : `${tone2DelayNs.toFixed(1)} µs`;
     }
     const slP2 = document.getElementById('slPhase2');
-    if (slP2) { const deg = relPhaseDeg(); slP2.value = deg; document.getElementById('outPhase2').textContent = `${deg}°`; }
+    if (slP2) { slP2.value = relDegDisp; document.getElementById('outPhase2').textContent = `${relDegDisp}°${stagedParams.drivePhase2 !== null ? ' *' : ''}`; }
     const tBtn = document.getElementById('arnoldTargetBtn');
     if (tBtn) { tBtn.textContent = `TAP: T${arnoldTarget}`; tBtn.classList.toggle('t2', arnoldTarget === 2); }
     const bBtn = document.getElementById('arnoldBandBtn');
@@ -4592,6 +4773,60 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const kind = mIdx === 27 ? 'uniform Kittel mode (all spins rotate together)' : 'bulk spin-wave mode (spatial nodal rings)';
     announcePress(`m${mIdx}${mIdx === 27 ? ' Kit' : ''}`, `Excited ${kind} at f = ${fGhzArr[mIdx].toFixed(4)} GHz, self-NFS N = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz.`, `m${mIdx}`);
   });
+  function applyNow(customRampNs = paramRampNs) {
+    const patch = {};
+    if (stagedParams.driveFreq !== null) patch.driveFreq = stagedParams.driveFreq;
+    if (stagedParams.driveAmp !== null) patch.driveAmp = stagedParams.driveAmp;
+    if (stagedParams.drivePhase1 !== null) patch.drivePhase1 = stagedParams.drivePhase1;
+    if (stagedParams.driveFreq2 !== null) patch.driveFreq2 = stagedParams.driveFreq2;
+    if (stagedParams.driveAmp2 !== null) patch.driveAmp2 = stagedParams.driveAmp2;
+    if (stagedParams.drivePhase2 !== null) patch.drivePhase2 = stagedParams.drivePhase2;
+    stagedParams.dirty = false;
+    stagedParams.driveFreq = null; stagedParams.driveAmp = null; stagedParams.drivePhase1 = null;
+    stagedParams.driveFreq2 = null; stagedParams.driveAmp2 = null; stagedParams.drivePhase2 = null;
+    rampDriveParams(patch, customRampNs);
+    syncUi();
+  }
+  function editDriveParam(key, val) {
+    if (liveApplyMode) {
+      const patch = {};
+      patch[key] = val;
+      if (key === 'drivePhase1') {
+        const cur1 = ramp1.active ? ramp1.p1 : drivePhase1;
+        const cur2 = ramp2.active ? ramp2.p1 : drivePhase2;
+        patch.drivePhase2 = val + (cur2 - cur1);
+      }
+      rampDriveParams(patch, paramRampNs);
+    } else {
+      if (key === 'drivePhase1') {
+        const cur1 = stagedParams.drivePhase1 !== null ? stagedParams.drivePhase1 : (ramp1.active ? ramp1.p1 : drivePhase1);
+        const cur2 = stagedParams.drivePhase2 !== null ? stagedParams.drivePhase2 : (ramp2.active ? ramp2.p1 : drivePhase2);
+        stagedParams.drivePhase2 = val + (cur2 - cur1);
+      }
+      stagedParams[key] = val;
+      stagedParams.dirty = true;
+    }
+    syncUi();
+  }
+  const btnApplyModeEl = document.getElementById('btnApplyMode');
+  if (btnApplyModeEl) btnApplyModeEl.addEventListener('click', () => {
+    liveApplyMode = !liveApplyMode;
+    if (liveApplyMode && stagedParams.dirty) applyNow();
+    else syncUi();
+    announcePress(liveApplyMode ? 'Apply: Live Smooth' : 'Apply: Staged', liveApplyMode ? `Parameter edits now smoothly ramp over ${paramRampNs} ns preserving simTime & spins.` : 'Staged mode active: adjust values freely, then click Apply Now to ramp preserving state.');
+  });
+  const btnApplyNowEl = document.getElementById('btnApplyNow');
+  if (btnApplyNowEl) btnApplyNowEl.addEventListener('click', () => {
+    applyNow();
+    announcePress('Apply Now', `Applied drive parameters via ${paramRampNs} ns smooth ramp preserving t = ${simTimeUs().toFixed(3)} µs, modal amplitudes & continuous carrier phase.`);
+  });
+  const slRampNsEl = document.getElementById('slRampNs');
+  if (slRampNsEl) slRampNsEl.addEventListener('input', e => {
+    paramRampNs = Math.max(0, Math.min(500, Number(e.target.value) || 0));
+    syncUi();
+    announcePress(`Ramp τ_ramp = ${paramRampNs} ns`, `Set smooth parameter transition duration to ${paramRampNs} ns.`);
+  });
+
   document.getElementById('driveParallel').addEventListener('click', () => {
     driveMode = 'parallel'; syncUi();
     announcePress('Parallel Pump (x)', 'Aligned RF drive along static magnetization m₀ (x̂) — drives parametric ω_p ≈ 2ω_k instabilities.');
@@ -4601,77 +4836,113 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     announcePress('Transverse RF (y)', 'Aligned RF drive perpendicular to m₀ (ŷ) — drives direct linear resonance ω_p ≈ ω_k.');
   });
   document.getElementById('slFreq').addEventListener('input', e => {
-    driveFreq = +e.target.value; syncUi();
-    announcePress(`Tone 1 Freq ${driveFreq.toFixed(4)} GHz`, 'Tuned Tone 1 carrier frequency horizontally across the Arnold instability tongues.');
+    const val = +e.target.value;
+    editDriveParam('driveFreq', val);
+    announcePress(`Tone 1 Freq ${val.toFixed(4)} GHz`, `${liveApplyMode ? 'Smoothly tuned' : 'Staged'} Tone 1 frequency preserving modal state & carrier phase.`);
   });
   document.getElementById('slAmp').addEventListener('input', e => {
-    driveAmp = (+e.target.value) / MU0_MS_MT; syncUi();
-    announcePress(`Tone 1 Amp ${(driveAmp * MU0_MS_MT).toFixed(2)} mT`, 'Adjusted Tone 1 pump strength vertically relative to parametric threshold h_th.');
+    const val = (+e.target.value) / MU0_MS_MT;
+    editDriveParam('driveAmp', val);
+    announcePress(`Tone 1 Amp ${(val * MU0_MS_MT).toFixed(2)} mT`, `${liveApplyMode ? 'Smoothly adjusted' : 'Staged'} Tone 1 pump strength preserving simulation state.`);
   });
   const slPhase1El = document.getElementById('slPhase1');
   if (slPhase1El) slPhase1El.addEventListener('input', e => {
     const deg = +e.target.value;
-    const rel = drivePhase2 - drivePhase1;
-    drivePhase1 = (deg * Math.PI) / 180;
-    drivePhase2 = drivePhase1 + rel;
-    syncUi();
-    announcePress(`Tone 1 Phase φ₁ = ${deg}°`, `Set Tone 1 carrier phase φ₁ = ${deg}° — shifts interference against 4B cross-pumping P_hk a_k² (constructive pulls tongue down, 180° pushes up).`, 'phase1');
+    editDriveParam('drivePhase1', (deg * Math.PI) / 180);
+    announcePress(`Tone 1 Phase φ₁ = ${deg}°`, `Set Tone 1 phase φ₁ = ${deg}° preserving simTime & modal amplitudes.`, 'phase1');
   });
   document.getElementById('btnDualTone').addEventListener('click', () => {
     dualTone = !dualTone;
     if (dualTone && driveAmp2 === 0) { driveFreq2 = 2 * fGhzArr[16]; driveAmp2 = 2.0 * parametricThreshold(16); }
     syncUi();
-    announcePress(`Dual-Tone: ${dualTone ? 'ON' : 'OFF'}`, dualTone ? 'Enabled Tone 2 AWG channel with independent frequency, delay, and phase Δφ.' : 'Disabled Tone 2 — running single-tone Tone 1 drive only.', 'dualTone');
+    announcePress(`Dual-Tone: ${dualTone ? 'ON' : 'OFF'}`, dualTone ? 'Enabled Tone 2 AWG channel preserving current simulation state.' : 'Disabled Tone 2 preserving current simulation state.', 'dualTone');
     if (dualTone && swTutEl && !swTutEl.hidden) applyCoachSpotlights();
   });
   document.getElementById('slFreq2').addEventListener('input', e => {
-    driveFreq2 = +e.target.value; syncUi();
-    announcePress(`Tone 2 Freq ${driveFreq2.toFixed(4)} GHz`, 'Tuned Tone 2 carrier frequency to target a second normal mode.');
+    const val = +e.target.value;
+    editDriveParam('driveFreq2', val);
+    announcePress(`Tone 2 Freq ${val.toFixed(4)} GHz`, `${liveApplyMode ? 'Smoothly tuned' : 'Staged'} Tone 2 frequency preserving modal state.`);
   });
   document.getElementById('slAmp2').addEventListener('input', e => {
-    driveAmp2 = (+e.target.value) / MU0_MS_MT; syncUi();
-    announcePress(`Tone 2 Amp ${(driveAmp2 * MU0_MS_MT).toFixed(2)} mT`, 'Adjusted Tone 2 RF amplitude.');
+    const val = (+e.target.value) / MU0_MS_MT;
+    editDriveParam('driveAmp2', val);
+    announcePress(`Tone 2 Amp ${(val * MU0_MS_MT).toFixed(2)} mT`, `${liveApplyMode ? 'Smoothly adjusted' : 'Staged'} Tone 2 RF amplitude preserving modal state.`);
   });
   document.getElementById('slDelay2').addEventListener('input', e => {
-    tone2WaitSS = false; tone2DelayNs = +e.target.value; simTime = 0; fastForwarding = false; seedSpins(0.004); syncUi();
-    announcePress(`Tone 2 Delay ${tone2DelayNs.toFixed(1)} µs`, `Reset t = 0: Tone 2 now turns on smoothly via 1 ns Tukey ramp after ${tone2DelayNs.toFixed(1)} µs.`);
+    tone2WaitSS = false; tone2DelayNs = +e.target.value; syncUi();
+    announcePress(`Tone 2 Delay ${tone2DelayNs.toFixed(1)} µs`, `Updated Tone 2 delay to ${tone2DelayNs.toFixed(1)} µs preserving simTime & spins (use Restart Sequence to replay from t=0).`);
   });
   document.getElementById('slPhase2').addEventListener('input', e => {
-    const deg = +e.target.value; drivePhase2 = drivePhase1 + (deg * Math.PI) / 180; syncUi();
-    announcePress(`Rel Phase Δφ = ${deg}°`, `Set φ₂ − φ₁ = ${deg}° (0° gives constructive interference on overlapping tones, ±180° cancels destructively).`, 'phase2');
+    const deg = +e.target.value;
+    const base1 = stagedParams.drivePhase1 !== null ? stagedParams.drivePhase1 : (ramp1.active ? ramp1.p1 : drivePhase1);
+    editDriveParam('drivePhase2', base1 + (deg * Math.PI) / 180);
+    announcePress(`Rel Phase Δφ = ${deg}°`, `Set φ₂ − φ₁ = ${deg}° preserving simulation state.`, 'phase2');
   });
   document.getElementById('btnWaitT1SS').addEventListener('click', () => {
-    tone2WaitSS = !tone2WaitSS; if (tone2WaitSS && !dualTone) dualTone = true; simTime = 0; fastForwarding = false; seedSpins(0.004); syncUi();
-    announcePress(`Wait T1 SS: ${tone2WaitSS ? 'ON' : 'OFF'}`, tone2WaitSS ? 'Tone 2 holds off until Tone 1 actually reaches steady state, then ramps on in 1 ns.' : 'Switched back to fixed µs delay timer for Tone 2.');
+    tone2WaitSS = !tone2WaitSS;
+    if (tone2WaitSS && !dualTone) dualTone = true;
+    if (!tone2WaitSS) { tone2Released = false; tone2ReleaseT = Infinity; }
+    t1WaitStable = 0; lastWaitCheckT = simTime;
+    syncUi();
+    announcePress(`Wait T1 SS: ${tone2WaitSS ? 'ON' : 'OFF'}`, tone2WaitSS ? 'Wait T1 SS enabled preserving current spins (never force-releases without real convergence).' : 'Switched back to fixed µs delay timer preserving current spins.');
   });
-  function swapTonesAction() {
+  function swapTonesAction(preserveState = false) {
     if (!dualTone) applyPreset('nonrecip');
+    if (preserveState) {
+      const f1 = ramp1.active ? ramp1.f1 : driveFreq, h1 = ramp1.active ? ramp1.h1 : driveAmp, p1 = ramp1.active ? ramp1.p1 : drivePhase1;
+      const f2 = ramp2.active ? ramp2.f1 : driveFreq2, h2 = ramp2.active ? ramp2.h1 : driveAmp2, p2 = ramp2.active ? ramp2.p1 : drivePhase2;
+      rampDriveParams({ driveFreq: f2, driveAmp: h2, drivePhase1: p2, driveFreq2: f1, driveAmp2: h1, drivePhase2: p1 }, paramRampNs);
+      syncUi();
+      return;
+    }
     [driveFreq, driveFreq2] = [driveFreq2, driveFreq];
     [driveAmp, driveAmp2] = [driveAmp2, driveAmp];
     [drivePhase1, drivePhase2] = [drivePhase2, drivePhase1];
     simTime = 0; fastForwarding = false; seedSpins(0.004, [13, 16]); syncUi();
   }
   document.getElementById('btnSwapTones').addEventListener('click', () => {
-    swapTonesAction();
-    announcePress('Swap T1↔T2', 'Swapped Tone 1 and Tone 2 frequencies, amplitudes & phases at t = 0 to test nonreciprocal arrival-order memory!', 'swap');
+    swapTonesAction(false);
+    announcePress('Swap & Restart', 'Swapped Tone 1 ↔ Tone 2 and restarted sequence from t = 0 for arrival-order test!', 'swap');
+  });
+  const btnLiveSwapEl = document.getElementById('btnLiveSwapTones');
+  if (btnLiveSwapEl) btnLiveSwapEl.addEventListener('click', () => {
+    swapTonesAction(true);
+    announcePress('Live Swap T1↔T2', 'Swapped Tone 1 ↔ Tone 2 smoothly while preserving simTime, modal amplitudes & continuous carrier phase!');
   });
   document.getElementById('quickSwapBtn').addEventListener('click', () => {
     if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
-    swapTonesAction();
+    swapTonesAction(false);
     announcePress('SWAP T1↔T2', 'Swapped Tone 1 ↔ Tone 2 order at t = 0 — whichever tone leads now locks out the rival!', 'swap');
   });
-  function resetSimTime() {
+  function restartSequence() {
+    if (stagedParams.dirty) applyNow(0);
+    if (ramp1.active) { driveFreq = ramp1.f1; driveAmp = ramp1.h1; drivePhase1 = ramp1.p1; ramp1.active = false; }
+    if (ramp2.active) { driveFreq2 = ramp2.f1; driveAmp2 = ramp2.h1; drivePhase2 = ramp2.p1; ramp2.active = false; }
+    simTime = 0;
+    syncCarrierPhaseToSimTime(0);
+    tone2Released = false; tone2ReleaseT = Infinity; t1WaitStable = 0; lastWaitCheckT = 0;
+    fastForwarding = false;
+    plotOriginTau = 0;
+    syncUi(); drawScene();
+  }
+  function resetSimulation(mode = null) {
+    if (ramp1.active) { driveFreq = ramp1.f1; driveAmp = ramp1.h1; drivePhase1 = ramp1.p1; ramp1.active = false; }
+    if (ramp2.active) { driveFreq2 = ramp2.f1; driveAmp2 = ramp2.h1; drivePhase2 = ramp2.p1; ramp2.active = false; }
     simTime = 0; fastForwarding = false; paused = false;
     document.getElementById('btnPause').textContent = 'Pause';
-    seedSpins(0.004); syncUi(); drawScene();
+    const seedMode = mode !== null ? mode : (temperatureK > 0 ? 'thermal' : 0.004);
+    seedSpins(seedMode); syncUi(); drawScene();
   }
-  document.getElementById('btnResetTime').addEventListener('click', () => { resetSimTime(); announcePress('Reset t=0', 'Rewound AWG pulse timer to t = 0 to replay the 1 ns Tukey turn-on.'); });
+  function resetSimTime() { restartSequence(); }
+  document.getElementById('btnResetTime').addEventListener('click', () => { restartSequence(); announcePress('Restart Sequence', 'Rewound AWG pulse sequence to t = 0 while preserving current modal amplitudes (a_h).'); });
+  const btnResetSimEl = document.getElementById('btnResetSim');
+  if (btnResetSimEl) btnResetSimEl.addEventListener('click', () => { resetSimulation(); announcePress('Reset Simulation', 'Reset t = 0, cleared trace history and re-initialized modal spins cleanly.'); });
   document.getElementById('quickResetTimeBtn').addEventListener('click', () => {
     if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
-    resetSimTime();
-    announcePress('↺ t=0', 'Rewound AWG pulse timer to t = 0 to replay turn-on from the start.');
+    restartSequence();
+    announcePress('↺ t=0 Seq', 'Rewound AWG pulse playhead to t = 0 preserving modal spins.');
   });
-  document.getElementById('hResetBtn').addEventListener('click', () => { resetSimTime(); announcePress('↺ t=0', 'Rewound h(t) pulse playhead to t = 0.'); });
+  document.getElementById('hResetBtn').addEventListener('click', () => { restartSequence(); announcePress('↺ t=0 Seq', 'Rewound h(t) pulse playhead to t = 0 preserving modal spins.'); });
   document.getElementById('arnoldTargetBtn').addEventListener('click', () => {
     arnoldTarget = arnoldTarget === 1 ? 2 : 1; if (arnoldTarget === 2 && !dualTone) dualTone = true; syncUi();
     announcePress(`TAP: T${arnoldTarget}`, `Tapping the Arnold diagram now aims Tone ${arnoldTarget}.`);
