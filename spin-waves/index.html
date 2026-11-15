@@ -1441,7 +1441,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     return df;
   }
   // Exact 4-magnon parametric cross-pumping rate W_4B = sum_{k != m} P_{mk} a_k^2 from Eq. (9) 4B term
-  function crossPump4BGHz(mIdx = 0, fProbeGHz = null, pumpPhaseRad = null) {
+  function crossPump4BGHz(mIdx = 0, fProbeGHz = null, pumpPhaseRad = null, pumpRefFreqGHz = null) {
     if (!terms.t4B) return { resRateGHz: 0, totalRateGHz: 0, resRe: 0, resIm: 0, wParGHz: 0, wPerpGHz: 0, cosPhase: 0, maxDriver: -1 };
     let totRe = 0, totIm = 0, resRe = 0, resIm = 0, resMagSum = 0, bestContrib = 0, maxDriver = -1;
     const bw = Math.max(0.008, 3 * modeGammaGHz(mIdx));
@@ -1473,13 +1473,15 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const totalRateGHz = Math.hypot(totRe, totIm);
     if (fProbeGHz === null) { resRe = totRe; resIm = totIm; resMagSum = totalRateGHz; }
     const resVecMag = Math.hypot(resRe, resIm);
-    const resRateGHz = Math.min(Math.max(resMagSum, resVecMag), totalRateGHz > 0 ? Math.max(resMagSum, totalRateGHz * 0.25) : 0);
+    const resRateGHz = Math.max(resMagSum, resVecMag);
     let wParGHz = resRateGHz, wPerpGHz = 0, cosPhase = 1;
     if (typeof pumpPhaseRad === 'number' && Number.isFinite(pumpPhaseRad) && resVecMag > 1e-9) {
       const i2 = (mIdx * M + mIdx) * 2;
       const qR = Q2x[i2], qI = Q2x[i2 + 1], qMag = Math.hypot(qR, qI);
       if (qMag > 1e-12) {
-        const fp = fProbeGHz !== null ? fProbeGHz : 2 * fGhzArr[mIdx];
+        const fp = (typeof pumpRefFreqGHz === 'number' && Number.isFinite(pumpRefFreqGHz))
+          ? pumpRefFreqGHz
+          : (fProbeGHz !== null ? fProbeGHz : 2 * fGhzArr[mIdx]);
         const thP = (fp * FREQ_TO_RAD) * simTime + pumpPhaseRad;
         // Exact Eq. (9) 2A rotating sideband multiplying a_h*: (-i Q2x / |Q2x|) * e^{i(omega_p tau + phi_p)}
         const c = Math.cos(thP), s = Math.sin(thP);
@@ -1498,13 +1500,13 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const gamma = modeGammaGHz(mIdx);
     return hTh * Math.hypot(1, delta / gamma);
   }
-  function instantaneousArnoldThresholdMT(mIdx, fPumpGHz, pumpPhaseRad = null) {
+  function instantaneousArnoldThresholdMT(mIdx, fPumpGHz, pumpPhaseRad = null, pumpRefFreqGHz = null) {
     const fMut = modeMutualNfsShiftGHz(mIdx); // strictly 0 if 4A N_hk is unchecked!
     const vm = Math.max(1e-9, vParamGHz_mT(mIdx));
     const gamma = modeGammaGHz(mIdx);
     const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fMut));
     const reqRate = Math.hypot(gamma, delta);
-    const cp = crossPump4BGHz(mIdx, fPumpGHz, pumpPhaseRad);
+    const cp = crossPump4BGHz(mIdx, fPumpGHz, pumpPhaseRad, pumpRefFreqGHz);
     if (typeof pumpPhaseRad === 'number' && Number.isFinite(pumpPhaseRad)) {
       const wVec = Math.hypot(cp.resRe, cp.resIm);
       if (!terms.t2A) return cp.resRateGHz >= reqRate ? 0 : Infinity;
@@ -2860,27 +2862,116 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const targetFp = (dualTone && arnoldTarget === 2) ? driveFreq2 : driveFreq;
     const targetHpNorm = (dualTone && arnoldTarget === 2) ? driveAmp2 : driveAmp;
     const closestMode = closestArnoldMode(targetFp);
-    const activePumpPhaseAt = (fp) => {
+    const activePumpBlendAt = (fp) => {
       if (!terms.t4B || driveMode !== 'parallel') return null;
       const d1 = driveAmp > 0 ? Math.abs(fp - driveFreq) : Infinity;
       const d2 = (dualTone && driveAmp2 > 0) ? Math.abs(fp - driveFreq2) : Infinity;
-      if (d2 <= d1 && d2 < 0.025) return drivePhase2;
-      if (d1 < 0.025) return drivePhase1;
+      const span = 0.040;
+      if (d2 <= d1 && d2 < span) {
+        return { phase: drivePhase2, refFreqGHz: driveFreq2, weight: 0.5 * (1 + Math.cos((Math.PI * d2) / span)) };
+      }
+      if (d1 < span) {
+        return { phase: drivePhase1, refFreqGHz: driveFreq, weight: 0.5 * (1 + Math.cos((Math.PI * d1) / span)) };
+      }
       return null;
     };
+    const evalInstArnoldMT = (mIdx, fp) => {
+      const hEnv = instantaneousArnoldThresholdMT(mIdx, fp, null);
+      const blend = activePumpBlendAt(fp);
+      if (!blend || blend.weight <= 1e-4) return hEnv;
+      const hPh = instantaneousArnoldThresholdMT(mIdx, fp, blend.phase, blend.refFreqGHz);
+      if (!Number.isFinite(hPh)) return hEnv;
+      return Number.isFinite(hEnv) ? (hEnv + blend.weight * (hPh - hEnv)) : hPh;
+    };
+    const sampleArnoldFreqs = (fCenter, gammaGHz) => {
+      const baseSteps = Math.min(260, Math.max(100, Math.round(pw * 0.65)));
+      const dfBase = (fMax - fMin) / baseSteps;
+      const raw = [];
+      for (let s = 0; s <= baseSteps; s++) raw.push(fMin + s * dfBase);
+      const gw = Math.max(0.002, gammaGHz);
+      const offsets = [-16, -10, -6.5, -4.2, -2.8, -1.8, -1.2, -0.75, -0.45, -0.25, -0.12, -0.05, 0, 0.05, 0.12, 0.25, 0.45, 0.75, 1.2, 1.8, 2.8, 4.2, 6.5, 10, 16];
+      for (let k = 0; k < offsets.length; k++) {
+        const f = fCenter + offsets[k] * gw;
+        if (f >= fMin && f <= fMax) raw.push(f);
+      }
+      if (driveAmp > 0 && driveFreq >= fMin && driveFreq <= fMax) raw.push(driveFreq);
+      if (dualTone && driveAmp2 > 0 && driveFreq2 >= fMin && driveFreq2 <= fMax) raw.push(driveFreq2);
+      raw.sort((a, b) => a - b);
+      const out = [];
+      for (let k = 0; k < raw.length; k++) {
+        if (!out.length || raw[k] - out[out.length - 1] > 1e-6) out.push(raw[k]);
+      }
+      return out;
+    };
+    const traceThresholdPath = (freqs, evalFn, hCap, closePolygon) => {
+      const yCap = toY(hCap);
+      const yBottom = ARNOLD_PAD_T + ph + 4;
+      arnoldCtx.beginPath();
+      let hasSeg = false, open = false, startX = 0;
+      let prevH = Infinity, prevX = 0;
+      for (let i = 0; i < freqs.length; i++) {
+        const fp = freqs[i];
+        const hT = evalFn(fp);
+        const x = toX(fp);
+        const inBand = Number.isFinite(hT) && hT <= hCap;
+        if (inBand) {
+          const y = Math.min(yBottom, toY(hT));
+          if (!open) {
+            if (i > 0 && Number.isFinite(prevH) && prevH > hCap) {
+              const frac = (hCap - prevH) / Math.min(-1e-9, hT - prevH);
+              const enterX = prevX + Math.max(0, Math.min(1, frac)) * (x - prevX);
+              arnoldCtx.moveTo(enterX, yCap);
+              arnoldCtx.lineTo(x, y);
+              startX = enterX;
+            } else {
+              arnoldCtx.moveTo(x, closePolygon ? yCap : y);
+              if (closePolygon) arnoldCtx.lineTo(x, y);
+              startX = x;
+            }
+            open = true;
+            hasSeg = true;
+          } else {
+            arnoldCtx.lineTo(x, y);
+          }
+        } else if (open) {
+          let exitX = prevX;
+          if (Number.isFinite(hT) && Number.isFinite(prevH) && hT > hCap) {
+            const frac = (hCap - prevH) / Math.max(1e-9, hT - prevH);
+            exitX = prevX + Math.max(0, Math.min(1, frac)) * (x - prevX);
+            arnoldCtx.lineTo(exitX, yCap);
+          } else if (closePolygon) {
+            arnoldCtx.lineTo(exitX, yCap);
+          }
+          if (closePolygon) {
+            arnoldCtx.lineTo(startX, yCap);
+            arnoldCtx.closePath();
+          }
+          open = false;
+        }
+        prevH = hT;
+        prevX = x;
+      }
+      if (open && closePolygon) {
+        arnoldCtx.lineTo(prevX, yCap);
+        arnoldCtx.lineTo(startX, yCap);
+        arnoldCtx.closePath();
+      }
+      return hasSeg;
+    };
 
+    const hCap = hMax + spanH * 0.28;
     let minTipMT = Infinity, maxTipMT = 0, maxShiftMHz = 0, maxW4B = 0, maxDh4B = 0;
 
     for (let m = 0; m < M; m++) {
       const f0 = 2 * fGhzArr[m];
       const fMut = modeMutualNfsShiftGHz(m); // 0 if 4A is OFF
       const f2Mut = 2 * (fGhzArr[m] + fMut);
-      if (Math.max(f0, f2Mut) < fMin - 0.14 || Math.min(f0, f2Mut) > fMax + 0.14) continue;
+      if (Math.max(f0, f2Mut) < fMin - 0.28 || Math.min(f0, f2Mut) > fMax + 0.28) continue;
       const col = modeColor(m);
       const hThStatic = parametricThresholdMT(m);
-      const tipPh = activePumpPhaseAt(f2Mut);
-      const cp = crossPump4BGHz(m, f2Mut, tipPh);
-      const hThInst = instantaneousArnoldThresholdMT(m, f2Mut, tipPh);
+      const tipBlend = activePumpBlendAt(f2Mut);
+      const cp = crossPump4BGHz(m, f2Mut, tipBlend ? tipBlend.phase : null, tipBlend ? tipBlend.refFreqGHz : null);
+      const hThInst = evalInstArnoldMT(m, f2Mut);
       if (f0 >= fMin && f0 <= fMax) {
         if (hThStatic < minTipMT) minTipMT = hThStatic;
         if (hThStatic > maxTipMT) maxTipMT = hThStatic;
@@ -2894,37 +2985,21 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       arnoldCtx.rect(ARNOLD_PAD_L, ARNOLD_PAD_T, pw, ph);
       arnoldCtx.clip();
 
+      const gamGHz = modeGammaGHz(m);
+
       // Static unperturbed reference outline (dashed) whenever shifted by 4A or reduced by 4B
       if (Math.abs(fMut) > 0.0004 || cp.resRateGHz > 1e-4) {
-        arnoldCtx.beginPath();
-        let refStarted = false;
-        for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 3) {
-          const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
-          const hb = arnoldThresholdMT(m, fp, 0);
-          if (hb <= hMax + spanH * 0.15) {
-            const yb = Math.max(0, toY(hb));
-            if (!refStarted) { arnoldCtx.moveTo(px, yb); refStarted = true; } else arnoldCtx.lineTo(px, yb);
-          }
+        const refFreqs = sampleArnoldFreqs(f0, gamGHz);
+        if (traceThresholdPath(refFreqs, fp => arnoldThresholdMT(m, fp, 0), hCap, false)) {
+          arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.28; arnoldCtx.lineWidth = 0.9;
+          arnoldCtx.setLineDash([2, 3]); arnoldCtx.stroke(); arnoldCtx.setLineDash([]);
         }
-        arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.28; arnoldCtx.lineWidth = 0.9;
-        arnoldCtx.setLineDash([2, 3]); arnoldCtx.stroke(); arnoldCtx.setLineDash([]);
       }
 
-      // Instantaneous Arnold tongue curve (reflecting active 4A shift & 4B cross-pumping reduction)
+      // Instantaneous Arnold tongue curve (reflecting active 4A shift & smooth 4B cross-pumping reduction)
       if (terms.t2A || cp.resRateGHz > 1e-4) {
-        arnoldCtx.beginPath();
-        let started = false, lastPx = ARNOLD_PAD_L;
-        for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 2) {
-          const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
-          const hT = instantaneousArnoldThresholdMT(m, fp, activePumpPhaseAt(fp));
-          if (Number.isFinite(hT) && hT <= hMax + spanH * 0.15) {
-            const y = Math.max(0, Math.min(ARNOLD_PAD_T + ph + 4, toY(hT)));
-            if (!started) { arnoldCtx.moveTo(px, 0); arnoldCtx.lineTo(px, y); started = true; } else arnoldCtx.lineTo(px, y);
-            lastPx = px;
-          } else if (started) { arnoldCtx.lineTo(px, 0); lastPx = px; break; }
-        }
-        if (started) {
-          arnoldCtx.lineTo(lastPx, 0); arnoldCtx.closePath();
+        const instFreqs = sampleArnoldFreqs(f2Mut, gamGHz);
+        if (traceThresholdPath(instFreqs, fp => evalInstArnoldMT(m, fp), hCap, true)) {
           const isKey = m === closestMode || cycleAvgModeAmp(m) > 0.002;
           arnoldCtx.globalAlpha = isKey ? 0.22 : (arnoldBand === 'all' ? 0.07 : 0.12);
           arnoldCtx.fillStyle = col; arnoldCtx.fill();
@@ -3684,9 +3759,13 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     'GRANT USAGE ON SCHEMA public TO anon;',
     'GRANT INSERT, SELECT ON public.spacetime_feedback_runs TO anon;',
     'ALTER TABLE public.spacetime_feedback_runs ENABLE ROW LEVEL SECURITY;',
+    'DROP POLICY IF EXISTS "allow_anon_insert_runs" ON public.spacetime_feedback_runs;',
     'CREATE POLICY "allow_anon_insert_runs" ON public.spacetime_feedback_runs FOR INSERT TO anon WITH CHECK (true);',
-    'CREATE POLICY "allow_anon_select_runs" ON public.spacetime_feedback_runs FOR SELECT TO anon USING (true);'
+    'DROP POLICY IF EXISTS "allow_anon_select_runs" ON public.spacetime_feedback_runs;',
+    'CREATE POLICY "allow_anon_select_runs" ON public.spacetime_feedback_runs FOR SELECT TO anon USING (true);',
+    "NOTIFY pgrst, 'reload schema';"
   ].join('\n');
+  let dbRlsBlockedUrl = null;
 
   function getDbConfig() {
     try {
@@ -3704,10 +3783,12 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const cleanUrl = String(url || '').trim() || DEFAULT_SW_DB_URL;
     const cleanKey = String(key || '').trim() || DEFAULT_SW_DB_KEY;
     try { localStorage.setItem(SW_DB_CFG_KEY, JSON.stringify({ url: cleanUrl, key: cleanKey })); } catch (_) {}
+    dbRlsBlockedUrl = null;
     return { url: cleanUrl, key: cleanKey };
   }
   function resetDbConfig() {
     try { if (localStorage && localStorage.removeItem) localStorage.removeItem(SW_DB_CFG_KEY); } catch (_) {}
+    dbRlsBlockedUrl = null;
     return { url: DEFAULT_SW_DB_URL, key: DEFAULT_SW_DB_KEY };
   }
 
@@ -4015,6 +4096,12 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
     if (swLog.uploading && !keepalive) return false;
     const cfg = getDbConfig();
+    const isExplicit = reason === 'manual' || reason === 'connection_test';
+    if (!isExplicit && dbRlsBlockedUrl === cfg.url) {
+      swLog.dbStatus = 'RLS 401';
+      updateLogUiBadges();
+      return false;
+    }
     swLog.uploading = true;
     swLog.dbStatus = 'SAVING…';
     updateLogUiBadges();
@@ -4031,10 +4118,16 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       });
       if (!res.ok) {
         const parsed = await parseSupabaseError(res);
+        const isRls = parsed.status === 401 || parsed.code === '42501' || /row-level security/i.test(parsed.message || '');
+        const alreadyRlsSameUrl = isRls && dbRlsBlockedUrl === cfg.url;
         swLog.lastDbAttempt = { ok: false, op: 'POST', ...parsed, at: new Date().toISOString(), reason, url: cfg.url };
-        swLog.dbStatus = (parsed.status === 401 || parsed.code === '42501') ? 'RLS 401' : 'LOCAL IDB';
-        throw new Error(`HTTP ${parsed.status}${parsed.code ? ` (${parsed.code})` : ''}: ${parsed.message}`);
+        swLog.dbStatus = isRls ? 'RLS 401' : 'LOCAL IDB';
+        if (isRls) dbRlsBlockedUrl = cfg.url;
+        const errMsg = `HTTP ${parsed.status}${parsed.code ? ` (${parsed.code})` : ''}: ${parsed.message}`;
+        if (!alreadyRlsSameUrl) recordLogError('db_upload_failed', errMsg);
+        return false;
       }
+      dbRlsBlockedUrl = null;
       swLog.lastDbAttempt = { ok: true, op: 'POST', status: res.status, code: null, message: 'OK', at: new Date().toISOString(), reason, url: cfg.url };
       swLog.dbStatus = 'DB SAVED ✓';
       swLog.lastUploadedSeq = swLog.totalEvents + swLog.totalSamples;
@@ -4578,7 +4671,9 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (ok) {
       showLogToast('DB SAVED ✓', `Saved session ${swLog.sessionId.slice(0, 8)} (${swLog.totalEvents} events, ${swLog.totalSamples} samples) to Supabase spacetime_feedback_runs & IndexedDB.`);
     } else {
-      showLogToast('SAVED LOCAL (IDB)', formatDbDiagText());
+      const isRls = swLog.dbStatus === 'RLS 401';
+      showLogToast(isRls ? 'RLS 401 · IDB SAVED' : 'SAVED LOCAL (IDB)', formatDbDiagText());
+      if (isRls && typeof openVerifyModal === 'function') openVerifyModal('db');
     }
     if (typeof renderDbModalStatus === 'function') renderDbModalStatus();
     if (typeof refreshIdbVault === 'function') refreshIdbVault();
@@ -5424,7 +5519,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (tabName === 'db') refreshIdbVault();
   }
 
-  const APP_RELEASE_VERSION = 'spacetime-shell-v81';
+  const APP_RELEASE_VERSION = 'spacetime-shell-v82';
   const WHATS_NEW_KEY = 'spin-waves-whatsnew-seen-version';
   const whatsNewModalEl = document.getElementById('whatsNewModal');
   function shouldShowWhatsNew() {
