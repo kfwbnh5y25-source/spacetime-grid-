@@ -6,95 +6,107 @@
 <meta name="theme-color" content="#000000">
 <title>Spin Waves — d'Aquino (2026) Normal Modes Model</title>
 <style>
-  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #03060d; color: #ebf3ff; font: 12px/1.4 system-ui,-apple-system,sans-serif; }
+  * { box-sizing: border-box; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; scrollbar-width: thin; scrollbar-color: rgba(130,190,255,.28) transparent; }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: radial-gradient(ellipse at 22% 14%, #091326 0%, #03060d 62%, #02040a 100%); color: #ebf3ff; font: 12px/1.4 system-ui,-apple-system,sans-serif; }
   body { display: grid; grid-template-rows: auto auto 1fr; }
   input, pre, .vmCodeBox { user-select: text; -webkit-user-select: text; }
+  [hidden] { display: none !important; }
 
-  #topHud { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; padding: max(8px,env(safe-area-inset-top)) 12px 4px; background: rgba(3,6,13,.94); border-bottom: 1px solid rgba(190,220,255,.10); z-index: 6; }
-  .hudPill { padding: 4px 10px; border: 1px solid rgba(190,220,255,.22); border-radius: 99px; background: rgba(8,15,28,.85); font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; color: rgba(235,245,255,.90); white-space: nowrap; }
+  #topHud { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; padding: max(8px,env(safe-area-inset-top)) 12px 5px; background: rgba(4,8,17,.92); border-bottom: 1px solid rgba(190,220,255,.12); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); z-index: 6; }
+  .hudPill { padding: 4px 10px; border: 1px solid rgba(190,220,255,.22); border-radius: 99px; background: rgba(10,18,34,.86); font: 10.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; color: rgba(235,245,255,.92); white-space: nowrap; box-shadow: inset 0 1px 0 rgba(210,235,255,.06); }
   .hudPill.warn { border-color: rgba(255,200,95,.55); color: #ffd479; }
   .hudPill.active { border-color: rgba(110,225,175,.55); color: #8af0c4; }
   .hudPill.cedric { pointer-events: auto; cursor: pointer; border-color: rgba(244,114,182,.65); background: linear-gradient(135deg, rgba(64,16,42,.88), rgba(32,18,58,.86)); color: #fbcfe8; animation: cedricPulse 2.4s ease-in-out infinite; }
   .hudPill.cedric.on { border-color: #f9a8d4; box-shadow: 0 0 18px rgba(244,114,182,.65); color: #fff; }
   @keyframes cedricPulse { 0%, 100% { box-shadow: 0 0 6px rgba(244,114,182,.25); } 50% { box-shadow: 0 0 16px rgba(244,114,182,.62); } }
 
-  #quickLaunchBar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: center; padding: 4px 12px 6px; background: rgba(4,9,18,.90); border-bottom: 1px solid rgba(190,220,255,.12); z-index: 7; }
-  .quickPill { display: inline-flex; align-items: center; gap: 5px; min-height: 27px; padding: 0 9px; border: 1px solid rgba(190,220,255,.26); border-radius: 18px; background: rgba(10,19,36,.84); color: rgba(235,245,255,.94); font: 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; cursor: pointer; text-decoration: none; }
-  .quickPill:hover { background: rgba(30,54,90,.85); border-color: rgba(165,210,255,.55); }
-  .quickPill.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
+  #quickLaunchBar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: center; padding: 5px 12px 6px; background: rgba(5,10,20,.88); border-bottom: 1px solid rgba(190,220,255,.12); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); z-index: 7; }
+  .quickPill { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 10px; border: 1px solid rgba(190,220,255,.24); border-radius: 18px; background: rgba(12,22,40,.84); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; cursor: pointer; text-decoration: none; transition: border-color .15s, background .15s, transform .1s; }
+  .quickPill:hover { background: rgba(28,50,84,.88); border-color: rgba(165,210,255,.58); }
+  .quickPill:active { transform: translateY(1px); }
+  .quickPill.active { background: rgba(56,155,255,.28); border-color: rgba(145,210,255,.76); color: #fff; box-shadow: 0 0 12px rgba(56,189,248,.16); }
   .quickPill.accent { border-color: rgba(110,231,183,.48); color: #a7f3d0; }
-  .quickPill.accent.active { background: rgba(16,185,129,.3); border-color: rgba(110,231,183,.85); color: #fff; }
-  .speedGroup { display: inline-flex; align-items: center; gap: 2px; padding: 2px 4px; border: 1px solid rgba(190,220,255,.22); border-radius: 18px; background: rgba(10,19,36,.84); }
-  .speedGroup .speedLbl { padding: 0 4px; font: 8.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .07em; color: rgba(185,212,245,.68); }
-  .spdBtn { min-height: 22px; padding: 0 6px; border-radius: 12px; font-size: 8.5px; border-color: transparent; background: transparent; }
+  .quickPill.accent.active { background: rgba(16,185,129,.30); border-color: rgba(110,231,183,.85); color: #fff; }
+  .speedGroup { display: inline-flex; align-items: center; gap: 2px; padding: 2px 5px; border: 1px solid rgba(190,220,255,.22); border-radius: 18px; background: rgba(10,19,36,.86); }
+  .speedGroup .speedLbl { padding: 0 4px; font: 9.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; color: rgba(185,212,245,.72); }
+  .spdBtn { min-height: 23px; padding: 0 7px; border-radius: 12px; font-size: 9.5px; border-color: transparent; background: transparent; }
   .spdBtn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
   #swTutorialBtn.hidden { display: none; }
   #backBtn { margin-left: auto; border-color: rgba(190,220,255,.3); }
 
-  #dashShell { display: grid; grid-template-columns: minmax(310px, .92fr) minmax(420px, 1.38fr) 360px; gap: 10px; padding: 8px 12px 10px; min-height: 0; overflow: hidden; align-items: stretch; }
+  #dashShell { display: grid; grid-template-columns: minmax(310px, .92fr) minmax(420px, 1.38fr) 368px; gap: 10px; padding: 8px 12px 10px; min-height: 0; overflow: hidden; align-items: stretch; }
   #diskColumn { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
-  #diskStage { position: relative; flex: 1 1 auto; min-height: 240px; border: 1px solid rgba(190,220,255,.20); border-radius: 14px; background: radial-gradient(circle at center, #081225 0%, #03060d 78%); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  #diskStage { position: relative; flex: 1 1 auto; min-height: 240px; border: 1px solid rgba(180,215,255,.20); border-radius: 16px; background: radial-gradient(circle at center, #081225 0%, #03060d 78%); overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 0 rgba(210,235,255,.06), 0 10px 28px rgba(0,0,0,.38); }
   canvas#fieldCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
-  .diskCaption { position: absolute; left: 10px; bottom: 8px; padding: 2px 7px; border-radius: 6px; background: rgba(3,7,15,.72); border: 1px solid rgba(190,220,255,.16); font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(200,222,248,.78); pointer-events: none; }
+  .diskCaption { position: absolute; left: 10px; bottom: 8px; padding: 3px 8px; border-radius: 7px; background: rgba(4,9,19,.80); border: 1px solid rgba(190,220,255,.18); font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(208,228,252,.84); pointer-events: none; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 
-  #readoutsDock { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; overflow-y: auto; padding-right: 2px; }
-  .readoutCard { padding: 8px 10px; border: 1px solid rgba(190,220,255,.20); border-radius: 12px; background: rgba(7,13,25,.88); display: flex; flex-direction: column; min-width: 0; }
-  .specTitle { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .07em; color: rgba(215,232,255,.84); margin-bottom: 5px; gap: 4px; }
-  #arnoldBox { flex: 1.25 1 220px; min-height: 215px; }
-  canvas#arnoldCanvas { display: block; width: 100%; flex: 1 1 auto; min-height: 150px; height: 168px; cursor: crosshair; touch-action: none; border-radius: 6px; }
-  #modesBox { flex: 1.15 1 215px; min-height: 210px; }
-  canvas#modeTimeCanvas { display: block; width: 100%; flex: 1 1 auto; min-height: 112px; height: 124px; border-radius: 5px; background: rgba(3,7,15,.65); cursor: ew-resize; touch-action: pan-y; }
-  #spectrumBox { flex: 0.72 0 auto; min-height: 105px; }
-  canvas#specCanvas { display: block; width: 100%; height: 74px; border-radius: 5px; }
+  #readoutsDock { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; overflow-y: auto; padding-right: 3px; }
+  .readoutCard { padding: 9px 11px; border: 1px solid rgba(180,215,255,.20); border-radius: 14px; background: linear-gradient(180deg, rgba(10,18,34,.92), rgba(6,11,22,.90)); display: flex; flex-direction: column; min-width: 0; box-shadow: inset 0 1px 0 rgba(210,235,255,.06), 0 8px 24px rgba(0,0,0,.30); }
+  .specTitle { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font: 10px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; color: rgba(218,234,255,.88); margin-bottom: 6px; gap: 4px; }
+  #arnoldBox { flex: 0 0 auto; }
+  canvas#arnoldCanvas { display: block; width: 100%; flex: none; height: 166px; cursor: crosshair; touch-action: none; border-radius: 7px; }
+  #modesBox { flex: 0 0 auto; }
+  canvas#modeTimeCanvas { display: block; width: 100%; flex: none; height: 116px; border-radius: 6px; background: rgba(3,7,15,.68); cursor: ew-resize; touch-action: pan-y; }
+  #spectrumBox { flex: 0 0 auto; }
+  canvas#specCanvas { display: block; width: 100%; flex: none; height: 78px; border-radius: 6px; }
 
-  .modeLegend { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; min-height: 16px; }
-  .modeChip { display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px; border-radius: 5px; border: 1px solid rgba(190,220,255,.18); background: rgba(15,28,50,.68); font: 8.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(230,242,255,.92); cursor: pointer; font-variant-numeric: tabular-nums; }
-  .modeChip:hover { background: rgba(120,175,255,.20); border-color: rgba(165,215,255,.55); }
+  .modeLegend { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; min-height: 18px; }
+  .modeChip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.20); background: rgba(15,28,50,.72); font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(232,243,255,.94); cursor: pointer; font-variant-numeric: tabular-nums; transition: background .15s, border-color .15s; }
+  .modeChip:hover { background: rgba(120,175,255,.22); border-color: rgba(165,215,255,.55); }
   .modeChip.pinned { border-color: #34d399; background: rgba(16,185,129,.22); color: #d1fae5; }
   .modeChipDot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
 
-  .timeCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.82); }
-  .timeRangeWrap { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
-  .timeStatsStrip { margin-top: 5px; padding: 5px 7px; border-radius: 7px; border: 1px solid rgba(130,185,255,.18); background: rgba(5,11,22,.78); font: 8.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,234,255,.9); display: grid; gap: 3px; }
+  .timeCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 5px; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(200,224,252,.86); }
+  .timeRangeWrap { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
+  .timeStatsStrip { margin-top: 6px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(130,185,255,.20); background: rgba(5,11,22,.82); font: 9.5px/1.38 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(218,236,255,.92); display: grid; gap: 3px; }
   .timeStatsHead { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .timeStatsRows { display: grid; gap: 2px; max-height: 54px; overflow-y: auto; }
-  .timeStatRow { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-variant-numeric: tabular-nums; color: rgba(210,228,255,.86); }
-  .convCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 2px; padding-top: 4px; border-top: 1px solid rgba(130,185,255,.14); font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.82); }
-  .convCtrlBar label { display: inline-flex; align-items: center; gap: 3px; }
-  .miniNumIn { width: 48px; padding: 2px 4px; border-radius: 4px; border: 1px solid rgba(190,220,255,.24); background: rgba(4,9,18,.88); color: #ebf3ff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric: tabular-nums; }
-  #cwSweepBox { flex: 0.92 0 auto; min-height: 176px; }
-  .cwCtrlGrid { display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center; margin-bottom: 5px; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(200,224,252,.86); }
-  .cwCtrlGrid label { display: inline-flex; align-items: center; gap: 3px; }
-  canvas#cwSweepCanvas { display: block; width: 100%; height: 112px; border-radius: 5px; background: rgba(3,7,15,.72); }
-  #cwSweepReadout { margin-top: 4px; font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,234,255,.86); font-variant-numeric: tabular-nums; }
+  .timeStatsRows { display: grid; gap: 2px; max-height: 58px; overflow-y: auto; }
+  .timeStatRow { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-variant-numeric: tabular-nums; color: rgba(212,230,255,.88); }
+  .convCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 3px; padding-top: 5px; border-top: 1px solid rgba(130,185,255,.16); font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(200,224,252,.86); }
+  .convCtrlBar label { display: inline-flex; align-items: center; gap: 4px; }
+  .miniNumIn { width: 54px; padding: 2px 5px; border-radius: 5px; border: 1px solid rgba(190,220,255,.26); background: rgba(4,9,18,.90); color: #ebf3ff; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric: tabular-nums; }
+  #cwSweepBox { flex: 0 0 auto; }
+  .cwCtrlGrid { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-bottom: 6px; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,228,255,.88); }
+  .cwCtrlGrid label { display: inline-flex; align-items: center; gap: 4px; }
+  canvas#cwSweepCanvas { display: block; width: 100%; height: 112px; border-radius: 6px; background: rgba(3,7,15,.74); }
+  #cwSweepReadout { margin-top: 5px; font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(218,236,255,.88); font-variant-numeric: tabular-nums; }
 
-  .magnonGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 6px; padding: 7px 10px; border: 1px solid rgba(190,220,255,.18); border-radius: 10px; background: rgba(7,13,25,.86); font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,226,255,.82); }
+  .magnonGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px 7px; padding: 8px 10px; border: 1px solid rgba(180,215,255,.20); border-radius: 12px; background: linear-gradient(180deg, rgba(10,18,34,.90), rgba(6,11,22,.88)); font: 9.5px/1.28 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.86); box-shadow: inset 0 1px 0 rgba(210,235,255,.05); }
   .magnonGrid b { color: #9ad8ff; font-weight: 600; }
 
-  #controlsPanel { min-height: 0; min-width: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(190,220,255,.20); border-radius: 14px; background: rgba(7,13,25,.90); }
-  #controlsPanel summary { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; padding: 9px 12px; background: rgba(6,12,23,.97); font: 9.5px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: rgba(225,238,255,.94); }
+  #controlsPanel { min-height: 0; min-width: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(180,215,255,.22); border-radius: 15px; background: linear-gradient(180deg, rgba(10,18,34,.94), rgba(6,11,22,.92)); box-shadow: inset 0 1px 0 rgba(210,235,255,.06), 0 10px 28px rgba(0,0,0,.35); }
+  #controlsPanel summary { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; padding: 10px 12px; background: rgba(7,13,26,.96); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); font: 10px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: rgba(228,240,255,.95); }
   #controlsPanel summary::-webkit-details-marker { display: none; }
   #controlsPanel[open] summary { border-bottom: 1px solid rgba(190,220,255,.14); }
   .ctrlToggleHint { font-size: 11px; opacity: .75; }
   .ctrlBody { padding: 10px 11px 14px; display: grid; gap: 9px; touch-action: pan-y; }
-  .sectionLabel { font: 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .11em; color: rgba(185,212,245,.66); text-transform: uppercase; }
-  .subCard { padding: 8px 9px; border-radius: 10px; border: 1px solid rgba(130,185,255,.20); background: rgba(11,21,39,.72); display: grid; gap: 6px; }
-  .rfGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,236,255,.88); font-variant-numeric: tabular-nums; }
+  .sectionLabel { font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .10em; color: rgba(185,214,248,.74); text-transform: uppercase; }
+  .subCard { padding: 9px 10px; border-radius: 11px; border: 1px solid rgba(135,190,255,.20); background: rgba(12,22,42,.74); display: grid; gap: 7px; box-shadow: inset 0 1px 0 rgba(205,232,255,.04); }
+  .rfGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(222,238,255,.90); font-variant-numeric: tabular-nums; }
   .rfInputRow { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .rfMiniLbl { display: grid; gap: 2px; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(185,212,245,.74); }
-  .rfMiniLbl input { width: 100%; padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(190,220,255,.24); background: rgba(4,9,18,.88); color: #ebf3ff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
-  .rfWarnNote { padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(251,191,36,.40); background: rgba(251,191,36,.09); font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: #fde68a; }
+  .rfMiniLbl { display: grid; gap: 3px; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(192,218,248,.80); }
+  .rfMiniLbl input { width: 100%; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.26); background: rgba(4,9,18,.90); color: #ebf3ff; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .rfWarnNote { padding: 5px 7px; border-radius: 7px; border: 1px solid rgba(251,191,36,.40); background: rgba(251,191,36,.09); font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: #fde68a; }
 
   .btnRow { display: flex; gap: 5px; flex-wrap: wrap; }
-  .btn { min-height: 27px; padding: 4px 8px; border: 1px solid rgba(190,220,255,.22); border-radius: 8px; background: rgba(120,165,225,.13); color: #eef5ff; font: 9.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .03em; cursor: pointer; }
-  .btn.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.68); color: #fff; }
-  .btn.tiny { min-height: 22px; padding: 2px 6px; font-size: 8.5px; border-radius: 6px; }
-  .sliderRow { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; align-items: center; font: 10px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.84); }
-  .sliderRow output { color: #fff; font-variant-numeric: tabular-nums; }
-  .sliderRow input { grid-column: 1 / -1; width: 100%; accent-color: #8ec5ff; margin: 0; }
+  .btn { min-height: 28px; padding: 4px 9px; border: 1px solid rgba(190,220,255,.24); border-radius: 8px; background: rgba(120,165,225,.13); color: #eef5ff; font: 10px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .03em; cursor: pointer; transition: border-color .15s, background .15s; }
+  .btn:hover { background: rgba(120,175,245,.22); border-color: rgba(180,220,255,.45); }
+  .btn.active { background: rgba(56,155,255,.30); border-color: rgba(145,210,255,.74); color: #fff; box-shadow: 0 0 10px rgba(56,189,248,.16); }
+  .btn.tiny { min-height: 23px; padding: 2px 7px; font-size: 9.5px; border-radius: 6px; }
+  .sliderRow { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; padding: 6px 8px; border-radius: 9px; border: 1px solid rgba(165,205,255,.12); background: rgba(12,22,42,.44); font: 10.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(226,240,255,.92); transition: border-color .15s, background .15s; }
+  .sliderRow:hover, .sliderRow:focus-within { border-color: rgba(125,211,252,.36); background: rgba(16,29,54,.60); }
+  .sliderLabelWrap { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .sliderRangeHint { font-size: 9.5px; line-height: 1.2; color: rgba(168,202,240,.66); }
+  .sliderValWrap { display: inline-flex; align-items: center; gap: 4px; justify-self: end; }
+  .sliderNumIn { width: 70px; padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(135,195,255,.30); background: rgba(4,10,20,.88); color: #f0f7ff; font: 600 10.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric: tabular-nums; text-align: right; cursor: text; transition: border-color .15s, box-shadow .15s, background .15s; -moz-appearance: textfield; }
+  .sliderNumIn:hover { border-color: rgba(125,211,252,.65); background: rgba(8,18,36,.96); }
+  .sliderNumIn:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56,189,248,.22); background: rgba(5,14,28,.98); }
+  .sliderNumIn::-webkit-inner-spin-button, .sliderNumIn::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .sliderUnit { font-size: 9.5px; color: rgba(190,220,250,.78); white-space: nowrap; }
+  .sliderRow output { color: #fde68a; font-weight: 600; font-size: 10px; font-variant-numeric: tabular-nums; }
+  .sliderRow input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: #7dd3fc; margin: 1px 0 0; cursor: pointer; }
   .nmmTermsGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  .termChk { display: flex; align-items: center; gap: 4px; padding: 3px 5px; border-radius: 6px; border: 1px solid rgba(190,220,255,.16); background: rgba(18,32,56,.45); font: 8.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,232,255,.88); cursor: pointer; }
+  .termChk { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.18); background: rgba(18,32,56,.48); font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(218,234,255,.90); cursor: pointer; }
   .termChk input { accent-color: #6cb8ff; margin: 0; }
 
   @keyframes coachPulse {
@@ -102,8 +114,8 @@
     50% { box-shadow: 0 0 0 5px rgba(251,191,36,.32), 0 0 24px rgba(251,191,36,.88); border-color: #fde68a; }
   }
   .tutSpotlight { position: relative; animation: coachPulse 1.25s ease-in-out infinite !important; border-color: #fbbf24 !important; color: #fff !important; }
-  .tutSpotlight::after { content: 'PRESS'; position: absolute; top: -8px; right: -4px; padding: 1px 4px; border-radius: 4px; background: #fbbf24; color: #050a14; font: 700 7.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; pointer-events: none; z-index: 20; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
-  .sliderRow.tutSpotlight { padding: 4px 6px; border-radius: 8px; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.75); }
+  .tutSpotlight::after { content: 'PRESS'; position: absolute; top: -8px; right: -4px; padding: 1px 5px; border-radius: 4px; background: #fbbf24; color: #050a14; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; pointer-events: none; z-index: 20; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+  .sliderRow.tutSpotlight { padding: 6px 8px; border-radius: 9px; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.75); }
   .sliderRow.tutSpotlight::after { content: 'SLIDE'; top: -7px; right: 4px; }
   #swTutorial { position: fixed; z-index: 20; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(356px,calc(100vw - 24px)); padding: 12px 14px; border: 1px solid rgba(185,218,255,.26); border-radius: 15px; background: rgba(5,10,20,.94); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.64); }
   #swTutorial[hidden] { display: none; }
@@ -128,35 +140,39 @@
   .tutBtnGroup { display: flex; gap: 6px; }
 
   #nikWrap { margin-top: 2px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
-  #nikHeader { display: flex; justify-content: space-between; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.78); margin-bottom: 5px; }
+  #nikHeader { display: flex; justify-content: space-between; align-items: center; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(212,230,255,.84); margin-bottom: 5px; }
   .nikTabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; margin-bottom: 5px; }
-  .nikTab { padding: 3px 2px; border-radius: 4px; border: 1px solid rgba(190,220,255,.2); background: rgba(120,165,225,.08); color: rgba(210,228,255,.8); font: 8px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; text-align: center; }
+  .nikTab { padding: 3px 2px; border-radius: 5px; border: 1px solid rgba(190,220,255,.22); background: rgba(120,165,225,.08); color: rgba(214,232,255,.86); font: 9.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; text-align: center; }
   .nikTab.active { background: rgba(105,175,255,.3); border-color: rgba(165,215,255,.65); color: #fff; }
-  #nikGrid { display: grid; grid-template-columns: 24px repeat(6, 1fr); gap: 2px; align-items: center; }
-  .nikLbl { font: 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,210,240,.68); text-align: center; }
-  .nikCell { height: 15px; border-radius: 2px; border: 1px solid rgba(255,255,255,.08); cursor: pointer; font: 7.5px/15px ui-monospace,SFMono-Regular,Menlo,monospace; text-align: center; color: rgba(240,248,255,.90); transition: transform .08s, border-color .12s; }
+  #nikGrid { display: grid; grid-template-columns: 26px repeat(6, 1fr); gap: 2px; align-items: center; }
+  .nikLbl { font: 9.5px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,216,245,.78); text-align: center; }
+  .nikCell { height: 17px; border-radius: 3px; border: 1px solid rgba(255,255,255,.10); cursor: pointer; font: 9.5px/16px ui-monospace,SFMono-Regular,Menlo,monospace; text-align: center; color: rgba(242,249,255,.94); transition: transform .08s, border-color .12s; }
   .nikCell:hover { border-color: rgba(255,255,255,.7); transform: scale(1.06); z-index: 2; }
   .nikCell.activeCol { box-shadow: inset 0 0 0 1px rgba(255,255,255,.45); }
   .nikCell.selected { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; z-index: 3; }
-  #nikConfig { margin-top: 6px; padding: 6px 7px; border-radius: 6px; background: rgba(14,26,46,.72); border: 1px solid rgba(130,185,255,.18); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.88); }
+  #nikConfig { margin-top: 6px; padding: 6px 8px; border-radius: 7px; background: rgba(14,26,46,.74); border: 1px solid rgba(130,185,255,.20); font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(224,238,255,.92); }
 
-  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #arnoldExpBtn, #specBandBtn, #specModeBtn, #specTrackBtn, #specCenterBtn, #specResetViewBtn, #timeEnvBtn, #timeModeBtn, #timeExportBtn { padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.32); background: rgba(130,185,255,.14); color: #b9dcff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #arnoldExpBtn, #specBandBtn, #specModeBtn, #specTrackBtn, #specCenterBtn, #specResetViewBtn, #timeEnvBtn, #timeModeBtn, #timeExportBtn { padding: 2px 7px; border-radius: 5px; border: 1px solid rgba(130,185,255,.34); background: rgba(130,185,255,.14); color: #c4e2ff; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #arnoldTargetBtn.t2, #arnoldPanBtn.active, #arnoldExpBtn.active, #specTrackBtn.active { border-color: rgba(251,191,36,.60); background: rgba(251,191,36,.22); color: #fde68a; }
   #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes, #specModeBtn.active, #timeEnvBtn.active, #timeModeBtn.active { border-color: rgba(110,231,183,.55); background: rgba(16,185,129,.20); color: #a7f3d0; }
   canvas#arnoldCanvas.panMode { cursor: grab; }
   canvas#arnoldCanvas.panning { cursor: grabbing; }
-  .arnoldNavBar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
-  .arnoldAvgBar, .specCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(130,185,255,.18); font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.84); }
-  .arnoldAvgBar label, .specCtrlBar label { display: inline-flex; align-items: center; gap: 3px; }
-  .miniSel { padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(190,220,255,.26); background: rgba(4,9,18,.88); color: #e2f1ff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
-  #specMeta { margin-top: 4px; font: 7.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(185,218,255,.78); font-variant-numeric: tabular-nums; }
-  .arnoldNavCtrl { display: grid; gap: 1px; font: 8px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.80); }
-  .arnoldNavHead { display: flex; justify-content: space-between; align-items: center; gap: 2px; }
+  .arnoldNavBar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 5px; }
+  .arnoldAvgBar, .specCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 5px; padding-top: 5px; border-top: 1px dashed rgba(130,185,255,.20); font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(202,226,252,.88); }
+  .arnoldAvgBar label, .specCtrlBar label { display: inline-flex; align-items: center; gap: 4px; }
+  .miniSel { padding: 2px 5px; border-radius: 5px; border: 1px solid rgba(190,220,255,.28); background: rgba(4,9,18,.90); color: #e2f1ff; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  #specMeta { margin-top: 4px; font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,224,255,.84); font-variant-numeric: tabular-nums; }
+  .arnoldNavCtrl { display: grid; gap: 2px; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(202,226,252,.86); min-width: 0; }
+  .arnoldNavHead { display: flex; justify-content: space-between; align-items: center; gap: 3px; min-width: 0; }
   .arnoldNavHead output { color: #b9dcff; font-weight: 600; }
-  .arnoldNavCtrl input[type=range] { width: 100%; height: 13px; margin: 0; accent-color: #7cd4ff; cursor: pointer; }
-  #arnoldTermsNote { margin-top: 4px; font: 8.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(190,218,250,.78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .navValWrap { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+  .navNumIn { width: 52px; padding: 1px 4px; border-radius: 5px; border: 1px solid rgba(135,195,255,.28); background: rgba(4,10,20,.88); color: #dbeafe; font: 600 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric: tabular-nums; text-align: right; cursor: text; -moz-appearance: textfield; }
+  .navNumIn:focus { outline: none; border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56,189,248,.20); }
+  .navNumIn::-webkit-inner-spin-button, .navNumIn::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .arnoldNavCtrl input[type=range] { width: 100%; height: 14px; margin: 0; accent-color: #7cd4ff; cursor: pointer; }
+  #arnoldTermsNote { margin-top: 4px; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,222,252,.84); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  #dbDiagBanner { margin-top: 5px; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.14); background: rgba(10,20,38,.7); font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(210,228,255,.85); word-break: break-word; }
+  #dbDiagBanner { margin-top: 5px; padding: 5px 7px; border-radius: 7px; border: 1px solid rgba(190,220,255,.16); background: rgba(10,20,38,.74); font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(214,232,255,.88); word-break: break-word; }
   #dbDiagBanner.err { border-color: rgba(251,191,36,.45); color: #fde68a; background: rgba(80,45,10,.35); }
   #dbDiagBanner.ok { border-color: rgba(52,211,153,.45); color: #a7f3d0; background: rgba(12,60,45,.32); }
 
@@ -172,7 +188,7 @@
   .vmTitle { font: 700 10.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .09em; color: #9ad8ff; }
   .vmBody { padding: 11px 13px 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; display: grid; gap: 10px; }
   .vmTabs { display: flex; gap: 5px; flex-wrap: wrap; }
-  .vmTab { padding: 5px 9px; border-radius: 7px; border: 1px solid rgba(190,220,255,.2); background: rgba(120,165,225,.08); color: rgba(215,232,255,.82); font: 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  .vmTab { padding: 5px 10px; border-radius: 7px; border: 1px solid rgba(190,220,255,.22); background: rgba(120,165,225,.08); color: rgba(218,234,255,.86); font: 9.5px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   .vmTab.active { background: rgba(105,175,255,.32); border-color: rgba(165,215,255,.7); color: #fff; }
   .vmProgressWrap { height: 6px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; }
   .vmProgressBar { height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #34d399); transition: width .2s ease; }
@@ -183,50 +199,50 @@
   .vmStageCard.fail { border-color: rgba(251,113,133,.6); }
   .vmStageName { font: 600 10px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; color: #f0f7ff; }
   .vmStageDesc { font: 9.5px/1.3 system-ui,-apple-system,sans-serif; color: rgba(200,220,245,.75); }
-  .vmTable { width: 100%; border-collapse: collapse; font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmTable { width: 100%; border-collapse: collapse; font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; }
   .vmTable th, .vmTable td { padding: 4px 5px; border-bottom: 1px solid rgba(190,220,255,.1); text-align: left; vertical-align: top; }
-  .vmTable th { color: rgba(185,212,245,.66); font-weight: 600; }
-  .vmBadge { display: inline-block; padding: 1px 5px; border-radius: 4px; font: 700 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmTable th { color: rgba(185,212,245,.72); font-weight: 600; }
+  .vmBadge { display: inline-block; padding: 2px 6px; border-radius: 5px; font: 700 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
   .vmBadge.pass { background: rgba(16,185,129,.25); color: #6ee7b7; border: 1px solid rgba(52,211,153,.5); }
   .vmBadge.fail { background: rgba(244,63,94,.24); color: #fda4af; border: 1px solid rgba(251,113,133,.5); }
   .vmBadge.warn { background: rgba(251,191,36,.2); color: #fde68a; border: 1px solid rgba(251,191,36,.45); }
   .vmBadge.idle { background: rgba(148,163,184,.18); color: #cbd5e1; border: 1px solid rgba(148,163,184,.35); }
   .vmInputGrid { display: grid; gap: 6px; }
-  .vmInputRow { display: grid; grid-template-columns: 92px 1fr; gap: 6px; align-items: center; font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
-  .vmInputRow input, .vmCodeBox { width: 100%; padding: 5px 7px; border-radius: 6px; border: 1px solid rgba(190,220,255,.22); background: rgba(4,9,18,.88); color: #ebf3ff; font: 9px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
-  .vmSessionItem { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(190,220,255,.15); background: rgba(14,26,46,.55); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmInputRow { display: grid; grid-template-columns: 96px 1fr; gap: 6px; align-items: center; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmInputRow input, .vmCodeBox { width: 100%; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(190,220,255,.24); background: rgba(4,9,18,.88); color: #ebf3ff; font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .vmSessionItem { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(190,220,255,.15); background: rgba(14,26,46,.55); font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; }
 
-  #hInputBox { padding: 6px 9px; flex: 0 0 auto; }
-  #hInputBox .specTitle { align-items: center; margin-bottom: 3px; gap: 4px; }
+  #hInputBox { padding: 7px 10px; flex: 0 0 auto; }
+  #hInputBox .specTitle { align-items: center; margin-bottom: 4px; gap: 4px; }
   #hTimeVal { color: #b9dcff; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .hPulseRow { display: flex; align-items: center; gap: 4px; }
-  .pulseTag { padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(190,220,255,.2); background: rgba(255,255,255,.05); color: rgba(200,220,245,.55); font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .04em; white-space: nowrap; }
+  .hPulseRow { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .pulseTag { padding: 2px 6px; border-radius: 5px; border: 1px solid rgba(190,220,255,.22); background: rgba(255,255,255,.05); color: rgba(205,224,248,.68); font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .04em; white-space: nowrap; }
   .pulseTag.on { border-color: rgba(124,212,255,.55); background: rgba(56,189,248,.18); color: #bae6fd; }
   .pulseTag.wait { border-color: rgba(251,191,36,.55); background: rgba(251,191,36,.15); color: #fde68a; }
   .pulseTag.p2on { border-color: rgba(52,211,153,.85); background: rgba(16,185,129,.28); color: #a7f3d0; box-shadow: 0 0 8px rgba(52,211,153,.35); font-weight: 600; }
-  #hResetBtn { padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(190,220,255,.28); background: rgba(120,165,225,.16); color: #eef5ff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #hResetBtn { padding: 2px 7px; border-radius: 5px; border: 1px solid rgba(190,220,255,.28); background: rgba(120,165,225,.16); color: #eef5ff; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #hResetBtn:hover { background: rgba(120,165,225,.3); border-color: rgba(165,215,255,.6); }
   canvas#hInputCanvas { display: block; width: 100%; height: 28px; border-radius: 4px; background: rgba(3,7,15,.65); }
 
   .mainTabGroup { display: inline-flex; align-items: center; gap: 3px; padding: 2px; border: 1px solid rgba(130,190,255,.34); border-radius: 18px; background: rgba(6,13,26,.92); }
-  .tabBtn { min-height: 23px; padding: 0 9px; border-radius: 14px; border-color: transparent; background: transparent; color: rgba(205,226,255,.78); font-weight: 600; }
+  .tabBtn { min-height: 24px; padding: 0 9px; border-radius: 14px; border-color: transparent; background: transparent; color: rgba(205,226,255,.82); font-weight: 600; }
   .tabBtn.active { background: linear-gradient(135deg, rgba(56,189,248,.34), rgba(16,185,129,.28)); border-color: rgba(125,211,252,.78); color: #fff; box-shadow: 0 0 12px rgba(56,189,248,.22); }
-  #arnoldToSweepBtn { padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(52,211,153,.45); background: rgba(16,185,129,.16); color: #a7f3d0; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldToSweepBtn { padding: 2px 7px; border-radius: 5px; border: 1px solid rgba(52,211,153,.45); background: rgba(16,185,129,.16); color: #a7f3d0; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #arnoldToSweepBtn:hover { background: rgba(16,185,129,.30); border-color: rgba(110,231,183,.8); }
 
   #dashShell[hidden], #sweepShell[hidden] { display: none !important; }
-  #sweepShell { display: grid; grid-template-columns: minmax(460px, 1.48fr) minmax(320px, 380px); gap: 10px; padding: 8px 12px 10px; min-height: 0; overflow: hidden; align-items: stretch; }
+  #sweepShell { display: grid; grid-template-columns: minmax(460px, 1.48fr) minmax(320px, 384px); gap: 10px; padding: 8px 12px 10px; min-height: 0; overflow: hidden; align-items: stretch; }
   #sweepPlotCol { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
   #sweepMapCard { flex: 1.55 1 260px; min-height: 250px; }
   #sweepPlotStage { display: grid; grid-template-columns: 1fr 56px; gap: 6px; flex: 1 1 auto; min-height: 200px; align-items: stretch; }
   canvas#sweepCanvas { display: block; width: 100%; height: 100%; min-height: 200px; border-radius: 6px; background: #060b16; cursor: crosshair; touch-action: none; }
   canvas#sweepCbarCanvas { display: block; width: 56px; height: 100%; min-height: 200px; border-radius: 6px; background: rgba(4,9,18,.78); }
-  #sweepHoverInfo { margin-top: 5px; padding: 4px 7px; border-radius: 6px; border: 1px solid rgba(130,185,255,.18); background: rgba(5,11,22,.78); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,234,255,.90); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #sweepHoverInfo { margin-top: 5px; padding: 5px 8px; border-radius: 7px; border: 1px solid rgba(130,185,255,.20); background: rgba(5,11,22,.82); font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(218,236,255,.92); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #sweepSliceCard { flex: 0.58 0 auto; min-height: 122px; }
   canvas#sweepSliceCanvas { display: block; width: 100%; height: 90px; border-radius: 5px; background: rgba(3,7,15,.72); }
-  #sweepCtrlPanel { min-height: 0; min-width: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(190,220,255,.20); border-radius: 14px; background: rgba(7,13,25,.90); padding: 10px 11px 14px; display: grid; gap: 9px; align-content: start; }
+  #sweepCtrlPanel { min-height: 0; min-width: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(180,215,255,.22); border-radius: 15px; background: linear-gradient(180deg, rgba(10,18,34,.94), rgba(6,11,22,.92)); padding: 10px 11px 14px; display: grid; gap: 9px; align-content: start; box-shadow: inset 0 1px 0 rgba(210,235,255,.06), 0 10px 28px rgba(0,0,0,.35); }
   .sweepParamGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .sweepParamGrid select { width: 100%; padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(190,220,255,.24); background: rgba(4,9,18,.88); color: #ebf3ff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .sweepParamGrid select { width: 100%; padding: 4px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.26); background: rgba(4,9,18,.90); color: #ebf3ff; font: 9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace; }
   .sweepChkGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
   #sweepProgressWrap { height: 5px; border-radius: 99px; background: rgba(255,255,255,.10); overflow: hidden; }
   #sweepProgressBar { height: 100%; width: 100%; background: linear-gradient(90deg, #38bdf8, #34d399); transition: width .12s ease; }
@@ -235,11 +251,11 @@
     html, body { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; }
     body { display: block; }
     #topHud { gap: 4px; padding: max(8px,env(safe-area-inset-top)) 8px 5px; }
-    .hudPill { padding: 4px 8px; font-size: 9px; letter-spacing: .03em; white-space: normal; text-align: center; }
+    .hudPill { padding: 4px 8px; font-size: 9.5px; letter-spacing: .03em; white-space: normal; text-align: center; }
     #quickLaunchBar { gap: 4px; padding: 5px 8px; justify-content: flex-start; }
-    .quickPill { min-height: 28px; padding: 0 8px; font-size: 8.5px; letter-spacing: .04em; }
+    .quickPill { min-height: 29px; padding: 0 8px; font-size: 9.5px; letter-spacing: .03em; }
     .speedGroup .speedLbl { display: none; }
-    .spdBtn { min-height: 24px; padding: 0 6px; font-size: 8.5px; }
+    .spdBtn { min-height: 24px; padding: 0 6px; font-size: 9.5px; }
     #dashShell { display: flex; flex-direction: column; gap: 10px; padding: 8px 10px max(24px,env(safe-area-inset-bottom)); overflow: visible; }
     #sweepShell { display: flex; flex-direction: column; gap: 10px; padding: 8px 10px max(24px,env(safe-area-inset-bottom)); overflow: visible; }
     #sweepPlotCol { flex: none; gap: 10px; }
@@ -374,18 +390,18 @@
     </div>
     <canvas id="arnoldCanvas" width="460" height="175"></canvas>
     <div class="arnoldNavBar" id="arnoldNavBar">
-      <label class="arnoldNavCtrl" title="Zoom into/out of the Arnold instability map (or pinch on trackpad)">
-        <span class="arnoldNavHead"><span>Zoom</span><output id="outArnoldZoom">1.0×</output></span>
+      <div class="arnoldNavCtrl" title="Zoom into/out of the Arnold instability map [1–8×] (or pinch on trackpad)">
+        <span class="arnoldNavHead"><span>Zoom</span><output id="outArnoldZoom" hidden>1.0×</output><span class="navValWrap"><input id="numArnoldZoom" class="navNumIn" type="number" min="1" max="8" step="0.05" value="1.00" aria-label="Arnold Zoom factor"><span class="sliderUnit">×</span></span></span>
         <input id="slArnoldZoom" type="range" min="1" max="8" step="0.05" value="1">
-      </label>
-      <label class="arnoldNavCtrl" title="Horizontal frequency slide f_c across Arnold tongues (or horizontal trackpad swipe)">
-        <span class="arnoldNavHead"><span>f_c</span><output id="outArnoldPanF">3.78G</output></span>
+      </div>
+      <div class="arnoldNavCtrl" title="Horizontal frequency center f_c [3.10–4.40 GHz] across Arnold tongues">
+        <span class="arnoldNavHead"><span>f_c</span><output id="outArnoldPanF" hidden>3.78G</output><span class="navValWrap"><input id="numArnoldPanF" class="navNumIn" type="number" min="3.10" max="4.40" step="0.005" value="3.780" aria-label="Arnold Center Frequency GHz"><span class="sliderUnit">G</span></span></span>
         <input id="slArnoldPanF" type="range" min="3.10" max="4.40" step="0.005" value="3.78">
-      </label>
-      <label class="arnoldNavCtrl" title="Vertical amplitude floor h₀ in mT (or vertical trackpad swipe)">
-        <span class="arnoldNavHead"><span>h₀</span><output id="outArnoldPanH">0.0mT</output></span>
+      </div>
+      <div class="arnoldNavCtrl" title="Vertical amplitude floor h₀ [0.00–2.50 mT]">
+        <span class="arnoldNavHead"><span>h₀</span><output id="outArnoldPanH" hidden>0.0mT</output><span class="navValWrap"><input id="numArnoldPanH" class="navNumIn" type="number" min="0" max="2.50" step="0.01" value="0.00" aria-label="Arnold Amplitude Floor mT"><span class="sliderUnit">mT</span></span></span>
         <input id="slArnoldPanH" type="range" min="0" max="2.50" step="0.01" value="0">
-      </label>
+      </div>
     </div>
     <div class="arnoldAvgBar" id="arnoldAvgBar">
       <label title="Physical-time averaging window for 4A modal powers &amp; rotating-frame 4B phase coherence (µs; changing does NOT reset simulation)">Avg µs <input id="inArnoldAvgUs" class="miniNumIn" type="number" min="0" max="5.0" step="0.05" value="0.40"></label>
@@ -408,14 +424,14 @@
     </div>
     <canvas id="modeTimeCanvas" width="460" height="130"></canvas>
     <div class="timeRangeWrap">
-      <label class="arnoldNavCtrl" title="Adjust inspection window width across recorded trace history">
-        <span class="arnoldNavHead"><span>Window</span><output id="outTimeZoom">AUTO</output></span>
+      <div class="arnoldNavCtrl" title="Adjust inspection window width across recorded trace history [10–100%]">
+        <span class="arnoldNavHead"><span>Window</span><output id="outTimeZoom" hidden>AUTO</output><span class="navValWrap"><input id="numTimeZoom" class="navNumIn" type="number" min="10" max="100" step="2" value="100" aria-label="Time Window width percent"><span class="sliderUnit">%</span></span></span>
         <input id="slTimeZoom" type="range" min="10" max="100" step="2" value="100">
-      </label>
-      <label class="arnoldNavCtrl" title="Pan inspection start/end window across recorded history">
-        <span class="arnoldNavHead"><span>Pan t</span><output id="outTimePan">LIVE</output></span>
+      </div>
+      <div class="arnoldNavCtrl" title="Pan inspection start/end window across recorded history [0–100%]">
+        <span class="arnoldNavHead"><span>Pan t</span><output id="outTimePan" hidden>LIVE</output><span class="navValWrap"><input id="numTimePan" class="navNumIn" type="number" min="0" max="100" step="1" value="100" aria-label="Time Pan percent"><span class="sliderUnit">%</span></span></span>
         <input id="slTimePan" type="range" min="0" max="100" step="1" value="100">
-      </label>
+      </div>
     </div>
     <div class="modeLegend" id="modeLegend"></div>
     <div class="timeStatsStrip" id="timeStatsBox">
@@ -522,56 +538,66 @@
       <button class="btn tiny active" id="btnApplyMode" type="button" title="Toggle Live Smooth updates vs Staged edits applied on Apply Now">Apply: Live Smooth</button>
       <button class="btn tiny" id="btnApplyNow" type="button" title="Apply parameter edits smoothly preserving simTime, modal amplitudes & carrier phase">Apply Now</button>
     </div>
-    <label class="sliderRow" title="Smooth linear ramp duration when changing frequency, amplitude or phase at t > 0">
-      <span>Param Ramp τ_ramp (ns)</span><output id="outRampNs">20 ns</output>
+    <div class="sliderRow" title="Smooth linear ramp duration when changing frequency, amplitude or phase at t > 0 [0–500 ns]">
+      <span class="sliderLabelWrap"><span>Param Ramp τ_ramp</span><span class="sliderRangeHint">[0–500 ns]</span></span>
+      <span class="sliderValWrap"><output id="outRampNs" hidden>20 ns</output><input id="numRampNs" class="sliderNumIn" type="number" min="0" max="500" step="5" value="20" aria-label="Param Ramp duration ns"><span class="sliderUnit">ns</span></span>
       <input id="slRampNs" type="range" min="0" max="500" step="5" value="20">
-    </label>
-    <label class="sliderRow">
-      <span>Tone 1 Freq f_p1</span><output id="outFreq">3.950 GHz</output>
+    </div>
+    <div class="sliderRow">
+      <span class="sliderLabelWrap"><span>Tone 1 Freq f_p1</span><span class="sliderRangeHint">[1.65–4.30 GHz]</span></span>
+      <span class="sliderValWrap"><output id="outFreq" hidden>3.950 GHz</output><input id="numFreq" class="sliderNumIn" type="number" min="1.65" max="4.30" step="0.0005" value="3.9500" aria-label="Tone 1 Frequency GHz"><span class="sliderUnit">GHz</span></span>
       <input id="slFreq" type="range" min="1.65" max="4.30" step="0.0005" value="3.950">
-    </label>
-    <label class="sliderRow">
-      <span>Tone 1 Amp μ₀h_p1</span><output id="outAmp">0.60 mT</output>
+    </div>
+    <div class="sliderRow">
+      <span class="sliderLabelWrap"><span>Tone 1 Amp μ₀h_p1</span><span class="sliderRangeHint">[0.00–2.50 mT]</span></span>
+      <span class="sliderValWrap"><output id="outAmp" hidden>0.60 mT</output><input id="numAmp" class="sliderNumIn" type="number" min="0" max="2.50" step="0.01" value="0.60" aria-label="Tone 1 Amplitude mT"><span class="sliderUnit">mT</span></span>
       <input id="slAmp" type="range" min="0" max="2.50" step="0.01" value="0.60">
-    </label>
-    <label class="sliderRow">
-      <span>Tone 1 Phase φ₁</span><output id="outPhase1">0°</output>
+    </div>
+    <div class="sliderRow">
+      <span class="sliderLabelWrap"><span>Tone 1 Phase φ₁</span><span class="sliderRangeHint">[−180–+180 °]</span></span>
+      <span class="sliderValWrap"><output id="outPhase1" hidden>0°</output><input id="numPhase1" class="sliderNumIn" type="number" min="-180" max="180" step="1" value="0" aria-label="Tone 1 Phase degrees"><span class="sliderUnit">°</span></span>
       <input id="slPhase1" type="range" min="-180" max="180" step="1" value="0">
-    </label>
+    </div>
     <div class="btnRow">
       <button class="btn" id="btnDualTone" type="button">Dual-Tone: OFF</button>
     </div>
     <div id="dualToneGroup" hidden>
-      <label class="sliderRow">
-        <span>Tone 2 Freq f_p2</span><output id="outFreq2">4.000 GHz</output>
+      <div class="sliderRow">
+        <span class="sliderLabelWrap"><span>Tone 2 Freq f_p2</span><span class="sliderRangeHint">[1.65–4.30 GHz]</span></span>
+        <span class="sliderValWrap"><output id="outFreq2" hidden>4.000 GHz</output><input id="numFreq2" class="sliderNumIn" type="number" min="1.65" max="4.30" step="0.0005" value="4.0000" aria-label="Tone 2 Frequency GHz"><span class="sliderUnit">GHz</span></span>
         <input id="slFreq2" type="range" min="1.65" max="4.30" step="0.0005" value="4.000">
-      </label>
-      <label class="sliderRow">
-        <span>Tone 2 Amp μ₀h_p2</span><output id="outAmp2">0.50 mT</output>
+      </div>
+      <div class="sliderRow">
+        <span class="sliderLabelWrap"><span>Tone 2 Amp μ₀h_p2</span><span class="sliderRangeHint">[0.00–2.50 mT]</span></span>
+        <span class="sliderValWrap"><output id="outAmp2" hidden>0.50 mT</output><input id="numAmp2" class="sliderNumIn" type="number" min="0" max="2.50" step="0.01" value="0.50" aria-label="Tone 2 Amplitude mT"><span class="sliderUnit">mT</span></span>
         <input id="slAmp2" type="range" min="0" max="2.50" step="0.01" value="0.50">
-      </label>
-      <label class="sliderRow">
-        <span>Tone 2 Delay τ₂</span><output id="outDelay2">3.0 µs</output>
+      </div>
+      <div class="sliderRow">
+        <span class="sliderLabelWrap"><span>Tone 2 Delay τ₂</span><span class="sliderRangeHint">[0.0–10.0 µs]</span></span>
+        <span class="sliderValWrap"><output id="outDelay2" hidden>3.0 µs</output><input id="numDelay2" class="sliderNumIn" type="number" min="0" max="10.0" step="0.1" value="3.0" aria-label="Tone 2 Delay microseconds"><span id="unitDelay2" class="sliderUnit">µs</span></span>
         <input id="slDelay2" type="range" min="0" max="10.0" step="0.1" value="3.0">
-      </label>
-      <label class="sliderRow">
-        <span>Rel Phase Δφ (φ₂−φ₁)</span><output id="outPhase2">0°</output>
+      </div>
+      <div class="sliderRow">
+        <span class="sliderLabelWrap"><span>Rel Phase Δφ (φ₂−φ₁)</span><span class="sliderRangeHint">[−180–+180 °]</span></span>
+        <span class="sliderValWrap"><output id="outPhase2" hidden>0°</output><input id="numPhase2" class="sliderNumIn" type="number" min="-180" max="180" step="1" value="0" aria-label="Relative Phase degrees"><span class="sliderUnit">°</span></span>
         <input id="slPhase2" type="range" min="-180" max="180" step="1" value="0">
-      </label>
+      </div>
       <div class="btnRow">
         <button class="btn" id="btnWaitT1SS" type="button" title="Hold Tone 2 until Tone 1 reaches steady state">Wait T1 SS: OFF</button>
         <button class="btn" id="btnSwapTones" type="button" title="Restart sequence from t = 0 with swapped Tone 1 ↔ Tone 2">Swap &amp; Restart</button>
         <button class="btn" id="btnLiveSwapTones" type="button" title="Swap Tone 1 ↔ Tone 2 live preserving simTime, spins & carrier phase">Live Swap</button>
       </div>
     </div>
-    <label class="sliderRow">
-      <span>Gilbert Damping α</span><output id="outDamp">0.0005</output>
+    <div class="sliderRow">
+      <span class="sliderLabelWrap"><span>Gilbert Damping α</span><span class="sliderRangeHint">[0.0001–0.0040]</span></span>
+      <span class="sliderValWrap"><output id="outDamp" hidden>0.0005</output><input id="numDamp" class="sliderNumIn" type="number" min="0.0001" max="0.0040" step="0.0001" value="0.0005" aria-label="Gilbert Damping alpha"></span>
       <input id="slDamp" type="range" min="0.0001" max="0.0040" step="0.0001" value="0.0005">
-    </label>
-    <label class="sliderRow" title="Brown Fluctuation-Dissipation thermal noise: <|a_h|^2>_eq = k_B T / (mu_0 M_s^2 V)">
-      <span>Thermal Bath T (FDT)</span><output id="outTemp">300 K</output>
+    </div>
+    <div class="sliderRow" title="Brown Fluctuation-Dissipation thermal noise: <|a_h|^2>_eq = k_B T / (mu_0 M_s^2 V)">
+      <span class="sliderLabelWrap"><span>Thermal Bath T (FDT)</span><span class="sliderRangeHint">[0–600 K]</span></span>
+      <span class="sliderValWrap"><output id="outTemp" hidden>300 K</output><input id="numTemp" class="sliderNumIn" type="number" min="0" max="600" step="10" value="300" aria-label="Thermal Bath Temperature K"><span class="sliderUnit">K</span></span>
       <input id="slTemp" type="range" min="0" max="600" step="10" value="300">
-    </label>
+    </div>
     <div class="sectionLabel" style="display:flex;justify-content:space-between;align-items:center;">
       <span>NMM Eq. (9) Equations</span>
       <span style="display:flex;gap:4px;">
@@ -646,7 +672,7 @@
         </label>
         <div class="rfMiniLbl">
           <span>Converted (50 Ω + G_ref)</span>
-          <div id="rfTargetOut" style="padding:3px 6px;border-radius:5px;border:1px solid rgba(190,220,255,.18);background:rgba(4,9,18,.75);color:#bae6fd;min-height:22px;font:8px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;">—</div>
+          <div id="rfTargetOut" style="padding:4px 6px;border-radius:6px;border:1px solid rgba(190,220,255,.18);background:rgba(4,9,18,.78);color:#bae6fd;min-height:24px;font:9.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;">—</div>
         </div>
       </div>
       <div id="rfSampleWarn" class="rfWarnNote">⚠ Sample-plane μ₀h_p &amp; P_sample UNCALIBRATED (unknown antenna Oersted conversion k_eff, S₁₁ &amp; input cable loss vs bypass). Reporting generator (50 Ω) &amp; SA bypass only unless k_eff is entered.</div>
@@ -656,13 +682,13 @@
         <span>EXP MODE ID (27 mT) &amp; CSI2</span>
         <button class="btn tiny active" id="btnOpenExpTab" type="button">Full Exp Data ↗</button>
       </div>
-      <div style="font:8.5px/1.38 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(215,234,255,.88);">
+      <div style="font:9.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(218,236,255,.90);">
         <b>B_cal = 27.0 mT retained</b> (29-mode fit 26.995 ± 0.10 mT, RMS 3.01 MHz; 80-mode 26.990 mT; all |δf_h| ≤ 7.5 MHz &lt; 15 MHz bound).<br>
         <b>CSI2 Downshift:</b> −25 to −55 mV (−0.7 to −1.7 dB), +13.5–20 dB (4068–4190 MHz) · <span style="color:#fde68a;">Partially compatible</span> (coupled 4B cross-pumping P_hk + nonuniform CPW excitation of p_x=−1 dark modes).
       </div>
     </div>
     <div id="logWrap" style="margin-top:2px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12);">
-      <div style="display:flex;justify-content:space-between;align-items:center;font:9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(210,228,255,.78);margin-bottom:5px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font:9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(214,232,255,.82);margin-bottom:5px;">
         <span>TELEMETRY, VERIFY &amp; DB</span>
         <span id="logStatusBadge" style="color:#6ee7b7;">REC · 0 ev</span>
       </div>
@@ -746,13 +772,13 @@
       <button class="btn" id="sweepStopOdeBtn" type="button" disabled>Stop</button>
     </div>
     <div id="sweepProgressWrap"><div id="sweepProgressBar"></div></div>
-    <div id="sweepProgressLabel" style="font:8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(195,220,250,.80);">Analytical 140×80 sweep ready.</div>
+    <div id="sweepProgressLabel" style="font:9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(202,226,252,.84);">Analytical 140×80 sweep ready.</div>
     <div class="btnRow">
       <button class="btn" id="sweepSendLiveBtn" type="button" title="Send selected (f_p, V_pk -> mu0*h_p) point into Tab 1 (1 · LIVE NMM) and run it">Send Point → Tab 1</button>
       <button class="btn" id="sweepExportJsonBtn" type="button">Export JSON</button>
       <button class="btn" id="sweepExportCsvBtn" type="button">Export CSV</button>
     </div>
-    <div id="sweepSciNote" class="vmCodeBox" style="white-space:pre-wrap;font-size:8.5px;">Comparison vs arnold_tongue_halfaverage.png:
+    <div id="sweepSciNote" class="vmCodeBox" style="white-space:pre-wrap;font-size:9.5px;">Comparison vs arnold_tongue_halfaverage.png:
 • 29-mode NMM spans 2f = 3406.6–4137.8 MHz: left bulk lobe (m9–m16, ~3.89–4.00 GHz) + bright Kittel lobe (m27, 4109.2 MHz) match experimental ~250–300 mV onset at nominal k_eff = 1.50 mT/V_pk &amp; α = 0.0020.
 • Pink [n35/n37/n42] (4145–4223 MHz) lie above the 29-mode basis cutoff in the 80-mode NPZ set; p_x=−1 modes (e16 @ 3997 MHz) require nonuniform CPW Oersted gradients.</div>
   </aside>
@@ -3033,7 +3059,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         lastLegendKey = key;
         lastLegendBuildMs = nowMs;
         if (!descModes.length) {
-          modeLegendEl.innerHTML = '<span style="font:8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(185,212,245,.52);">No active nonzero modes yet</span>';
+          modeLegendEl.innerHTML = '<span style="font:9.5px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(190,218,248,.62);">No active nonzero modes yet</span>';
         } else {
           modeLegendEl.innerHTML = descModes.map(m =>
             `<button class="modeChip${pinnedModes.has(m) ? ' pinned' : ''}" type="button" data-m="${m}" title="m${m}: f=${fGhzArr[m].toFixed(4)} GHz, N=${mutualNfsCoeffGHz(m, m).toFixed(2)} GHz — click to pin, Shift+click to excite"><span class="modeChipDot" style="background:${modeColor(m)}"></span><span>m${m}</span><span id="mcVal_${m}">${modeAmps[m].toFixed(3)}</span></button>`
@@ -4501,6 +4527,126 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
   }
 
+  const SLIDER_SYNC_SPECS = [
+    ['slArnoldZoom', 'numArnoldZoom', 'outArnoldZoom', 1, 8, 2],
+    ['slArnoldPanF', 'numArnoldPanF', 'outArnoldPanF', 3.10, 4.40, 3],
+    ['slArnoldPanH', 'numArnoldPanH', 'outArnoldPanH', 0, 2.50, 2],
+    ['slTimeZoom', 'numTimeZoom', 'outTimeZoom', 10, 100, 0],
+    ['slTimePan', 'numTimePan', 'outTimePan', 0, 100, 0],
+    ['slRampNs', 'numRampNs', 'outRampNs', 0, 500, 0],
+    ['slFreq', 'numFreq', 'outFreq', 1.65, 4.30, 4],
+    ['slAmp', 'numAmp', 'outAmp', 0, 2.50, 2],
+    ['slPhase1', 'numPhase1', 'outPhase1', -180, 180, 0],
+    ['slFreq2', 'numFreq2', 'outFreq2', 1.65, 4.30, 4],
+    ['slAmp2', 'numAmp2', 'outAmp2', 0, 2.50, 2],
+    ['slDelay2', 'numDelay2', 'outDelay2', 0, 10.0, 1],
+    ['slPhase2', 'numPhase2', 'outPhase2', -180, 180, 0],
+    ['slDamp', 'numDamp', 'outDamp', 0.0001, 0.0040, 4],
+    ['slTemp', 'numTemp', 'outTemp', 0, 600, 0]
+  ];
+
+  function getSliderSpec(slId) {
+    return SLIDER_SYNC_SPECS.find(s => s[0] === slId) || null;
+  }
+
+  function clampSliderNumericValue(slId, rawVal) {
+    const spec = getSliderSpec(slId);
+    if (!spec) return null;
+    const [, , , min, max, dec] = spec;
+    const parsed = typeof rawVal === 'number'
+      ? rawVal
+      : parseFloat(String(rawVal ?? '').trim().replace(',', '.'));
+    if (!Number.isFinite(parsed)) return null;
+    const clamped = Math.max(min, Math.min(max, parsed));
+    return Number(clamped.toFixed(dec));
+  }
+
+  function syncSliderNumsFromRanges() {
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+    for (const [slId, numId, outId, min, max, dec] of SLIDER_SYNC_SPECS) {
+      const sl = document.getElementById(slId);
+      const num = document.getElementById(numId);
+      const out = document.getElementById(outId);
+      const isWaitDelay = slId === 'slDelay2' && tone2WaitSS;
+      if (out) out.hidden = !isWaitDelay;
+      if (num) num.hidden = isWaitDelay;
+      if (slId === 'slDelay2') {
+        const unitD2 = document.getElementById('unitDelay2');
+        if (unitD2) unitD2.hidden = isWaitDelay;
+      }
+      if (sl && num && active !== num) {
+        const raw = Number(sl.value);
+        if (Number.isFinite(raw)) {
+          num.value = Math.max(min, Math.min(max, raw)).toFixed(dec);
+        }
+      }
+    }
+  }
+
+  function applySliderNumericUpdate(slId, val) {
+    if (slId === 'slRampNs') {
+      paramRampNs = val; syncUi();
+    } else if (slId === 'slFreq') {
+      editDriveParam('driveFreq', val);
+    } else if (slId === 'slAmp') {
+      editDriveParam('driveAmp', val / MU0_MS_MT);
+    } else if (slId === 'slPhase1') {
+      editDriveParam('drivePhase1', (val * Math.PI) / 180);
+    } else if (slId === 'slFreq2') {
+      editDriveParam('driveFreq2', val);
+    } else if (slId === 'slAmp2') {
+      editDriveParam('driveAmp2', val / MU0_MS_MT);
+    } else if (slId === 'slDelay2') {
+      tone2WaitSS = false; tone2DelayNs = val; syncUi();
+    } else if (slId === 'slPhase2') {
+      const base1 = stagedParams.drivePhase1 !== null ? stagedParams.drivePhase1 : (ramp1.active ? ramp1.p1 : drivePhase1);
+      editDriveParam('drivePhase2', base1 + (val * Math.PI) / 180);
+    } else if (slId === 'slDamp') {
+      damping = val; syncUi();
+    } else if (slId === 'slTemp') {
+      temperatureK = val; syncUi();
+    } else if (slId === 'slArnoldZoom') {
+      arnoldZoomAt(val / Math.max(1e-6, arnoldViewZoom), 0.5, 0.5);
+      drawArnoldTongues();
+    } else if (slId === 'slArnoldPanF') {
+      const cur = getArnoldRange(true);
+      const halfF = (cur.fMax - cur.fMin) * 0.5;
+      arnoldAutoFollow = false;
+      arnoldCenterF = Math.max(ARNOLD_ABS_F_MIN + halfF, Math.min(ARNOLD_ABS_F_MAX - halfF, val));
+      getArnoldRange(true); syncUi(); drawArnoldTongues();
+    } else if (slId === 'slArnoldPanH') {
+      arnoldAutoFollow = false;
+      arnoldBaseMT = Math.max(0, val);
+      getArnoldRange(true); syncUi(); drawArnoldTongues();
+    } else if (slId === 'slTimeZoom') {
+      timeZoomPct = Math.max(10, Math.min(100, val));
+      plotViewMode = 'window';
+      syncUi(); lastStatsBuildMs = 0; drawModeTimePlot();
+    } else if (slId === 'slTimePan') {
+      timePanPct = Math.max(0, Math.min(100, val));
+      plotViewMode = 'window';
+      syncUi(); lastStatsBuildMs = 0; drawModeTimePlot();
+    }
+  }
+
+  function commitSliderNumericInput(slId, rawVal) {
+    const spec = getSliderSpec(slId);
+    if (!spec) return null;
+    const [, numId, , , , dec] = spec;
+    const clamped = clampSliderNumericValue(slId, rawVal);
+    if (clamped === null) {
+      syncSliderNumsFromRanges();
+      return null;
+    }
+    const sl = document.getElementById(slId);
+    const num = document.getElementById(numId);
+    if (sl) sl.value = clamped.toFixed(dec);
+    applySliderNumericUpdate(slId, clamped);
+    syncSliderNumsFromRanges();
+    if (num) num.value = clamped.toFixed(dec);
+    return clamped;
+  }
+
   function syncUi() {
     const dispF1 = stagedParams.driveFreq !== null ? stagedParams.driveFreq : (ramp1.active ? ramp1.f1 : driveFreq);
     const dispA1 = stagedParams.driveAmp !== null ? stagedParams.driveAmp : (ramp1.active ? ramp1.h1 : driveAmp);
@@ -4624,6 +4770,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
     const cwStop = document.getElementById('btnCwSweepStop');
     if (cwStop) cwStop.hidden = !cwSweep.running;
+    syncSliderNumsFromRanges();
   }
 
   // Slow-Motion Step-by-Step Interactive Guide + Button Spotlights + "What You're Pressing"
@@ -4756,7 +4903,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     (s.targets || []).forEach(sel => {
       document.querySelectorAll(sel).forEach(el => {
         if (!el) return;
-        const host = el.tagName === 'INPUT' && el.closest ? (el.closest('label.sliderRow') || el) : el;
+        const host = el.tagName === 'INPUT' && el.closest ? (el.closest('.sliderRow') || el) : el;
         if (host && host.classList) host.classList.add('tutSpotlight');
         if (!scrolled && controlsPanel && controlsPanel.contains && controlsPanel.contains(host) && host.scrollIntoView) {
           host.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -5765,6 +5912,29 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     temperatureK = +e.target.value; syncUi();
     announcePress(`Thermal Bath T = ${temperatureK} K`, temperatureK > 0 ? `Brown FDT Langevin fluctuations active (RMS a_th = ${thermalRmsAmp().toExponential(2)}): spontaneous nucleation & stochastic switching.` : 'T = 0 K deterministic limit (zero thermal noise).', 'temp');
   });
+  for (const [slId, numId] of SLIDER_SYNC_SPECS) {
+    const numEl = document.getElementById(numId);
+    if (!numEl || !numEl.addEventListener) continue;
+    const commitFromInput = () => {
+      const committed = commitSliderNumericInput(slId, numEl.value);
+      if (committed === null) syncSliderNumsFromRanges();
+    };
+    numEl.addEventListener('change', commitFromInput);
+    numEl.addEventListener('blur', commitFromInput);
+    numEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        commitFromInput();
+        numEl.blur();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        syncSliderNumsFromRanges();
+        numEl.blur();
+      }
+    });
+  }
+  syncSliderNumsFromRanges();
+
   document.getElementById('btnNmmRwa').addEventListener('click', () => {
     setNmmMode(false);
     announcePress('RWA Fast', 'Enabled secular Rotating-Wave core (1M + 2A + 4A N_hk) — fast & matches analytical Eqs. (33) & (55–57).');

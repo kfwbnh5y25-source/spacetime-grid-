@@ -602,6 +602,7 @@ function loadSpinWavesContext(seedStorage = {}) {
     cwBuildFreqList, runCwFreqSweepSync,
     getConvState: () => ({ status: convStatus, detail: convLastDetail, history: convHistory.slice(), primary2usLastReport }),
     SPEC_RING_LEN, computeWelchPsd, getSpecViewRange, evalAveragedArnoldStats,
+    SLIDER_SYNC_SPECS, clampSliderNumericValue, commitSliderNumericInput, syncSliderNumsFromRanges,
     plotHistAmps, plotHistMin, plotHistMax,
     getDspArnoldPlotState: () => ({
       probeCount, specCfg: { ...specCfg }, lastSpecPeakGHz,
@@ -2531,4 +2532,34 @@ test(
       assert.ok(maxEnv >= maxCenter && maxEnv > 0.01, `Expected plotHistMax envelope (${maxEnv}) >= center (${maxCenter}) and > 0.01`);
       assert.equal(minEnvBelowCenter, checkN, 'Every folded bin must preserve plotHistMin <= center <= plotHistMax');
       spin.drawModeTimePlot();
+    });
+
+    test('AE. Subtask 4: Single clickable/editable clamped numeric slider values & minimum readable font hierarchy (>= 9px)', () => {
+      assert.equal(spin.SLIDER_SYNC_SPECS.length, 15, 'Expected all 15 range sliders registered in SLIDER_SYNC_SPECS');
+      for (const [slId, numId, outId, min, max, dec] of spin.SLIDER_SYNC_SPECS) {
+        assert.ok(spinWavesHtml.includes(`id="${slId}"`), `Missing range slider ${slId} in HTML`);
+        assert.ok(spinWavesHtml.includes(`id="${numId}"`), `Missing paired numeric input ${numId} in HTML`);
+        assert.ok(spinWavesHtml.includes(`id="${outId}" hidden`), `Legacy output ${outId} must be hidden so slider value is shown only once`);
+        assert.equal(spin.clampSliderNumericValue(slId, min - 999), Number(min.toFixed(dec)), `${slId} must clamp below min`);
+        assert.equal(spin.clampSliderNumericValue(slId, max + 999), Number(max.toFixed(dec)), `${slId} must clamp above max`);
+        assert.equal(spin.clampSliderNumericValue(slId, 'not-a-number'), null, `${slId} must reject NaN text`);
+        const mid = Number((0.5 * (min + max)).toFixed(dec));
+        const res = spin.commitSliderNumericInput(slId, mid);
+        assert.equal(res, mid, `${slId} commit midpoint should equal ${mid}`);
+      }
+      // Verify Wait T1 SS toggles single Delay display cleanly between numDelay2 and outDelay2
+      spin.setState({ tone2WaitSS: true });
+      spin.syncSliderNumsFromRanges();
+      assert.equal(spin.getElHidden('numDelay2'), true);
+      assert.equal(spin.getElHidden('outDelay2'), false);
+      spin.setState({ tone2WaitSS: false });
+      spin.syncSliderNumsFromRanges();
+      assert.equal(spin.getElHidden('numDelay2'), false);
+      assert.equal(spin.getElHidden('outDelay2'), true);
+      // Verify CSS hierarchy has no sub-9px font-size rules
+      const styleBlock = (spinWavesHtml.match(/<style>([\s\S]*?)<\/style>/) || [])[1] || '';
+      const sub9 = [...styleBlock.matchAll(/font(?:-size)?:\s*(?:[0-9]+\s+)?([0-8](?:\.[0-9]+)?)px/g)];
+      assert.equal(sub9.length, 0, `Expected zero CSS font sizes < 9px, found: ${sub9.map(m => m[0]).join(', ')}`);
+      spin.applyPreset('nonrecip');
+      assert.ok(Math.abs(spin.getState().driveFreq - 2 * spin.modeFreqGHz(13)) < 0.05);
     });
