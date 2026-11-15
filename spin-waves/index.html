@@ -60,6 +60,14 @@
   .timeStatsHead { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; }
   .timeStatsRows { display: grid; gap: 2px; max-height: 54px; overflow-y: auto; }
   .timeStatRow { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-variant-numeric: tabular-nums; color: rgba(210,228,255,.86); }
+  .convCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 2px; padding-top: 4px; border-top: 1px solid rgba(130,185,255,.14); font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.82); }
+  .convCtrlBar label { display: inline-flex; align-items: center; gap: 3px; }
+  .miniNumIn { width: 48px; padding: 2px 4px; border-radius: 4px; border: 1px solid rgba(190,220,255,.24); background: rgba(4,9,18,.88); color: #ebf3ff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; font-variant-numeric: tabular-nums; }
+  #cwSweepBox { flex: 0.92 0 auto; min-height: 176px; }
+  .cwCtrlGrid { display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center; margin-bottom: 5px; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(200,224,252,.86); }
+  .cwCtrlGrid label { display: inline-flex; align-items: center; gap: 3px; }
+  canvas#cwSweepCanvas { display: block; width: 100%; height: 112px; border-radius: 5px; background: rgba(3,7,15,.72); }
+  #cwSweepReadout { margin-top: 4px; font: 8px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,234,255,.86); font-variant-numeric: tabular-nums; }
 
   .magnonGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px 6px; padding: 7px 10px; border: 1px solid rgba(190,220,255,.18); border-radius: 10px; background: rgba(7,13,25,.86); font: 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(205,226,255,.82); }
   .magnonGrid b { color: #9ad8ff; font-weight: 600; }
@@ -246,6 +254,8 @@
     canvas#modeTimeCanvas { height: 125px; min-height: 115px; }
     #spectrumBox { display: flex !important; min-height: 104px; flex: none; }
     canvas#specCanvas { height: 76px; }
+    #cwSweepBox { display: flex !important; min-height: 185px; flex: none; }
+    canvas#cwSweepCanvas { height: 116px; }
     #controlsPanel { overflow: visible; max-height: none; width: 100%; }
     #swTutorial { left: 10px; right: 10px; width: auto; top: max(96px,calc(env(safe-area-inset-top) + 84px)); }
     #pressToast { display: none; }
@@ -401,9 +411,19 @@
     <div class="timeStatsStrip" id="timeStatsBox">
       <div class="timeStatsHead">
         <span id="timeStatsSpan">Window [0.00–0.00 µs] · Mean / RMS / σ / γ_eff</span>
-        <span id="timeConvBadge" class="vmBadge idle">IDLE</span>
+        <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
+          <button id="btnRunPrimary2us" class="btn tiny accent" type="button" title="Run reproducible 2.0 µs physical-time experiment & record window convergence history">2µs Run</button>
+          <button id="btnExportConvJson" class="btn tiny" type="button" title="Export physical-time convergence history & metrics as JSON">Conv JSON</button>
+          <span id="timeConvBadge" class="vmBadge idle">IDLE</span>
+        </span>
       </div>
       <div class="timeStatsRows" id="timeStatsRows">Run or FAST→SS to compute steady-state convergence &amp; onset rates.</div>
+      <div class="convCtrlBar">
+        <label title="Physical-time convergence window length (µs)">Win µs <input id="inConvWinUs" class="miniNumIn" type="number" min="0.05" max="2.0" step="0.05" value="0.20"></label>
+        <label title="Minimum settle time before declaring CONVERGED (µs)">Min µs <input id="inConvMinUs" class="miniNumIn" type="number" min="0.10" max="5.0" step="0.10" value="0.80"></label>
+        <label title="Maximum horizon before TIMEOUT (µs)">Max µs <input id="inConvMaxUs" class="miniNumIn" type="number" min="0.50" max="20.0" step="0.50" value="6.0"></label>
+        <span id="convDetailSpan" style="margin-left:auto;color:#9ad8ff;">win: 0</span>
+      </div>
     </div>
   </div>
   <div class="readoutCard" id="spectrumBox">
@@ -413,6 +433,28 @@
       <span id="specPeak">f_peak: —</span>
     </div>
     <canvas id="specCanvas" width="460" height="74"></canvas>
+  </div>
+  <div class="readoutCard" id="cwSweepBox">
+    <div class="specTitle">
+      <span>CONTINUOUS CW HYSTERESIS SWEEP (STATE-CARRYING)</span>
+      <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
+        <button id="btnCwSweepUp" class="btn tiny" type="button" title="Sweep upward carrying full complex state & continuous carrier phase">↑ Up</button>
+        <button id="btnCwSweepDown" class="btn tiny" type="button" title="Sweep downward carrying full complex state & continuous carrier phase">↓ Down</button>
+        <button id="btnCwSweepLoop" class="btn tiny active" type="button" title="Continuous Up→Down hysteresis loop from live state">↕ Loop</button>
+        <button id="btnCwSweepStop" class="btn tiny" type="button" hidden>Stop</button>
+        <button id="btnCwSweepExport" class="btn tiny" type="button" title="Export CW sweep curve & phase continuity JSON">JSON</button>
+        <span id="cwSweepStatusBadge" class="vmBadge idle">IDLE</span>
+      </span>
+    </div>
+    <div class="cwCtrlGrid">
+      <label title="CW sweep start pump frequency (GHz)">f₁ <input id="inCwFStart" class="miniNumIn" type="number" min="1.65" max="4.30" step="0.002" value="3.940">G</label>
+      <label title="CW sweep end pump frequency (GHz)">f₂ <input id="inCwFEnd" class="miniNumIn" type="number" min="1.65" max="4.30" step="0.002" value="3.972">G</label>
+      <label title="Frequency step size (MHz)">Δf <input id="inCwStepMHz" class="miniNumIn" type="number" min="0.2" max="20.0" step="0.5" value="2.0">MHz</label>
+      <label title="Dwell duration per frequency step (µs)">Dwell <input id="inCwDwellUs" class="miniNumIn" type="number" min="0.02" max="2.0" step="0.05" value="0.20">µs</label>
+      <label title="Smooth frequency chirp rate between steps (GHz/µs, 0 = phase-continuous step)">Rate <input id="inCwRateGHzUs" class="miniNumIn" type="number" min="0" max="5.0" step="0.05" value="0.20">G/µs</label>
+    </div>
+    <canvas id="cwSweepCanvas" width="460" height="112" aria-label="Continuous CW frequency hysteresis loop carrying complex modal state and carrier phase"></canvas>
+    <div id="cwSweepReadout">Sweep carries full complex a_h(τ) &amp; φ(t)=∫2πf ds across points (independent of Tab 2 PWM).</div>
   </div>
 </div>
 <details id="controlsPanel" open>
@@ -1000,6 +1042,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   let rfChainGainDB = 0.0;
   let rfKEffMTPerV = null; // null = uncalibrated sample-plane Oersted conversion
   let activeMainTab = 'live';
+  let convWindowUs = 0.20, convMinSettleUs = 0.80, convMaxUs = 6.0;
+  let convStatus = 'IDLE', convLastDetail = '', convStableWindows = 0;
+  let convHistory = [], convLastWindow = null, convSubAccum = null, primary2usLastReport = null;
+  const cwSweep = {
+    running: false, abort: false, dir: 'updown',
+    fStartGHz: 3.940, fEndGHz: 3.972, stepMHz: 2.0, dwellUs: 0.20, rateGHzUs: 0.20,
+    upPts: [], downPts: [], status: 'IDLE', stepIdx: 0, totalSteps: 0, lastTimer: 0
+  };
 
   function prepHiDpiCanvas(canvas, ctx2d, fallbackW = 460, fallbackH = 140) {
     if (!canvas) return { w: fallbackW, h: fallbackH, scale: 1 };
@@ -1517,6 +1567,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     plotHistHead = 0; plotHistCount = 0; lastPlotTau = -1; plotOriginTau = simTime;
     holdPlotWin = false; plotWinTau = defaultPlotWinTau(); plotYScale = 0.02; plotYTarget = 0.02;
     lastPlotDrawMs = 0; lastLegendBuildMs = 0; lastLegendKey = '';
+    convHistory = []; convLastWindow = null; convSubAccum = null; convStableWindows = 0;
+    convStatus = 'IDLE'; convLastDetail = '';
   }
 
   function computeTimeWindowMetrics(startFrac = 0, endFrac = 1) {
@@ -2330,6 +2382,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (typeof activeMainTab !== 'undefined' && activeMainTab === 'sweep' && typeof drawSweepHeatmap === 'function') {
       drawSweepHeatmap();
       if (typeof drawSweepSlice === 'function') drawSweepSlice();
+    } else if (typeof drawCwSweepPlot === 'function') {
+      drawCwSweepPlot();
     }
   }
   window.addEventListener('resize', resize, { passive: true });
@@ -2586,13 +2640,17 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       if (statsSpanEl || convBadgeEl || statsRowsEl) {
         const metrics = computeTimeWindowMetrics(metStartFrac, metEndFrac);
         if (statsSpanEl) statsSpanEl.textContent = `Window [${metrics.tStartUs.toFixed(2)}–${metrics.tEndUs.toFixed(2)} µs] · ${metrics.sampleCount} pts`;
+        const showStatus = convHistory.length > 0 ? convStatus : metrics.dominantStatus;
         if (convBadgeEl) {
-          convBadgeEl.textContent = metrics.dominantStatus;
+          convBadgeEl.textContent = showStatus;
           convBadgeEl.className = 'vmBadge ' + (
-            metrics.dominantStatus === 'CONVERGED' ? 'pass' :
-            (metrics.dominantStatus === 'OSCILLATING' || metrics.dominantStatus === 'GROWING' ? 'warn' : 'idle')
+            showStatus === 'CONVERGED' ? 'pass' :
+            (showStatus === 'FAILED' || showStatus === 'MODE COMPETITION' ? 'fail' :
+            (showStatus === 'TIMEOUT' || showStatus === 'EVOLVING' || showStatus === 'OSCILLATING' || showStatus === 'GROWING' ? 'warn' : 'idle'))
           );
         }
+        const convDetEl = document.getElementById('convDetailSpan');
+        if (convDetEl) convDetEl.textContent = convLastDetail || `win: ${convHistory.length}`;
         if (statsRowsEl) {
           if (!metrics.modes.length) {
             statsRowsEl.textContent = 'Run or FAST→SS to compute steady-state convergence & onset rates.';
@@ -3986,6 +4044,19 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     });
     syncRfCalUi();
     syncNikConfigUi();
+    const inWin = document.getElementById('inConvWinUs');
+    if (inWin && document.activeElement !== inWin) inWin.value = convWindowUs.toFixed(2);
+    const inMin = document.getElementById('inConvMinUs');
+    if (inMin && document.activeElement !== inMin) inMin.value = convMinSettleUs.toFixed(2);
+    const inMax = document.getElementById('inConvMaxUs');
+    if (inMax && document.activeElement !== inMax) inMax.value = convMaxUs.toFixed(1);
+    const cwBadge = document.getElementById('cwSweepStatusBadge');
+    if (cwBadge) {
+      cwBadge.textContent = cwSweep.running ? `RUN ${cwSweep.stepIdx}/${cwSweep.totalSteps}` : cwSweep.status;
+      cwBadge.className = 'vmBadge ' + (cwSweep.running ? 'warn' : (cwSweep.status === 'DONE' ? 'pass' : 'idle'));
+    }
+    const cwStop = document.getElementById('btnCwSweepStop');
+    if (cwStop) cwStop.hidden = !cwSweep.running;
   }
 
   // Slow-Motion Step-by-Step Interactive Guide + Button Spotlights + "What You're Pressing"
@@ -4260,6 +4331,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       meanDynAmp: +lastMeanDynAmp.toFixed(5),
       peakDyn: +lastPeakDyn.toFixed(5),
       fPeakGHz: lastSpecPeakGHz,
+      convStatus,
+      convWindows: convHistory.length,
       topModes: activeTop,
       theory
     };
@@ -5096,33 +5169,598 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   });
 
   function fastForwardStepsPerFrame() { return isRwaFast() ? 140 : 48; }
-  function fastForwardSteadyState(maxSteps = 240000) {
+
+  function captureConvSubSample() {
+    const amps = new Float64Array(M), phases = new Float64Array(M);
+    let finite = true, peakAmp = 0;
+    for (let m = 0; m < M; m++) {
+      const ar = aRe[m], ai = aIm[m];
+      if (!Number.isFinite(ar) || !Number.isFinite(ai)) { finite = false; break; }
+      const amp = Math.hypot(ar, ai);
+      if (!Number.isFinite(amp) || amp > 1.5) finite = false;
+      if (amp > peakAmp) peakAmp = amp;
+      amps[m] = amp;
+      phases[m] = Math.atan2(ai, ar);
+    }
+    return { tau: simTime, tUs: simTimeUs(), amps, phases, phi1: carrierPhase1, phi2: carrierPhase2, finite, peakAmp };
+  }
+
+  function evaluateConvergenceWindow(subSamples, minSettleTau) {
+    if (!subSamples || subSamples.length === 0) return { status: 'EVOLVING', finite: true };
+    const nS = subSamples.length;
+    for (let s = 0; s < nS; s++) {
+      if (!subSamples[s].finite) {
+        convStatus = 'FAILED';
+        convStableWindows = 0;
+        convLastDetail = 'FAILED: non-finite or diverged amplitude';
+        const rec = {
+          idx: convHistory.length + 1, tUs: +simTimeUs().toFixed(5), dtWindowUs: convWindowUs,
+          status: 'FAILED', domMode: -1, domAmp: NaN, secMode: -1, secAmp: NaN,
+          maxAbsDrift: NaN, maxRelDrift: NaN, maxTempStd: NaN, maxRelStd: NaN,
+          maxPhaseDriftRad: NaN, thermalSigma: temperatureK > 0 ? +thermalRmsAmp().toFixed(6) : 0,
+          compRatio: NaN, phaseSlip: true, tone2Released
+        };
+        convHistory.push(rec);
+        if (convHistory.length > 400) convHistory.shift();
+        return rec;
+      }
+    }
+
+    const meanAmps = new Float64Array(M), stdAmps = new Float64Array(M);
+    let domMode = 0, domAmp = 0, secMode = -1, secAmp = 0;
+    let maxTempStd = 0, maxRelStd = 0;
+    for (let m = 0; m < M; m++) {
+      let sum = 0, sumSq = 0;
+      for (let s = 0; s < nS; s++) {
+        const v = subSamples[s].amps[m];
+        sum += v; sumSq += v * v;
+      }
+      const mean = sum / nS;
+      const std = Math.sqrt(Math.max(0, sumSq / nS - mean * mean));
+      meanAmps[m] = mean; stdAmps[m] = std;
+      if (mean > domAmp) { secMode = domMode; secAmp = domAmp; domMode = m; domAmp = mean; }
+      else if (mean > secAmp) { secMode = m; secAmp = mean; }
+      if (std > maxTempStd && (mean >= 0.004 || temperatureK === 0)) maxTempStd = std;
+      const thSigMode = temperatureK > 0 ? thermalRmsAmp() : 0;
+      const activeRelFloor = temperatureK > 0 ? Math.max(0.006, 8 * thSigMode) : 0.005;
+      if (mean >= activeRelFloor) {
+        const effStd = Math.max(0, std - 1.4 * thSigMode);
+        const rStd = effStd / Math.max(activeRelFloor, mean, 0.25 * domAmp);
+        if (rStd > maxRelStd) maxRelStd = rStd;
+      }
+    }
+
+    const first = subSamples[0], last = subSamples[nS - 1];
+    const thSig = temperatureK > 0 ? thermalRmsAmp() : 0;
+    const absTol = Math.max(8e-5, 2.0 * thSig);
+    const relTol = temperatureK > 0 ? 0.022 : 0.008;
+    const relStdTol = temperatureK > 0 ? 0.055 : 0.020;
+    const activeRelFloor = temperatureK > 0 ? Math.max(0.006, 8 * thSig) : 0.005;
+
+    let maxAbsDrift = 0, maxRelDrift = 0;
+    if (convLastWindow) {
+      for (let m = 0; m < M; m++) {
+        const diff = Math.abs(meanAmps[m] - convLastWindow.amps[m]);
+        if (diff > maxAbsDrift) maxAbsDrift = diff;
+        const effDiff = Math.max(0, diff - 0.8 * thSig);
+        if (meanAmps[m] >= activeRelFloor || convLastWindow.amps[m] >= activeRelFloor) {
+          const rel = effDiff / Math.max(activeRelFloor, meanAmps[m], 0.25 * domAmp);
+          if (rel > maxRelDrift) maxRelDrift = rel;
+        } else if (temperatureK === 0) {
+          const rel = diff / Math.max(0.005, meanAmps[m]);
+          if (rel > maxRelDrift) maxRelDrift = rel;
+        }
+      }
+    } else {
+      maxAbsDrift = maxTempStd;
+      maxRelDrift = maxRelStd;
+    }
+
+    // Rotating-frame phase evolution across the window (relative to active half-pump or direct carrier)
+    const dPhi1Tot = last.phi1 - first.phi1, dPhi2Tot = last.phi2 - first.phi2;
+    const dRef1 = driveMode === 'parallel' ? 0.5 * dPhi1Tot : dPhi1Tot;
+    const dRef2 = driveMode === 'parallel' ? 0.5 * dPhi2Tot : dPhi2Tot;
+    let maxPhaseDriftRad = 0, phaseSlip = false;
+    const activePhaseSig = Math.max(0.005, 5 * thSig);
+    for (let m = 0; m < M; m++) {
+      if (meanAmps[m] < activePhaseSig) continue;
+      let dTheta = last.phases[m] - first.phases[m];
+      const fDiff1 = (driveFreq > 0 && tone1EnvAt(simTime) > 0.01) ? Math.abs(dTheta - dRef1) : Infinity;
+      const err1 = Math.abs(((dTheta - dRef1 + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI);
+      let errMin = (driveAmp > 1e-6 && tone1EnvAt(simTime) > 0.01) ? err1 : Infinity;
+      if (dualTone && driveAmp2 > 1e-6 && tone2EnvAt(simTime) > 0.01) {
+        const err2 = Math.abs(((dTheta - dRef2 + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI);
+        if (err2 < errMin) errMin = err2;
+      }
+      if (Number.isFinite(errMin) && errMin > maxPhaseDriftRad) maxPhaseDriftRad = errMin;
+      if (Number.isFinite(errMin) && errMin > 0.45 && meanAmps[m] >= 0.008) phaseSlip = true;
+    }
+
+    const compRatio = domAmp > 1e-6 ? secAmp / domAmp : 0;
+    const leaderSwitched = !!(convLastWindow && convLastWindow.domMode !== domMode && domAmp > 0.005 && convLastWindow.domAmp > 0.005);
+    const exchTol = Math.max(2 * absTol, 0.0003);
+    const antiCorrelatedExchange = !!(convLastWindow && secMode >= 0 && secAmp > Math.max(0.005, 0.15 * domAmp) && domAmp > 0.005 &&
+      Math.abs(meanAmps[domMode] - convLastWindow.amps[domMode]) > exchTol &&
+      Math.abs(meanAmps[secMode] - convLastWindow.amps[secMode]) > exchTol &&
+      ((meanAmps[domMode] - convLastWindow.amps[domMode]) * (meanAmps[secMode] - convLastWindow.amps[secMode]) < 0));
+    const isCompeting = leaderSwitched || antiCorrelatedExchange ||
+      (secAmp > Math.max(0.005, 0.30 * domAmp) && (maxRelDrift > relTol || maxRelStd > 0.03));
+
+    const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + usToTau(convMinSettleUs));
+    const settled = !!convLastWindow && simTime >= minSettleTau && waitReady &&
+      maxAbsDrift < absTol && maxRelDrift < relTol && maxRelStd < relStdTol && !phaseSlip;
+
+    let nextStatus = 'EVOLVING';
+    if (isCompeting) {
+      convStableWindows = 0;
+      nextStatus = 'MODE COMPETITION';
+    } else if (settled) {
+      convStableWindows++;
+      nextStatus = convStableWindows >= 2 ? 'CONVERGED' : 'EVOLVING';
+    } else {
+      convStableWindows = 0;
+      nextStatus = 'EVOLVING';
+    }
+
+    convStatus = nextStatus;
+    convLastWindow = {
+      tUs: last.tUs, amps: meanAmps, domMode, domAmp, secMode, secAmp
+    };
+    const dtWin = Math.max(0, last.tUs - first.tUs);
+    convLastDetail = `${nextStatus} · m${domMode}=${domAmp.toFixed(4)} Δrel=${(maxRelDrift * 100).toFixed(2)}% w=${convHistory.length + 1}`;
+    const rec = {
+      idx: convHistory.length + 1,
+      tUs: +last.tUs.toFixed(5),
+      dtWindowUs: +dtWin.toFixed(4),
+      status: nextStatus,
+      domMode,
+      domAmp: +domAmp.toFixed(6),
+      secMode,
+      secAmp: +secAmp.toFixed(6),
+      maxAbsDrift: +maxAbsDrift.toFixed(6),
+      maxRelDrift: +maxRelDrift.toFixed(6),
+      maxTempStd: +maxTempStd.toFixed(6),
+      maxRelStd: +maxRelStd.toFixed(6),
+      maxPhaseDriftRad: +maxPhaseDriftRad.toFixed(4),
+      thermalSigma: +thSig.toFixed(6),
+      compRatio: +compRatio.toFixed(4),
+      phaseSlip,
+      tone2Released
+    };
+    convHistory.push(rec);
+    if (convHistory.length > 400) convHistory.shift();
+    return rec;
+  }
+
+  function fastForwardSteadyState(arg = 240000) {
+    const isOpts = arg && typeof arg === 'object';
+    const opts = isOpts ? arg : { maxSteps: arg };
+    const dt = Number.isFinite(opts.dt) && opts.dt > 0 ? opts.dt : 0.65;
+    const winUs = Number.isFinite(opts.windowUs) && opts.windowUs > 0 ? opts.windowUs : convWindowUs;
+    const minSetUs = Number.isFinite(opts.minSettleUs) && opts.minSettleUs >= 0 ? opts.minSettleUs : convMinSettleUs;
+    const maxSteps = Number.isFinite(opts.maxSteps) && opts.maxSteps > 0 ? opts.maxSteps : Math.round(usToTau(Number.isFinite(opts.maxUs) ? opts.maxUs : convMaxUs) / dt);
+
     let maxA = 0; for (let m = 0; m < M; m++) maxA = Math.max(maxA, cycleAvgModeAmp(m));
     if (maxA < 1e-4 && temperatureK === 0 && (driveAmp > 0 || (dualTone && driveAmp2 > 0))) seedSpins(0.004);
     const delayTau = (dualTone && driveAmp2 > 0 && !tone2WaitSS && tone2DelayNs > 0) ? usToTau(tone2DelayNs) : 0;
-    const minSettleTau = Math.max(simTime, delayTau) + usToTau(1.2);
-    const chunk = 600, dt = 0.65;
-    let prev = MODE_SPECS.map((_, m) => modeRmsAmp(m));
-    let stable = 0;
-    const diffTol = temperatureK > 0 ? Math.max(6e-5, 0.8 * thermalRmsAmp()) : 5e-5;
-    for (let k = 0; k < maxSteps; k += chunk) {
-      for (let s = 0; s < chunk; s++) stepLlg(dt, true);
-      recordPlotSample();
-      const cur = MODE_SPECS.map((_, m) => modeRmsAmp(m));
-      let maxDiff = 0, maxRel = 0;
-      for (let m = 0; m < M; m++) {
-        const diff = Math.abs(cur[m] - prev[m]);
-        if (cur[m] >= 0.004 || temperatureK === 0) { if (diff > maxDiff) maxDiff = diff; }
-        const rel = diff / Math.max(0.005, cur[m]); if (rel > maxRel) maxRel = rel;
+    const minSettleTau = Math.max(simTime, delayTau) + usToTau(minSetUs);
+
+    const winSteps = Math.max(240, Math.min(Math.max(240, Math.floor(maxSteps / 4)), Math.round(usToTau(winUs) / dt)));
+    const subCount = 6;
+    const subSteps = Math.max(40, Math.floor(winSteps / subCount));
+    let stepsDone = 0;
+    convStableWindows = 0;
+
+    while (stepsDone < maxSteps) {
+      const subSamples = [];
+      for (let c = 0; c < subCount && stepsDone < maxSteps; c++) {
+        const todo = Math.min(subSteps, maxSteps - stepsDone);
+        for (let s = 0; s < todo; s++) stepLlg(dt, true);
+        stepsDone += todo;
+        recordPlotSample();
+        subSamples.push(captureConvSubSample());
+        if (!subSamples[subSamples.length - 1].finite) break;
       }
-      prev = cur;
-      const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + usToTau(1.2));
-      if (simTime >= minSettleTau && waitReady && maxDiff < diffTol && maxRel < 0.004) { if (++stable >= 4) break; } else stable = 0;
+      const res = evaluateConvergenceWindow(subSamples, minSettleTau);
+      if (res.status === 'FAILED' || res.status === 'CONVERGED') break;
+      if (isOpts && Number.isFinite(opts.maxUs) && simTimeUs() >= (opts.tStartUs || 0) + opts.maxUs - 1e-6) break;
+    }
+
+    if (convStatus !== 'CONVERGED' && convStatus !== 'FAILED') {
+      if (convStatus !== 'MODE COMPETITION') convStatus = 'TIMEOUT';
+      convLastDetail = `${convStatus} @ ${simTimeUs().toFixed(2)}µs (${convHistory.length} win)`;
     }
     reconstructSpatialSpins();
     updateSpectrum();
     drawScene();
+    const lastW = convHistory.length ? convHistory[convHistory.length - 1] : null;
+    return {
+      status: convStatus,
+      converged: convStatus === 'CONVERGED',
+      timedOut: convStatus === 'TIMEOUT' || (convStatus === 'MODE COMPETITION' && stepsDone >= maxSteps),
+      simTimeUs: simTimeUs(),
+      domMode: lastW ? lastW.domMode : -1,
+      domAmp: lastW ? lastW.domAmp : 0,
+      secMode: lastW ? lastW.secMode : -1,
+      secAmp: lastW ? lastW.secAmp : 0,
+      windows: convHistory.length,
+      convHistory: convHistory.slice()
+    };
   }
+
+  function buildConvHistoryExport() {
+    return {
+      schema: 'spin-waves-convergence-v1',
+      exportedAt: new Date().toISOString(),
+      solver: isRwaFast() ? 'RWA Fast' : 'Full NMM',
+      terms: { ...terms },
+      config: { convWindowUs, convMinSettleUs, convMaxUs, damping, temperatureK, thermalSeed, driveMode, driveFreq, driveAmpMT: +(driveAmp * MU0_MS_MT).toFixed(4), dualTone, driveFreq2, driveAmp2MT: +(driveAmp2 * MU0_MS_MT).toFixed(4), tone2WaitSS, tone2DelayUs: tone2DelayNs },
+      finalStatus: convStatus,
+      simTimeUs: +simTimeUs().toFixed(5),
+      windowCount: convHistory.length,
+      primary2usReport: primary2usLastReport,
+      convHistory: convHistory.slice()
+    };
+  }
+
+  function exportConvHistoryJson() {
+    const payload = buildConvHistoryExport();
+    try {
+      const json = JSON.stringify(payload, null, 2);
+      if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `spin-waves-conv-${payload.finalStatus.toLowerCase().replace(/\s+/g, '_')}.json`;
+        if (document.body && document.body.appendChild) document.body.appendChild(a);
+        if (typeof a.click === 'function') a.click();
+        if (a.remove) a.remove();
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
+      }
+      showLogToast('CONV EXPORT', `Exported ${payload.windowCount} physical convergence windows (${payload.finalStatus}).`);
+    } catch (err) {
+      recordLogError('conv_export_failed', err && err.message ? err.message : String(err));
+    }
+    return payload;
+  }
+
+  function runPrimary2usExperiment(opts = {}) {
+    const cfg = {
+      preset: opts.preset || 'param',
+      fullNmm: !!opts.fullNmm,
+      tempK: Number.isFinite(opts.tempK) ? opts.tempK : 0,
+      seed: Number.isFinite(opts.seed) ? opts.seed : 20260101,
+      durUs: Number.isFinite(opts.durUs) && opts.durUs > 0 ? opts.durUs : 2.0,
+      windowUs: Number.isFinite(opts.windowUs) && opts.windowUs > 0 ? opts.windowUs : 0.20,
+      minSettleUs: Number.isFinite(opts.minSettleUs) && opts.minSettleUs >= 0 ? opts.minSettleUs : 0.80,
+      dt: Number.isFinite(opts.dt) && opts.dt > 0 ? opts.dt : 0.65
+    };
+    setNmmMode(cfg.fullNmm);
+    reseedRng(cfg.seed);
+    temperatureK = cfg.tempK;
+    convWindowUs = cfg.windowUs;
+    convMinSettleUs = cfg.minSettleUs;
+    applyPreset(cfg.preset);
+    if (Number.isFinite(opts.damping) && opts.damping > 0) damping = opts.damping;
+    if (cfg.tempK > 0) seedSpins('thermal');
+
+    const dt = cfg.dt;
+    const totalSteps = Math.round(usToTau(cfg.durUs) / dt);
+    const winSteps = Math.max(120, Math.round(usToTau(cfg.windowUs) / dt));
+    const subCount = 6;
+    const subSteps = Math.max(20, Math.floor(winSteps / subCount));
+    const minSettleTau = usToTau(cfg.minSettleUs);
+    let done = 0;
+    convStableWindows = 0;
+    while (done < totalSteps) {
+      const subSamples = [];
+      for (let c = 0; c < subCount && done < totalSteps; c++) {
+        const todo = Math.min(subSteps, totalSteps - done);
+        for (let s = 0; s < todo; s++) stepLlg(dt, true);
+        done += todo;
+        recordPlotSample();
+        subSamples.push(captureConvSubSample());
+        if (!subSamples[subSamples.length - 1].finite) break;
+      }
+      evaluateConvergenceWindow(subSamples, minSettleTau);
+      if (convStatus === 'FAILED') break;
+    }
+    if (convStatus !== 'CONVERGED' && convStatus !== 'FAILED' && convStatus !== 'MODE COMPETITION') {
+      convStatus = 'TIMEOUT';
+    }
+    holdPlotWin = true;
+    reconstructSpatialSpins();
+    updateSpectrum();
+    drawModeTimePlot();
+    drawScene();
+    syncUi();
+    const lastW = convHistory.length ? convHistory[convHistory.length - 1] : null;
+    primary2usLastReport = {
+      config: cfg,
+      simTimeUs: +simTimeUs().toFixed(5),
+      finalStatus: convStatus,
+      domMode: lastW ? lastW.domMode : -1,
+      domAmp: lastW ? lastW.domAmp : 0,
+      secMode: lastW ? lastW.secMode : -1,
+      secAmp: lastW ? lastW.secAmp : 0,
+      windows: convHistory.length,
+      convHistory: convHistory.slice()
+    };
+    recordLogEvent('experiment', `Primary ${cfg.durUs}us Run (${convStatus})`, { preset: cfg.preset, fullNmm: cfg.fullNmm, tempK: cfg.tempK, domMode: primary2usLastReport.domMode });
+    return primary2usLastReport;
+  }
+
+  // Genuine state-carrying Continuous-Wave (CW) frequency sweep (carries full aRe, aIm & integral carrier phase)
+  function cwBuildFreqList(fStart = cwSweep.fStartGHz, fEnd = cwSweep.fEndGHz, stepMHz = cwSweep.stepMHz, dir = cwSweep.dir) {
+    const stepG = Math.max(0.0002, Math.abs(stepMHz) * 1e-3);
+    const fLo = Math.min(fStart, fEnd), fHi = Math.max(fStart, fEnd);
+    const up = [];
+    for (let f = fLo; f <= fHi + 1e-7; f += stepG) up.push(+f.toFixed(6));
+    if (up.length === 0) up.push(+fLo.toFixed(6));
+    const down = up.slice().reverse();
+    if (dir === 'up') return up.map(fGHz => ({ dir: 'up', fGHz }));
+    if (dir === 'down') return down.map(fGHz => ({ dir: 'down', fGHz }));
+    return up.map(fGHz => ({ dir: 'up', fGHz })).concat(down.map(fGHz => ({ dir: 'down', fGHz })));
+  }
+
+  function cwIntegrateStep(pt, opts = {}) {
+    const dwellUs = Math.max(0.01, Number.isFinite(opts.dwellUs) ? opts.dwellUs : cwSweep.dwellUs);
+    const rateGHzUs = Math.max(0, Number.isFinite(opts.rateGHzUs) ? opts.rateGHzUs : cwSweep.rateGHzUs);
+    const dt = Number.isFinite(opts.dt) && opts.dt > 0 ? opts.dt : 0.65;
+    const phiBefore = carrierPhase1;
+    const df = Math.abs(pt.fGHz - driveFreq);
+    const rampUs = (rateGHzUs > 0 && df > 1e-7) ? (df / rateGHzUs) : 0;
+    if (df > 1e-7) rampDriveParams({ driveFreq: pt.fGHz }, rampUs * 1000);
+    const totalUs = rampUs + dwellUs;
+    const totalSteps = Math.max(120, Math.round(usToTau(totalUs) / dt));
+    const measStart = Math.round(totalSteps * (rampUs + 0.6 * dwellUs) / Math.max(1e-9, totalUs));
+    let sumDom = 0, sumSqDom = 0, nMeas = 0;
+    const sumModes = new Float64Array(M);
+    for (let s = 0; s < totalSteps; s++) {
+      stepLlg(dt, true);
+      if (s >= measStart) {
+        for (let m = 0; m < M; m++) sumModes[m] += cycleAvgModeAmp(m);
+        nMeas++;
+      }
+    }
+    recordPlotSample();
+    let domMode = 0, ampMean = 0;
+    const denom = Math.max(1, nMeas);
+    for (let m = 0; m < M; m++) {
+      const am = sumModes[m] / denom;
+      if (am > ampMean) { ampMean = am; domMode = m; }
+    }
+    const ampEnd = cycleAvgModeAmp(domMode);
+    const ptOut = {
+      dir: pt.dir,
+      fGHz: +pt.fGHz.toFixed(6),
+      ampMean: +ampMean.toFixed(6),
+      ampEnd: +ampEnd.toFixed(6),
+      domMode,
+      a13: +(sumModes[13] / denom).toFixed(6),
+      a16: +(sumModes[16] / denom).toFixed(6),
+      a27: +(sumModes[27] / denom).toFixed(6),
+      phiStart: +phiBefore.toFixed(4),
+      phiEnd: +carrierPhase1.toFixed(4),
+      tUs: +simTimeUs().toFixed(5)
+    };
+    if (pt.dir === 'up') cwSweep.upPts.push(ptOut);
+    else cwSweep.downPts.push(ptOut);
+    return ptOut;
+  }
+
+  function readCwInputsFromDom() {
+    const f1El = document.getElementById('inCwFStart'), f2El = document.getElementById('inCwFEnd');
+    const stEl = document.getElementById('inCwStepMHz'), dwEl = document.getElementById('inCwDwellUs'), rtEl = document.getElementById('inCwRateGHzUs');
+    if (f1El) cwSweep.fStartGHz = Math.max(1.65, Math.min(4.30, Number(f1El.value) || 3.940));
+    if (f2El) cwSweep.fEndGHz = Math.max(1.65, Math.min(4.30, Number(f2El.value) || 3.972));
+    if (stEl) cwSweep.stepMHz = Math.max(0.2, Math.min(20.0, Number(stEl.value) || 2.0));
+    if (dwEl) cwSweep.dwellUs = Math.max(0.02, Math.min(2.0, Number(dwEl.value) || 0.20));
+    if (rtEl) cwSweep.rateGHzUs = Math.max(0, Math.min(5.0, Number(rtEl.value) || 0));
+  }
+
+  function runCwFreqSweepSync(opts = {}) {
+    if (cwSweep.lastTimer) { clearTimeout(cwSweep.lastTimer); cwSweep.lastTimer = 0; }
+    cwSweep.running = false; cwSweep.abort = false;
+    const fStart = Number.isFinite(opts.fStartGHz) ? opts.fStartGHz : cwSweep.fStartGHz;
+    const fEnd = Number.isFinite(opts.fEndGHz) ? opts.fEndGHz : cwSweep.fEndGHz;
+    const stepMHz = Number.isFinite(opts.stepMHz) ? opts.stepMHz : cwSweep.stepMHz;
+    const dwellUs = Number.isFinite(opts.dwellUs) ? opts.dwellUs : cwSweep.dwellUs;
+    const rateGHzUs = Number.isFinite(opts.rateGHzUs) ? opts.rateGHzUs : cwSweep.rateGHzUs;
+    const dir = opts.dir || cwSweep.dir || 'updown';
+    cwSweep.dir = dir; cwSweep.fStartGHz = fStart; cwSweep.fEndGHz = fEnd;
+    cwSweep.stepMHz = stepMHz; cwSweep.dwellUs = dwellUs; cwSweep.rateGHzUs = rateGHzUs;
+    cwSweep.upPts = []; cwSweep.downPts = [];
+    const pts = cwBuildFreqList(fStart, fEnd, stepMHz, dir);
+    cwSweep.totalSteps = pts.length;
+    // Never reset modal state between points; only optionally seed tiny perturbation BEFORE start if identically zero
+    let curMax = 0; for (let m = 0; m < M; m++) curMax = Math.max(curMax, Math.hypot(aRe[m], aIm[m]));
+    if (curMax < 1e-6 && opts.seedIfZero !== false && (driveAmp > 0 || (dualTone && driveAmp2 > 0))) {
+      const tiny = temperatureK > 0 ? 'thermal' : 1e-5;
+      if (tiny === 'thermal') seedSpins('thermal');
+      else { aRe[closestArnoldMode(pts[0].fGHz)] = tiny; }
+    }
+    for (let i = 0; i < pts.length; i++) {
+      cwSweep.stepIdx = i + 1;
+      cwIntegrateStep(pts[i], { dwellUs, rateGHzUs, dt: opts.dt || 0.65 });
+    }
+    cwSweep.status = 'DONE';
+    reconstructSpatialSpins();
+    updateSpectrum();
+    drawScene();
+    drawCwSweepPlot();
+    syncUi();
+    return {
+      dir, fStartGHz: fStart, fEndGHz: fEnd, stepMHz, dwellUs, rateGHzUs,
+      upPts: cwSweep.upPts.slice(), downPts: cwSweep.downPts.slice()
+    };
+  }
+
+  function stopCwSweepRun() {
+    if (cwSweep.lastTimer) { clearTimeout(cwSweep.lastTimer); cwSweep.lastTimer = 0; }
+    cwSweep.abort = true; cwSweep.running = false;
+    if (cwSweep.upPts.length + cwSweep.downPts.length > 0) cwSweep.status = 'DONE';
+    syncUi();
+    drawCwSweepPlot();
+  }
+
+  function startCwSweepRun(dir = 'updown') {
+    readCwInputsFromDom();
+    if (cwSweep.lastTimer) { clearTimeout(cwSweep.lastTimer); cwSweep.lastTimer = 0; }
+    cwSweep.dir = dir; cwSweep.running = true; cwSweep.abort = false;
+    cwSweep.upPts = []; cwSweep.downPts = [];
+    const pts = cwBuildFreqList(cwSweep.fStartGHz, cwSweep.fEndGHz, cwSweep.stepMHz, dir);
+    cwSweep.totalSteps = pts.length; cwSweep.stepIdx = 0; cwSweep.status = 'RUN';
+    let curMax = 0; for (let m = 0; m < M; m++) curMax = Math.max(curMax, Math.hypot(aRe[m], aIm[m]));
+    if (curMax < 1e-6 && (driveAmp > 0 || (dualTone && driveAmp2 > 0))) {
+      const m0 = closestArnoldMode(pts[0].fGHz);
+      if (temperatureK > 0) seedSpins('thermal');
+      else { aRe[m0] = 1e-5; syncCarrierPhaseToSimTime(simTime); }
+    }
+    syncUi();
+    function nextCwChunk() {
+      if (cwSweep.abort || !cwSweep.running) return;
+      if (cwSweep.stepIdx >= pts.length) {
+        cwSweep.running = false; cwSweep.status = 'DONE';
+        reconstructSpatialSpins(); updateSpectrum(); drawScene(); drawCwSweepPlot(); syncUi();
+        return;
+      }
+      cwIntegrateStep(pts[cwSweep.stepIdx], {});
+      cwSweep.stepIdx++;
+      if (cwSweep.stepIdx % 2 === 0 || cwSweep.stepIdx === pts.length) {
+        reconstructSpatialSpins(); drawScene();
+      }
+      drawCwSweepPlot();
+      syncUi();
+      cwSweep.lastTimer = setTimeout(nextCwChunk, 8);
+    }
+    cwSweep.lastTimer = setTimeout(nextCwChunk, 8);
+  }
+
+  function drawCwSweepPlot() {
+    const canvas = document.getElementById('cwSweepCanvas');
+    if (!canvas || !canvas.getContext) return;
+    const c = canvas.getContext('2d');
+    const { w, h } = prepHiDpiCanvas(canvas, c, 460, 112);
+    c.clearRect(0, 0, w, h);
+    c.fillStyle = '#040812';
+    c.fillRect(0, 0, w, h);
+    const padL = 38, padR = 10, padT = 12, padB = 20;
+    const pw = Math.max(40, w - padL - padR), ph = Math.max(30, h - padT - padB);
+    const allPts = cwSweep.upPts.concat(cwSweep.downPts);
+    const fLo = Math.min(cwSweep.fStartGHz, cwSweep.fEndGHz), fHi = Math.max(cwSweep.fStartGHz, cwSweep.fEndGHz, fLo + 1e-3);
+    let yMax = 0.04;
+    for (const p of allPts) yMax = Math.max(yMax, p.ampMean * 1.15);
+    yMax = quantizePlotTop(yMax);
+
+    c.strokeStyle = 'rgba(180,210,255,0.12)';
+    c.lineWidth = 1;
+    for (let g = 0; g <= 3; g++) {
+      const yy = padT + (ph * g) / 3;
+      c.beginPath(); c.moveTo(padL, yy); c.lineTo(padL + pw, yy); c.stroke();
+    }
+    const fx = f => padL + ((f - fLo) / (fHi - fLo)) * pw;
+    const fy = a => padT + ph - (Math.max(0, a) / yMax) * ph;
+
+    // Shaded hysteresis gap when both passes exist
+    if (cwSweep.upPts.length >= 2 && cwSweep.downPts.length >= 2) {
+      c.fillStyle = 'rgba(167,139,250,0.14)';
+      c.beginPath();
+      cwSweep.upPts.forEach((p, idx) => idx === 0 ? c.moveTo(fx(p.fGHz), fy(p.ampMean)) : c.lineTo(fx(p.fGHz), fy(p.ampMean)));
+      cwSweep.downPts.slice().sort((a, b) => b.fGHz - a.fGHz).forEach(p => c.lineTo(fx(p.fGHz), fy(p.ampMean)));
+      c.closePath();
+      c.fill();
+    }
+    const drawLeg = (pts, col) => {
+      if (!pts.length) return;
+      c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 1.7;
+      c.beginPath();
+      pts.forEach((p, i) => i === 0 ? c.moveTo(fx(p.fGHz), fy(p.ampMean)) : c.lineTo(fx(p.fGHz), fy(p.ampMean)));
+      c.stroke();
+      pts.forEach(p => { c.beginPath(); c.arc(fx(p.fGHz), fy(p.ampMean), 2.1, 0, 2 * Math.PI); c.fill(); });
+    };
+    drawLeg(cwSweep.upPts, '#38bdf8');
+    drawLeg(cwSweep.downPts, '#fbbf24');
+
+    c.fillStyle = 'rgba(205,226,255,0.72)';
+    c.font = '8px ui-monospace, SFMono-Regular, Menlo, monospace';
+    c.textAlign = 'right';
+    c.fillText(yMax.toFixed(2), padL - 3, padT + 7);
+    c.fillText('0.00', padL - 3, padT + ph + 3);
+    c.textAlign = 'left'; c.fillText(`${fLo.toFixed(3)}G`, padL, h - 5);
+    c.textAlign = 'right'; c.fillText(`${fHi.toFixed(3)}G`, padL + pw, h - 5);
+    c.fillStyle = '#38bdf8'; c.fillText('↑ Up', padL + 42, padT + 9);
+    c.fillStyle = '#fbbf24'; c.fillText('↓ Down', padL + 90, padT + 9);
+
+    const rdEl = document.getElementById('cwSweepReadout');
+    if (rdEl && allPts.length) {
+      let maxGap = 0, gapF = 0;
+      for (const u of cwSweep.upPts) {
+        const d = cwSweep.downPts.find(x => Math.abs(x.fGHz - u.fGHz) < 1e-4);
+        if (d) {
+          const g = Math.abs(u.ampMean - d.ampMean);
+          if (g > maxGap) { maxGap = g; gapF = u.fGHz; }
+        }
+      }
+      const last = allPts[allPts.length - 1];
+      rdEl.textContent = `State-carried ${allPts.length} pts · last m${last.domMode}=${last.ampMean.toFixed(4)} @ ${last.fGHz.toFixed(3)}G` +
+        (cwSweep.upPts.length && cwSweep.downPts.length ? ` · max |↑−↓| = ${maxGap.toFixed(4)} @ ${gapF.toFixed(3)}G` : '');
+    }
+  }
+
+  function exportCwSweepData() {
+    const payload = {
+      schema: 'spin-waves-cw-hysteresis-v1',
+      exportedAt: new Date().toISOString(),
+      solver: isRwaFast() ? 'RWA Fast' : 'Full NMM',
+      damping, temperatureK, driveAmpMT: +(driveAmp * MU0_MS_MT).toFixed(4),
+      config: { dir: cwSweep.dir, fStartGHz: cwSweep.fStartGHz, fEndGHz: cwSweep.fEndGHz, stepMHz: cwSweep.stepMHz, dwellUs: cwSweep.dwellUs, rateGHzUs: cwSweep.rateGHzUs },
+      upPts: cwSweep.upPts, downPts: cwSweep.downPts
+    };
+    try {
+      const json = JSON.stringify(payload, null, 2);
+      if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'spin-waves-cw-hysteresis.json';
+        if (document.body && document.body.appendChild) document.body.appendChild(a);
+        if (typeof a.click === 'function') a.click();
+        if (a.remove) a.remove();
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
+      }
+      showLogToast('CW EXPORT', `Exported ${cwSweep.upPts.length}↑ + ${cwSweep.downPts.length}↓ continuous CW sweep points.`);
+    } catch (_) {}
+    return payload;
+  }
+
+  const inConvWinEl = document.getElementById('inConvWinUs');
+  if (inConvWinEl) inConvWinEl.addEventListener('change', e => { convWindowUs = Math.max(0.05, Math.min(2.0, Number(e.target.value) || 0.20)); syncUi(); });
+  const inConvMinEl = document.getElementById('inConvMinUs');
+  if (inConvMinEl) inConvMinEl.addEventListener('change', e => { convMinSettleUs = Math.max(0.10, Math.min(5.0, Number(e.target.value) || 0.80)); syncUi(); });
+  const inConvMaxEl = document.getElementById('inConvMaxUs');
+  if (inConvMaxEl) inConvMaxEl.addEventListener('change', e => { convMaxUs = Math.max(0.50, Math.min(20.0, Number(e.target.value) || 6.0)); syncUi(); });
+  const btnPrimary2usEl = document.getElementById('btnRunPrimary2us');
+  if (btnPrimary2usEl) btnPrimary2usEl.addEventListener('click', () => {
+    const rep = runPrimary2usExperiment({ windowUs: convWindowUs, minSettleUs: convMinSettleUs });
+    announcePress('Primary 2µs Run', `Reproducible 2.0 µs run completed (${rep.finalStatus}): m${rep.domMode}=${rep.domAmp.toFixed(4)} across ${rep.windows} windows.`);
+  });
+  const btnExpConvEl = document.getElementById('btnExportConvJson');
+  if (btnExpConvEl) btnExpConvEl.addEventListener('click', () => {
+    exportConvHistoryJson();
+    announcePress('Export Conv JSON', 'Exported multi-window physical-time convergence history JSON.');
+  });
+  const btnCwUpEl = document.getElementById('btnCwSweepUp');
+  if (btnCwUpEl) btnCwUpEl.addEventListener('click', () => { startCwSweepRun('up'); announcePress('CW ↑ Sweep', 'Started upward continuous CW frequency sweep preserving complex modal amplitudes & carrier phase.'); });
+  const btnCwDnEl = document.getElementById('btnCwSweepDown');
+  if (btnCwDnEl) btnCwDnEl.addEventListener('click', () => { startCwSweepRun('down'); announcePress('CW ↓ Sweep', 'Started downward continuous CW frequency sweep preserving complex modal amplitudes & carrier phase.'); });
+  const btnCwLpEl = document.getElementById('btnCwSweepLoop');
+  if (btnCwLpEl) btnCwLpEl.addEventListener('click', () => { startCwSweepRun('updown'); announcePress('CW ↕ Hysteresis Loop', 'Started upward→downward continuous CW sweep measuring magnetic hysteresis.'); });
+  const btnCwStEl = document.getElementById('btnCwSweepStop');
+  if (btnCwStEl) btnCwStEl.addEventListener('click', () => stopCwSweepRun());
+  const btnCwExEl = document.getElementById('btnCwSweepExport');
+  if (btnCwExEl) btnCwExEl.addEventListener('click', () => exportCwSweepData());
   function toggleFastForward() {
     fastForwarding = !fastForwarding;
     if (fastForwarding) {
@@ -7193,23 +7831,33 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
           for (let s = 0; s < steps; s++) stepLlg(dtFast, true);
           reconstructSpatialSpins();
           ffFrames++;
+          if (!convSubAccum) convSubAccum = [];
+          const subSnap = captureConvSubSample();
+          convSubAccum.push(subSnap);
           const delayTau = (dualTone && driveAmp2 > 0 && !tone2WaitSS && tone2DelayNs > 0) ? usToTau(tone2DelayNs) : 0;
-          const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + usToTau(1.0));
-          const ffTol = temperatureK > 0 ? Math.max(8e-5, 0.8 * thermalRmsAmp()) : 8e-5;
-          let maxDiff = 0, maxRel = 0;
-          for (let m = 0; m < M; m++) {
-            const cur = modeRmsAmp(m);
-            const diff = Math.abs(cur - ffPrev[m]);
-            if (cur >= 0.004 || temperatureK === 0) { if (diff > maxDiff) maxDiff = diff; }
-            const rel = diff / Math.max(0.005, cur); if (rel > maxRel) maxRel = rel;
-            ffPrev[m] = cur;
+          const minSettleTau = Math.max(delayTau, 0) + usToTau(convMinSettleUs);
+          if (!subSnap.finite) {
+            evaluateConvergenceWindow(convSubAccum, minSettleTau);
+            convSubAccum = null;
+            fastForwarding = false;
+            syncUi();
+          } else if (convSubAccum.length >= 4 && (convSubAccum[convSubAccum.length - 1].tUs - convSubAccum[0].tUs) >= convWindowUs) {
+            const winRes = evaluateConvergenceWindow(convSubAccum, minSettleTau);
+            convSubAccum = [];
+            if (winRes.status === 'CONVERGED' || winRes.status === 'FAILED') {
+              fastForwarding = false;
+              syncUi();
+            } else if (simTimeUs() >= convMaxUs && ffFrames >= 40) {
+              if (convStatus !== 'MODE COMPETITION' && convStatus !== 'FAILED') convStatus = 'TIMEOUT';
+              fastForwarding = false;
+              syncUi();
+            }
           }
-          const relTol = (dualTone && simTime >= delayTau + usToTau(1.8)) ? 0.012 : 0.006;
-          const absTol = (dualTone && simTime >= delayTau + usToTau(1.8)) ? Math.max(ffTol, 1e-3) : ffTol;
-          if (ffFrames >= 10 && simTime >= delayTau + usToTau(1.0) && waitReady && maxDiff < absTol && maxRel < relTol) {
-            if (++ffStable >= 4) { fastForwarding = false; syncUi(); }
-          } else ffStable = 0;
-          if (fastForwarding && ffFrames >= 3000) { fastForwarding = false; syncUi(); }
+          if (fastForwarding && ffFrames >= 6000) {
+            if (convStatus !== 'MODE COMPETITION' && convStatus !== 'FAILED') convStatus = 'TIMEOUT';
+            fastForwarding = false;
+            syncUi();
+          }
         } else {
           const [nSub, hSub] = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
           frameStepTau = nSub * hSub;

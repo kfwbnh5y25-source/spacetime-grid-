@@ -598,6 +598,9 @@ function loadSpinWavesContext(seedStorage = {}) {
     computeTimeWindowMetrics, buildTimeTraceExport,
     drawModeTimePlot, updatePlotWindow, recordPlotSample,
     getPlotStats: () => ({ count: plotHistCount, winTau: plotWinTau, originTau: plotOriginTau, lastPlotTau, plotYScale, plotYTarget }),
+    captureConvSubSample, evaluateConvergenceWindow, buildConvHistoryExport, runPrimary2usExperiment,
+    cwBuildFreqList, runCwFreqSweepSync,
+    getConvState: () => ({ status: convStatus, detail: convLastDetail, history: convHistory.slice(), primary2usLastReport }),
     setState(patch) {
       if ('driveMode' in patch) driveMode = patch.driveMode;
       if ('driveFreq' in patch) driveFreq = patch.driveFreq;
@@ -630,6 +633,9 @@ function loadSpinWavesContext(seedStorage = {}) {
       if ('rfVpkTargetMV' in patch) rfVpkTargetMV = patch.rfVpkTargetMV;
       if ('paramRampNs' in patch) paramRampNs = patch.paramRampNs;
       if ('liveApplyMode' in patch) liveApplyMode = patch.liveApplyMode;
+      if ('convWindowUs' in patch) convWindowUs = patch.convWindowUs;
+      if ('convMinSettleUs' in patch) convMinSettleUs = patch.convMinSettleUs;
+      if ('convMaxUs' in patch) convMaxUs = patch.convMaxUs;
       if ('simTime' in patch) { simTime = patch.simTime; resetModeHistory(); recordModeSample(); }
     },
     getState() {
@@ -2315,4 +2321,107 @@ test(
       assert.equal(
           spin.getState().tone2Released, false,
           'Wait T1 SS must NOT blindly force-release Tone 2 at 3.0 us while Tone 1 is still decaying');
+    });
+
+test(
+    'AC. Multi-window convergence states, reproducible Primary 2 us Run, and state-carrying CW hysteresis sweep',
+    () => {
+      // 1. CONVERGED at 0 K and 300 K via configurable physical-time windows
+      spin.setNmmMode(false);
+      spin.applyPreset('param');
+      spin.setState({temperatureK: 0, convWindowUs: 0.20, convMinSettleUs: 0.60, convMaxUs: 4.0});
+      const res0K = spin.fastForwardSteadyState({windowUs: 0.20, minSettleUs: 0.60, maxUs: 4.0});
+      assert.equal(res0K.status, 'CONVERGED', `Expected CONVERGED at 0 K, got ${res0K.status}`);
+      assert.ok(res0K.simTimeUs >= 0.8 && res0K.windows >= 4);
+      assert.ok(res0K.convHistory.some(w => w.status === 'EVOLVING'), 'Transient windows should report EVOLVING before settling');
+
+      spin.applyPreset('param');
+      spin.setState({temperatureK: 300, thermalSeed: 12345});
+      spin.seedSpins('thermal');
+      const res300K = spin.fastForwardSteadyState({windowUs: 0.20, minSettleUs: 0.60, maxUs: 5.0});
+      assert.equal(res300K.status, 'CONVERGED', `Expected CONVERGED at 300 K with thermal tolerance, got ${res300K.status}`);
+
+      // 2. TIMEOUT without force-releasing Wait T1 SS when settle horizon is too short
+      spin.applyPreset('nonrecip');
+      spin.setState({temperatureK: 0, tone2WaitSS: true});
+      spin.seedSpins(0.004, [13]);
+      const resTimeout = spin.fastForwardSteadyState({windowUs: 0.15, minSettleUs: 1.50, maxUs: 0.70, tStartUs: 0});
+      assert.equal(resTimeout.status, 'TIMEOUT');
+      assert.equal(resTimeout.timedOut, true);
+      assert.equal(spin.getState().tone2Released, false, 'TIMEOUT under Wait T1 SS must never force-release Tone 2');
+
+      // 3. MODE COMPETITION under 2.4x Full NMM multi-mode transition (set damping BEFORE parametricThreshold)
+      spin.setNmmMode(true);
+      spin.setState({damping: 0.001});
+      spin.setState({
+        temperatureK: 300, thermalSeed: 42, damping: 0.001, driveMode: 'parallel', dualTone: true,
+        tone2WaitSS: false, tone2DelayNs: 0.80,
+        driveFreq: 2 * spin.modeFreqGHz(13), driveAmp: 2.4 * spin.parametricThreshold(13),
+        driveFreq2: 2 * spin.modeFreqGHz(16), driveAmp2: 2.0 * spin.parametricThreshold(16),
+        simTime: 0
+      });
+      spin.seedSpins('thermal');
+      const resComp = spin.fastForwardSteadyState({windowUs: 0.25, minSettleUs: 1.50, maxUs: 4.5, tStartUs: 0});
+      const sawCompetition = resComp.status === 'MODE COMPETITION' ||
+        resComp.convHistory.some(w => w.status === 'MODE COMPETITION');
+      assert.ok(sawCompetition, `Expected MODE COMPETITION in 2.4x Full NMM, got ${resComp.status}: ${JSON.stringify(resComp.convHistory.slice(-4))}`);
+
+      // 4. FAILED on non-finite / diverged modal amplitude (>1.5)
+      spin.setNmmMode(false);
+      spin.applyPreset('param');
+      spin.aRe[13] = 2.0;
+      const resFail = spin.fastForwardSteadyState({maxSteps: 300, windowUs: 0.05, minSettleUs: 0.0});
+      assert.equal(resFail.status, 'FAILED');
+
+      // 5. Reproducible Primary 2 us Experiment & schema export
+      const runA = spin.runPrimary2usExperiment({preset: 'param', fullNmm: false, tempK: 300, seed: 20260101, durUs: 2.0, windowUs: 0.20, minSettleUs: 0.80});
+      const expA = spin.buildConvHistoryExport();
+      const runB = spin.runPrimary2usExperiment({preset: 'param', fullNmm: false, tempK: 300, seed: 20260101, durUs: 2.0, windowUs: 0.20, minSettleUs: 0.80});
+      assert.equal(expA.schema, 'spin-waves-convergence-v1');
+      assert.ok(Math.abs(runA.simTimeUs - 2.0) < 0.02);
+      assert.equal(runA.finalStatus, runB.finalStatus);
+      assert.equal(runA.domMode, runB.domMode);
+      assert.ok(Math.abs(runA.domAmp - runB.domAmp) < 1e-6, 'Primary 2 us experiment must be bit-reproducible for fixed seed');
+      assert.equal(runA.windows, runB.windows);
+      assert.ok(expA.windowCount >= 8);
+
+      // 6. Genuine state-carrying Continuous-Wave (CW) hysteresis sweep (up vs down)
+      // On softening Kittel mode m27 (N_27,27 < 0), bistable overhang sits on the low-frequency side (f < 2*f27):
+      // sweeping UP starts at z=0 (stays near 0 until Arnold left boundary), whereas sweeping DOWN carries the upper branch back into f < 2*f27.
+      spin.setNmmMode(false);
+      spin.resetSimulation(0.0);
+      const f27 = spin.modeFreqGHz(27);
+      spin.setState({temperatureK: 0, damping: 0.0015, driveMode: 'parallel', dualTone: false});
+      spin.setState({
+        driveFreq: +(2 * f27 - 0.020).toFixed(4), driveAmp: 2.2 * spin.parametricThreshold(27)
+      });
+      const cwRes = spin.runCwFreqSweepSync({
+        dir: 'updown',
+        fStartGHz: +(2 * f27 - 0.020).toFixed(4),
+        fEndGHz: +(2 * f27 + 0.008).toFixed(4),
+        stepMHz: 4.0,
+        dwellUs: 0.65,
+        rateGHzUs: 0.12
+      });
+      assert.equal(cwRes.upPts.length, cwRes.downPts.length);
+      assert.ok(cwRes.upPts.length >= 7);
+      // Carrier phase must advance monotonically without phase jumps/resets across sweep points and turnaround
+      for (let i = 0; i < cwRes.upPts.length; i++) {
+        assert.ok(cwRes.upPts[i].phiEnd > cwRes.upPts[i].phiStart, `upPt[${i}] carrierPhase must advance`);
+        if (i > 0) {
+          assert.ok(Math.abs(cwRes.upPts[i].phiStart - cwRes.upPts[i - 1].phiEnd) < 1e-3, 'phi must be continuous between up points');
+        }
+      }
+      assert.ok(
+          Math.abs(cwRes.downPts[0].phiStart - cwRes.upPts[cwRes.upPts.length - 1].phiEnd) < 1e-3,
+          'Turnaround from up sweep to down sweep must preserve continuous carrierPhase1 without reset');
+      // Check distinct bistable hysteresis between upward and downward branches matched by frequency
+      let maxBranchDiff = 0;
+      for (let i = 0; i < cwRes.upPts.length; i++) {
+        const u = cwRes.upPts[i];
+        const d = cwRes.downPts[cwRes.downPts.length - 1 - i];
+        assert.ok(Math.abs(u.fGHz - d.fGHz) < 1e-5);
+        maxBranchDiff = Math.max(maxBranchDiff, Math.abs(u.ampMean - d.ampMean));
+      }
+      assert.ok(maxBranchDiff > 0.01, `Expected clear upward/downward CW bistable hysteresis > 0.01, got ${maxBranchDiff.toFixed(6)}: up=${cwRes.upPts.map(p=>p.ampMean)} down=${cwRes.downPts.map(p=>p.ampMean)}`);
     });
