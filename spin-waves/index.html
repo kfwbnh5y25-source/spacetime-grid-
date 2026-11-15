@@ -196,6 +196,29 @@
   #hResetBtn:hover { background: rgba(120,165,225,.3); border-color: rgba(165,215,255,.6); }
   canvas#hInputCanvas { display: block; width: 100%; height: 28px; border-radius: 4px; background: rgba(3,7,15,.65); }
 
+  .mainTabGroup { display: inline-flex; align-items: center; gap: 3px; padding: 2px; border: 1px solid rgba(130,190,255,.34); border-radius: 18px; background: rgba(6,13,26,.92); }
+  .tabBtn { min-height: 23px; padding: 0 9px; border-radius: 14px; border-color: transparent; background: transparent; color: rgba(205,226,255,.78); font-weight: 600; }
+  .tabBtn.active { background: linear-gradient(135deg, rgba(56,189,248,.34), rgba(16,185,129,.28)); border-color: rgba(125,211,252,.78); color: #fff; box-shadow: 0 0 12px rgba(56,189,248,.22); }
+  #arnoldToSweepBtn { padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(52,211,153,.45); background: rgba(16,185,129,.16); color: #a7f3d0; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldToSweepBtn:hover { background: rgba(16,185,129,.30); border-color: rgba(110,231,183,.8); }
+
+  #dashShell[hidden], #sweepShell[hidden] { display: none !important; }
+  #sweepShell { display: grid; grid-template-columns: minmax(460px, 1.48fr) minmax(320px, 380px); gap: 10px; padding: 8px 12px 10px; min-height: 0; overflow: hidden; align-items: stretch; }
+  #sweepPlotCol { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+  #sweepMapCard { flex: 1.55 1 260px; min-height: 250px; }
+  #sweepPlotStage { display: grid; grid-template-columns: 1fr 56px; gap: 6px; flex: 1 1 auto; min-height: 200px; align-items: stretch; }
+  canvas#sweepCanvas { display: block; width: 100%; height: 100%; min-height: 200px; border-radius: 6px; background: #060b16; cursor: crosshair; touch-action: none; }
+  canvas#sweepCbarCanvas { display: block; width: 56px; height: 100%; min-height: 200px; border-radius: 6px; background: rgba(4,9,18,.78); }
+  #sweepHoverInfo { margin-top: 5px; padding: 4px 7px; border-radius: 6px; border: 1px solid rgba(130,185,255,.18); background: rgba(5,11,22,.78); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(215,234,255,.90); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #sweepSliceCard { flex: 0.58 0 auto; min-height: 122px; }
+  canvas#sweepSliceCanvas { display: block; width: 100%; height: 90px; border-radius: 5px; background: rgba(3,7,15,.72); }
+  #sweepCtrlPanel { min-height: 0; min-width: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; border: 1px solid rgba(190,220,255,.20); border-radius: 14px; background: rgba(7,13,25,.90); padding: 10px 11px 14px; display: grid; gap: 9px; align-content: start; }
+  .sweepParamGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sweepParamGrid select { width: 100%; padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(190,220,255,.24); background: rgba(4,9,18,.88); color: #ebf3ff; font: 8.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .sweepChkGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  #sweepProgressWrap { height: 5px; border-radius: 99px; background: rgba(255,255,255,.10); overflow: hidden; }
+  #sweepProgressBar { height: 100%; width: 100%; background: linear-gradient(90deg, #38bdf8, #34d399); transition: width .12s ease; }
+
   @media (pointer:coarse), (max-width: 1023px) {
     html, body { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; }
     body { display: block; }
@@ -206,6 +229,14 @@
     .speedGroup .speedLbl { display: none; }
     .spdBtn { min-height: 24px; padding: 0 6px; font-size: 8.5px; }
     #dashShell { display: flex; flex-direction: column; gap: 10px; padding: 8px 10px max(24px,env(safe-area-inset-bottom)); overflow: visible; }
+    #sweepShell { display: flex; flex-direction: column; gap: 10px; padding: 8px 10px max(24px,env(safe-area-inset-bottom)); overflow: visible; }
+    #sweepPlotCol { flex: none; gap: 10px; }
+    #sweepMapCard { flex: none; min-height: 0; }
+    #sweepPlotStage { flex: none; height: 270px; min-height: 250px; grid-template-columns: 1fr 48px; }
+    canvas#sweepCanvas, canvas#sweepCbarCanvas { height: 270px; min-height: 250px; }
+    #sweepHoverInfo { white-space: normal; }
+    #sweepSliceCard { flex: none; min-height: 0; }
+    #sweepCtrlPanel { overflow: visible; max-height: none; width: 100%; }
     #diskStage { height: min(78vw, 310px); min-height: 230px; flex: none; }
     .magnonGrid { grid-template-columns: repeat(2, 1fr); }
     #readoutsDock { overflow: visible; gap: 10px; padding-right: 0; }
@@ -231,6 +262,10 @@
   <div class="hudPill active" id="domModeBadge">MODE: m13 (1.9739G)</div>
 </div>
 <div id="quickLaunchBar">
+  <span class="mainTabGroup" id="mainTabBar" role="tablist" aria-label="Simulation view mode">
+    <button class="quickPill tabBtn active" id="tabLiveBtn" type="button" role="tab" aria-selected="true">1 · LIVE NMM</button>
+    <button class="quickPill tabBtn" id="tabSweepBtn" type="button" role="tab" aria-selected="false" title="Reproduce experimental single-frequency Arnold sweep (antigravity.zip: 3760–4250 MHz, 200–500 mV_pk)">2 · ARNOLD SWEEP</button>
+  </span>
   <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves step-by-step guide">GUIDE ?</button>
   <button class="quickPill accent" id="quickWhatsNewBtn" type="button" title="Summary of experimental calibration, CSI2 analysis & dashboard updates">WHAT'S NEW</button>
   <button class="quickPill cedric" id="cedricEggBtn" type="button" title="Click for a special spin-wave surprise">♥ FOR CÉDRIC</button>
@@ -319,6 +354,7 @@
         <button id="arnoldBandBtn" class="all" type="button" title="Toggle between ALL 29 modes (3.38–4.18 GHz) and BULK zoom (3.88–4.16 GHz)">ALL 29</button>
         <button id="arnoldExpBtn" class="active" type="button" title="Overlay experimentally observed resonance ticks (3788.6–4224 MHz) & calibrated k_eff threshold markers if provided">EXP</button>
         <button id="arnoldTargetBtn" type="button" title="Toggle tap target between Tone 1 and Tone 2">TAP: T1</button>
+        <button id="arnoldToSweepBtn" type="button" title="Switch to Tab 2: Single-Frequency Arnold Sweep Reproduction">SWEEP ↗</button>
       </span>
       <span id="arnoldHint">tap to pump</span>
     </div>
@@ -554,6 +590,87 @@
   </div>
 </details>
 </main>
+<section id="sweepShell" hidden aria-label="Single-Frequency Experimental Arnold Sweep Reproduction">
+  <div id="sweepPlotCol">
+    <div class="readoutCard" id="sweepMapCard">
+      <div class="specTitle">
+        <span>SINGLE-FREQ ARNOLD SWEEP (1.0µs TUKEY · SA @ f_p/2 ±2.5 MHz)</span>
+        <span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
+          <span id="sweepEngineBadge" class="vmBadge pass">ANALYTICAL NMM</span>
+          <span id="sweepStatusSpan" style="color:#8ec5ff;">Ready</span>
+        </span>
+      </div>
+      <div id="sweepPlotStage">
+        <canvas id="sweepCanvas" width="760" height="440" aria-label="Single-frequency Arnold sweep heatmap: frequency MHz vs AWG V_pk mV"></canvas>
+        <canvas id="sweepCbarCanvas" width="56" height="440" aria-label="Sweep colorbar"></canvas>
+      </div>
+      <div id="sweepHoverInfo">Hover or click map to inspect (f_p MHz, V_pk mV), 50 Ω P_AWG, SA integrated signal, FWHM &amp; N_eff.</div>
+    </div>
+    <div class="readoutCard" id="sweepSliceCard">
+      <div class="specTitle">
+        <span>5 MHz SA SPECTRUM AT f_p / 2 (LINEAR-POWER BASELINE SUBTRACTED)</span>
+        <span id="sweepSliceMeta" style="color:#8ec5ff;">f_p = 4110 MHz · V_pk = 320 mV</span>
+      </div>
+      <canvas id="sweepSliceCanvas" width="760" height="90" aria-label="1D 5 MHz spectrum analyzer trace at selected frequency and voltage"></canvas>
+    </div>
+  </div>
+  <aside id="sweepCtrlPanel" aria-label="Single-Frequency Sweep Parameters & Metrics">
+    <div class="sectionLabel">Experimental Sweep Presets (antigravity.zip)</div>
+    <div class="btnRow">
+      <button class="btn active" id="sweepPresetWide" type="button" title="antigravity/plot.py: 3760–4250 MHz, 200–500 mV_pk (V_pp/2), 1 µs pulse">Wide (3760–4250M)</button>
+      <button class="btn" id="sweepPresetZoom" type="button" title="antigravity/zoom/plot2.py: 4050–4080 MHz, 240–350 mV_pk">Zoom (4050–4080M)</button>
+      <button class="btn" id="sweepPresetAll29" type="button" title="Full 29-mode NMM range (m0 @ 3406 MHz .. m28 @ 4138 MHz)">All 29 (3380–4180M)</button>
+    </div>
+    <div class="sectionLabel">Map Metric (plot.py Colormaps)</div>
+    <div class="btnRow">
+      <button class="btn active" id="sweepMetricSignal" type="button" title="10*log10(trapz(SA)) clipped to [max - 51 dB, max] (Viridis)">Signal dB (Viridis)</button>
+      <button class="btn" id="sweepMetricWidth" type="button" title="Equivalent Gaussian FWHM = 2.35482 * sqrt(Var) in MHz (Magma, SNR>=10 masked)">Width FWHM (Magma)</button>
+      <button class="btn" id="sweepMetricNeff" type="button" title="Effective spectral bins N_eff = total^2 / sum(w^2) (Plasma, SNR>=10 masked)">N_eff Bins (Plasma)</button>
+    </div>
+    <div class="sectionLabel">Frequency (MHz), AWG V_pk (mV = V_pp/2) &amp; Physical Params</div>
+    <div class="sweepParamGrid">
+      <label class="rfMiniLbl"><span>f_min (MHz)</span><input id="sweepFMinIn" type="number" step="5" min="3000" max="4500" value="3760"></label>
+      <label class="rfMiniLbl"><span>f_max (MHz)</span><input id="sweepFMaxIn" type="number" step="5" min="3100" max="4600" value="4250"></label>
+      <label class="rfMiniLbl"><span>V_min (mV_pk)</span><input id="sweepVMinIn" type="number" step="5" min="20" max="1500" value="200"></label>
+      <label class="rfMiniLbl"><span>V_max (mV_pk)</span><input id="sweepVMaxIn" type="number" step="5" min="30" max="1500" value="500"></label>
+      <label class="rfMiniLbl" title="Nominal sample-plane antenna scale k_eff (mT / V_pk) for comparing V_pk vs NMM mu0*h_p"><span>k_eff (mT/V_pk, nom)</span><input id="sweepKEffIn" type="number" step="0.05" min="0.1" max="10" value="1.50"></label>
+      <label class="rfMiniLbl" title="Gilbert damping alpha for sweep"><span>Gilbert Damping α</span><input id="sweepDampIn" type="number" step="0.0001" min="0.0001" max="0.01" value="0.0020"></label>
+      <label class="rfMiniLbl" title="AWG pulse length in us (antigravity/run.py = 1.0 us @ 64 GS/s)"><span>Pulse τ_p (µs)</span><input id="sweepPulseUsIn" type="number" step="0.1" min="0.1" max="10" value="1.0"></label>
+      <label class="rfMiniLbl" title="SA span around f_p/2 in MHz (plot.py = 5.0 MHz)"><span>SA Span (MHz)</span><input id="sweepSaSpanIn" type="number" step="0.5" min="1" max="25" value="5.0"></label>
+      <label class="rfMiniLbl" title="Brown FDT thermal bath temperature T (K)"><span>Thermal Bath T (K)</span><input id="sweepTempIn" type="number" step="10" min="0" max="600" value="300"></label>
+      <label class="rfMiniLbl"><span>Grid Resolution</span>
+        <select id="sweepResSelect">
+          <option value="110x64">Fast (110×64)</option>
+          <option value="140x80" selected>Standard (140×80)</option>
+          <option value="180x100">High (180×100)</option>
+        </select>
+      </label>
+    </div>
+    <div class="sectionLabel">NMM Physics &amp; Overlays</div>
+    <div class="sweepChkGrid">
+      <label class="termChk" title="Weight SA signal by mode radiative coupling |b_y,h| (m13, m27 brighter like CPW pickup)"><input id="sweepChkRad" type="checkbox" checked>Radiative |b_y|</label>
+      <label class="termChk" title="Overlay measured [EXP] peaks & 10-sigma onsets (e9..e28 & n35..n42)"><input id="sweepChkExp" type="checkbox" checked>[EXP] Anchors</label>
+      <label class="termChk" title="Draw exact 29-mode NMM Arnold threshold contours h_th(f_p)/k_eff"><input id="sweepChkThresh" type="checkbox" checked>h_th Contours</label>
+      <label class="termChk" title="Include 4A Kerr saturation N_hh (Eq. 33) vs open instability boundary"><input id="sweepChk4A" type="checkbox" checked>4A Saturation</label>
+      <label class="termChk" title="Include 4B cross-pumping / Full NMM non-RWA terms in ODE sweep"><input id="sweepChk4B" type="checkbox">4B / Full ODE</label>
+    </div>
+    <div class="btnRow">
+      <button class="btn active" id="sweepRunFastBtn" type="button" title="Compute 29-mode NMM + 1us Tukey + 300K FDT single-freq sweep">↻ Analytical Sweep</button>
+      <button class="btn" id="sweepRunOdeBtn" type="button" title="Run genuine pixel-by-pixel time-domain RK4 stepLlg ODE sweep (26×16 grid)">▶ Live RK4 ODE</button>
+      <button class="btn" id="sweepStopOdeBtn" type="button" disabled>Stop</button>
+    </div>
+    <div id="sweepProgressWrap"><div id="sweepProgressBar"></div></div>
+    <div id="sweepProgressLabel" style="font:8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;color:rgba(195,220,250,.80);">Analytical 140×80 sweep ready.</div>
+    <div class="btnRow">
+      <button class="btn" id="sweepSendLiveBtn" type="button" title="Send selected (f_p, V_pk -> mu0*h_p) point into Tab 1 (1 · LIVE NMM) and run it">Send Point → Tab 1</button>
+      <button class="btn" id="sweepExportJsonBtn" type="button">Export JSON</button>
+      <button class="btn" id="sweepExportCsvBtn" type="button">Export CSV</button>
+    </div>
+    <div id="sweepSciNote" class="vmCodeBox" style="white-space:pre-wrap;font-size:8.5px;">Comparison vs arnold_tongue_halfaverage.png:
+• 29-mode NMM spans 2f = 3406.6–4137.8 MHz: left bulk lobe (m9–m16, ~3.89–4.00 GHz) + bright Kittel lobe (m27, 4109.2 MHz) match experimental ~250–300 mV onset at nominal k_eff = 1.50 mT/V_pk &amp; α = 0.0020.
+• Pink [n35/n37/n42] (4145–4223 MHz) lie above the 29-mode basis cutoff in the 80-mode NPZ set; p_x=−1 modes (e16 @ 3997 MHz) require nonuniform CPW Oersted gradients.</div>
+  </aside>
+</section>
 <section id="verifyModal" hidden aria-label="Interactive Benchmark, Calibration, Verification & DB Vault">
   <div class="vmHeader">
     <span class="vmTitle">BENCHMARK · CALIBRATION · EXP DATA · VERIFICATION · DB</span>
@@ -703,8 +820,10 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       <div class="wnCard"><b>2 · Time-Dependent Mode Analysis (Window Stats, Convergence &amp; Pin)</b><br>2048-pt trace history, zoom/pan window sliders, <code>ENV</code> h₁/h₂ overlay, per-mode Mean / RMS / σ / Drift / Onset / γ_eff convergence detector (<code>CONVERGED</code> / <code>GROWING</code> / <code>OSCILLATING</code>), click chip to pin, and JSON trace export.</div>
       <div class="wnCard"><b>3 · RF 50 Ω Amplitude &amp; Reference Bypass Calibration</b><br>Live <code>V_pk = V_pp/2</code> ↔ <code>mW / dBm</code> + 50-pt <code>G_ref(f)</code> bypass transfer &amp; noise-floor thresholds (<code>3σ = −70.92 dBm</code>), while keeping uncalibrated sample-plane <code>k_eff</code> explicit.</div>
       <div class="wnCard"><b>4 · Exp Mode ID (B_cal = 27 mT), CSI2 &amp; NMM Ablation Tab</b><br>New <code>EXP DATA &amp; CSI2</code> tab in <code>VERIFY / EXP</code> summarizes Hellmann–Feynman <code>B_cal = 27.0 mT</code> fits, linear-power thresholds, and controlled <code>4A / 4B</code> downshift ablations.</div>
+      <div class="wnCard"><b>5 · Second Tab: Single-Frequency Arnold Sweep Reproduction</b><br>Click <code>2 · ARNOLD SWEEP</code> to reproduce the experimental <code>1.0 µs</code> Tukey single-tone sweep (<code>3760–4250 MHz</code> / <code>200–500 mV</code> + <code>4050–4080 MHz</code> zoom) with Viridis dB power, Magma FWHM, Plasma <code>N_eff</code>, 5 MHz SA spectrum slices, and instant Eq. (33) + progressive RK4 ODE solvers.</div>
     </div>
     <div class="btnRow" style="justify-content:flex-end;">
+      <button class="btn" id="wnOpenSweepBtn" type="button">Open 2 · Arnold Sweep</button>
       <button class="btn" id="wnOpenExpBtn" type="button">View Exp Data &amp; CSI2</button>
       <button class="btn" id="wnOpenVerifyBtn" type="button">Run 8-Stage Verify</button>
       <button class="btn" id="wnOpenHandoutBtn" type="button">View Handout</button>
@@ -863,6 +982,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   const pinnedModes = new Set();
   let rfChainGainDB = 0.0;
   let rfKEffMTPerV = null; // null = uncalibrated sample-plane Oersted conversion
+  let activeMainTab = 'live';
 
   function prepHiDpiCanvas(canvas, ctx2d, fallbackW = 460, fallbackH = 140) {
     if (!canvas) return { w: fallbackW, h: fallbackH, scale: 1 };
@@ -2045,6 +2165,10 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     fieldCanvas.height = Math.round(diskH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     syncTopBarsLayout();
+    if (typeof activeMainTab !== 'undefined' && activeMainTab === 'sweep' && typeof drawSweepHeatmap === 'function') {
+      drawSweepHeatmap();
+      if (typeof drawSweepSlice === 'function') drawSweepSlice();
+    }
   }
   window.addEventListener('resize', resize, { passive: true });
   resize();
@@ -2964,13 +3088,16 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     };
 
     const hCap = hMax + spanH * 0.28;
-    let minTipMT = Infinity, maxTipMT = 0, maxShiftMHz = 0, maxW4B = 0, maxDh4B = 0;
+    let minTipMT = Infinity, maxTipMT = 0, maxShiftMHz = 0, maxSelfShiftMHz = 0, maxSelfSignedMHz = 0, maxW4B = 0, maxDh4B = 0;
 
     for (let m = 0; m < M; m++) {
       const f0 = 2 * fGhzArr[m];
       const fMut = modeMutualNfsShiftGHz(m); // 0 if 4A is OFF
+      const aCur = cycleAvgModeAmp(m);
+      const fSelf = terms.t4A ? mutualNfsCoeffGHz(m, m) * aCur * aCur : 0;
       const f2Mut = 2 * (fGhzArr[m] + fMut);
-      if (Math.max(f0, f2Mut) < fMin - 0.28 || Math.min(f0, f2Mut) > fMax + 0.28) continue;
+      const f2Self = 2 * (fGhzArr[m] + fMut + fSelf);
+      if (Math.max(f0, f2Mut, f2Self) < fMin - 0.28 || Math.min(f0, f2Mut, f2Self) > fMax + 0.28) continue;
       const col = modeColor(m);
       const hThStatic = parametricThresholdMT(m);
       const tipBlend = activePumpBlendAt(f2Mut);
@@ -2981,6 +3108,11 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         if (hThStatic > maxTipMT) maxTipMT = hThStatic;
       }
       if (Math.abs(fMut) * 1000 > maxShiftMHz) maxShiftMHz = Math.abs(fMut) * 1000;
+      const selfPumpShiftMHz = Math.abs(fSelf) * 2000;
+      if (selfPumpShiftMHz > maxSelfShiftMHz) {
+        maxSelfShiftMHz = selfPumpShiftMHz;
+        maxSelfSignedMHz = fSelf * 2000;
+      }
       if (cp.resRateGHz > maxW4B) maxW4B = cp.resRateGHz;
       if (Number.isFinite(hThInst) && (hThStatic - hThInst) > maxDh4B) maxDh4B = hThStatic - hThInst;
 
@@ -2990,39 +3122,59 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       arnoldCtx.clip();
 
       const gamGHz = modeGammaGHz(m);
+      const hasSelfShift = Math.abs(fSelf) >= 0.00025;
 
-      // Static unperturbed reference outline (dashed) whenever shifted by 4A or reduced by 4B
-      if (Math.abs(fMut) > 0.0004 || cp.resRateGHz > 1e-4) {
+      // Static/onset unshifted reference outline (dashed) whenever shifted by mutual 4A, self 4A, or reduced by 4B
+      if (Math.abs(fMut) > 0.0004 || hasSelfShift || cp.resRateGHz > 1e-4) {
         const refFreqs = sampleArnoldFreqs(f0, gamGHz);
         if (traceThresholdPath(refFreqs, fp => arnoldThresholdMT(m, fp, 0), hCap, false)) {
-          arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.28; arnoldCtx.lineWidth = 0.9;
+          arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.34; arnoldCtx.lineWidth = 0.95;
           arnoldCtx.setLineDash([2, 3]); arnoldCtx.stroke(); arnoldCtx.setLineDash([]);
         }
       }
 
-      // Instantaneous Arnold tongue curve (reflecting active 4A shift & smooth 4B cross-pumping reduction)
+      // Active Arnold tongue curve shifted by mutual 4A + live single-mode self-NFS (N_mm |a_m|^2)
       if (terms.t2A || cp.resRateGHz > 1e-4) {
-        const instFreqs = sampleArnoldFreqs(f2Mut, gamGHz);
-        if (traceThresholdPath(instFreqs, fp => evalInstArnoldMT(m, fp), hCap, true)) {
-          const isKey = m === closestMode || cycleAvgModeAmp(m) > 0.002;
-          arnoldCtx.globalAlpha = isKey ? 0.22 : (arnoldBand === 'all' ? 0.07 : 0.12);
+        const instFreqs = sampleArnoldFreqs(f2Self, gamGHz);
+        if (traceThresholdPath(instFreqs, fp => evalInstArnoldMT(m, fp - 2 * fSelf), hCap, true)) {
+          const isKey = m === closestMode || aCur > 0.002;
+          arnoldCtx.globalAlpha = isKey ? 0.24 : (arnoldBand === 'all' ? 0.07 : 0.12);
           arnoldCtx.fillStyle = col; arnoldCtx.fill();
-          arnoldCtx.globalAlpha = isKey ? 0.95 : (arnoldBand === 'all' ? 0.62 : 0.80);
-          arnoldCtx.strokeStyle = col; arnoldCtx.lineWidth = isKey ? 1.5 : 0.85; arnoldCtx.stroke();
+          arnoldCtx.globalAlpha = isKey ? 0.96 : (arnoldBand === 'all' ? 0.62 : 0.80);
+          arnoldCtx.strokeStyle = col; arnoldCtx.lineWidth = isKey ? 1.6 : 0.85; arnoldCtx.stroke();
         }
       }
 
-      // Mark each mode's distinct tip vertex + label key modes cleanly
+      // Visual self-NFS shift arrow at tongue tip (onset -> self-NFS shifted resonance)
+      if (hasSelfShift && Number.isFinite(hThInst) && hThInst >= hMin && hThInst <= hMax) {
+        const xFrom = toX(f2Mut), xTo = toX(f2Self), yTip = toY(hThInst);
+        if (Math.abs(xTo - xFrom) >= 2 && Math.max(xFrom, xTo) >= ARNOLD_PAD_L && Math.min(xFrom, xTo) <= ARNOLD_PAD_L + pw) {
+          arnoldCtx.globalAlpha = 0.9;
+          arnoldCtx.strokeStyle = '#fbbf24';
+          arnoldCtx.lineWidth = 1.25;
+          arnoldCtx.beginPath();
+          arnoldCtx.moveTo(xFrom, yTip);
+          arnoldCtx.lineTo(xTo, yTip);
+          const dir = xTo >= xFrom ? 1 : -1;
+          arnoldCtx.moveTo(xTo - dir * 4, yTip - 2.5);
+          arnoldCtx.lineTo(xTo, yTip);
+          arnoldCtx.lineTo(xTo - dir * 4, yTip + 2.5);
+          arnoldCtx.stroke();
+        }
+      }
+
+      // Mark each mode's active (self-NFS shifted) tip vertex + label key modes cleanly
       if (Number.isFinite(hThInst) && hThInst >= hMin - spanH * 0.05 && hThInst <= hMax + spanH * 0.05) {
-        const tipX = toX(f2Mut), tipY = toY(hThInst);
+        const tipX = toX(f2Self), tipY = toY(hThInst);
         if (tipX >= ARNOLD_PAD_L && tipX <= ARNOLD_PAD_L + pw) {
           arnoldCtx.globalAlpha = 0.95; arnoldCtx.fillStyle = col;
-          arnoldCtx.beginPath(); arnoldCtx.arc(tipX, tipY, m === closestMode ? 2.1 : 1.35, 0, Math.PI * 2); arnoldCtx.fill();
-          const showLbl = m === closestMode || m === 0 || m === 4 || m === 13 || m === 16 || m === 20 || m === 23 || m === 27 || m === 28 || cycleAvgModeAmp(m) > 0.0025;
+          arnoldCtx.beginPath(); arnoldCtx.arc(tipX, tipY, m === closestMode ? 2.2 : 1.35, 0, Math.PI * 2); arnoldCtx.fill();
+          const showLbl = m === closestMode || m === 0 || m === 4 || m === 13 || m === 16 || m === 20 || m === 23 || m === 27 || m === 28 || aCur > 0.0025;
           if (showLbl && tipX > ARNOLD_PAD_L + 4 && tipX < ARNOLD_PAD_L + pw - 14) {
             arnoldCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
             const lblY = Math.min(ARNOLD_PAD_T + ph - 2, Math.max(ARNOLD_PAD_T + 8, tipY + (m % 2 === 0 ? 8 : 14)));
-            arnoldCtx.fillText(`m${m}`, tipX - 6, lblY);
+            const shiftTag = hasSelfShift && aCur > 0.003 ? ` ${fSelf >= 0 ? '+' : ''}${(2000 * fSelf).toFixed(0)}M` : '';
+            arnoldCtx.fillText(`m${m}${shiftTag}`, tipX - 6, lblY);
           }
         }
       }
@@ -3069,22 +3221,30 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       arnoldCtx.restore();
     }
 
-    // Sawtooth |a_k|_ss curve (Eq. 33) for closest mode
+    // Eq. (33) nonlinear saturation curve |a_k|_ss(f_p) for closest mode (showing bistable overhang & saturation level)
     const ssCol = modeColor(closestMode);
     const closestMut = modeMutualNfsShiftGHz(closestMode);
     arnoldCtx.save();
     arnoldCtx.beginPath();
     arnoldCtx.rect(ARNOLD_PAD_L, ARNOLD_PAD_T, pw, ph);
     arnoldCtx.clip();
-    arnoldCtx.strokeStyle = ssCol; arnoldCtx.globalAlpha = 0.52; arnoldCtx.lineWidth = 1.2; arnoldCtx.beginPath();
+    arnoldCtx.strokeStyle = ssCol; arnoldCtx.globalAlpha = 0.72; arnoldCtx.lineWidth = 1.45; arnoldCtx.beginPath();
     let ssStarted = false;
     for (let px = ARNOLD_PAD_L; px <= ARNOLD_PAD_L + pw; px += 2) {
       const fp = fMin + ((px - ARNOLD_PAD_L) / pw) * (fMax - fMin);
       const aSS = terms.t4A ? steadyStateAmp(closestMode, fp, targetHpNorm, closestMut, false) : 0;
-      const ySS = ARNOLD_PAD_T + ph - 2 - Math.min(1, aSS / 0.08) * 24;
+      const ySS = ARNOLD_PAD_T + ph - 2 - Math.min(1, aSS / 0.08) * 30;
       if (!ssStarted) { arnoldCtx.moveTo(px, ySS); ssStarted = true; } else arnoldCtx.lineTo(px, ySS);
     }
     arnoldCtx.stroke();
+    if (terms.t4A && driveMode === 'parallel' && targetHpNorm > 0) {
+      const aTargetSS = steadyStateAmp(closestMode, targetFp, targetHpNorm, closestMut, true);
+      if (aTargetSS > 0) {
+        const ySatDot = ARNOLD_PAD_T + ph - 2 - Math.min(1, aTargetSS / 0.08) * 30;
+        arnoldCtx.globalAlpha = 0.95; arnoldCtx.fillStyle = '#fbbf24';
+        arnoldCtx.beginPath(); arnoldCtx.arc(toX(targetFp), ySatDot, 2.8, 0, Math.PI * 2); arnoldCtx.fill();
+      }
+    }
     arnoldCtx.restore();
 
     // Axis numeric labels (mT on left, dynamic GHz on bottom)
@@ -3127,17 +3287,29 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         }
       } else {
         const thSS = steadyStateAmp(closestMode, targetFp, targetHpNorm, closestMut, true);
-        const simSS = modeAmps[closestMode] || 0;
+        const simSS = cycleAvgModeAmp(closestMode) || 0;
         const hthMT = instantaneousArnoldThresholdMT(closestMode, targetFp);
+        const selfMHz = terms.t4A ? mutualNfsCoeffGHz(closestMode, closestMode) * simSS * simSS * 2000 : 0;
         hintEl.textContent = thSS > 0
-          ? `sim ${simSS.toFixed(4)} / d'Aq ${thSS.toFixed(4)}`
+          ? `sim ${simSS.toFixed(4)} / d'Aq ${thSS.toFixed(4)} (${selfMHz >= 0 ? '+' : ''}${selfMHz.toFixed(1)}M)`
           : `m${closestMode} h_th=${Number.isFinite(hthMT) ? hthMT.toFixed(2) : '∞'}mT`;
       }
     }
 
     const termsNoteEl = document.getElementById('arnoldTermsNote');
     if (termsNoteEl) {
-      const s4A = terms.t4A ? `4A:${maxShiftMHz > 0.05 ? `${maxShiftMHz.toFixed(1)}M` : 'ON'}` : '4A:OFF(pinned)';
+      let s4A = '4A:OFF(pinned)';
+      if (terms.t4A) {
+        if (maxSelfShiftMHz > 0.05 && maxShiftMHz > 0.05) {
+          s4A = `4A self:${maxSelfSignedMHz >= 0 ? '+' : ''}${maxSelfSignedMHz.toFixed(1)}M mut:${maxShiftMHz.toFixed(1)}M`;
+        } else if (maxSelfShiftMHz > 0.05) {
+          s4A = `4A self:${maxSelfSignedMHz >= 0 ? '+' : ''}${maxSelfSignedMHz.toFixed(1)}M (sat)`;
+        } else if (maxShiftMHz > 0.05) {
+          s4A = `4A:${maxShiftMHz.toFixed(1)}M`;
+        } else {
+          s4A = '4A:ON';
+        }
+      }
       const s4B = terms.t4B ? (maxW4B > 1e-4 ? `4B:-${maxDh4B.toFixed(2)}mT` : '4B:ON(W=0)') : '4B:OFF';
       const spreadTxt = Number.isFinite(minTipMT) ? `h_th ${minTipMT.toFixed(2)}..${maxTipMT.toFixed(2)}mT` : '';
       const extras = [];
@@ -3454,6 +3626,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
   });
   tonguesToggleBtn.addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
     const active = tonguesToggleBtn.classList.toggle('active');
     if (arnoldBox && typeof arnoldBox.scrollIntoView === 'function') {
       arnoldBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3724,13 +3897,13 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       openControls: true
     },
     {
-      tag: 'STEP 9 OF 10 · 50 Ω V_pk & CSI2 EXP DATA',
-      title: 'AWG mV (V_pp/2), G_ref(f) & CSI2 Ablations',
-      body: 'The <b>RF 50 Ω Card</b> converts live AWG voltages (<code>V_pk = V_pp/2</code>) into mW/dBm & 50-pt bypass <code>G_ref(f)</code> (3σ floor −70.92 dBm), keeping uncalibrated sample-plane <code>k_eff</code> explicit. Open <b>Full Exp Data ↗</b> to inspect 29/80-mode fits & CSI2 ablations.',
+      tag: 'STEP 9 OF 10 · 2 · ARNOLD SWEEP & 50 Ω V_pk',
+      title: 'Single-Freq Arnold Sweep Tab & AWG mV (V_pp/2)',
+      body: 'Open <b>2 · ARNOLD SWEEP</b> in the top bar to reproduce the experimental <code>halfaverage</code> sweep (<code>3760–4250 MHz</code>, <code>200–500 mV_pk</code>, 1 µs Tukey pulse, Viridis signal dB, Magma FWHM, Plasma N_eff, &amp; Zoom 4050–4080M), or convert AWG mV via <code>G_ref(f)</code> in Tab 1.',
       formula: 'P_AWG = V_pk² / (2·50Ω) · B_cal = 27.0 mT · |δf_h| ≤ 7.5 MHz',
-      prompt: '<b>Press now:</b> Enter a <b>Convert V_pk (mV)</b> value or click <b>Full Exp Data ↗</b>.',
-      targets: ['#rfVpkTargetIn', '#btnOpenExpTab'],
-      actions: ['rf:cal', 'modal:exp'],
+      prompt: '<b>Press now:</b> Click <b>2 · ARNOLD SWEEP</b> in the top bar (or enter Convert V_pk mV in Tab 1).',
+      targets: ['#tabSweepBtn', '#rfVpkTargetIn', '#btnOpenExpTab'],
+      actions: ['tab:sweep', 'rf:cal', 'modal:exp'],
       openControls: true
     },
     {
@@ -4253,6 +4426,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   }
   function runSwTutDemo(step) {
     if (step === 0) {
+      if (typeof switchMainTab === 'function') switchMainTab('live');
       playbackSpeed = 0.25; exciteEigenmode(27);
       announcePress('Run Step 1 (m27 Kit at 0.25×)', 'Set speed to 0.25× ultra-slow and excited uniform Kittel mode m27 (2.055 GHz). Watch all spin arrows precess together!', 'm27');
     } else if (step === 1) {
@@ -4285,7 +4459,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       const tIn = document.getElementById('rfVpkTargetIn');
       if (tIn) tIn.value = '500';
       showExpMarkers = true; syncRfCalUi(); syncUi(); drawArnoldTongues();
-      announcePress('Run Step 9 (50 Ω 500 mV_pk + [EXP])', 'Converted V_pk = 500 mV (1.0 V_pp) → 2.50 mW (+3.98 dBm) through G_ref(f). Click Full Exp Data ↗ to inspect B_cal = 27 mT & CSI2 ablations!', 'rf:cal');
+      if (typeof switchMainTab === 'function') switchMainTab('sweep');
+      announcePress('Run Step 9 (2 · ARNOLD SWEEP)', 'Opened Tab 2 (2 · ARNOLD SWEEP) reproducing 3760–4250 MHz × 200–500 mV_pk (1 µs Tukey, Viridis/Magma/Plasma)! Try Zoom (4050–4080M) or Live RK4 ODE.', 'tab:sweep');
     } else if (step === 9) {
       openVerifyModal('protocol');
       announcePress('Run Step 10 (Verify & DB Vault)', 'Opened the 8-Stage Verification Protocol & DB Vault — run verification, inspect the Handout, or check IndexedDB/Supabase status!', 'modal:verify');
@@ -4395,10 +4570,12 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     announcePress('4B Down+φ (m16→m15)', 'Prior m16 excitation (|a₁₆|=0.045) + exact 4B P₁₅,₁₆ pulls m15 Arnold tongue downward so 0.90×h_th(15) ignites at φ₁=0° and extinguishes at φ₁=180°!', 'preset:cross4b');
   });
   document.getElementById('quickCoexBtn').addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
     applyPreset('coex');
     announcePress('COEX c++', 'Scenario 1 (S_det = +1.08 > 0): both m13 & m23 coexist cleanly at shifted steady-state amplitudes.', 'preset:coex');
   });
   document.getElementById('quickNonrecipBtn').addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
     applyPreset('nonrecip');
     announcePress('3µs NONRECIP', 'Scenario 2 (S_det = −12.84 < 0): Tone 1 (m13) locks out delayed Tone 2 (m16). Try FAST→SS then SWAP T1↔T2!', 'preset:nonrecip');
   });
@@ -4479,6 +4656,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     announcePress('Swap T1↔T2', 'Swapped Tone 1 and Tone 2 frequencies, amplitudes & phases at t = 0 to test nonreciprocal arrival-order memory!', 'swap');
   });
   document.getElementById('quickSwapBtn').addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
     swapTonesAction();
     announcePress('SWAP T1↔T2', 'Swapped Tone 1 ↔ Tone 2 order at t = 0 — whichever tone leads now locks out the rival!', 'swap');
   });
@@ -4488,7 +4666,11 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     seedSpins(0.004); syncUi(); drawScene();
   }
   document.getElementById('btnResetTime').addEventListener('click', () => { resetSimTime(); announcePress('Reset t=0', 'Rewound AWG pulse timer to t = 0 to replay the 1 ns Tukey turn-on.'); });
-  document.getElementById('quickResetTimeBtn').addEventListener('click', () => { resetSimTime(); announcePress('↺ t=0', 'Rewound AWG pulse timer to t = 0 to replay turn-on from the start.'); });
+  document.getElementById('quickResetTimeBtn').addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
+    resetSimTime();
+    announcePress('↺ t=0', 'Rewound AWG pulse timer to t = 0 to replay turn-on from the start.');
+  });
   document.getElementById('hResetBtn').addEventListener('click', () => { resetSimTime(); announcePress('↺ t=0', 'Rewound h(t) pulse playhead to t = 0.'); });
   document.getElementById('arnoldTargetBtn').addEventListener('click', () => {
     arnoldTarget = arnoldTarget === 1 ? 2 : 1; if (arnoldTarget === 2 && !dualTone) dualTone = true; syncUi();
@@ -4685,6 +4867,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     announcePress('Fast-Fwd → SS', fastForwarding ? 'Fast-forwarding through µs transients until all active modes settle at steady state.' : 'Stopped fast-forward and returned to smooth visual playback.', 'fast');
   });
   document.getElementById('quickFastBtn').addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
     toggleFastForward();
     announcePress('FAST→SS', fastForwarding ? 'Fast-forwarding across µs delays until steady state stabilizes.' : 'Stopped fast-forward.', 'fast');
   });
@@ -5557,7 +5740,996 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     notifySwTutorial(tabName === 'exp' ? 'modal:exp' : 'modal:verify');
   }
 
-  const APP_RELEASE_VERSION = 'spacetime-shell-v83';
+  // =========================================================================
+  // Tab 2: Single-Frequency Arnold Sweep Reproduction (antigravity.zip)
+  // =========================================================================
+  const SWEEP_CMAPS = {
+    viridis: [
+      [68, 1, 84], [72, 40, 120], [62, 73, 137], [49, 104, 142], [38, 130, 142],
+      [31, 158, 137], [53, 183, 121], [109, 205, 89], [180, 222, 44], [253, 231, 37]
+    ],
+    magma: [
+      [0, 0, 4], [20, 14, 54], [59, 15, 112], [100, 26, 128], [140, 41, 129],
+      [183, 55, 121], [222, 73, 104], [246, 112, 92], [254, 159, 109], [254, 207, 146], [252, 253, 191]
+    ],
+    plasma: [
+      [13, 8, 135], [75, 3, 161], [125, 3, 168], [168, 34, 150], [203, 70, 121],
+      [229, 107, 93], [248, 148, 65], [253, 195, 40], [240, 249, 33]
+    ]
+  };
+  function sampleColormapRgb(cmapName, t) {
+    const stops = SWEEP_CMAPS[cmapName] || SWEEP_CMAPS.viridis;
+    const u = Math.max(0, Math.min(1, Number.isFinite(t) ? t : 0)) * (stops.length - 1);
+    const i0 = Math.floor(u), i1 = Math.min(stops.length - 1, i0 + 1), f = u - i0;
+    const c0 = stops[i0], c1 = stops[i1];
+    return [
+      Math.round(c0[0] + f * (c1[0] - c0[0])),
+      Math.round(c0[1] + f * (c1[1] - c0[1])),
+      Math.round(c0[2] + f * (c1[2] - c0[2]))
+    ];
+  }
+
+  const sweepState = {
+    preset: 'wide',
+    metric: 'signal',
+    fMinMHz: 3760,
+    fMaxMHz: 4250,
+    vMinMV: 200,
+    vMaxMV: 500,
+    kEffMTPerV: 1.50,
+    damping: 0.0020,
+    pulseUs: 1.0,
+    saSpanMHz: 5.0,
+    tempK: 300,
+    nx: 140,
+    ny: 80,
+    radWeight: true,
+    showExp: true,
+    showThresh: true,
+    use4A: true,
+    use4B: false,
+    selF: 4110,
+    selV: 320,
+    hoverF: null,
+    hoverV: null,
+    grid: null,
+    odeRunning: false,
+    odeAbort: false,
+    odeSnap: null,
+    lastSlice: null
+  };
+
+  function sweepModeGammaGHz(mIdx, alpha) {
+    return Math.max(1e-7, Math.max(1e-5, alpha) * Kp[(mIdx * M + mIdx) * 2] * F_M);
+  }
+  function sweepSteadyAmpAlpha(mIdx, fPumpGHz, hPumpNorm, fMutGHz, pwm, alpha) {
+    const hpMT = hPumpNorm * MU0_MS_MT;
+    const gam = sweepModeGammaGHz(mIdx, alpha);
+    const vm = vParamGHz_mT(mIdx);
+    if (hpMT * vm <= gam) return 0;
+    const rad = Math.sqrt((vm * hpMT) ** 2 - gam * gam);
+    const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fMutGHz));
+    if (pwm && Math.abs(delta) >= rad) return 0;
+    const nkk = mutualNfsCoeffGHz(mIdx, mIdx);
+    if (Math.abs(nkk) < 1e-8) return 0;
+    const sgn = nkk >= 0 ? 1 : -1;
+    if (sgn * delta < -rad) return 0;
+    const a2 = (delta + sgn * rad) / nkk;
+    return a2 > 0 ? Math.sqrt(a2) : 0;
+  }
+
+  function sweepSeedHash(a, b, c) {
+    let x = Math.imul((Math.round(a * 131) ^ Math.round(b * 977) ^ Math.round(c * 313)) >>> 0, 0x9E3779B1) >>> 0;
+    x ^= x >>> 15; x = Math.imul(x, 0x85EBCA6B) >>> 0; x ^= x >>> 13;
+    return (x >>> 0) / 4294967296;
+  }
+
+  function computePointSaSpectrum(fPumpMHz, vPkMV, opts = {}, forcedModeAmps = null) {
+    const kEff = Math.max(0.05, Number(opts.kEffMTPerV ?? sweepState.kEffMTPerV) || 1.50);
+    const alpha = Math.max(1e-5, Number(opts.damping ?? sweepState.damping) || 0.0020);
+    const pulseUs = Math.max(0.05, Number(opts.pulseUs ?? sweepState.pulseUs) || 1.0);
+    const saSpanMHz = Math.max(0.5, Number(opts.saSpanMHz ?? sweepState.saSpanMHz) || 5.0);
+    const tempK = Math.max(0, Number(opts.tempK ?? sweepState.tempK) || 0);
+    const radWeight = opts.radWeight !== undefined ? !!opts.radWeight : sweepState.radWeight;
+    const use4A = opts.use4A !== undefined ? !!opts.use4A : sweepState.use4A;
+    const use4B = opts.use4B !== undefined ? !!opts.use4B : sweepState.use4B;
+
+    const fPumpGHz = fPumpMHz * 1e-3;
+    const hPumpMT = (vPkMV * 1e-3) * kEff;
+    const hPumpNorm = hPumpMT / MU0_MS_MT;
+    const pulseTau = usToTau(pulseUs);
+    const effTau = Math.max(10, pulseTau - TUKEY_RAMP_TAU);
+    const a0Therm = tempK > 0 ? Math.sqrt(Math.max(0, tempK) * THETA_PER_K) : 3.5e-4;
+
+    const amps = new Float64Array(M);
+    const modeShiftMHz = new Float64Array(M);
+    let domM = 0, domAmp = 0;
+
+    if (forcedModeAmps && forcedModeAmps.length === M) {
+      for (let m = 0; m < M; m++) {
+        amps[m] = Math.max(0, forcedModeAmps[m]);
+        if (amps[m] > domAmp) { domAmp = amps[m]; domM = m; }
+      }
+      if (use4A) {
+        for (let m = 0; m < M; m++) {
+          let df = 0;
+          for (let j = 0; j < M; j++) if (amps[j] > 1e-5) df += N4A[m * M + j] * F_M * amps[j] * amps[j];
+          modeShiftMHz[m] = df * 1000;
+        }
+      }
+    } else {
+      for (let m = 0; m < M; m++) {
+        const vm = vParamGHz_mT(m);
+        const gamGHz = sweepModeGammaGHz(m, alpha);
+        const deltaGHz = 0.5 * (fPumpGHz - 2 * fGhzArr[m]);
+        const rateRad = vm * hPumpMT;
+        if (rateRad > Math.hypot(gamGHz, deltaGHz)) {
+          const lambdaGHz = Math.sqrt(rateRad * rateRad - deltaGHz * deltaGHz) - gamGHz;
+          const growthExp = Math.min(35, lambdaGHz * FREQ_TO_RAD * effTau);
+          const aLin = a0Therm * Math.exp(growthExp);
+          const aSat = use4A
+            ? sweepSteadyAmpAlpha(m, fPumpGHz, hPumpNorm, 0, true, alpha)
+            : Math.min(0.28, 0.045 * Math.sqrt(Math.max(0, (rateRad / Math.hypot(gamGHz, deltaGHz)) - 1)));
+          const aFin = aSat > 0 ? (aLin * aSat) / Math.hypot(aLin, aSat) : 0;
+          amps[m] = aFin;
+          if (aFin > domAmp) { domAmp = aFin; domM = m; }
+        } else {
+          amps[m] = tempK > 0 ? a0Therm * 0.25 * (gamGHz / Math.max(gamGHz, Math.hypot(gamGHz, deltaGHz) - rateRad)) : 0;
+        }
+      }
+      if (use4B && domAmp > 0.002) {
+        for (let m = 0; m < M; m++) {
+          let w4bGHz = 0, mutGHz = 0;
+          for (let k = 0; k < M; k++) {
+            if (amps[k] < 0.002) continue;
+            if (use4A && k !== m) mutGHz += N4A[m * M + k] * F_M * amps[k] * amps[k];
+            if (k !== m) {
+              const pAbs = Math.hypot(P4B[(m * M + k) * 2], P4B[(m * M + k) * 2 + 1]) * F_M;
+              const bw = Math.max(0.008, 3 * sweepModeGammaGHz(m, alpha));
+              const detK = 0.5 * (fPumpGHz - 2 * fGhzArr[k]);
+              w4bGHz += pAbs * amps[k] * amps[k] * (bw / Math.hypot(bw, detK));
+            }
+          }
+          if (w4bGHz > 1e-6 || Math.abs(mutGHz) > 1e-6) {
+            const vm = vParamGHz_mT(m);
+            const gamGHz = sweepModeGammaGHz(m, alpha);
+            const deltaGHz = 0.5 * (fPumpGHz - 2 * (fGhzArr[m] + mutGHz));
+            const effRate = vm * hPumpMT + w4bGHz;
+            if (effRate > Math.hypot(gamGHz, deltaGHz)) {
+              const lambdaGHz = Math.sqrt(effRate * effRate - deltaGHz * deltaGHz) - gamGHz;
+              const growthExp = Math.min(35, lambdaGHz * FREQ_TO_RAD * effTau);
+              const aLin = a0Therm * Math.exp(growthExp);
+              const aSat = use4A
+                ? Math.max(amps[m], sweepSteadyAmpAlpha(m, fPumpGHz, hPumpNorm, mutGHz, true, alpha), Math.sqrt(Math.max(0, (effRate - gamGHz) / Math.max(0.05, Math.abs(N4A[m * M + m] * F_M)))))
+                : Math.max(amps[m], 0.04 * Math.sqrt(Math.max(0, effRate / Math.hypot(gamGHz, deltaGHz) - 1)));
+              const aFin = aSat > 0 ? (aLin * aSat) / Math.hypot(aLin, aSat) : 0;
+              if (aFin > amps[m]) {
+                amps[m] = aFin;
+                if (aFin > domAmp) { domAmp = aFin; domM = m; }
+              }
+            }
+          }
+        }
+      }
+      if (use4A) {
+        for (let m = 0; m < M; m++) {
+          let df = 0;
+          for (let j = 0; j < M; j++) if (amps[j] > 1e-4) df += N4A[m * M + j] * F_M * amps[j] * amps[j];
+          modeShiftMHz[m] = df * 1000;
+        }
+      }
+    }
+
+    const nBins = 201;
+    const fCenterMHz = 0.5 * fPumpMHz;
+    const fLoMHz = fCenterMHz - 0.5 * saSpanMHz;
+    const dfMHz = saSpanMHz / (nBins - 1);
+    const trace = new Float64Array(nBins);
+    const freqsMHz = new Float64Array(nBins);
+    const blNoiseMW = RF_NOISE_FLOOR.meanMW * Math.max(0.08, (tempK + 30) / 330);
+    const notchHalfMHz = Math.max(0.05, saSpanMHz * 0.01); // plot.py weights[490:510]=0 (+-1% around f_p/2)
+    const fourierHalfMHz = 0.22 / pulseUs;
+
+    // Collect excited & thermally detectable modes inside/near SA band
+    const contribModes = [];
+    for (let m = 0; m < M; m++) {
+      const a = amps[m];
+      if (a < 1e-4) continue;
+      const byW = radWeight ? Math.max(0.04, MODE_SPECS[m].byAbs) : 1.0;
+      const pIntMW = 0.15 * (byW * a) * (byW * a);
+      const isParam = a > Math.max(0.002, 2.5 * a0Therm);
+      const gamMHz = sweepModeGammaGHz(m, alpha) * 1000;
+      // Finite pulse (~0.14/pulseUs MHz) + nonlinear self-modulation broadening around f_p/2
+      const sigmaCoreMHz = isParam
+        ? Math.max(0.055, Math.min(0.32, 0.06 + (0.14 / pulseUs) + 2.4 * a * a))
+        : Math.max(0.18, Math.min(0.9, 0.25 * gamMHz));
+      const fNaturalMHz = fGhzArr[m] * 1000 + modeShiftMHz[m];
+      const dfWingMHz = (fNaturalMHz - fCenterMHz) * (isParam ? 0.12 : 1.0);
+      contribModes.push({ m, pIntMW, sigmaCoreMHz, dfWingMHz, isParam });
+    }
+
+    for (let i = 0; i < nBins; i++) {
+      const f = fLoMHz + i * dfMHz;
+      freqsMHz[i] = f;
+      const nJit = 0.72 + 0.56 * sweepSeedHash(fPumpMHz, vPkMV, i + 1);
+      let p = blNoiseMW * nJit;
+      for (let c = 0; c < contribModes.length; c++) {
+        const md = contribModes[c];
+        const df0 = f - fCenterMHz;
+        if (md.isParam) {
+          // Locked subharmonic emission at f_p/2 + weak shifted sideband wing (unclamped so SA edge bins stay at noise floor)
+          const uCore = df0 / md.sigmaCoreMHz;
+          const gCore = Math.exp(-0.5 * uCore * uCore);
+          const dfWing = f - (fCenterMHz + md.dfWingMHz);
+          const uWing = dfWing / (md.sigmaCoreMHz * 1.45);
+          const gWing = Math.exp(-0.5 * uWing * uWing);
+          p += md.pIntMW * (0.78 * gCore + 0.22 * gWing);
+        } else {
+          const uTh = (f - (fCenterMHz + md.dfWingMHz)) / md.sigmaCoreMHz;
+          p += md.pIntMW / (1 + uTh * uTh);
+        }
+      }
+      trace[i] = p;
+    }
+
+    // np.trapz(spectrum)
+    let signal = 0;
+    for (let i = 0; i < nBins - 1; i++) signal += 0.5 * (trace[i] + trace[i + 1]);
+    const signalDB = 10 * Math.log10(Math.max(signal, 1e-30));
+
+    // Exact plot.py spectral_metrics(spectrum, spectrum_freq)
+    const nNoiseBins = Math.max(8, Math.floor(nBins * 0.05));
+    let maxNoise = 0, sumNoise = 0, meanAll = 0;
+    for (let i = 0; i < nNoiseBins; i++) {
+      if (trace[i] > maxNoise) maxNoise = trace[i];
+      sumNoise += trace[i];
+    }
+    const meanNoise = sumNoise / nNoiseBins;
+    for (let i = 0; i < nBins; i++) meanAll += trace[i];
+    meanAll /= nBins;
+    const snrRatio = meanNoise > 0 ? meanAll / meanNoise : 0;
+
+    let widthMHz = NaN, nEff = NaN;
+    if (snrRatio >= 10) {
+      let maxW = 0, total = 0;
+      const wArr = new Float64Array(nBins);
+      for (let i = 0; i < nBins; i++) {
+        const dfC = Math.abs(freqsMHz[i] - fCenterMHz);
+        const w = dfC <= notchHalfMHz ? 0 : trace[i];
+        wArr[i] = w;
+        if (w > maxW) maxW = w;
+        total += w;
+      }
+      if (maxW <= 2 * maxNoise || total <= 1e-30) {
+        widthMHz = 0; nEff = 0;
+      } else {
+        let sumWF = 0, sumW2 = 0;
+        for (let i = 0; i < nBins; i++) {
+          sumWF += wArr[i] * freqsMHz[i];
+          sumW2 += wArr[i] * wArr[i];
+        }
+        const meanF = sumWF / total;
+        let variance = 0;
+        for (let i = 0; i < nBins; i++) {
+          const d = freqsMHz[i] - meanF;
+          variance += wArr[i] * d * d;
+        }
+        variance /= total;
+        widthMHz = 2.35482 * Math.sqrt(Math.max(0, variance));
+        nEff = Math.min(150, (total * total) / Math.max(1e-30, sumW2));
+      }
+    }
+
+    return {
+      fPumpMHz, vPkMV, hPumpMT, domM, domAmp,
+      trace, freqsMHz, signal, signalDB, snrRatio,
+      widthMHz, nEff,
+      blNoiseMW, meanNoise, thresh10x: snrRatio >= 10
+    };
+  }
+
+  function computeSingleFreqSweepGrid(overrideOpts = {}) {
+    const fMinMHz = Math.min(Number(overrideOpts.fMinMHz ?? sweepState.fMinMHz) || 3760, 4590);
+    const fMaxMHz = Math.max(fMinMHz + 5, Number(overrideOpts.fMaxMHz ?? sweepState.fMaxMHz) || 4250);
+    const vMinMV = Math.max(10, Number(overrideOpts.vMinMV ?? sweepState.vMinMV) || 200);
+    const vMaxMV = Math.max(vMinMV + 5, Number(overrideOpts.vMaxMV ?? sweepState.vMaxMV) || 500);
+    const nx = Math.max(12, Math.min(220, Math.round(Number(overrideOpts.nx ?? sweepState.nx) || 140)));
+    const ny = Math.max(8, Math.min(140, Math.round(Number(overrideOpts.ny ?? sweepState.ny) || 80)));
+
+    const opts = {
+      kEffMTPerV: Number(overrideOpts.kEffMTPerV ?? sweepState.kEffMTPerV) || 1.50,
+      damping: Number(overrideOpts.damping ?? sweepState.damping) || 0.0020,
+      pulseUs: Number(overrideOpts.pulseUs ?? sweepState.pulseUs) || 1.0,
+      saSpanMHz: Number(overrideOpts.saSpanMHz ?? sweepState.saSpanMHz) || 5.0,
+      tempK: overrideOpts.tempK !== undefined ? Number(overrideOpts.tempK) : sweepState.tempK,
+      radWeight: overrideOpts.radWeight !== undefined ? !!overrideOpts.radWeight : sweepState.radWeight,
+      use4A: overrideOpts.use4A !== undefined ? !!overrideOpts.use4A : sweepState.use4A,
+      use4B: overrideOpts.use4B !== undefined ? !!overrideOpts.use4B : sweepState.use4B
+    };
+
+    const freqs = new Float64Array(nx);
+    const volts = new Float64Array(ny);
+    for (let ix = 0; ix < nx; ix++) freqs[ix] = fMinMHz + (ix / (nx - 1)) * (fMaxMHz - fMinMHz);
+    for (let iy = 0; iy < ny; iy++) volts[iy] = vMinMV + (iy / (ny - 1)) * (vMaxMV - vMinMV);
+
+    const total = nx * ny;
+    const signalDB = new Float64Array(total);
+    const widthMHz = new Float64Array(total);
+    const nEff = new Float64Array(total);
+    const domMode = new Int16Array(total);
+    let maxSigDB = -Infinity, minSigDB = Infinity, maxWidth = 0, maxNeff = 0, validCount = 0;
+
+    for (let iy = 0; iy < ny; iy++) {
+      const v = volts[iy];
+      for (let ix = 0; ix < nx; ix++) {
+        const idx = iy * nx + ix;
+        const pt = computePointSaSpectrum(freqs[ix], v, opts);
+        signalDB[idx] = pt.signalDB;
+        widthMHz[idx] = pt.widthMHz;
+        nEff[idx] = pt.nEff;
+        domMode[idx] = pt.domM;
+        if (pt.signalDB > maxSigDB) maxSigDB = pt.signalDB;
+        if (pt.signalDB < minSigDB) minSigDB = pt.signalDB;
+        if (Number.isFinite(pt.widthMHz) && pt.widthMHz > maxWidth) maxWidth = pt.widthMHz;
+        if (Number.isFinite(pt.nEff) && pt.nEff > maxNeff) maxNeff = pt.nEff;
+        if (Number.isFinite(pt.nEff)) validCount++;
+      }
+    }
+    const sigClipMin = maxSigDB - 51;
+    for (let i = 0; i < total; i++) {
+      if (signalDB[i] < sigClipMin) signalDB[i] = sigClipMin;
+    }
+
+    const grid = {
+      engine: 'analytical',
+      nx, ny, fMinMHz, fMaxMHz, vMinMV, vMaxMV, freqs, volts,
+      signalDB, widthMHz, nEff, domMode,
+      maxSigDB, sigClipMin,
+      maxWidth: Math.max(0.5, maxWidth),
+      maxNeff: Math.max(10, Math.min(150, maxNeff)),
+      validFrac: validCount / total,
+      opts
+    };
+    if (!overrideOpts.noStore) {
+      sweepState.grid = grid;
+      sweepState.selF = Math.max(fMinMHz, Math.min(fMaxMHz, sweepState.selF));
+      sweepState.selV = Math.max(vMinMV, Math.min(vMaxMV, sweepState.selV));
+      const badgeEl = document.getElementById('sweepEngineBadge');
+      const statusEl = document.getElementById('sweepStatusSpan');
+      const lblEl = document.getElementById('sweepProgressLabel');
+      if (badgeEl) { badgeEl.textContent = 'ANALYTICAL NMM'; badgeEl.className = 'vmBadge pass'; }
+      if (statusEl) statusEl.textContent = `${nx}×${ny} · ${(grid.validFrac * 100).toFixed(1)}% SNR≥10`;
+      if (lblEl) lblEl.textContent = `Analytical ${nx}×${ny} sweep ready (${(grid.validFrac * 100).toFixed(1)}% excited above 10× noise).`;
+    }
+    return grid;
+  }
+
+  function applySweepPreset(name, runCompute = true) {
+    sweepState.preset = name;
+    if (name === 'zoom') {
+      sweepState.fMinMHz = 4050; sweepState.fMaxMHz = 4080;
+      sweepState.vMinMV = 240; sweepState.vMaxMV = 350;
+      sweepState.selF = 4069; sweepState.selV = 310;
+    } else if (name === 'all29') {
+      sweepState.fMinMHz = 3380; sweepState.fMaxMHz = 4180;
+      sweepState.vMinMV = 200; sweepState.vMaxMV = 550;
+      sweepState.selF = 4110; sweepState.selV = 340;
+    } else {
+      sweepState.preset = 'wide';
+      sweepState.fMinMHz = 3760; sweepState.fMaxMHz = 4250;
+      sweepState.vMinMV = 200; sweepState.vMaxMV = 500;
+      sweepState.selF = 4110; sweepState.selV = 320;
+    }
+    syncSweepUi();
+    if (runCompute) {
+      computeSingleFreqSweepGrid();
+      drawSweepHeatmap();
+      drawSweepSlice();
+    }
+  }
+
+  function setSweepMetric(metric) {
+    sweepState.metric = (metric === 'width' || metric === 'neff') ? metric : 'signal';
+    syncSweepUi();
+    drawSweepHeatmap();
+    drawSweepSlice();
+  }
+
+  function syncSweepUi() {
+    const mapBtn = (id, on) => { const el = document.getElementById(id); if (el && el.classList) el.classList.toggle('active', !!on); };
+    mapBtn('sweepPresetWide', sweepState.preset === 'wide');
+    mapBtn('sweepPresetZoom', sweepState.preset === 'zoom');
+    mapBtn('sweepPresetAll29', sweepState.preset === 'all29');
+    mapBtn('sweepMetricSignal', sweepState.metric === 'signal');
+    mapBtn('sweepMetricWidth', sweepState.metric === 'width');
+    mapBtn('sweepMetricNeff', sweepState.metric === 'neff');
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    setVal('sweepFMinIn', sweepState.fMinMHz);
+    setVal('sweepFMaxIn', sweepState.fMaxMHz);
+    setVal('sweepVMinIn', sweepState.vMinMV);
+    setVal('sweepVMaxIn', sweepState.vMaxMV);
+    setVal('sweepKEffIn', sweepState.kEffMTPerV.toFixed(2));
+    setVal('sweepDampIn', sweepState.damping.toFixed(4));
+    setVal('sweepPulseUsIn', sweepState.pulseUs.toFixed(1));
+    setVal('sweepSaSpanIn', sweepState.saSpanMHz.toFixed(1));
+    setVal('sweepTempIn', Math.round(sweepState.tempK));
+    const resEl = document.getElementById('sweepResSelect');
+    if (resEl) resEl.value = `${sweepState.nx}x${sweepState.ny}`;
+    const setChk = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+    setChk('sweepChkRad', sweepState.radWeight);
+    setChk('sweepChkExp', sweepState.showExp);
+    setChk('sweepChkThresh', sweepState.showThresh);
+    setChk('sweepChk4A', sweepState.use4A);
+    setChk('sweepChk4B', sweepState.use4B);
+    const runOdeBtn = document.getElementById('sweepRunOdeBtn');
+    const stopOdeBtn = document.getElementById('sweepStopOdeBtn');
+    if (runOdeBtn) runOdeBtn.disabled = sweepState.odeRunning;
+    if (stopOdeBtn) stopOdeBtn.disabled = !sweepState.odeRunning;
+  }
+
+  function readSweepInputsFromDom() {
+    const numVal = (id, fb) => {
+      const el = document.getElementById(id);
+      const v = el ? parseFloat(el.value) : NaN;
+      return Number.isFinite(v) ? v : fb;
+    };
+    const chkVal = (id, fb) => {
+      const el = document.getElementById(id);
+      return el && typeof el.checked === 'boolean' ? el.checked : fb;
+    };
+    sweepState.fMinMHz = Math.max(3000, Math.min(4550, numVal('sweepFMinIn', sweepState.fMinMHz)));
+    sweepState.fMaxMHz = Math.max(sweepState.fMinMHz + 10, Math.min(4600, numVal('sweepFMaxIn', sweepState.fMaxMHz)));
+    sweepState.vMinMV = Math.max(10, Math.min(1450, numVal('sweepVMinIn', sweepState.vMinMV)));
+    sweepState.vMaxMV = Math.max(sweepState.vMinMV + 10, Math.min(1500, numVal('sweepVMaxIn', sweepState.vMaxMV)));
+    sweepState.kEffMTPerV = Math.max(0.05, Math.min(10, numVal('sweepKEffIn', sweepState.kEffMTPerV)));
+    sweepState.damping = Math.max(0.0001, Math.min(0.02, numVal('sweepDampIn', sweepState.damping)));
+    sweepState.pulseUs = Math.max(0.05, Math.min(10, numVal('sweepPulseUsIn', sweepState.pulseUs)));
+    sweepState.saSpanMHz = Math.max(0.5, Math.min(25, numVal('sweepSaSpanIn', sweepState.saSpanMHz)));
+    sweepState.tempK = Math.max(0, Math.min(600, numVal('sweepTempIn', sweepState.tempK)));
+    const resEl = document.getElementById('sweepResSelect');
+    if (resEl && typeof resEl.value === 'string' && resEl.value.includes('x')) {
+      const [rx, ry] = resEl.value.split('x').map(Number);
+      if (rx >= 20 && ry >= 16) { sweepState.nx = rx; sweepState.ny = ry; }
+    }
+    sweepState.radWeight = chkVal('sweepChkRad', sweepState.radWeight);
+    sweepState.showExp = chkVal('sweepChkExp', sweepState.showExp);
+    sweepState.showThresh = chkVal('sweepChkThresh', sweepState.showThresh);
+    sweepState.use4A = chkVal('sweepChk4A', sweepState.use4A);
+    sweepState.use4B = chkVal('sweepChk4B', sweepState.use4B);
+  }
+
+  function drawSweepHeatmap() {
+    const canvas = document.getElementById('sweepCanvas');
+    const cbar = document.getElementById('sweepCbarCanvas');
+    if (!canvas || !sweepState.grid) return;
+    const ctx2 = canvas.getContext('2d');
+    if (!ctx2) return;
+    const { w, h } = prepHiDpiCanvas(canvas, ctx2, 760, 440);
+    const padL = 50, padR = 14, padT = 16, padB = 34;
+    const pw = Math.max(40, w - padL - padR), ph = Math.max(40, h - padT - padB);
+    const g = sweepState.grid;
+    const { nx, ny, fMinMHz, fMaxMHz, vMinMV, vMaxMV } = g;
+
+    ctx2.clearRect(0, 0, w, h);
+    ctx2.fillStyle = '#050a14';
+    ctx2.fillRect(0, 0, w, h);
+
+    const cmap = sweepState.metric === 'width' ? 'magma' : (sweepState.metric === 'neff' ? 'plasma' : 'viridis');
+    const zArr = sweepState.metric === 'width' ? g.widthMHz : (sweepState.metric === 'neff' ? g.nEff : g.signalDB);
+    const zMin = sweepState.metric === 'signal' ? g.sigClipMin : 0;
+    const zMax = sweepState.metric === 'signal' ? g.maxSigDB : (sweepState.metric === 'width' ? g.maxWidth : g.maxNeff);
+    const zSpan = Math.max(1e-9, zMax - zMin);
+
+    // Paint grid into offscreen ImageData and scale onto plot box cleanly
+    const tmpCan = document.createElement('canvas');
+    tmpCan.width = nx; tmpCan.height = ny;
+    const tmpCtx = tmpCan.getContext('2d');
+    if (tmpCtx && typeof tmpCtx.createImageData === 'function') {
+      const im = tmpCtx.createImageData(nx, ny);
+      const dat = im.data;
+      for (let iy = 0; iy < ny; iy++) {
+        const yFlip = ny - 1 - iy; // high V_pk at top (y=0 in image)
+        for (let ix = 0; ix < nx; ix++) {
+          const val = zArr[yFlip * nx + ix];
+          const pOff = (iy * nx + ix) * 4;
+          if (!Number.isFinite(val)) {
+            dat[pOff] = 8; dat[pOff + 1] = 13; dat[pOff + 2] = 24; dat[pOff + 3] = 255;
+          } else {
+            const [r, gr, b] = sampleColormapRgb(cmap, (val - zMin) / zSpan);
+            dat[pOff] = r; dat[pOff + 1] = gr; dat[pOff + 2] = b; dat[pOff + 3] = 255;
+          }
+        }
+      }
+      tmpCtx.putImageData(im, 0, 0);
+      ctx2.save();
+      ctx2.imageSmoothingEnabled = true;
+      ctx2.drawImage(tmpCan, padL, padT, pw, ph);
+      ctx2.restore();
+    }
+
+    const toX = f => padL + ((f - fMinMHz) / (fMaxMHz - fMinMHz)) * pw;
+    const toY = v => padT + ph - ((v - vMinMV) / (vMaxMV - vMinMV)) * ph;
+
+    // Optional NMM analytical Arnold threshold contours converted to mV via k_eff
+    if (sweepState.showThresh) {
+      const kEff = Math.max(0.05, sweepState.kEffMTPerV || 1.50);
+      const alpha = Math.max(1e-5, sweepState.damping || 0.0020);
+      ctx2.save();
+      ctx2.beginPath(); ctx2.rect(padL, padT, pw, ph); ctx2.clip();
+      for (let m = 0; m < M; m++) {
+        const f0MHz = 2000 * fGhzArr[m];
+        if (f0MHz < fMinMHz - 140 || f0MHz > fMaxMHz + 140) continue;
+        const vm = Math.max(1e-9, vParamGHz_mT(m));
+        const gam = sweepModeGammaGHz(m, alpha);
+        const hTipMV = ((gam / vm) / kEff) * 1000;
+        if (hTipMV > vMaxMV) continue;
+        ctx2.strokeStyle = 'rgba(255,255,255,0.34)';
+        ctx2.lineWidth = (m === 13 || m === 27) ? 1.35 : 0.75;
+        ctx2.beginPath();
+        let started = false;
+        const steps = 64;
+        for (let s = 0; s <= steps; s++) {
+          const fm = f0MHz - 80 + (s / steps) * 160;
+          if (fm < fMinMHz - 10 || fm > fMaxMHz + 10) continue;
+          const deltaGHz = 0.5 * (fm * 1e-3 - 2 * fGhzArr[m]);
+          const hReqMT = Math.hypot(gam, deltaGHz) / vm;
+          const vReqMV = (hReqMT / kEff) * 1000;
+          if (vReqMV <= vMaxMV + 20) {
+            const x = toX(fm), y = toY(vReqMV);
+            if (!started) { ctx2.moveTo(x, y); started = true; } else ctx2.lineTo(x, y);
+          } else {
+            started = false;
+          }
+        }
+        if (started) ctx2.stroke();
+        if (f0MHz >= fMinMHz + 10 && f0MHz <= fMaxMHz - 10 && hTipMV >= vMinMV && hTipMV <= vMaxMV - 8) {
+          ctx2.fillStyle = 'rgba(235,245,255,0.78)';
+          ctx2.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+          ctx2.textBaseline = 'bottom';
+          ctx2.fillText(`m${m}`, toX(f0MHz) - 7, toY(hTipMV) - 2);
+        }
+      }
+      ctx2.restore();
+    }
+
+    // Optional experimental [EXP] anchors (amber = 29-mode matched, pink = 80-mode NPZ cutoff)
+    if (sweepState.showExp) {
+      ctx2.save();
+      ctx2.beginPath(); ctx2.rect(padL, padT, pw, ph); ctx2.clip();
+      const plotAnchor = (fMHz, aMV, col, tag) => {
+        if (fMHz < fMinMHz || fMHz > fMaxMHz) return;
+        const x = toX(fMHz);
+        ctx2.strokeStyle = col; ctx2.lineWidth = 1.1;
+        ctx2.beginPath(); ctx2.moveTo(x, padT + ph - 10); ctx2.lineTo(x, padT + ph); ctx2.stroke();
+        if (aMV && aMV >= vMinMV && aMV <= vMaxMV) {
+          const y = toY(aMV);
+          ctx2.fillStyle = col;
+          ctx2.beginPath();
+          ctx2.moveTo(x, y - 5); ctx2.lineTo(x + 5, y); ctx2.lineTo(x, y + 5); ctx2.lineTo(x - 5, y);
+          ctx2.closePath(); ctx2.fill();
+          ctx2.strokeStyle = '#03060d'; ctx2.lineWidth = 0.8; ctx2.stroke();
+          ctx2.fillStyle = col;
+          ctx2.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+          ctx2.textBaseline = 'bottom';
+          ctx2.fillText(tag, Math.min(padL + pw - 22, x + 6), y - 2);
+        }
+      };
+      for (const r of EXP_ANCHORS_29) plotAnchor(r.f2ExpMHz, r.a10SigMV, '#fbbf24', `e${r.m}`);
+      for (const r of EXP_ANCHORS_80_EXTRA) plotAnchor(r.f2ExpMHz, r.a10SigMV, '#f472b6', `n${r.npz}`);
+      ctx2.restore();
+    }
+
+    // Selected inspection crosshair
+    const cx = toX(sweepState.selF), cy = toY(sweepState.selV);
+    if (cx >= padL && cx <= padL + pw && cy >= padT && cy <= padT + ph) {
+      ctx2.strokeStyle = 'rgba(255,255,255,0.88)';
+      ctx2.lineWidth = 1.2;
+      ctx2.beginPath();
+      ctx2.moveTo(cx - 8, cy); ctx2.lineTo(cx + 8, cy);
+      ctx2.moveTo(cx, cy - 8); ctx2.lineTo(cx, cy + 8);
+      ctx2.stroke();
+      ctx2.beginPath(); ctx2.arc(cx, cy, 4.5, 0, Math.PI * 2); ctx2.stroke();
+    }
+
+    // Axes & ticks
+    ctx2.strokeStyle = 'rgba(210,232,255,0.55)';
+    ctx2.lineWidth = 1;
+    ctx2.strokeRect(padL, padT, pw, ph);
+    ctx2.fillStyle = 'rgba(215,234,255,0.86)';
+    ctx2.font = '9px ui-monospace,SFMono-Regular,Menlo,monospace';
+    const nXTicks = 6;
+    ctx2.textBaseline = 'top';
+    for (let i = 0; i <= nXTicks; i++) {
+      const fx = fMinMHz + (i / nXTicks) * (fMaxMHz - fMinMHz);
+      const x = toX(fx);
+      ctx2.beginPath(); ctx2.moveTo(x, padT + ph); ctx2.lineTo(x, padT + ph + 4); ctx2.stroke();
+      ctx2.fillText(`${Math.round(fx)}`, Math.max(padL, Math.min(padL + pw - 26, x - 12)), padT + ph + 6);
+    }
+    ctx2.fillText('Frequency f_p (MHz)', padL + pw * 0.5 - 52, padT + ph + 20);
+    const nYTicks = 5;
+    ctx2.textBaseline = 'middle';
+    for (let i = 0; i <= nYTicks; i++) {
+      const vy = vMinMV + (i / nYTicks) * (vMaxMV - vMinMV);
+      const y = toY(vy);
+      ctx2.beginPath(); ctx2.moveTo(padL - 4, y); ctx2.lineTo(padL, y); ctx2.stroke();
+      ctx2.fillText(`${Math.round(vy)}`, 6, y);
+    }
+    ctx2.fillText('mV', 8, padT + 6);
+
+    // Colorbar canvas
+    if (cbar) {
+      const cbCtx = cbar.getContext('2d');
+      if (cbCtx) {
+        const { w: cw, h: ch } = prepHiDpiCanvas(cbar, cbCtx, 56, 440);
+        cbCtx.clearRect(0, 0, cw, ch);
+        cbCtx.fillStyle = 'rgba(4,9,18,0.88)';
+        cbCtx.fillRect(0, 0, cw, ch);
+        const barW = 14, barH = Math.max(40, ch - padT - padB);
+        for (let y = 0; y < barH; y++) {
+          const t = 1 - y / Math.max(1, barH - 1);
+          const [r, gr, b] = sampleColormapRgb(cmap, t);
+          cbCtx.fillStyle = `rgb(${r},${gr},${b})`;
+          cbCtx.fillRect(6, padT + y, barW, 1.5);
+        }
+        cbCtx.strokeStyle = 'rgba(200,225,255,0.45)';
+        cbCtx.strokeRect(6, padT, barW, barH);
+        cbCtx.fillStyle = 'rgba(215,234,255,0.85)';
+        cbCtx.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+        cbCtx.textBaseline = 'middle';
+        for (let k = 0; k <= 4; k++) {
+          const frac = k / 4;
+          const v = zMin + (1 - frac) * (zMax - zMin);
+          const lbl = sweepState.metric === 'signal' ? v.toFixed(0) : (sweepState.metric === 'width' ? v.toFixed(2) : v.toFixed(0));
+          cbCtx.fillText(lbl, 24, padT + frac * barH);
+        }
+        cbCtx.textBaseline = 'top';
+        const unitLbl = sweepState.metric === 'signal' ? 'dB' : (sweepState.metric === 'width' ? 'MHz' : 'bins');
+        cbCtx.fillText(unitLbl, 24, 2);
+      }
+    }
+  }
+
+  function drawSweepSlice(fOverride = null, vOverride = null) {
+    const fMHz = fOverride !== null ? fOverride : sweepState.selF;
+    const vMV = vOverride !== null ? vOverride : sweepState.selV;
+    const pt = computePointSaSpectrum(fMHz, vMV);
+    sweepState.lastSlice = pt;
+
+    const u = awgVpkToUnits(vMV, fMHz * 1e-3, rfChainGainDB, sweepState.kEffMTPerV);
+    const metaEl = document.getElementById('sweepSliceMeta');
+    if (metaEl) {
+      const wTxt = Number.isFinite(pt.widthMHz) ? `FWHM=${pt.widthMHz.toFixed(2)} MHz · N_eff=${pt.nEff.toFixed(0)}` : 'SNR < 10 (noise floor)';
+      metaEl.textContent = `f_p=${fMHz.toFixed(1)} MHz (f_p/2=${(fMHz * 0.5).toFixed(1)}) · V_pk=${vMV.toFixed(0)} mV · ${wTxt}`;
+    }
+    const hoverEl = document.getElementById('sweepHoverInfo');
+    if (hoverEl) {
+      const hThDom = parametricThresholdMT(pt.domM) * (sweepState.damping / Math.max(1e-5, damping));
+      hoverEl.textContent =
+        `f_p=${fMHz.toFixed(1)} MHz | V_pk=${vMV.toFixed(0)} mV (${(2 * vMV).toFixed(0)} Vpp) · P_AWG=${u.pAwgMW.toFixed(3)} mW (${u.pAwgDBm.toFixed(2)} dBm) · μ₀h_p=${pt.hPumpMT.toFixed(3)} mT | Sig=${pt.signalDB.toFixed(1)} dB (SNR=${pt.snrRatio.toFixed(1)}×) · m${pt.domM} (h_th=${hThDom.toFixed(3)} mT)`;
+    }
+
+    const canvas = document.getElementById('sweepSliceCanvas');
+    if (!canvas) return;
+    const ctx2 = canvas.getContext('2d');
+    if (!ctx2) return;
+    const { w, h } = prepHiDpiCanvas(canvas, ctx2, 760, 90);
+    const padL = 42, padR = 10, padT = 10, padB = 20;
+    const pw = Math.max(40, w - padL - padR), ph = Math.max(20, h - padT - padB);
+    ctx2.clearRect(0, 0, w, h);
+    ctx2.fillStyle = 'rgba(4,9,18,0.88)';
+    ctx2.fillRect(0, 0, w, h);
+
+    const n = pt.trace.length;
+    const dbArr = new Float64Array(n);
+    let minDB = Infinity, maxDB = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const d = 10 * Math.log10(Math.max(pt.trace[i], 1e-30));
+      dbArr[i] = d;
+      if (d < minDB) minDB = d;
+      if (d > maxDB) maxDB = d;
+    }
+    const yLo = Math.floor(Math.min(minDB - 2, -85));
+    const yHi = Math.ceil(Math.max(maxDB + 3, yLo + 25));
+    const toX = i => padL + (i / Math.max(1, n - 1)) * pw;
+    const toY = d => padT + ph - ((d - yLo) / Math.max(1, yHi - yLo)) * ph;
+
+    // Shade +-50 kHz SA notch & draw 10x noise line
+    const fCenter = 0.5 * fMHz;
+    const notchHalf = Math.max(0.05, sweepState.saSpanMHz * 0.01);
+    const nx1 = padL + ((0.5 - notchHalf / sweepState.saSpanMHz) * pw);
+    const nx2 = padL + ((0.5 + notchHalf / sweepState.saSpanMHz) * pw);
+    ctx2.fillStyle = 'rgba(251,191,36,0.14)';
+    ctx2.fillRect(nx1, padT, Math.max(2, nx2 - nx1), ph);
+
+    const y10x = toY(10 * Math.log10(Math.max(1e-30, 10 * pt.meanNoise)));
+    if (y10x >= padT && y10x <= padT + ph) {
+      ctx2.strokeStyle = 'rgba(248,113,113,0.55)';
+      ctx2.setLineDash([4, 3]);
+      ctx2.beginPath(); ctx2.moveTo(padL, y10x); ctx2.lineTo(padL + pw, y10x); ctx2.stroke();
+      ctx2.setLineDash([]);
+    }
+
+    ctx2.strokeStyle = pt.thresh10x ? '#34d399' : '#60a5fa';
+    ctx2.lineWidth = 1.35;
+    ctx2.beginPath();
+    for (let i = 0; i < n; i++) {
+      const x = toX(i), y = toY(dbArr[i]);
+      if (i === 0) ctx2.moveTo(x, y); else ctx2.lineTo(x, y);
+    }
+    ctx2.stroke();
+
+    ctx2.fillStyle = 'rgba(205,228,255,0.78)';
+    ctx2.font = '8px ui-monospace,SFMono-Regular,Menlo,monospace';
+    ctx2.textBaseline = 'top';
+    ctx2.fillText(`${yHi}dB`, 4, padT);
+    ctx2.textBaseline = 'bottom';
+    ctx2.fillText(`${yLo}dB`, 4, padT + ph);
+    ctx2.fillText(`${(fCenter - 0.5 * sweepState.saSpanMHz).toFixed(1)}`, padL, h - 4);
+    ctx2.fillText(`f_p/2=${fCenter.toFixed(1)} MHz (notch)`, padL + pw * 0.5 - 52, h - 4);
+    ctx2.fillText(`${(fCenter + 0.5 * sweepState.saSpanMHz).toFixed(1)}`, padL + pw - 36, h - 4);
+  }
+
+  function stopSweepOdeRun(restoreLive = true) {
+    sweepState.odeAbort = true;
+    sweepState.odeRunning = false;
+    if (restoreLive && sweepState.odeSnap) {
+      restoreSimSnapshot(sweepState.odeSnap);
+      sweepState.odeSnap = null;
+    }
+    syncSweepUi();
+  }
+
+  function startSweepOdeRun() {
+    if (sweepState.odeRunning) return;
+    readSweepInputsFromDom();
+    const nx = 24, ny = 14;
+    const { fMinMHz, fMaxMHz, vMinMV, vMaxMV, kEffMTPerV, damping: alpha, pulseUs, saSpanMHz, tempK, radWeight, use4A, use4B } = sweepState;
+    const freqs = new Float64Array(nx);
+    const volts = new Float64Array(ny);
+    for (let ix = 0; ix < nx; ix++) freqs[ix] = fMinMHz + (ix / (nx - 1)) * (fMaxMHz - fMinMHz);
+    for (let iy = 0; iy < ny; iy++) volts[iy] = vMinMV + (iy / (ny - 1)) * (vMaxMV - vMinMV);
+    const total = nx * ny;
+    const signalDB = new Float64Array(total).fill(-90);
+    const widthMHz = new Float64Array(total).fill(NaN);
+    const nEff = new Float64Array(total).fill(NaN);
+    const domMode = new Int16Array(total).fill(0);
+
+    sweepState.odeSnap = saveSimSnapshot();
+    sweepState.odeRunning = true;
+    sweepState.odeAbort = false;
+    sweepState.grid = {
+      engine: 'rk4-ode',
+      nx, ny, fMinMHz, fMaxMHz, vMinMV, vMaxMV, freqs, volts,
+      signalDB, widthMHz, nEff, domMode,
+      maxSigDB: -30, sigClipMin: -81, maxWidth: 2.0, maxNeff: 120, validFrac: 0,
+      opts: { kEffMTPerV, damping: alpha, pulseUs, saSpanMHz, tempK, radWeight, use4A, use4B }
+    };
+    const badgeEl = document.getElementById('sweepEngineBadge');
+    if (badgeEl) { badgeEl.textContent = 'LIVE RK4 ODE'; badgeEl.className = 'vmBadge warn'; }
+    syncSweepUi();
+
+    let cursor = 0;
+    let rawMaxDB = -Infinity, maxW = 0.5, maxN = 10, valid = 0;
+    const rawSigDB = new Float64Array(total);
+    const tauTarget = Math.min(usToTau(0.55), usToTau(pulseUs));
+
+    function pumpChunk() {
+      if (sweepState.odeAbort || !sweepState.odeRunning) return;
+      const chunkCount = 4;
+      for (let c = 0; c < chunkCount && cursor < total; c++, cursor++) {
+        const iy = Math.floor(cursor / nx), ix = cursor % nx;
+        const fMHz = freqs[ix], vMV = volts[iy];
+        driveMode = 'parallel';
+        dualTone = false;
+        driveAmp2 = 0;
+        driveFreq = fMHz * 1e-3;
+        driveAmp = ((vMV * 1e-3) * kEffMTPerV) / MU0_MS_MT;
+        damping = alpha;
+        temperatureK = tempK;
+        terms.g1 = true; terms.t2A = true; terms.t4A = use4A;
+        terms.t2B = terms.t2C = terms.g3 = terms.t4B = terms.t4C = terms.t4D = use4B;
+        simTime = 0;
+        reseedRng(20260101 + cursor);
+        seedSpins(tempK > 0 ? 'thermal' : 0.002);
+        const dt = use4B ? 0.45 : 0.65;
+        const nSteps = Math.max(60, Math.round(tauTarget / dt));
+        for (let s = 0; s < nSteps; s++) stepLlg(dt, true);
+        const ampsNow = new Float64Array(M);
+        for (let m = 0; m < M; m++) ampsNow[m] = Math.hypot(aRe[m], aIm[m]);
+        const pt = computePointSaSpectrum(fMHz, vMV, sweepState.grid.opts, ampsNow);
+        rawSigDB[cursor] = pt.signalDB;
+        widthMHz[cursor] = pt.widthMHz;
+        nEff[cursor] = pt.nEff;
+        domMode[cursor] = pt.domM;
+        if (pt.signalDB > rawMaxDB) rawMaxDB = pt.signalDB;
+        if (Number.isFinite(pt.widthMHz) && pt.widthMHz > maxW) maxW = pt.widthMHz;
+        if (Number.isFinite(pt.nEff) && pt.nEff > maxN) maxN = pt.nEff;
+        if (Number.isFinite(pt.nEff)) valid++;
+      }
+
+      const clipMin = rawMaxDB - 51;
+      for (let i = 0; i < cursor; i++) signalDB[i] = Math.max(clipMin, rawSigDB[i]);
+      sweepState.grid.maxSigDB = rawMaxDB;
+      sweepState.grid.sigClipMin = clipMin;
+      sweepState.grid.maxWidth = maxW;
+      sweepState.grid.maxNeff = Math.min(150, maxN);
+      sweepState.grid.validFrac = valid / Math.max(1, cursor);
+
+      const pct = Math.round((cursor / total) * 100);
+      const pBar = document.getElementById('sweepProgressBar');
+      const pLbl = document.getElementById('sweepProgressLabel');
+      const statusEl = document.getElementById('sweepStatusSpan');
+      if (pBar) pBar.style.width = `${pct}%`;
+      if (pLbl) pLbl.textContent = `RK4 ODE Sweep: ${cursor}/${total} pixels (${pct}%)`;
+      if (statusEl) statusEl.textContent = `ODE ${cursor}/${total}`;
+      drawSweepHeatmap();
+
+      if (cursor < total) {
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(pumpChunk);
+        else setTimeout(pumpChunk, 0);
+      } else {
+        sweepState.odeRunning = false;
+        if (sweepState.odeSnap) { restoreSimSnapshot(sweepState.odeSnap); sweepState.odeSnap = null; }
+        if (badgeEl) { badgeEl.textContent = 'LIVE RK4 DONE'; badgeEl.className = 'vmBadge pass'; }
+        if (pLbl) pLbl.textContent = `RK4 ODE ${nx}×${ny} sweep complete (${(sweepState.grid.validFrac * 100).toFixed(1)}% excited).`;
+        syncSweepUi();
+        drawSweepHeatmap();
+        drawSweepSlice();
+      }
+    }
+    pumpChunk();
+  }
+
+  function sendSweepPointToLive() {
+    readSweepInputsFromDom();
+    const fGHz = sweepState.selF * 1e-3;
+    const hMT = (sweepState.selV * 1e-3) * sweepState.kEffMTPerV;
+    if (sweepState.odeRunning) stopSweepOdeRun(false);
+    rfKEffMTPerV = sweepState.kEffMTPerV;
+    const kEl = document.getElementById('rfKEffIn');
+    if (kEl) kEl.value = sweepState.kEffMTPerV.toFixed(2);
+    driveMode = 'parallel';
+    dualTone = false;
+    driveAmp2 = 0;
+    driveFreq = fGHz;
+    driveAmp = hMT / MU0_MS_MT;
+    damping = sweepState.damping;
+    temperatureK = sweepState.tempK;
+    terms.g1 = true; terms.t2A = true; terms.t4A = sweepState.use4A;
+    terms.t2B = terms.t2C = terms.g3 = terms.t4B = terms.t4C = terms.t4D = sweepState.use4B;
+    simTime = 0;
+    seedSpins(temperatureK > 0 ? 'thermal' : 0.004);
+    switchMainTab('live');
+    announcePress('Sweep → Tab 1', `Sent f_p=${sweepState.selF.toFixed(1)} MHz, V_pk=${sweepState.selV.toFixed(0)} mV (k_eff=${sweepState.kEffMTPerV.toFixed(2)} mT/V → ${hMT.toFixed(3)} mT) into Live NMM!`);
+  }
+
+  function exportSweepData(format = 'json') {
+    if (!sweepState.grid) computeSingleFreqSweepGrid();
+    const g = sweepState.grid;
+    let payload = '', ext = 'json', mime = 'application/json';
+    if (format === 'csv') {
+      const rows = ['freq_MHz,V_pk_mV,h_pump_mT,signal_dB,width_FWHM_MHz,N_eff,dom_mode'];
+      for (let iy = 0; iy < g.ny; iy++) {
+        for (let ix = 0; ix < g.nx; ix++) {
+          const idx = iy * g.nx + ix;
+          const hmt = ((g.volts[iy] * 1e-3) * g.opts.kEffMTPerV).toFixed(4);
+          const w = Number.isFinite(g.widthMHz[idx]) ? g.widthMHz[idx].toFixed(4) : 'NaN';
+          const n = Number.isFinite(g.nEff[idx]) ? g.nEff[idx].toFixed(2) : 'NaN';
+          rows.push(`${g.freqs[ix].toFixed(2)},${g.volts[iy].toFixed(2)},${hmt},${g.signalDB[idx].toFixed(3)},${w},${n},m${g.domMode[idx]}`);
+        }
+      }
+      payload = rows.join('\n'); ext = 'csv'; mime = 'text/csv';
+    } else {
+      payload = JSON.stringify({
+        protocol: 'spin-waves-single-freq-sweep-v1',
+        engine: g.engine,
+        nx: g.nx, ny: g.ny,
+        fMinMHz: g.fMinMHz, fMaxMHz: g.fMaxMHz,
+        vMinMV: g.vMinMV, vMaxMV: g.vMaxMV,
+        opts: g.opts,
+        freqs: Array.from(g.freqs), volts: Array.from(g.volts),
+        signalDB: Array.from(g.signalDB),
+        widthMHz: Array.from(g.widthMHz),
+        nEff: Array.from(g.nEff)
+      }, null, 2);
+    }
+    try {
+      if (typeof Blob !== 'undefined' && typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const blob = new Blob([payload], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `arnold-sweep-${sweepState.preset}.${ext}`;
+        if (document.body && document.body.appendChild) document.body.appendChild(a);
+        if (typeof a.click === 'function') a.click();
+        if (a.remove) a.remove();
+        setTimeout(() => { try { URL.revokeObjectURL(url); } catch (_) {} }, 1000);
+      }
+      showLogToast(`EXPORTED ${ext.toUpperCase()}`, `Downloaded arnold-sweep-${sweepState.preset}.${ext}`);
+    } catch (_) {}
+    return payload;
+  }
+
+  function switchMainTab(tab) {
+    const next = tab === 'sweep' ? 'sweep' : 'live';
+    activeMainTab = next;
+    const tLiveBtn = document.getElementById('tabLiveBtn');
+    const tSweepBtn = document.getElementById('tabSweepBtn');
+    const dShell = document.getElementById('dashShell');
+    const sShell = document.getElementById('sweepShell');
+    if (tLiveBtn && tLiveBtn.classList) {
+      tLiveBtn.classList.toggle('active', next === 'live');
+      if (typeof tLiveBtn.setAttribute === 'function') tLiveBtn.setAttribute('aria-selected', next === 'live' ? 'true' : 'false');
+    }
+    if (tSweepBtn && tSweepBtn.classList) {
+      tSweepBtn.classList.toggle('active', next === 'sweep');
+      if (typeof tSweepBtn.setAttribute === 'function') tSweepBtn.setAttribute('aria-selected', next === 'sweep' ? 'true' : 'false');
+    }
+    if (dShell) dShell.hidden = next === 'sweep';
+    if (sShell) sShell.hidden = next !== 'sweep';
+    if (next === 'sweep') {
+      syncSweepUi();
+      if (!sweepState.grid) computeSingleFreqSweepGrid();
+      drawSweepHeatmap();
+      drawSweepSlice();
+      notifySwTutorial('tab:sweep');
+      recordLogEvent('ui', 'Switched to Tab 2: Single-Freq Arnold Sweep', { preset: sweepState.preset });
+    } else {
+      if (sweepState.odeRunning) stopSweepOdeRun(true);
+      resize();
+      syncUi();
+      drawScene();
+    }
+  }
+
+  {
+    const onClk = (id, fn) => { const el = document.getElementById(id); if (el && el.addEventListener) el.addEventListener('click', fn); };
+    const onChg = (id, fn) => { const el = document.getElementById(id); if (el && el.addEventListener) el.addEventListener('change', fn); };
+    onClk('tabLiveBtn', () => switchMainTab('live'));
+    onClk('tabSweepBtn', () => switchMainTab('sweep'));
+    onClk('arnoldToSweepBtn', () => switchMainTab('sweep'));
+    onClk('wnOpenSweepBtn', () => { dismissWhatsNew(true); switchMainTab('sweep'); });
+    onClk('sweepPresetWide', () => applySweepPreset('wide', true));
+    onClk('sweepPresetZoom', () => applySweepPreset('zoom', true));
+    onClk('sweepPresetAll29', () => applySweepPreset('all29', true));
+    onClk('sweepMetricSignal', () => setSweepMetric('signal'));
+    onClk('sweepMetricWidth', () => setSweepMetric('width'));
+    onClk('sweepMetricNeff', () => setSweepMetric('neff'));
+    onClk('sweepRunFastBtn', () => { readSweepInputsFromDom(); computeSingleFreqSweepGrid(); drawSweepHeatmap(); drawSweepSlice(); });
+    onClk('sweepRunOdeBtn', () => startSweepOdeRun());
+    onClk('sweepStopOdeBtn', () => stopSweepOdeRun(true));
+    onClk('sweepSendLiveBtn', () => sendSweepPointToLive());
+    onClk('sweepExportJsonBtn', () => exportSweepData('json'));
+    onClk('sweepExportCsvBtn', () => exportSweepData('csv'));
+    ['sweepFMinIn', 'sweepFMaxIn', 'sweepVMinIn', 'sweepVMaxIn', 'sweepKEffIn', 'sweepDampIn', 'sweepPulseUsIn', 'sweepSaSpanIn', 'sweepTempIn', 'sweepResSelect', 'sweepChkRad', 'sweepChkExp', 'sweepChkThresh', 'sweepChk4A', 'sweepChk4B'].forEach(id => {
+      onChg(id, () => { readSweepInputsFromDom(); computeSingleFreqSweepGrid(); drawSweepHeatmap(); drawSweepSlice(); });
+    });
+    const swCan = document.getElementById('sweepCanvas');
+    if (swCan && swCan.addEventListener) {
+      const mapCoords = ev => {
+        const rect = swCan.getBoundingClientRect ? swCan.getBoundingClientRect() : null;
+        if (!rect || rect.width <= 40 || rect.height <= 40 || !sweepState.grid) return null;
+        const x = ev.clientX - rect.left, y = ev.clientY - rect.top;
+        const padL = 50, padR = 14, padT = 16, padB = 34;
+        const pw = Math.max(40, rect.width - padL - padR), ph = Math.max(40, rect.height - padT - padB);
+        const fx = Math.max(0, Math.min(1, (x - padL) / pw));
+        const fy = Math.max(0, Math.min(1, 1 - (y - padT) / ph));
+        return {
+          f: sweepState.grid.fMinMHz + fx * (sweepState.grid.fMaxMHz - sweepState.grid.fMinMHz),
+          v: sweepState.grid.vMinMV + fy * (sweepState.grid.vMaxMV - sweepState.grid.vMinMV)
+        };
+      };
+      swCan.addEventListener('pointermove', ev => {
+        const pt = mapCoords(ev);
+        if (pt) { sweepState.hoverF = pt.f; sweepState.hoverV = pt.v; drawSweepSlice(pt.f, pt.v); }
+      });
+      swCan.addEventListener('pointerdown', ev => {
+        const pt = mapCoords(ev);
+        if (pt) { sweepState.selF = pt.f; sweepState.selV = pt.v; drawSweepHeatmap(); drawSweepSlice(pt.f, pt.v); }
+      });
+    }
+  }
+
+  const APP_RELEASE_VERSION = 'spacetime-shell-v84';
   const WHATS_NEW_KEY = 'spin-waves-whatsnew-seen-version';
   const whatsNewModalEl = document.getElementById('whatsNewModal');
   function shouldShowWhatsNew() {
@@ -5705,6 +6877,11 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   buildNikMatrix();
   applyPreset('param');
+  {
+    const d0 = document.getElementById('dashShell'), s0 = document.getElementById('sweepShell');
+    if (d0) d0.hidden = false;
+    if (s0) s0.hidden = true;
+  }
   drawScene();
   swLog.lastFpsCalcMs = swLog.startedWallMs;
   swLog.lastIdbSaveMs = swLog.startedWallMs;
@@ -5734,52 +6911,56 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
     swLog.lastFrameWallMs = t0;
 
-    if (!paused) {
-      const wasReleased = tone2Released;
-      const wasFast = fastForwarding;
-      let frameStepTau = 0;
-      if (fastForwarding) {
-        const steps = fastForwardStepsPerFrame(), dtFast = 0.35;
-        frameStepTau = steps * dtFast;
-        for (let s = 0; s < steps; s++) stepLlg(dtFast, true);
-        reconstructSpatialSpins();
-        ffFrames++;
-        const delayTau = (dualTone && driveAmp2 > 0 && !tone2WaitSS && tone2DelayNs > 0) ? usToTau(tone2DelayNs) : 0;
-        const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + usToTau(1.0));
-        const ffTol = temperatureK > 0 ? Math.max(8e-5, 0.8 * thermalRmsAmp()) : 8e-5;
-        let maxDiff = 0, maxRel = 0;
-        for (let m = 0; m < M; m++) {
-          const cur = modeRmsAmp(m);
-          const diff = Math.abs(cur - ffPrev[m]);
-          if (cur >= 0.004 || temperatureK === 0) { if (diff > maxDiff) maxDiff = diff; }
-          const rel = diff / Math.max(0.005, cur); if (rel > maxRel) maxRel = rel;
-          ffPrev[m] = cur;
+    if (activeMainTab === 'live' && !sweepState.odeRunning) {
+      if (!paused) {
+        const wasReleased = tone2Released;
+        const wasFast = fastForwarding;
+        let frameStepTau = 0;
+        if (fastForwarding) {
+          const steps = fastForwardStepsPerFrame(), dtFast = 0.35;
+          frameStepTau = steps * dtFast;
+          for (let s = 0; s < steps; s++) stepLlg(dtFast, true);
+          reconstructSpatialSpins();
+          ffFrames++;
+          const delayTau = (dualTone && driveAmp2 > 0 && !tone2WaitSS && tone2DelayNs > 0) ? usToTau(tone2DelayNs) : 0;
+          const waitReady = !(dualTone && driveAmp2 > 0 && tone2WaitSS) || (tone2Released && simTime >= tone2ReleaseT + usToTau(1.0));
+          const ffTol = temperatureK > 0 ? Math.max(8e-5, 0.8 * thermalRmsAmp()) : 8e-5;
+          let maxDiff = 0, maxRel = 0;
+          for (let m = 0; m < M; m++) {
+            const cur = modeRmsAmp(m);
+            const diff = Math.abs(cur - ffPrev[m]);
+            if (cur >= 0.004 || temperatureK === 0) { if (diff > maxDiff) maxDiff = diff; }
+            const rel = diff / Math.max(0.005, cur); if (rel > maxRel) maxRel = rel;
+            ffPrev[m] = cur;
+          }
+          const relTol = (dualTone && simTime >= delayTau + usToTau(1.8)) ? 0.012 : 0.006;
+          const absTol = (dualTone && simTime >= delayTau + usToTau(1.8)) ? Math.max(ffTol, 1e-3) : ffTol;
+          if (ffFrames >= 10 && simTime >= delayTau + usToTau(1.0) && waitReady && maxDiff < absTol && maxRel < relTol) {
+            if (++ffStable >= 4) { fastForwarding = false; syncUi(); }
+          } else ffStable = 0;
+          if (fastForwarding && ffFrames >= 3000) { fastForwarding = false; syncUi(); }
+        } else {
+          const [nSub, hSub] = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
+          frameStepTau = nSub * hSub;
+          for (let s = 0; s < nSub; s++) stepLlg(hSub, true);
+          reconstructSpatialSpins();
         }
-        if (ffFrames >= 10 && simTime >= delayTau + usToTau(1.0) && waitReady && maxDiff < ffTol && maxRel < 0.006) {
-          if (++ffStable >= 4) { fastForwarding = false; syncUi(); }
-        } else ffStable = 0;
-        if (fastForwarding && ffFrames >= 3000) { fastForwarding = false; syncUi(); }
-      } else {
-        const [nSub, hSub] = SPEED_FRAME_STEPS[playbackSpeed] || [1, 0.06];
-        frameStepTau = nSub * hSub;
-        for (let s = 0; s < nSub; s++) stepLlg(hSub, true);
-        reconstructSpatialSpins();
+        if (tone2WaitSS && !wasReleased && tone2Released) {
+          syncUi();
+          recordLogEvent('physics', 'Tone 2 Released at T1 Steady State', { releaseTau: +tone2ReleaseT.toFixed(2) });
+          recordTelemetrySample(true);
+        }
+        if (wasFast && !fastForwarding) {
+          holdPlotWin = true;
+          recordLogEvent('physics', 'Fast-Forward Settled', { ffFrames, simTimeUs: +simTimeUs().toFixed(4) });
+          recordTelemetrySample(true);
+        }
+        updatePlotWindow(frameStepTau);
+        recordPlotSample();
+        updateSpectrum();
       }
-      if (tone2WaitSS && !wasReleased && tone2Released) {
-        syncUi();
-        recordLogEvent('physics', 'Tone 2 Released at T1 Steady State', { releaseTau: +tone2ReleaseT.toFixed(2) });
-        recordTelemetrySample(true);
-      }
-      if (wasFast && !fastForwarding) {
-        holdPlotWin = true;
-        recordLogEvent('physics', 'Fast-Forward Settled', { ffFrames, simTimeUs: +simTimeUs().toFixed(4) });
-        recordTelemetrySample(true);
-      }
-      updatePlotWindow(frameStepTau);
-      recordPlotSample();
-      updateSpectrum();
+      drawScene();
     }
-    drawScene();
     recordTelemetrySample(false);
     if ((t0 - swLog.lastIdbSaveMs) >= 10000) {
       swLog.lastIdbSaveMs = t0;

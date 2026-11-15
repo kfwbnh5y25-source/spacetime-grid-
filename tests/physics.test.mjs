@@ -358,7 +358,7 @@ function loadSpinWavesContext(seedStorage = {}) {
     remove: noop,
     contains: () => false,
     dataset: {},
-    hidden: id === 'whatsNewModal' || id === 'verifyModal' || id === 'vmTabHandout' || id === 'vmTabLive' || id === 'vmTabDb' || id === 'vmTabExp',
+    hidden: id === 'whatsNewModal' || id === 'verifyModal' || id === 'vmTabHandout' || id === 'vmTabLive' || id === 'vmTabDb' || id === 'vmTabExp' || id === 'sweepShell',
     textContent: '',
     innerHTML: '',
     value: 0,
@@ -433,10 +433,15 @@ function loadSpinWavesContext(seedStorage = {}) {
     RLS_SQL_FIX, getDbConfig, saveDbConfig, resetDbConfig, uploadSwLog, getDbRlsBlockedUrl: () => dbRlsBlockedUrl, formatDbDiagText,
     APP_RELEASE_VERSION, WHATS_NEW_KEY, shouldShowWhatsNew, openWhatsNew, dismissWhatsNew, openVerifyModal, swTutSteps, runSwTutDemo,
     getElHidden: id => !!document.getElementById(id).hidden,
+    getElText: id => String(document.getElementById(id).textContent || ''),
     VERIFY_STAGES, runVerificationStage, runFullVerificationProtocol, runThroughputBenchmark,
     inspectLiveCalibration, probe4Avs4BCrossPump,
     G_REF_50PTS, interpolateGrefDB, RF_NOISE_FLOOR, EXP_BCAL_SUMMARY, EXP_ANCHORS_29, EXP_ANCHORS_80_EXTRA, CSI2_ABLATION_DATA,
     awgVpkToUnits, mtToAwgVpk, dualToneRfSummary, syncRfCalUi,
+    switchMainTab, applySweepPreset, setSweepMetric, computePointSaSpectrum, computeSingleFreqSweepGrid,
+    drawSweepHeatmap, drawSweepSlice, sendSweepPointToLive, exportSweepData,
+    getSweepState: () => ({ activeMainTab, ...sweepState }),
+    setSweepState: patch => Object.assign(sweepState, patch),
     computeTimeWindowMetrics, buildTimeTraceExport,
     drawModeTimePlot, updatePlotWindow, recordPlotSample,
     getPlotStats: () => ({ count: plotHistCount, winTau: plotWinTau, originTau: plotOriginTau, lastPlotTau, plotYScale, plotYTarget }),
@@ -1067,14 +1072,20 @@ test('V. Arnold Tongues H/V/Zoom sliders, auto-follow frame lock & trackpad zoom
   assert.ok(Math.abs(baseRange.fMin - 3.38) < 1e-6 && Math.abs(baseRange.fMax - 4.18) < 1e-6 && baseRange.hMin === 0,
     `Expected default ALL 29 range 3.38..4.18 GHz, got ${baseRange.fMin}..${baseRange.fMax}`);
 
-  // 1. Auto-follow keeps large 4A downward-shifted tongue (e.g. m27 strong softening) and high pump crosshair in frame
+  // 1. Auto-follow keeps large 4A downward-shifted tongue (e.g. m27 strong softening self-NFS) and high pump crosshair in frame
   spin.aRe[27] = 0.22;
   const f27Shifted = 2 * (spin.modeFreqGHz(27) + spin.modeMutualNfsShiftGHz(27));
+  const f27Self = 2 * (spin.modeFreqGHz(27) + spin.modeNfsShiftGHz(27));
   spin.setState({ driveFreq: f27Shifted, driveAmp: 2.2 / spin.MU0_MS_MT });
   const autoRange = spin.getArnoldRange(true);
   assert.ok(f27Shifted >= autoRange.fMin && f27Shifted <= autoRange.fMax,
     `Auto-follow must keep shifted tongue ${f27Shifted.toFixed(4)} GHz in frame [${autoRange.fMin.toFixed(4)}, ${autoRange.fMax.toFixed(4)}]`);
+  assert.ok(f27Self < f27Shifted - 0.05 && f27Self >= autoRange.fMin && f27Self <= autoRange.fMax,
+    `Auto-follow must also keep single-mode self-NFS tongue ${f27Self.toFixed(4)} GHz in frame [${autoRange.fMin.toFixed(4)}, ${autoRange.fMax.toFixed(4)}]`);
   assert.ok(autoRange.hMax >= 2.2, `Auto-follow hMax (${autoRange.hMax.toFixed(2)}) must cover 2.2 mT drive`);
+  spin.drawArnoldTongues();
+  assert.ok(spin.getElText('arnoldTermsNote').includes('4A self:'),
+    `Expected single-mode self-NFS note in #arnoldTermsNote, got: ${spin.getElText('arnoldTermsNote')}`);
 
   // 2. Cursor-anchored zoom narrows spans and disables auto-follow
   spin.aRe.fill(0);
@@ -1162,7 +1173,7 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
 
   // 2. Launch "What's New" gating (shows once per release version)
   const freshCtx = loadSpinWavesContext();
-  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v83');
+  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v84');
   assert.equal(freshCtx.shouldShowWhatsNew(), true);
   assert.equal(freshCtx.getElHidden('whatsNewModal'), false, 'Fresh launch must auto-open #whatsNewModal');
   freshCtx.dismissWhatsNew(true);
@@ -1175,9 +1186,9 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
   seenCtx.openWhatsNew();
   assert.equal(seenCtx.getElHidden('whatsNewModal'), false, 'WHAT\'S NEW button must reopen #whatsNewModal');
 
-  // 3. Service Worker v83 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
+  // 3. Service Worker v84 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
   const swSrc = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
-  assert.ok(swSrc.includes("'spacetime-shell-v83'"), 'sw.js must use spacetime-shell-v83');
+  assert.ok(swSrc.includes("'spacetime-shell-v84'"), 'sw.js must use spacetime-shell-v84');
   assert.ok(swSrc.includes('./spin-waves/BENCHMARK_HANDOUT.md'), 'sw.js must precache BENCHMARK_HANDOUT.md');
   const htmlSrc = fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
   const qbSlice = htmlSrc.slice(htmlSrc.indexOf('<div id="quickLaunchBar">'), htmlSrc.indexOf('<div id="readoutsDock">'));
@@ -1386,4 +1397,68 @@ test('Z. Smooth Dynamic Arnold Tongues at simTime > 0 & Idempotent Supabase RLS 
     assert.doesNotThrow(() => spin.runSwTutDemo(i), `runSwTutDemo(${i}) threw`);
   }
 });
+
+test('AA. Tab 2 Single-Frequency Arnold Sweep Reproduction (Wide, Zoom, SA Metrics, Damping Scaling & Send-to-Tab-1)', () => {
+  // 1. Initial state is Tab 1 (live) with #sweepShell hidden; switching to Tab 2 reveals #sweepShell & computes Wide grid
+  spin.switchMainTab('live');
+  assert.equal(spin.getElHidden('dashShell'), false);
+  assert.equal(spin.getElHidden('sweepShell'), true);
+
+  spin.switchMainTab('sweep');
+  assert.equal(spin.getElHidden('dashShell'), true);
+  assert.equal(spin.getElHidden('sweepShell'), false);
+  const st = spin.getSweepState();
+  assert.equal(st.activeMainTab, 'sweep');
+  assert.equal(st.preset, 'wide');
+  assert.ok(st.grid && st.grid.fMinMHz === 3760 && st.grid.fMaxMHz === 4250 && st.grid.vMinMV === 200 && st.grid.vMaxMV === 500);
+  assert.ok(st.grid.validFrac > 0.05 && st.grid.validFrac < 0.85,
+    `Expected partial excited tongue fraction in Wide sweep, got ${st.grid.validFrac}`);
+
+  // 2. Physical onset: inside m27 Kittel tongue (4110 MHz, 450 mV_pk) strongly exceeds noise floor (200 mV_pk)
+  const ptKittel = spin.computePointSaSpectrum(4110, 450, { kEffMTPerV: 1.50, damping: 0.0020, tempK: 300 });
+  const ptFloor = spin.computePointSaSpectrum(4110, 200, { kEffMTPerV: 1.50, damping: 0.0020, tempK: 300 });
+  const ptBulk13 = spin.computePointSaSpectrum(3948, 450, { kEffMTPerV: 1.50, damping: 0.0020, tempK: 300 });
+  assert.ok(ptKittel.signalDB - ptFloor.signalDB > 20,
+    `Expected >20 dB parametric Kittel signal jump: peak=${ptKittel.signalDB.toFixed(1)} vs floor=${ptFloor.signalDB.toFixed(1)}`);
+  assert.ok(ptBulk13.signalDB - ptFloor.signalDB > 15,
+    `Expected >15 dB bulk m13 signal jump: peak=${ptBulk13.signalDB.toFixed(1)} vs floor=${ptFloor.signalDB.toFixed(1)}`);
+  assert.equal(ptFloor.thresh10x, false);
+  assert.ok(Number.isNaN(ptFloor.widthMHz) && Number.isNaN(ptFloor.nEff), 'Below 10x noise must mask width & n_eff as NaN per plot.py');
+  assert.equal(ptKittel.thresh10x, true);
+  assert.ok(Number.isFinite(ptKittel.widthMHz) && ptKittel.widthMHz > 0.1 && ptKittel.widthMHz < 3.0);
+  assert.ok(Number.isFinite(ptKittel.nEff) && ptKittel.nEff >= 4 && ptKittel.nEff <= 150);
+
+  // 3. Raising Gilbert damping reduces excited tongue fraction & raises threshold
+  const gridLowAlpha = spin.computeSingleFreqSweepGrid({ nx: 48, ny: 24, damping: 0.0015, noStore: true });
+  const gridHiAlpha = spin.computeSingleFreqSweepGrid({ nx: 48, ny: 24, damping: 0.0045, noStore: true });
+  assert.ok(gridHiAlpha.validFrac < gridLowAlpha.validFrac,
+    `Higher alpha=0.0045 (${gridHiAlpha.validFrac.toFixed(3)}) must shrink excited tongue vs 0.0015 (${gridLowAlpha.validFrac.toFixed(3)})`);
+
+  // 4. Zoom (4050-4080 MHz) & All29 presets + metric tabs + JSON/CSV export + Send Point -> Tab 1
+  spin.applySweepPreset('zoom', true);
+  assert.equal(spin.getSweepState().fMinMHz, 4050);
+  assert.equal(spin.getSweepState().fMaxMHz, 4080);
+  assert.equal(spin.getSweepState().vMinMV, 240);
+  assert.equal(spin.getSweepState().vMaxMV, 350);
+
+  spin.setSweepMetric('width');
+  assert.doesNotThrow(() => spin.drawSweepHeatmap());
+  spin.setSweepMetric('neff');
+  assert.doesNotThrow(() => spin.drawSweepHeatmap());
+  spin.setSweepMetric('signal');
+  assert.doesNotThrow(() => spin.drawSweepSlice());
+
+  const csvOut = spin.exportSweepData('csv');
+  assert.ok(csvOut.startsWith('freq_MHz,V_pk_mV,h_pump_mT,signal_dB,width_FWHM_MHz,N_eff,dom_mode'));
+
+  spin.setSweepState({ selF: 4110, selV: 350, kEffMTPerV: 1.50, damping: 0.0020 });
+  spin.sendSweepPointToLive();
+  assert.equal(spin.getElHidden('dashShell'), false);
+  assert.equal(spin.getElHidden('sweepShell'), true);
+  const liveSt = spin.getState();
+  assert.ok(Math.abs(liveSt.driveFreq - 4.110) < 1e-6);
+  assert.ok(Math.abs(liveSt.driveAmp * spin.MU0_MS_MT - 0.350 * 1.50) < 1e-6);
+  spin.setState({ rfKEffMTPerV: null });
+});
+
 
