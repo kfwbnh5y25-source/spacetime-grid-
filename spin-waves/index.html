@@ -255,7 +255,7 @@
 <div id="pressToast" aria-live="polite"></div>
 <section id="swTutorial" hidden aria-label="d'Aquino 2026 Spin Waves step-by-step guide">
   <div class="tutHeader">
-    <span class="tutStepTag" id="swTutTag">STEP 1 OF 8</span>
+    <span class="tutStepTag" id="swTutTag">STEP 1 OF 10</span>
     <button class="tutClose" id="swTutClose" type="button" aria-label="Close guide">×</button>
   </div>
   <div class="tutPills" aria-hidden="true">
@@ -267,6 +267,8 @@
     <div class="tutPill" data-step="5"></div>
     <div class="tutPill" data-step="6"></div>
     <div class="tutPill" data-step="7"></div>
+    <div class="tutPill" data-step="8"></div>
+    <div class="tutPill" data-step="9"></div>
   </div>
   <h2 class="tutTitle" id="swTutTitle"></h2>
   <p class="tutBody" id="swTutBody"></p>
@@ -2340,6 +2342,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     plotShowEnv = !plotShowEnv;
     timeEnvBtnEl.classList.toggle('active', plotShowEnv);
     drawModeTimePlot();
+    announcePress(`Time ENV: ${plotShowEnv ? 'ON' : 'OFF'}`, plotShowEnv ? 'Overlaying dashed h₁/h₂ pump envelopes on the Time-Dependent Mode Analysis plot.' : 'Hid h₁/h₂ envelopes on Time Analysis.', 'time:env');
   });
   const timeModeBtnEl = document.getElementById('timeModeBtn');
   if (timeModeBtnEl) timeModeBtnEl.addEventListener('click', () => {
@@ -2360,6 +2363,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     syncUi();
     lastStatsBuildMs = 0;
     drawModeTimePlot();
+    notifySwTutorial('time:zoom');
   });
   const slTimePanEl = document.getElementById('slTimePan');
   if (slTimePanEl) slTimePanEl.addEventListener('input', e => {
@@ -3631,7 +3635,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   }
 
   // Slow-Motion Step-by-Step Interactive Guide + Button Spotlights + "What You're Pressing"
-  const swTutKey = 'spin-waves-tutorial-v3';
+  const swTutKey = 'spin-waves-tutorial-v4';
   const swTutEl = document.getElementById('swTutorial'), swTutBtn = document.getElementById('swTutorialBtn');
   const swTutPressEl = document.getElementById('swTutPress');
   const pressToastEl = document.getElementById('pressToast');
@@ -3640,7 +3644,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   const swTutSteps = [
     {
-      tag: 'STEP 1 OF 8 · SLOW MOTION & KITTEL MODE',
+      tag: 'STEP 1 OF 10 · SLOW MOTION & KITTEL MODE',
       title: 'Slow Down & Watch Uniform Precession',
       body: 'Spin waves oscillate near 2 GHz, so we set SPEED to <b>1× SLOW</b> (or <b>0.25×</b>) so each wave crest glides gently. Click the glowing <b>m27 Kit</b> button to excite the Kittel uniform mode.',
       formula: 'm27 Kittel · f = 2.055 GHz · N = −2.38 GHz',
@@ -3650,29 +3654,19 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       openControls: true
     },
     {
-      tag: 'STEP 2 OF 8 · BULK STANDING SPIN WAVE',
-      title: 'Compare With Bulk Mode m13 (Rings)',
-      body: 'In <b>m27 Kit</b> all arrows rotated together. Now click <b>m13</b> to see a true spatial standing wave with nodal rings inside the YIG disk and opposite-sign hardening nonlinearity.',
-      formula: 'm13 Bulk · f = 1.974 GHz · N = +2.99 GHz',
-      prompt: '<b>Press now:</b> Click the glowing <b>m13</b> button to load mode 13.',
-      targets: ['#eigenButtons button[data-mode="13"]'],
-      actions: ['m13', 'eigen'],
+      tag: 'STEP 2 OF 10 · BULK MODES, THRESHOLDS & EXP OVERLAY',
+      title: 'Bulk m13 vs Below/Above h_th & [EXP] Map',
+      body: 'Click <b>m13</b> to inspect spatial nodal rings, toggle <b>EXP</b> on the Arnold Instability Map to overlay 29/80-mode experimental anchors (<code>B_cal = 27.0 mT</code>), and compare <b>Below h_th</b> decay vs <b>m13 Param</b> (1.6× h_th, 1 ns Tukey ramp).',
+      formula: 'h_th = Γ_k / v_k · 1ns tukey(128,1)[:64] · |δf_h| ≤ 7.5 MHz',
+      prompt: '<b>Press now:</b> Click <b>m13</b>, toggle <b>EXP</b> on the Arnold map, or click <b>m13 Param</b>.',
+      targets: ['#eigenButtons button[data-mode="13"]', '#presetParam', '#arnoldExpBtn'],
+      actions: ['m13', 'preset:param', 'preset:sub', 'arnold:exp'],
       openControls: true
     },
     {
-      tag: 'STEP 3 OF 8 · DAMPING vs PUMP THRESHOLD',
-      title: 'Decay Below h_th vs Growth Above h_th',
-      body: 'First click <b>Below h_th</b> (0.35× threshold): Gilbert damping α drains the wave back to zero. Then click <b>m13 Param</b> (1.6× threshold): Tone 1 turns on with a smooth <b>1 ns Tukey ramp</b> and amplifies m13!',
-      formula: 'h_th = Γ_k / v_k · 1ns tukey(128,1)[:64]',
-      prompt: '<b>Press now:</b> Click <b>Below h_th</b> first to watch decay, then click <b>m13 Param</b> to watch growth.',
-      targets: ['#presetSub', '#presetParam'],
-      actions: ['preset:sub', 'preset:param'],
-      openControls: true
-    },
-    {
-      tag: 'STEP 4 OF 8 · RELATIVE PHASE Δφ',
+      tag: 'STEP 3 OF 10 · RELATIVE PHASE Δφ',
       title: 'Constructive vs Destructive Phase (Δφ)',
-      body: 'With <b>Dual-Tone: ON</b>, overlapping tones at the same frequency interfere coherently: <b>0°</b> adds amplitudes above threshold while <b>180°</b> cancels to zero.',
+      body: 'With <b>Dual-Tone: ON</b>, overlapping tones at the same frequency interfere coherently: <b>0°</b> adds amplitudes above threshold while <b>±180°</b> cancels to zero.',
       formula: 'h(t) = h₁ sin(ωt + φ₁) + h₂ sin(ωt + φ₂)',
       prompt: '<b>Press now:</b> Turn on <b>Dual-Tone</b>, then drag <b>Rel Phase Δφ</b> between 0° and ±180°.',
       targets: ['#btnDualTone', '#slPhase2'],
@@ -3680,17 +3674,17 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       openControls: true
     },
     {
-      tag: 'STEP 5 OF 8 · SCENARIO 1 (S_det > 0)',
-      title: 'Coupled 2-Mode Coexistence (COEX c++)',
-      body: 'Modes m13 (+2.99G) & m23 (+0.38G) have <b>S_det = +1.08 > 0</b>: both modes coexist simultaneously at shifted steady-state amplitudes. Watch slowly, or tap <b>25×</b> / <b>FAST→SS</b> to jump ahead.',
-      formula: 'COEX c++ · (m13, m23) stable fixed point',
-      prompt: '<b>Press now:</b> Click <b>COEX c++</b> in the top bar (or <b>Coex (13,23)</b>), then watch the m13 & m23 time traces climb.',
-      targets: ['#quickCoexBtn', '#presetCoex'],
-      actions: ['preset:coex', 'coex'],
+      tag: 'STEP 4 OF 10 · SCENARIO 1 & TIME ANALYSIS',
+      title: 'Coupled Coexistence (COEX c++) & Window Stats',
+      body: 'Modes m13 (+2.99G) & m23 (+0.38G) have <b>S_det = +1.08 > 0</b>: both coexist simultaneously. Track them in <b>Time-Dependent Mode Analysis</b> — toggle <b>ENV</b> (h₁/h₂), scrub <b>Window</b>, or tap any mode chip to pin!',
+      formula: 'COEX c++ · μ / RMS / σ / Δ / γ_eff → CONVERGED',
+      prompt: '<b>Press now:</b> Click <b>COEX c++</b>, then toggle <b>ENV</b> or adjust <b>Window</b> in Time Analysis.',
+      targets: ['#quickCoexBtn', '#presetCoex', '#timeEnvBtn', '#slTimeZoom'],
+      actions: ['preset:coex', 'coex', 'time:env', 'time:zoom'],
       openControls: false
     },
     {
-      tag: 'STEP 6 OF 8 · SCENARIO 2 (S_det < 0)',
+      tag: 'STEP 5 OF 10 · SCENARIO 2 (S_det < 0)',
       title: '2-Tone 3.0 µs Delayed Nonreciprocity',
       body: 'Modes m13 & m16 have <b>S_det = −12.84 < 0</b> (mutually exclusive). Tone 1 starts at t = 0 with a 1 ns Tukey ramp; Tone 2 waits until Tone 1 saturates (<b>WAIT T1 SS</b>), then cannot dethrone m13!',
       formula: 'T1→T2: m13 wins, m16 quenched (~0)',
@@ -3700,23 +3694,53 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       openControls: false
     },
     {
-      tag: 'STEP 7 OF 8 · SWAP ORDER & 300 K NOISE',
-      title: 'Flip T1↔T2 Memory & Thermal Bath',
-      body: 'Same two amplitudes, opposite order! Clicking <b>SWAP T1↔T2</b> puts m16 first so m16 locks out m13. At <b>300 K</b>, Brown FDT noise also nucleates modes from 0 and causes stochastic switching when delay = 0.',
+      tag: 'STEP 6 OF 10 · SWAP ORDER & 300 K NOISE',
+      title: 'Flip T1↔T2 Memory & Brown FDT Bath',
+      body: 'Same amplitudes, opposite order! Clicking <b>SWAP T1↔T2</b> puts m16 first so m16 locks out m13. At <b>300 K</b>, Brown FDT noise nucleates modes from 0 and causes stochastic switching at zero delay.',
       formula: 'T2→T1: (0, m16) · ⟨|a|²⟩_eq = k_B T / (μ₀ M_s² V)',
-      prompt: '<b>Press now:</b> Click <b>SWAP T1↔T2</b> (and try sliding <b>Thermal Bath T</b> between 0 K and 300 K).',
+      prompt: '<b>Press now:</b> Click <b>SWAP T1↔T2</b> and try sliding <b>Thermal Bath T</b> between 0 K and 300 K.',
       targets: ['#quickSwapBtn', '#slTemp'],
       actions: ['swap', 'temp'],
       openControls: false
     },
     {
-      tag: 'STEP 8 OF 8 · FULL NMM & HARMONICS',
-      title: 'Switch RWA Fast ↔ Full NMM (0–6.5 GHz)',
-      body: 'RWA Fast keeps resonant core (1+2A+4A). Clicking <b>Full NMM</b> activates all non-RWA & 3-wave Eq. (9) tensors (<b>G3+4B+4C+4D</b>) so <b>f, 2f, 3f</b> harmonics appear on the DFT spectrum!',
-      formula: 'Eq. (9): G1 + G2 + G3 + G4 (29 modes)',
-      prompt: '<b>Press now:</b> Click <b>Full NMM</b> in the controls, or pluck the YIG disk directly to see the spectrum harmonics.',
+      tag: 'STEP 7 OF 10 · 4B CROSS-PUMPING DOWNSHIFT',
+      title: '4B P_hk Threshold Reduction & Phase Gate (CSI2)',
+      body: 'Click <b>4B Down+φ</b> (0.90× h_th(15) with prior m16): <b>4B</b> (P₁₅,₁₆ a₁₅* a₁₆²) lowers the Arnold tongue downward so φ₁ = 0° ignites m15 while φ₁ = 180° suppresses it, whereas 4A N_hk shifts frequencies horizontally only.',
+      formula: '4B Downshift: P_hk a_h* a_k² · φ₁=0° ON vs 180° OFF',
+      prompt: '<b>Press now:</b> Click <b>4B Down+φ</b> and drag <b>Tone 1 Phase φ₁</b> between 0° and 180°.',
+      targets: ['#presetCross4B', '#slPhase1'],
+      actions: ['preset:cross4b', 'phase1'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 8 OF 10 · FULL NMM & HARMONICS',
+      title: 'Switch RWA Fast ↔ Full Eq. (9) NMM',
+      body: 'RWA Fast keeps the resonant core (1M+2A+4A). Clicking <b>Full NMM</b> enables all 29-mode tensors (<b>2B+2C+3M+4B+4C+4D</b>) with smooth dynamic Arnold tongues and reveals <b>f, 2f, 3f</b> harmonics on the 4096-pt DFT spectrum!',
+      formula: 'Eq. (9): G1 + G2 + G3 + G4 (29 modes, 0–6.5 GHz)',
+      prompt: '<b>Press now:</b> Click <b>Full NMM</b> in the controls, or pluck the YIG disk directly to excite harmonics.',
       targets: ['#btnNmmFull'],
       actions: ['nmm:full', 'pluck'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 9 OF 10 · 50 Ω V_pk & CSI2 EXP DATA',
+      title: 'AWG mV (V_pp/2), G_ref(f) & CSI2 Ablations',
+      body: 'The <b>RF 50 Ω Card</b> converts live AWG voltages (<code>V_pk = V_pp/2</code>) into mW/dBm & 50-pt bypass <code>G_ref(f)</code> (3σ floor −70.92 dBm), keeping uncalibrated sample-plane <code>k_eff</code> explicit. Open <b>Full Exp Data ↗</b> to inspect 29/80-mode fits & CSI2 ablations.',
+      formula: 'P_AWG = V_pk² / (2·50Ω) · B_cal = 27.0 mT · |δf_h| ≤ 7.5 MHz',
+      prompt: '<b>Press now:</b> Enter a <b>Convert V_pk (mV)</b> value or click <b>Full Exp Data ↗</b>.',
+      targets: ['#rfVpkTargetIn', '#btnOpenExpTab'],
+      actions: ['rf:cal', 'modal:exp'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 10 OF 10 · 8-STAGE VERIFY & DB VAULT',
+      title: 'Verification Protocol, IndexedDB Vault & JSON',
+      body: 'Open <b>Verify & Cal</b> (<code>VERIFY / EXP</code>) to run all 8 physics/numerical checks, inspect the <b>Benchmark Handout</b>, or configure Supabase in <b>DB Vault</b>. Sessions auto-save offline in IndexedDB and export as JSON anytime.',
+      formula: '29-mode Verify · Local IndexedDB Vault · JSON Trace Export',
+      prompt: '<b>Press now:</b> Click <b>Verify & Cal</b> (or <b>LOG DB</b> / <b>Save → DB</b>) to test verification & logging.',
+      targets: ['#btnOpenVerify', '#btnSaveLogDb', '#quickLogDbBtn'],
+      actions: ['modal:verify', 'db_save'],
       openControls: true
     }
   ];
@@ -4187,7 +4211,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   function renderSwTut() {
     const s = swTutSteps[swTutState.step] || swTutSteps[0];
-    document.getElementById('swTutTag').textContent = swTutState.done.every(Boolean) ? 'ALL 8 STEPS COMPLETED' : s.tag;
+    document.getElementById('swTutTag').textContent = swTutState.done.every(Boolean) ? `ALL ${swTutSteps.length} STEPS COMPLETED` : s.tag;
     document.getElementById('swTutTitle').textContent = s.title;
     document.getElementById('swTutBody').innerHTML = s.body + '<br><span class="tutFormula">' + s.formula + '</span>';
     const pr = document.getElementById('swTutPrompt');
@@ -4222,7 +4246,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (changed) {
       renderSwTut(); saveSwTut();
       if (swTutState.done.every(Boolean)) {
-        recordLogEvent('tutorial', 'All 8 Guide Steps Completed', { step: swTutState.step + 1 });
+        recordLogEvent('tutorial', `All ${swTutSteps.length} Guide Steps Completed`, { step: swTutState.step + 1 });
         uploadSwLog('tutorial_complete', false);
       }
     }
@@ -4232,30 +4256,39 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       playbackSpeed = 0.25; exciteEigenmode(27);
       announcePress('Run Step 1 (m27 Kit at 0.25×)', 'Set speed to 0.25× ultra-slow and excited uniform Kittel mode m27 (2.055 GHz). Watch all spin arrows precess together!', 'm27');
     } else if (step === 1) {
-      playbackSpeed = 1; exciteEigenmode(13);
-      announcePress('Run Step 2 (m13 Bulk at 1× Slow)', 'Loaded bulk standing mode m13 (1.974 GHz, hardening N = +2.99 GHz). Notice the radial nodal ring!', 'm13');
+      playbackSpeed = 5; showExpMarkers = true; applyPreset('param'); syncUi(); drawArnoldTongues();
+      announcePress('Run Step 2 (m13 Param + [EXP])', 'Turned on [EXP] overlay on the Arnold Instability Map and loaded m13 Param (1.6× h_th, 1 ns Tukey ramp).', 'preset:param');
     } else if (step === 2) {
-      playbackSpeed = 5; applyPreset('param');
-      announcePress('Run Step 3 (m13 Param at 5×)', 'Applied 1.6× parametric threshold on m13 with a 1 ns Tukey turn-on ramp. Watch the wave grow inside the Arnold tongue!', 'preset:param');
-    } else if (step === 3) {
       playbackSpeed = 5; temperatureK = 0;
       driveMode = 'parallel'; damping = 0.0020; dualTone = true; tone2WaitSS = false; tone2DelayNs = 0;
       const hSub = 0.75 * parametricThreshold(13);
       driveFreq = 2 * fGhzArr[13]; driveAmp = hSub; driveFreq2 = 2 * fGhzArr[13]; driveAmp2 = hSub;
       drivePhase1 = 0; drivePhase2 = 0; simTime = 0; seedSpins(0.005, [13]); syncUi();
-      announcePress('Run Step 4 (Δφ = 0° In-Phase)', 'Two sub-threshold tones (0.75·h_th each) overlap at Δφ = 0° → constructive sum 1.50·h_th excites m13! Now slide Δφ to 180° to cancel.', 'dualTone');
+      announcePress('Run Step 3 (Δφ = 0° In-Phase)', 'Two sub-threshold tones (0.75·h_th each) overlap at Δφ = 0° → constructive sum 1.50·h_th excites m13! Now slide Δφ to ±180° to cancel.', 'dualTone');
+    } else if (step === 3) {
+      playbackSpeed = 25; plotShowEnv = true; applyPreset('coex'); syncUi();
+      announcePress('Run Step 4 (COEX c++ & Time Analysis)', 'Scenario 1 (S_det = +1.08 > 0) with Time-Analysis ENV h₁/h₂ overlay ON — watch m13 & m23 climb toward CONVERGED!', 'preset:coex');
     } else if (step === 4) {
-      playbackSpeed = 25; applyPreset('coex');
-      announcePress('Run Step 5 (COEX c++ at 25×)', 'Scenario 1 (S_det = +1.08 > 0): pumping m13 & m23 simultaneously. Speed set to 25× so both time traces climb steadily.', 'preset:coex');
-    } else if (step === 5) {
       playbackSpeed = 150; applyPreset('nonrecip');
-      announcePress('Run Step 6 (3µs NONRECIP at 150×)', 'Scenario 2 (S_det = −12.84 < 0): m13 starts first while m16 waits (WAIT T1 SS). Click FAST→SS to jump right to release!', 'preset:nonrecip');
-    } else if (step === 6) {
+      announcePress('Run Step 5 (3µs NONRECIP at 150×)', 'Scenario 2 (S_det = −12.84 < 0): m13 starts first while m16 waits (WAIT T1 SS). Click FAST→SS to jump right to release!', 'preset:nonrecip');
+    } else if (step === 5) {
       playbackSpeed = 150; applyPreset('nonrecip'); swapTonesAction();
-      announcePress('Run Step 7 (SWAP T1↔T2)', 'Reversed pulse arrival order so Tone 1 pumps m16 first and Tone 2 (m13) waits — now m16 wins and locks out m13!', 'swap');
+      announcePress('Run Step 6 (SWAP T1↔T2)', 'Reversed pulse arrival order so Tone 1 pumps m16 first and Tone 2 (m13) waits — now m16 wins and locks out m13!', 'swap');
+    } else if (step === 6) {
+      playbackSpeed = 25; applyPreset('cross4b');
+      announcePress('Run Step 7 (4B Down+φ)', 'Prior m16 excitation + 4B P₁₅,₁₆ pulls m15 Arnold tongue downward so 0.90× h_th(15) ignites at φ₁ = 0° and shuts off at 180°!', 'preset:cross4b');
     } else if (step === 7) {
       playbackSpeed = 5; setNmmMode(true); pluckAt(width * 0.54, height * 0.46);
-      announcePress('Run Step 8 (Full NMM + Pluck)', 'Enabled all 29-mode Eq. (9) terms (G1+G2+G3+4ABCD) and plucked the disk — watch f, 2f, 3f harmonics in Spectrum!', 'nmm:full');
+      announcePress('Run Step 8 (Full NMM + Pluck)', 'Enabled all 29-mode Eq. (9) terms (G1+G2+G3+4ABCD) and plucked the disk — smooth dynamic Arnold tongues & f/2f/3f harmonics!', 'nmm:full');
+    } else if (step === 8) {
+      rfVpkTargetMV = 500;
+      const tIn = document.getElementById('rfVpkTargetIn');
+      if (tIn) tIn.value = '500';
+      showExpMarkers = true; syncRfCalUi(); syncUi(); drawArnoldTongues();
+      announcePress('Run Step 9 (50 Ω 500 mV_pk + [EXP])', 'Converted V_pk = 500 mV (1.0 V_pp) → 2.50 mW (+3.98 dBm) through G_ref(f). Click Full Exp Data ↗ to inspect B_cal = 27 mT & CSI2 ablations!', 'rf:cal');
+    } else if (step === 9) {
+      openVerifyModal('protocol');
+      announcePress('Run Step 10 (Verify & DB Vault)', 'Opened the 8-Stage Verification Protocol & DB Vault — run verification, inspect the Handout, or check IndexedDB/Supabase status!', 'modal:verify');
     }
   }
   swTutBtn.addEventListener('click', () => { openSwTut(); recordLogEvent('tutorial', 'Opened Guide', { step: swTutState.step + 1 }); });
@@ -4405,7 +4438,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     drivePhase1 = (deg * Math.PI) / 180;
     drivePhase2 = drivePhase1 + rel;
     syncUi();
-    announcePress(`Tone 1 Phase φ₁ = ${deg}°`, `Set Tone 1 carrier phase φ₁ = ${deg}° — shifts interference against 4B cross-pumping P_hk a_k² (constructive pulls tongue down, 180° pushes up).`);
+    announcePress(`Tone 1 Phase φ₁ = ${deg}°`, `Set Tone 1 carrier phase φ₁ = ${deg}° — shifts interference against 4B cross-pumping P_hk a_k² (constructive pulls tongue down, 180° pushes up).`, 'phase1');
   });
   document.getElementById('btnDualTone').addEventListener('click', () => {
     dualTone = !dualTone;
@@ -4477,13 +4510,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     drawArnoldTongues();
     announcePress(`Arnold EXP: ${showExpMarkers ? 'ON' : 'OFF'}`, showExpMarkers
       ? 'Overlaying 29-mode & 80-mode NPZ experimental peak anchors (and k_eff diamonds when calibrated).'
-      : 'Hid experimental peak anchors on the Arnold map.');
+      : 'Hid experimental peak anchors on the Arnold map.', 'arnold:exp');
   });
   const rfChainGainEl = document.getElementById('rfChainGainIn');
   if (rfChainGainEl) rfChainGainEl.addEventListener('input', e => {
     const v = parseFloat(e.target.value);
     rfChainGainDB = Number.isFinite(v) ? v : 0;
     syncRfCalUi();
+    notifySwTutorial('rf:cal');
   });
   const rfKEffEl = document.getElementById('rfKEffIn');
   if (rfKEffEl) rfKEffEl.addEventListener('input', e => {
@@ -4491,17 +4525,19 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     rfKEffMTPerV = Number.isFinite(raw) && raw > 0 ? raw : null;
     syncRfCalUi();
     drawArnoldTongues();
+    notifySwTutorial('rf:cal');
   });
   const rfVpkTargetEl = document.getElementById('rfVpkTargetIn');
   if (rfVpkTargetEl) rfVpkTargetEl.addEventListener('input', e => {
     const v = parseFloat(e.target.value);
     rfVpkTargetMV = Number.isFinite(v) && v >= 0 ? v : 0;
     syncRfCalUi();
+    notifySwTutorial('rf:cal');
   });
   const btnOpenExpTabEl = document.getElementById('btnOpenExpTab');
   if (btnOpenExpTabEl) btnOpenExpTabEl.addEventListener('click', () => {
     openVerifyModal('exp');
-    announcePress('EXP DATA & CSI2', 'Opened Mode Identification (27 mT), Linear-Power Thresholds, and CSI2 Ablation Verdict.');
+    announcePress('EXP DATA & CSI2', 'Opened Mode Identification (27 mT), Linear-Power Thresholds, and CSI2 Ablation Verdict.', 'modal:exp');
   });
   const arnoldAutoBtnEl = document.getElementById('arnoldAutoBtn');
   if (arnoldAutoBtnEl) arnoldAutoBtnEl.addEventListener('click', () => {
@@ -4666,6 +4702,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   async function handleSaveLogDb(sourceLabel) {
     recordLogEvent('db_save', sourceLabel, { reason: 'manual' });
+    notifySwTutorial('db_save');
     showLogToast('SAVING LOG…', `Saving ${swLog.totalEvents} events & ${swLog.totalSamples} telemetry samples to Supabase + IndexedDB...`);
     const ok = await uploadSwLog('manual', false);
     if (ok) {
@@ -5517,9 +5554,10 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     renderVerifyUi();
     renderDbModalStatus();
     if (tabName === 'db') refreshIdbVault();
+    notifySwTutorial(tabName === 'exp' ? 'modal:exp' : 'modal:verify');
   }
 
-  const APP_RELEASE_VERSION = 'spacetime-shell-v82';
+  const APP_RELEASE_VERSION = 'spacetime-shell-v83';
   const WHATS_NEW_KEY = 'spin-waves-whatsnew-seen-version';
   const whatsNewModalEl = document.getElementById('whatsNewModal');
   function shouldShowWhatsNew() {
