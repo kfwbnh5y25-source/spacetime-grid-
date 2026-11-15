@@ -601,6 +601,13 @@ function loadSpinWavesContext(seedStorage = {}) {
     captureConvSubSample, evaluateConvergenceWindow, buildConvHistoryExport, runPrimary2usExperiment,
     cwBuildFreqList, runCwFreqSweepSync,
     getConvState: () => ({ status: convStatus, detail: convLastDetail, history: convHistory.slice(), primary2usLastReport }),
+    SPEC_RING_LEN, computeWelchPsd, getSpecViewRange, evalAveragedArnoldStats,
+    plotHistAmps, plotHistMin, plotHistMax,
+    getDspArnoldPlotState: () => ({
+      probeCount, specCfg: { ...specCfg }, lastSpecPeakGHz,
+      arnoldAvgUs, arnoldAvgShowInst, arnoldAvgShowMean, arnoldPhysCount,
+      plotHistCount, plotBinDtTau, plotWinTau
+    }),
     setState(patch) {
       if ('driveMode' in patch) driveMode = patch.driveMode;
       if ('driveFreq' in patch) driveFreq = patch.driveFreq;
@@ -636,6 +643,10 @@ function loadSpinWavesContext(seedStorage = {}) {
       if ('convWindowUs' in patch) convWindowUs = patch.convWindowUs;
       if ('convMinSettleUs' in patch) convMinSettleUs = patch.convMinSettleUs;
       if ('convMaxUs' in patch) convMaxUs = patch.convMaxUs;
+      if ('specCfg' in patch && patch.specCfg) Object.assign(specCfg, patch.specCfg);
+      if ('arnoldAvgUs' in patch) arnoldAvgUs = patch.arnoldAvgUs;
+      if ('arnoldAvgShowInst' in patch) arnoldAvgShowInst = patch.arnoldAvgShowInst;
+      if ('arnoldAvgShowMean' in patch) arnoldAvgShowMean = patch.arnoldAvgShowMean;
       if ('simTime' in patch) { simTime = patch.simTime; resetModeHistory(); recordModeSample(); }
     },
     getState() {
@@ -2424,4 +2435,100 @@ test(
         maxBranchDiff = Math.max(maxBranchDiff, Math.abs(u.ampMean - d.ampMean));
       }
       assert.ok(maxBranchDiff > 0.01, `Expected clear upward/downward CW bistable hysteresis > 0.01, got ${maxBranchDiff.toFixed(6)}: up=${cwRes.upPts.map(p=>p.ampMean)} down=${cwRes.downPts.map(p=>p.ampMean)}`);
+    });
+
+    test('AD. Subtask 3: Welch PSD vs Raw FFT resolution/variance, physical-time Arnold averaging & 4B coherence, and extrema-preserving plot decimation', () => {
+      const runSteps = (n, dt = 0.65) => { for (let i = 0; i < n; i++) spin.stepLlg(dt, true); };
+      // 1. Welch PSD vs Raw FFT: 32k ring depth, zero-padding vs real resolution, variance reduction, peak-track zoom
+      spin.applyPreset('param');
+      spin.setNmmMode(false);
+      spin.setState({ temperatureK: 300, thermalSeed: 20260707, damping: 0.0005, specBand: 'modes' });
+      spin.setState({ driveAmp: 1.8 * spin.parametricThreshold(13),
+        specCfg: { mode: 'both', integUs: 1.20, segLen: 1024, overlapPct: 50, window: 'hann', zpFactor: 1, zoom: 1.0, peakTrack: false } });
+      runSteps(62000, 0.65); // ~1.28 us -> probeCount well past 4096 into 32768 ring
+      const stSpec = spin.getDspArnoldPlotState();
+      assert.ok(spin.SPEC_RING_LEN === 32768, `Expected 32768 ring length, got ${spin.SPEC_RING_LEN}`);
+      assert.ok(stSpec.probeCount > 4096, `Expected probeCount > 4096, got ${stSpec.probeCount}`);
+
+      const wZp1 = spin.computeWelchPsd({ integUs: 1.10, segLen: 1024, overlapPct: 50, window: 'hann', zpFactor: 1 });
+      const wZp4 = spin.computeWelchPsd({ integUs: 1.10, segLen: 1024, overlapPct: 50, window: 'hann', zpFactor: 4 });
+      assert.ok(wZp1.valid && wZp4.valid && wZp1.kSegs >= 5, `Welch segments invalid: kSegs=${wZp1.kSegs}`);
+      assert.equal(wZp1.dfRealMHz, wZp4.dfRealMHz, 'Zero-padding must NOT change real frequency resolution dfRealMHz');
+      assert.ok(Math.abs(wZp4.dfBinMHz * 4 - wZp1.dfBinMHz) < 0.05, `4x zero-padding must shrink grid dfBinMHz 4x: ${wZp1.dfBinMHz} vs ${wZp4.dfBinMHz}`);
+
+      // Single-segment periodogram vs multi-segment Welch spectral roughness over off-peak continuum (3.0..5.5 GHz)
+      const wRaw1Seg = spin.computeWelchPsd({ integUs: 0.12, segLen: 1024, overlapPct: 0, window: 'hann', zpFactor: 1 });
+      const logRoughness = wRes => {
+        const diffs = [];
+        for (let k = 2; k < wRes.psd.length - 1; k++) {
+          const fk = (k / wRes.nFft) * wRes.fsGHz;
+          if (fk >= 3.0 && fk <= 5.5 && wRes.psd[k] > 0 && wRes.psd[k - 1] > 0 && wRes.psd[k + 1] > 0) {
+            diffs.push(Math.log(wRes.psd[k]) - 0.5 * (Math.log(wRes.psd[k - 1]) + Math.log(wRes.psd[k + 1])));
+          }
+        }
+        return Math.sqrt(diffs.reduce((a, d) => a + d * d, 0) / diffs.length);
+      };
+      const rough1 = logRoughness(wRaw1Seg);
+      const roughK = logRoughness(wZp1);
+      assert.equal(wRaw1Seg.kSegs, 1, `Expected 1 segment for raw comparison, got ${wRaw1Seg.kSegs}`);
+      assert.ok(roughK < rough1 * 0.65, `Expected Welch (${wZp1.kSegs} segs) log-PSD roughness < 0.65x 1-seg periodogram, got ${roughK.toFixed(3)} vs ${rough1.toFixed(3)}`);
+
+      spin.updateSpectrum();
+      spin.setState({ specCfg: { zoom: 4.0, peakTrack: true } });
+      const vr = spin.getSpecViewRange();
+      const peakAfter = spin.getDspArnoldPlotState().lastSpecPeakGHz;
+      assert.ok(peakAfter > 1.7 && peakAfter < 2.2, `Expected peak in mode band, got ${peakAfter}`);
+      assert.ok(Math.abs(vr.centerGHz - peakAfter) < 0.02, `Peak-tracked zoom view should center on ${peakAfter}, got ${vr.centerGHz}`);
+
+      // 2. Physical-time Arnold averaging & rotating-frame 4B coherence, non-resetting UI updates
+      spin.setNmmMode(false);
+      spin.applyPreset('cross4b');
+      spin.setState({ temperatureK: 0, arnoldAvgUs: 0.40, arnoldAvgShowInst: true, arnoldAvgShowMean: true });
+      runSteps(24000, 0.65); // ~0.50 us (> 0.40 us window, >= 40 samples) of phase-locked 4B evolution
+      const avg4B = spin.evalAveragedArnoldStats(0.40);
+      assert.ok(avg4B.count >= 35 && avg4B.spanUs >= 0.35, `Expected sufficient Arnold avg samples, got count=${avg4B.count}, span=${avg4B.spanUs}`);
+      assert.ok(avg4B.powMean[16] > 1e-4, `Expected m16 excited in cross4b, got powMean[16]=${avg4B.powMean[16]}`);
+      assert.ok(avg4B.coh4B[15] > 0.75, `Expected high rotating-frame 4B coherence on driven target m15, got ${avg4B.coh4B[15].toFixed(3)}`);
+
+      // Changing averaging settings + redrawing must not reset simTime or alter modal state / carrierPhase1
+      const beforeUi = {
+        simTime: spin.getState().simTime,
+        phi1: spin.getState().carrierPhase1,
+        re14: spin.aRe[14],
+        im14: spin.aIm[14]
+      };
+      spin.setState({ arnoldAvgUs: 0.15, arnoldAvgShowInst: false, arnoldAvgShowMean: true });
+      spin.drawArnoldTongues();
+      const afterUi = {
+        simTime: spin.getState().simTime,
+        phi1: spin.getState().carrierPhase1,
+        re14: spin.aRe[14],
+        im14: spin.aIm[14]
+      };
+      assert.equal(afterUi.simTime, beforeUi.simTime, 'Changing Arnold averaging settings must not reset simTime');
+      assert.equal(afterUi.phi1, beforeUi.phi1, 'Changing Arnold averaging settings must not change carrierPhase1');
+      assert.equal(afterUi.re14, beforeUi.re14, 'Changing Arnold averaging settings must not alter aRe[14]');
+      assert.equal(afterUi.im14, beforeUi.im14, 'Changing Arnold averaging settings must not alter aIm[14]');
+
+      // 3. Fast-mode time-plot recording & extrema-preserving decimation across fold threshold (>2048 bins = >2.048 us)
+      spin.applyPreset('param');
+      spin.setNmmMode(false);
+      spin.setState({ temperatureK: 0, damping: 0.0005, playbackSpeed: 100 });
+      spin.setState({ driveAmp: 1.8 * spin.parametricThreshold(13) });
+      const initPlot = spin.getDspArnoldPlotState();
+      runSteps(105000, 0.65); // ~2.18 us -> crosses 2048 * 1 ns initial bins, triggering foldPlotHistExtrema() once
+      const postPlot = spin.getDspArnoldPlotState();
+      assert.ok(postPlot.plotHistCount >= 1024, `Expected accumulated folded plot samples >= 1024, got ${postPlot.plotHistCount}`);
+      assert.ok(postPlot.plotBinDtTau > initPlot.plotBinDtTau * 1.5, `Expected decoupled extrema-preserving bin folding: ${initPlot.plotBinDtTau} -> ${postPlot.plotBinDtTau}`);
+      let maxCenter = 0, maxEnv = 0, minEnvBelowCenter = 0;
+      const checkN = Math.min(2048, postPlot.plotHistCount);
+      for (let i = 0; i < checkN; i++) {
+        const idx = i * 29 + 13;
+        if (spin.plotHistAmps[idx] > maxCenter) maxCenter = spin.plotHistAmps[idx];
+        if (spin.plotHistMax[idx] > maxEnv) maxEnv = spin.plotHistMax[idx];
+        if (spin.plotHistMin[idx] <= spin.plotHistAmps[idx] + 1e-7 && spin.plotHistMax[idx] >= spin.plotHistAmps[idx] - 1e-7) minEnvBelowCenter++;
+      }
+      assert.ok(maxEnv >= maxCenter && maxEnv > 0.01, `Expected plotHistMax envelope (${maxEnv}) >= center (${maxCenter}) and > 0.01`);
+      assert.equal(minEnvBelowCenter, checkN, 'Every folded bin must preserve plotHistMin <= center <= plotHistMax');
+      spin.drawModeTimePlot();
     });

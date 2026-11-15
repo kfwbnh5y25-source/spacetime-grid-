@@ -140,12 +140,16 @@
   .nikCell.selected { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; z-index: 3; }
   #nikConfig { margin-top: 6px; padding: 6px 7px; border-radius: 6px; background: rgba(14,26,46,.72); border: 1px solid rgba(130,185,255,.18); font: 8.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(220,235,255,.88); }
 
-  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #arnoldExpBtn, #specBandBtn, #timeEnvBtn, #timeModeBtn, #timeExportBtn { padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.32); background: rgba(130,185,255,.14); color: #b9dcff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
-  #arnoldTargetBtn.t2, #arnoldPanBtn.active, #arnoldExpBtn.active { border-color: rgba(251,191,36,.60); background: rgba(251,191,36,.22); color: #fde68a; }
-  #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes, #timeEnvBtn.active, #timeModeBtn.active { border-color: rgba(110,231,183,.55); background: rgba(16,185,129,.20); color: #a7f3d0; }
+  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #arnoldExpBtn, #specBandBtn, #specModeBtn, #specTrackBtn, #specCenterBtn, #specResetViewBtn, #timeEnvBtn, #timeModeBtn, #timeExportBtn { padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(130,185,255,.32); background: rgba(130,185,255,.14); color: #b9dcff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldTargetBtn.t2, #arnoldPanBtn.active, #arnoldExpBtn.active, #specTrackBtn.active { border-color: rgba(251,191,36,.60); background: rgba(251,191,36,.22); color: #fde68a; }
+  #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes, #specModeBtn.active, #timeEnvBtn.active, #timeModeBtn.active { border-color: rgba(110,231,183,.55); background: rgba(16,185,129,.20); color: #a7f3d0; }
   canvas#arnoldCanvas.panMode { cursor: grab; }
   canvas#arnoldCanvas.panning { cursor: grabbing; }
   .arnoldNavBar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 4px; }
+  .arnoldAvgBar, .specCtrlBar { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(130,185,255,.18); font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.84); }
+  .arnoldAvgBar label, .specCtrlBar label { display: inline-flex; align-items: center; gap: 3px; }
+  .miniSel { padding: 1px 4px; border-radius: 4px; border: 1px solid rgba(190,220,255,.26); background: rgba(4,9,18,.88); color: #e2f1ff; font: 8px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  #specMeta { margin-top: 4px; font: 7.5px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(185,218,255,.78); font-variant-numeric: tabular-nums; }
   .arnoldNavCtrl { display: grid; gap: 1px; font: 8px/1.15 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(195,220,250,.80); }
   .arnoldNavHead { display: flex; justify-content: space-between; align-items: center; gap: 2px; }
   .arnoldNavHead output { color: #b9dcff; font-weight: 600; }
@@ -383,6 +387,12 @@
         <input id="slArnoldPanH" type="range" min="0" max="2.50" step="0.01" value="0">
       </label>
     </div>
+    <div class="arnoldAvgBar" id="arnoldAvgBar">
+      <label title="Physical-time averaging window for 4A modal powers &amp; rotating-frame 4B phase coherence (µs; changing does NOT reset simulation)">Avg µs <input id="inArnoldAvgUs" class="miniNumIn" type="number" min="0" max="5.0" step="0.05" value="0.40"></label>
+      <button id="arnoldAvgInstBtn" class="btn tiny active" type="button" title="Toggle instantaneous Arnold tongue curves">Inst</button>
+      <button id="arnoldAvgMeanBtn" class="btn tiny active" type="button" title="Toggle time-averaged curve and ±1σ uncertainty band">⟨t⟩ ±σ</button>
+      <span id="arnoldAvgReadout" style="margin-left:auto;color:#9ad8ff;">γ_4B: —</span>
+    </div>
     <div id="arnoldTermsNote">4A N_hk shift: ON · 4B cross-pump: OFF</div>
   </div>
   <div class="readoutCard" id="modesBox">
@@ -428,11 +438,35 @@
   </div>
   <div class="readoutCard" id="spectrumBox">
     <div class="specTitle">
-      <span>DFT SPECTRUM (4096-PT)</span>
-      <button id="specBandBtn" class="modes" type="button" title="Toggle between Mode Band (1.5–2.3 GHz, 3.4 MHz FFT resolution) and Wide Harmonics (0–6.5 GHz)">1.5–2.3G</button>
+      <span>SPECTRUM · FFT &amp; WELCH PSD</span>
+      <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
+        <button id="specBandBtn" class="modes" type="button" title="Toggle between Mode Band (1.5–2.3 GHz) and Wide Harmonics (0–6.5 GHz)">1.5–2.3G</button>
+        <button id="specModeBtn" class="active" type="button" title="Cycle Raw 4096-pt FFT + Welch PSD overlay vs Welch only vs Raw only">RAW+WELCH</button>
+        <button id="specTrackBtn" type="button" title="Track spectral peak &amp; center view when zooming">TRACK</button>
+        <button id="specCenterBtn" type="button" title="Center view on detected spectral peak">⌖Peak</button>
+        <button id="specResetViewBtn" type="button" title="Reset frequency zoom &amp; pan">1×</button>
+      </span>
       <span id="specPeak">f_peak: —</span>
     </div>
-    <canvas id="specCanvas" width="460" height="74"></canvas>
+    <canvas id="specCanvas" width="460" height="86" aria-label="Raw 4096-point FFT and configurable Welch PSD spectrum"></canvas>
+    <div class="specCtrlBar">
+      <label title="Physical integration duration used for Welch PSD (µs)">T_obs µs <input id="inSpecIntegUs" class="miniNumIn" type="number" min="0.05" max="2.30" step="0.05" value="0.80"></label>
+      <label title="Welch segment length N_seg (determines real frequency resolution Δf_real = ENBW·fs/N_seg)">Seg
+        <select id="selSpecSegLen" class="miniSel"><option value="512">512</option><option value="1024" selected>1024</option><option value="2048">2048</option><option value="4096">4096</option></select>
+      </label>
+      <label title="Segment overlap percentage">Ov
+        <select id="selSpecOverlap" class="miniSel"><option value="0">0%</option><option value="25">25%</option><option value="50" selected>50%</option><option value="75">75%</option></select>
+      </label>
+      <label title="Tapering window (trades main-lobe ENBW resolution against sidelobe leakage)">Win
+        <select id="selSpecWin" class="miniSel"><option value="hann" selected>Hann</option><option value="hamming">Hamming</option><option value="blackman">Blackman</option><option value="rect">Rect</option></select>
+      </label>
+      <label title="Zero-padding factor (interpolates display grid ONLY; never improves true Δf_real)">ZP
+        <select id="selSpecZp" class="miniSel"><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+      </label>
+      <label title="Frequency axis zoom">Zoom <input id="inSpecZoom" class="miniNumIn" type="number" min="1" max="20" step="0.5" value="1"></label>
+      <label title="Spectrum center frequency (GHz)">Pan G <input id="inSpecCenterGHz" class="miniNumIn" type="number" min="0" max="7.0" step="0.01" value="1.90"></label>
+    </div>
+    <div id="specMeta">T_obs: 0.00 µs · N: 0 · Δf_real: — · ZP: 1× (interpolates bins only)</div>
   </div>
   <div class="readoutCard" id="cwSweepBox">
     <div class="specTitle">
@@ -1362,23 +1396,92 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
   }
 
-  // High-resolution 4096-point radix-2 FFT probe spectrum (df = 3.42 MHz, 1.5-2.3 GHz mode band & 0-6.5 GHz wide band)
+  // High-resolution 4096-point raw FFT + 32k-sample ring buffer & configurable Welch PSD
   const SPEC_LEN = 4096;
-  const SPEC_DT = 2.21; // omega_M * 0.0713 ns -> fs ~ 14.01 GHz, Nyquist ~ 7.00 GHz, df = 3.42 MHz
-  const probeSeries = new Float32Array(SPEC_LEN);
+  const SPEC_RING_LEN = 32768;
+  const SPEC_DT = 2.21; // omega_M * 0.0713 ns -> fs ~ 14.01 GHz, Nyquist ~ 7.00 GHz
+  const probeSeries = new Float32Array(SPEC_RING_LEN);
   let probeHead = 0, probeCount = 0, lastSpecSampleT = -1, prevSpecT = -1, prevSpecVal = 0;
   let specSeq = 0, lastSpecFftSeq = -1, specMaxSmooth = 0;
   const spectrum = new Float32Array(SPEC_LEN / 2);
   const fftRe = new Float64Array(SPEC_LEN), fftIm = new Float64Array(SPEC_LEN);
-  const fftBitRev = new Uint16Array(SPEC_LEN);
-  {
-    const bits = Math.log2(SPEC_LEN) | 0;
-    for (let i = 0; i < SPEC_LEN; i++) {
+  const fftBitRevCache = new Map();
+  function getBitRevTable(N) {
+    let tab = fftBitRevCache.get(N);
+    if (tab) return tab;
+    tab = new Uint16Array(N);
+    const bits = Math.log2(N) | 0;
+    for (let i = 0; i < N; i++) {
       let r = 0, x = i;
       for (let b = 0; b < bits; b++) { r = (r << 1) | (x & 1); x >>= 1; }
-      fftBitRev[i] = r;
+      tab[i] = r;
+    }
+    fftBitRevCache.set(N, tab);
+    return tab;
+  }
+  function fftRadix2(re, im, N) {
+    const rev = getBitRevTable(N);
+    for (let i = 0; i < N; i++) {
+      const j = rev[i];
+      if (i < j) {
+        let t = re[i]; re[i] = re[j]; re[j] = t;
+        t = im[i]; im[i] = im[j]; im[j] = t;
+      }
+    }
+    for (let size = 2; size <= N; size <<= 1) {
+      const half = size >> 1;
+      const stepAng = (-2 * Math.PI) / size;
+      const wMulR = Math.cos(stepAng), wMulI = Math.sin(stepAng);
+      for (let i = 0; i < N; i += size) {
+        let wR = 1, wI = 0;
+        for (let k = 0; k < half; k++) {
+          const even = i + k, odd = even + half;
+          const tR = wR * re[odd] - wI * im[odd];
+          const tI = wR * im[odd] + wI * re[odd];
+          re[odd] = re[even] - tR;
+          im[odd] = im[even] - tI;
+          re[even] += tR;
+          im[even] += tI;
+          const nextWR = wR * wMulR - wI * wMulI;
+          wI = wR * wMulI + wI * wMulR;
+          wR = nextWR;
+        }
+      }
     }
   }
+  const specWinCache = new Map();
+  function specWindowWeights(winType, N) {
+    const key = `${winType}:${N}`;
+    let cached = specWinCache.get(key);
+    if (cached) return cached;
+    const w = new Float64Array(N);
+    const invNm1 = N > 1 ? 1 / (N - 1) : 1;
+    let s1 = 0, s2 = 0;
+    for (let n = 0; n < N; n++) {
+      const x = n * invNm1;
+      let val = 1;
+      if (winType === 'hann') val = 0.5 * (1 - Math.cos(2 * Math.PI * x));
+      else if (winType === 'hamming') val = 0.54 - 0.46 * Math.cos(2 * Math.PI * x);
+      else if (winType === 'blackman') val = 0.42 - 0.5 * Math.cos(2 * Math.PI * x) + 0.08 * Math.cos(4 * Math.PI * x);
+      w[n] = val; s1 += val; s2 += val * val;
+    }
+    cached = { w, s1, s2, enbwBins: N * s2 / Math.max(1e-18, s1 * s1) };
+    specWinCache.set(key, cached);
+    return cached;
+  }
+  const specCfg = {
+    mode: 'both',      // 'both' | 'welch' | 'raw'
+    integUs: 0.80,
+    segLen: 1024,
+    overlapPct: 50,
+    window: 'hann',
+    zpFactor: 1,
+    zoom: 1.0,
+    centerGHz: 1.90,
+    peakTrack: false
+  };
+  let lastWelchResult = null, lastWelchSeq = -1, lastWelchCfgKey = '';
+
   const probeCoeffRe = new Float64Array(M), probeCoeffIm = new Float64Array(M);
   {
     // 5 asymmetric rim + bulk pickup pixels so every mode m0..m28 has strong SNR
@@ -1403,35 +1506,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
   }
 
-  function runSpecFft4096() {
-    for (let i = 0; i < SPEC_LEN; i++) {
-      const j = fftBitRev[i];
-      if (i < j) {
-        let t = fftRe[i]; fftRe[i] = fftRe[j]; fftRe[j] = t;
-        t = fftIm[i]; fftIm[i] = fftIm[j]; fftIm[j] = t;
-      }
-    }
-    for (let size = 2; size <= SPEC_LEN; size <<= 1) {
-      const half = size >> 1;
-      const stepAng = (-2 * Math.PI) / size;
-      const wMulR = Math.cos(stepAng), wMulI = Math.sin(stepAng);
-      for (let i = 0; i < SPEC_LEN; i += size) {
-        let wR = 1, wI = 0;
-        for (let k = 0; k < half; k++) {
-          const even = i + k, odd = even + half;
-          const tR = wR * fftRe[odd] - wI * fftIm[odd];
-          const tI = wR * fftIm[odd] + wI * fftRe[odd];
-          fftRe[odd] = fftRe[even] - tR;
-          fftIm[odd] = fftIm[even] - tI;
-          fftRe[even] += tR;
-          fftIm[even] += tI;
-          const nextWR = wR * wMulR - wI * wMulI;
-          wI = wR * wMulI + wI * wMulR;
-          wR = nextWR;
-        }
-      }
-    }
-  }
+  function runSpecFft4096() { fftRadix2(fftRe, fftIm, SPEC_LEN); }
 
   function sampleProbeSignal() {
     let s = 0;
@@ -1447,8 +1522,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const val = sampleProbeSignal();
     if (lastSpecSampleT < 0 || curT < lastSpecSampleT || prevSpecT < 0 || curT < prevSpecT) {
       probeSeries[probeHead] = val;
-      probeHead = (probeHead + 1) % SPEC_LEN;
-      if (probeCount < SPEC_LEN) probeCount++;
+      probeHead = (probeHead + 1) % SPEC_RING_LEN;
+      if (probeCount < SPEC_RING_LEN) probeCount++;
       lastSpecSampleT = curT;
       specSeq++;
     } else {
@@ -1457,14 +1532,110 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         const targetT = lastSpecSampleT + SPEC_DT;
         const frac = span > 1e-12 ? Math.max(0, Math.min(1, (targetT - prevSpecT) / span)) : 1;
         probeSeries[probeHead] = prevSpecVal + frac * (val - prevSpecVal);
-        probeHead = (probeHead + 1) % SPEC_LEN;
-        if (probeCount < SPEC_LEN) probeCount++;
+        probeHead = (probeHead + 1) % SPEC_RING_LEN;
+        if (probeCount < SPEC_RING_LEN) probeCount++;
         lastSpecSampleT = targetT;
         specSeq++;
       }
     }
     prevSpecT = curT;
     prevSpecVal = val;
+  }
+
+  function computeWelchPsd(opts = {}) {
+    const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * SPEC_DT);
+    const integUs = Math.max(0.02, Math.min(2.35, Number.isFinite(opts.integUs) ? opts.integUs : specCfg.integUs));
+    const reqSeg = Number.isFinite(opts.segLen) ? opts.segLen : specCfg.segLen;
+    const overlapPct = Math.max(0, Math.min(87.5, Number.isFinite(opts.overlapPct) ? opts.overlapPct : specCfg.overlapPct));
+    const winType = opts.window || specCfg.window || 'hann';
+    const zpFactor = [1, 2, 4].includes(opts.zpFactor) ? opts.zpFactor : (specCfg.zpFactor || 1);
+    const avail = Math.min(probeCount, SPEC_RING_LEN);
+    const wanted = Math.max(16, Math.round(usToTau(integUs) / SPEC_DT));
+    const nActual = Math.min(avail, wanted);
+    const tObsUs = nActual * tauToUs(SPEC_DT);
+    if (nActual < 16) {
+      return {
+        valid: false, nActual, kSegs: 0, segLen: reqSeg, zpFactor, nFft: reqSeg * zpFactor,
+        enbwBins: 1.5, dfRealMHz: (1.5 * fsGHz * 1e3) / reqSeg, dfBinMHz: (fsGHz * 1e3) / (reqSeg * zpFactor),
+        tObsUs, fsGHz, peakGHz: 0, peakVal: 0, psd: new Float32Array(0), amp: new Float32Array(0)
+      };
+    }
+    let segLen = reqSeg;
+    while (segLen > nActual && segLen > 64) segLen >>= 1;
+    segLen = Math.max(16, Math.min(4096, segLen));
+    const nFft = Math.min(16384, segLen * zpFactor);
+    const halfFft = nFft >> 1;
+    const winInfo = specWindowWeights(winType, segLen);
+    const step = Math.max(1, Math.round(segLen * (1 - overlapPct / 100)));
+    const startIdx = (probeHead - nActual + SPEC_RING_LEN) % SPEC_RING_LEN;
+    const psdAccum = new Float64Array(halfFft);
+    const wRe = new Float64Array(nFft), wIm = new Float64Array(nFft);
+    let kSegs = 0;
+    for (let off = 0; off + segLen <= nActual; off += step) {
+      let mean = 0;
+      for (let n = 0; n < segLen; n++) mean += probeSeries[(startIdx + off + n) % SPEC_RING_LEN];
+      mean /= segLen;
+      wRe.fill(0); wIm.fill(0);
+      for (let n = 0; n < segLen; n++) {
+        wRe[n] = (probeSeries[(startIdx + off + n) % SPEC_RING_LEN] - mean) * winInfo.w[n];
+      }
+      fftRadix2(wRe, wIm, nFft);
+      for (let k = 1; k < halfFft; k++) {
+        psdAccum[k] += wRe[k] * wRe[k] + wIm[k] * wIm[k];
+      }
+      kSegs++;
+    }
+    if (kSegs === 0) {
+      // Fall back to zero-padded single available block when nActual < segLen
+      let mean = 0;
+      for (let n = 0; n < nActual; n++) mean += probeSeries[(startIdx + n) % SPEC_RING_LEN];
+      mean /= nActual;
+      const wAct = specWindowWeights(winType, nActual);
+      wRe.fill(0); wIm.fill(0);
+      for (let n = 0; n < nActual; n++) wRe[n] = (probeSeries[(startIdx + n) % SPEC_RING_LEN] - mean) * wAct.w[n];
+      fftRadix2(wRe, wIm, nFft);
+      for (let k = 1; k < halfFft; k++) psdAccum[k] = wRe[k] * wRe[k] + wIm[k] * wIm[k];
+      kSegs = 1;
+    }
+    const psd = new Float32Array(halfFft);
+    const amp = new Float32Array(halfFft);
+    const invK = 1 / kSegs;
+    const psdScale = 2.0 / (fsGHz * winInfo.s2);
+    const ampScale = 2.0 / Math.max(1e-12, winInfo.s1);
+    const fBandMin = specBand === 'modes' ? 1.5 : 0.0;
+    const fBandMax = specBand === 'modes' ? 2.3 : 6.5;
+    let peakVal = 0, peakBin = 1;
+    for (let k = 1; k < halfFft; k++) {
+      const mSq = psdAccum[k] * invK;
+      psd[k] = mSq * psdScale;
+      const aEq = Math.sqrt(mSq) * ampScale;
+      amp[k] = aEq;
+      const fk = (k / nFft) * fsGHz;
+      if (fk >= fBandMin && fk <= fBandMax && aEq > peakVal) { peakVal = aEq; peakBin = k; }
+    }
+    let fracBin = peakBin;
+    if (peakBin > 1 && peakBin < halfFft - 2) {
+      const yL = amp[peakBin - 1], yC = amp[peakBin], yR = amp[peakBin + 1];
+      const denom = yL - 2 * yC + yR;
+      if (denom < -1e-12) fracBin += Math.max(-0.5, Math.min(0.5, 0.5 * (yL - yR) / denom));
+    }
+    const effSegSamples = Math.min(nActual, segLen);
+    const dfRealMHz = (winInfo.enbwBins * fsGHz * 1e3) / effSegSamples;
+    const dfBinMHz = (fsGHz * 1e3) / nFft;
+    return {
+      valid: true, nActual, kSegs, segLen: effSegSamples, zpFactor, nFft,
+      enbwBins: +winInfo.enbwBins.toFixed(3),
+      dfRealMHz: +dfRealMHz.toFixed(2),
+      dfBinMHz: +dfBinMHz.toFixed(2),
+      tObsUs: +tObsUs.toFixed(4),
+      fsGHz,
+      window: winType,
+      overlapPct,
+      peakGHz: +((fracBin / nFft) * fsGHz).toFixed(4),
+      peakVal,
+      psd,
+      amp
+    };
   }
 
   const SPEED_FRAME_STEPS = {
@@ -1493,13 +1664,28 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   const PLOT_HIST_CAP = 2048;
   const plotHistTau = new Float64Array(PLOT_HIST_CAP);
   const plotHistAmps = new Float32Array(PLOT_HIST_CAP * M);
+  const plotHistMin = new Float32Array(PLOT_HIST_CAP * M);
+  const plotHistMax = new Float32Array(PLOT_HIST_CAP * M);
   const plotHistEnv1 = new Float32Array(PLOT_HIST_CAP);
   const plotHistEnv2 = new Float32Array(PLOT_HIST_CAP);
   let plotHistHead = 0, plotHistCount = 0, lastPlotTau = -1, plotOriginTau = 0;
+  const PLOT_INIT_BIN_TAU = 0.60; // Decoupled from plotWinTau; resolves single RK4 step, folds 2x preserving [min,max] on overflow
+  let plotBinDtTau = PLOT_INIT_BIN_TAU;
   let plotWinTau = 10.8, plotYScale = 0.02, plotYTarget = 0.02, holdPlotWin = false;
   let lastPlotDrawMs = 0, lastLegendBuildMs = 0, arnoldHMaxSmooth = 0, arnoldHMinSmooth = 0, lastLegendKey = '';
   let arnoldFMinSmooth = 3.38, arnoldFMaxSmooth = 4.18;
   let arnoldAutoFollow = true, arnoldPanMode = false, arnoldViewZoom = 1.0, arnoldCenterF = 3.78, arnoldBaseMT = 0;
+  // Physical-time Arnold averaging state (changing avg settings NEVER resets simulation)
+  let arnoldAvgUs = 0.40, arnoldAvgShowInst = true, arnoldAvgShowMean = true;
+  const ARNOLD_HIST_CAP = 512;
+  const ARNOLD_PHYS_DT_TAU = usToTau(0.010); // 10 ns/sample (~5.12 us rolling buffer)
+  const arnoldPhysTau = new Float64Array(ARNOLD_HIST_CAP);
+  const arnoldPhysPhi1 = new Float64Array(ARNOLD_HIST_CAP);
+  const arnoldPhysPhi2 = new Float64Array(ARNOLD_HIST_CAP);
+  const arnoldPhysPow = new Float32Array(ARNOLD_HIST_CAP * M);   // 4A modal power |a_m|^2
+  const arnoldPhysA2Re = new Float32Array(ARNOLD_HIST_CAP * M);  // Re(a_m^2) for rotating-frame 4B coherence
+  const arnoldPhysA2Im = new Float32Array(ARNOLD_HIST_CAP * M);  // Im(a_m^2)
+  let arnoldPhysHead = 0, arnoldPhysCount = 0, lastArnoldPhysTau = -1;
 
   function quantizePlotTop(rawVal) {
     const v = Math.max(0.01, rawVal);
@@ -1519,31 +1705,229 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   function tauToUs(tau) { return (tau * FREQ_TO_RAD * 1e-3) / (2 * Math.PI); }
 
+  function foldPlotHistExtrema() {
+    // 2:1 downsample-fold in chronological order preserving exact [min, max] envelopes over arbitrary multi-us durations
+    const half = PLOT_HIST_CAP >> 1;
+    const oldStart = (plotHistHead - plotHistCount + PLOT_HIST_CAP) % PLOT_HIST_CAP;
+    const tmpTau = new Float64Array(half);
+    const tmpEnv1 = new Float32Array(half);
+    const tmpEnv2 = new Float32Array(half);
+    const tmpAmps = new Float32Array(half * M);
+    const tmpMin = new Float32Array(half * M);
+    const tmpMax = new Float32Array(half * M);
+    for (let i = 0; i < half; i++) {
+      const s0 = (oldStart + 2 * i) % PLOT_HIST_CAP;
+      const s1 = (oldStart + 2 * i + 1) % PLOT_HIST_CAP;
+      tmpTau[i] = plotHistTau[s1];
+      tmpEnv1[i] = Math.max(plotHistEnv1[s0], plotHistEnv1[s1]);
+      tmpEnv2[i] = Math.max(plotHistEnv2[s0], plotHistEnv2[s1]);
+      const dst = i * M, o0 = s0 * M, o1 = s1 * M;
+      for (let m = 0; m < M; m++) {
+        tmpAmps[dst + m] = plotHistAmps[o1 + m];
+        tmpMin[dst + m] = Math.min(plotHistMin[o0 + m], plotHistMin[o1 + m]);
+        tmpMax[dst + m] = Math.max(plotHistMax[o0 + m], plotHistMax[o1 + m]);
+      }
+    }
+    plotHistTau.set(tmpTau, 0);
+    plotHistEnv1.set(tmpEnv1, 0);
+    plotHistEnv2.set(tmpEnv2, 0);
+    plotHistAmps.set(tmpAmps, 0);
+    plotHistMin.set(tmpMin, 0);
+    plotHistMax.set(tmpMax, 0);
+    plotHistHead = half;
+    plotHistCount = half;
+    plotBinDtTau *= 2;
+  }
+
   function recordPlotSample() {
-    const minDt = plotWinTau / 360;
     const env1MT = driveAmp > 1e-6 ? tone1EnvAt(simTime) * (driveAmp * MU0_MS_MT) : 0;
     const env2MT = (dualTone && driveAmp2 > 1e-6) ? tone2EnvAt(simTime) * (driveAmp2 * MU0_MS_MT) : 0;
     if (plotHistCount > 0 && simTime < lastPlotTau - 1e-9) {
-      plotHistHead = 0; plotHistCount = 0; plotOriginTau = simTime;
+      plotHistHead = 0; plotHistCount = 0; plotOriginTau = simTime; plotBinDtTau = PLOT_INIT_BIN_TAU;
     }
-    if (plotHistCount > 0 && (simTime - lastPlotTau) < minDt) {
+    if (plotHistCount > 0 && (simTime - plotHistTau[(plotHistHead - 1 + PLOT_HIST_CAP) % PLOT_HIST_CAP]) < plotBinDtTau) {
       const slot = (plotHistHead - 1 + PLOT_HIST_CAP) % PLOT_HIST_CAP;
-      plotHistTau[slot] = simTime;
-      plotHistEnv1[slot] = env1MT;
-      plotHistEnv2[slot] = env2MT;
+      plotHistEnv1[slot] = Math.max(plotHistEnv1[slot], env1MT);
+      plotHistEnv2[slot] = Math.max(plotHistEnv2[slot], env2MT);
       const off = slot * M;
-      for (let m = 0; m < M; m++) plotHistAmps[off + m] = Math.hypot(aRe[m], aIm[m]);
+      for (let m = 0; m < M; m++) {
+        const amp = Math.hypot(aRe[m], aIm[m]);
+        plotHistAmps[off + m] = amp;
+        if (amp < plotHistMin[off + m]) plotHistMin[off + m] = amp;
+        if (amp > plotHistMax[off + m]) plotHistMax[off + m] = amp;
+      }
       lastPlotTau = simTime;
       return;
     }
+    if (plotHistCount >= PLOT_HIST_CAP) foldPlotHistExtrema();
     plotHistTau[plotHistHead] = simTime;
     plotHistEnv1[plotHistHead] = env1MT;
     plotHistEnv2[plotHistHead] = env2MT;
     const off = plotHistHead * M;
-    for (let m = 0; m < M; m++) plotHistAmps[off + m] = Math.hypot(aRe[m], aIm[m]);
+    for (let m = 0; m < M; m++) {
+      const amp = Math.hypot(aRe[m], aIm[m]);
+      plotHistAmps[off + m] = amp;
+      plotHistMin[off + m] = amp;
+      plotHistMax[off + m] = amp;
+    }
     plotHistHead = (plotHistHead + 1) % PLOT_HIST_CAP;
     if (plotHistCount < PLOT_HIST_CAP) plotHistCount++;
     lastPlotTau = simTime;
+  }
+
+  function recordArnoldPhysSample() {
+    if (arnoldPhysCount > 0 && simTime < lastArnoldPhysTau - 1e-9) {
+      arnoldPhysHead = 0; arnoldPhysCount = 0; lastArnoldPhysTau = -1;
+    }
+    if (arnoldPhysCount > 0 && (simTime - lastArnoldPhysTau) < ARNOLD_PHYS_DT_TAU) return;
+    const slot = arnoldPhysHead;
+    arnoldPhysTau[slot] = simTime;
+    arnoldPhysPhi1[slot] = carrierPhase1 + drivePhase1;
+    arnoldPhysPhi2[slot] = carrierPhase2 + drivePhase2;
+    const off = slot * M;
+    for (let m = 0; m < M; m++) {
+      const ar = aRe[m], ai = aIm[m];
+      arnoldPhysPow[off + m] = ar * ar + ai * ai;
+      arnoldPhysA2Re[off + m] = ar * ar - ai * ai;
+      arnoldPhysA2Im[off + m] = 2 * ar * ai;
+    }
+    arnoldPhysHead = (arnoldPhysHead + 1) % ARNOLD_HIST_CAP;
+    if (arnoldPhysCount < ARNOLD_HIST_CAP) arnoldPhysCount++;
+    lastArnoldPhysTau = simTime;
+  }
+
+  function evalAveragedArnoldStats(windowUs = arnoldAvgUs) {
+    const powMean = new Float64Array(M);
+    const powStd = new Float64Array(M);
+    const dfMeanGHz = new Float64Array(M);
+    const dfStdGHz = new Float64Array(M);
+    const dfSelfMeanGHz = new Float64Array(M);
+    const dfMutMeanGHz = new Float64Array(M);
+    const coh4B = new Float64Array(M);
+    const w4BParMeanGHz = new Float64Array(M);
+    const w4BParStdGHz = new Float64Array(M);
+    if (arnoldPhysCount === 0 || windowUs <= 0) {
+      for (let m = 0; m < M; m++) {
+        powMean[m] = aRe[m] * aRe[m] + aIm[m] * aIm[m];
+        dfSelfMeanGHz[m] = terms.t4A ? mutualNfsCoeffGHz(m, m) * powMean[m] : 0;
+        dfMutMeanGHz[m] = modeMutualNfsShiftGHz(m);
+        dfMeanGHz[m] = dfSelfMeanGHz[m] + dfMutMeanGHz[m];
+      }
+      return { count: 0, spanUs: 0, powMean, powStd, dfMeanGHz, dfStdGHz, dfSelfMeanGHz, dfMutMeanGHz, coh4B, w4BParMeanGHz, w4BParStdGHz };
+    }
+    const minTau = simTime - usToTau(Math.max(0.01, windowUs));
+    const slots = [];
+    for (let k = 0; k < arnoldPhysCount; k++) {
+      const s = (arnoldPhysHead - arnoldPhysCount + k + ARNOLD_HIST_CAP) % ARNOLD_HIST_CAP;
+      if (arnoldPhysTau[s] >= minTau - 1e-9) slots.push(s);
+    }
+    if (slots.length === 0) slots.push((arnoldPhysHead - 1 + ARNOLD_HIST_CAP) % ARNOLD_HIST_CAP);
+    const nS = slots.length;
+    const spanUs = nS >= 2 ? tauToUs(arnoldPhysTau[slots[nS - 1]] - arnoldPhysTau[slots[0]]) : 0;
+
+    // 1. Exact 4A modal power averaging <|a_m|^2> & per-sample NFS frequency shift variance
+    const invN = 1 / nS;
+    for (let i = 0; i < nS; i++) {
+      const off = slots[i] * M;
+      for (let m = 0; m < M; m++) {
+        const p = arnoldPhysPow[off + m];
+        powMean[m] += p;
+        powStd[m] += p * p;
+      }
+    }
+    for (let m = 0; m < M; m++) {
+      powMean[m] *= invN;
+      powStd[m] = Math.sqrt(Math.max(0, powStd[m] * invN - powMean[m] * powMean[m]));
+      if (terms.t4A) {
+        dfSelfMeanGHz[m] = mutualNfsCoeffGHz(m, m) * powMean[m];
+        let mut = 0;
+        for (let j = 0; j < M; j++) {
+          if (j !== m && powMean[j] > 0) mut += mutualNfsCoeffGHz(m, j) * powMean[j];
+        }
+        dfMutMeanGHz[m] = mut;
+        dfMeanGHz[m] = dfSelfMeanGHz[m] + mut;
+      }
+    }
+    if (terms.t4A && nS >= 2) {
+      const dfVarSum = new Float64Array(M);
+      for (let i = 0; i < nS; i++) {
+        const off = slots[i] * M;
+        for (let m = 0; m < M; m++) {
+          let dfSample = 0;
+          for (let j = 0; j < M; j++) {
+            const pj = arnoldPhysPow[off + j];
+            if (pj > 0) dfSample += mutualNfsCoeffGHz(m, j) * pj;
+          }
+          const d = dfSample - dfMeanGHz[m];
+          dfVarSum[m] += d * d;
+        }
+      }
+      for (let m = 0; m < M; m++) dfStdGHz[m] = Math.sqrt(dfVarSum[m] * invN);
+    }
+
+    // 2. Rotating-frame complex 4B coherence vector average: rotates sum_{k!=h} P_hk a_k^2 against active 2A pump sideband frame
+    if (terms.t4B) {
+      const bwArr = new Float64Array(M);
+      for (let m = 0; m < M; m++) bwArr[m] = Math.max(0.008, 3 * modeGammaGHz(m));
+      const useTone2ForM = new Uint8Array(M);
+      for (let m = 0; m < M; m++) {
+        const f2m = 2 * fGhzArr[m];
+        useTone2ForM[m] = (dualTone && driveAmp2 > 0 && Math.abs(f2m - driveFreq2) < Math.abs(f2m - driveFreq)) ? 1 : 0;
+      }
+      const rotVecRe = new Float64Array(M), rotVecIm = new Float64Array(M);
+      const rotMagSum = new Float64Array(M);
+      const parSum = new Float64Array(M), parSqSum = new Float64Array(M);
+      for (let i = 0; i < nS; i++) {
+        const s = slots[i], off = s * M;
+        const p1 = arnoldPhysPhi1[s], p2 = arnoldPhysPhi2[s];
+        const c1 = Math.cos(p1), s1 = Math.sin(p1), c2 = Math.cos(p2), s2 = Math.sin(p2);
+        for (let m = 0; m < M; m++) {
+          const i2 = (m * M + m) * 2;
+          const qR = Q2x[i2], qI = Q2x[i2 + 1], qMag = Math.hypot(qR, qI);
+          if (qMag <= 1e-12) continue;
+          let wRe = 0, wIm = 0;
+          for (let k = 0; k < M; k++) {
+            if (k === m || arnoldPhysPow[off + k] < 1e-8) continue;
+            const hk2 = (m * M + k) * 2;
+            const pR = P4B[hk2] * F_M, pI = P4B[hk2 + 1] * F_M;
+            if (Math.hypot(pR, pI) <= 1e-8) continue;
+            const a2r = arnoldPhysA2Re[off + k], a2i = arnoldPhysA2Im[off + k];
+            const dfK = 0.5 * (2 * fGhzArr[m] - 2 * fGhzArr[k]);
+            const overlap = bwArr[m] / Math.hypot(bwArr[m], dfK);
+            wRe += (pR * a2r - pI * a2i) * overlap;
+            wIm += (pR * a2i + pI * a2r) * overlap;
+          }
+          const mag = Math.hypot(wRe, wIm);
+          if (mag <= 1e-12) continue;
+          const cP = useTone2ForM[m] ? c2 : c1;
+          const sP = useTone2ForM[m] ? s2 : s1;
+          // Rotating-frame pump basis u = (qI*cos + qR*sin, qI*sin - qR*cos) / qMag
+          const uR = (qI * cP + qR * sP) / qMag;
+          const uI = (qI * sP - qR * cP) / qMag;
+          // Project W_4B onto complex rotating frame (wPar + j * wPerp)
+          const wPar = wRe * uR + wIm * uI;
+          const wPerp = wIm * uR - wRe * uI;
+          rotVecRe[m] += wPar;
+          rotVecIm[m] += wPerp;
+          rotMagSum[m] += mag;
+          parSum[m] += wPar;
+          parSqSum[m] += wPar * wPar;
+        }
+      }
+      for (let m = 0; m < M; m++) {
+        const meanAbs = rotMagSum[m] * invN;
+        const vecNorm = Math.hypot(rotVecRe[m], rotVecIm[m]) * invN;
+        coh4B[m] = meanAbs > 1e-9 ? Math.min(1, vecNorm / meanAbs) : 0;
+        const pm = parSum[m] * invN;
+        w4BParMeanGHz[m] = pm;
+        w4BParStdGHz[m] = Math.sqrt(Math.max(0, parSqSum[m] * invN - pm * pm));
+      }
+    }
+    return {
+      count: nS, spanUs: +spanUs.toFixed(4),
+      powMean, powStd, dfMeanGHz, dfStdGHz, dfSelfMeanGHz, dfMutMeanGHz,
+      coh4B, w4BParMeanGHz, w4BParStdGHz
+    };
   }
 
   function updatePlotWindow(stepTau) {
@@ -1561,10 +1945,12 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   function resetModeHistory() {
     syncCarrierPhaseToSimTime(simTime);
     modeHistHead = 0; modeHistCount = 0; lastModeSampleT = simTime; lastSpecSampleT = -1; prevSpecT = -1; prevSpecVal = 0;
-    probeSeries.fill(0); spectrum.fill(0); probeHead = 0; probeCount = 0; specSeq++; lastSpecFftSeq = -1; specMaxSmooth = 0;
+    probeSeries.fill(0); spectrum.fill(0); probeHead = 0; probeCount = 0; specSeq++; lastSpecFftSeq = -1; specMaxSmooth = 0; lastWelchResult = null; lastWelchSeq = -1;
     tone2Released = false; tone2ReleaseT = Infinity; t1WaitStable = 0; lastWaitCheckT = simTime;
     t1WaitPrev.fill(0); visualPeakDyn = 0;
-    plotHistHead = 0; plotHistCount = 0; lastPlotTau = -1; plotOriginTau = simTime;
+    plotHistHead = 0; plotHistCount = 0; lastPlotTau = -1; plotOriginTau = simTime; plotBinDtTau = PLOT_INIT_BIN_TAU;
+    plotHistMin.fill(0); plotHistMax.fill(0);
+    arnoldPhysHead = 0; arnoldPhysCount = 0; lastArnoldPhysTau = -1;
     holdPlotWin = false; plotWinTau = defaultPlotWinTau(); plotYScale = 0.02; plotYTarget = 0.02;
     lastPlotDrawMs = 0; lastLegendBuildMs = 0; lastLegendKey = '';
     convHistory = []; convLastWindow = null; convSubAccum = null; convStableWindows = 0;
@@ -2227,7 +2613,11 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       if (lastSpecSampleT < 0 || simTime < lastSpecSampleT || simTime - lastSpecSampleT >= SPEC_DT) {
         recordSpecSamples(simTime);
       }
+      if (arnoldPhysCount === 0 || simTime < lastArnoldPhysTau || simTime - lastArnoldPhysTau >= ARNOLD_PHYS_DT_TAU) {
+        recordArnoldPhysSample();
+      }
     }
+    recordPlotSample();
     if (simTime < lastModeSampleT || simTime - lastModeSampleT >= 8.0 || modeHistCount === 0) recordModeSample();
     if (dualTone && tone2WaitSS && !tone2Released && driveAmp2 > 0 && simTime - lastWaitCheckT >= 450) {
       let maxDiff = 0, maxRel = 0;
@@ -2473,7 +2863,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
     if (anchorSlot >= 0 && visSlots.length > 0) visSlots.unshift(anchorSlot);
 
-    // Find all nonzero or pinned modes inside the window (or right now)
+    // Find all nonzero or pinned modes inside the window (or right now), honoring extrema plotHistMax
     const peakM = new Float32Array(M);
     for (let m = 0; m < M; m++) peakM[m] = modeAmps[m];
     let envMaxMT = 0;
@@ -2481,7 +2871,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       const slot = visSlots[s];
       const off = slot * M;
       for (let m = 0; m < M; m++) {
-        const v = plotHistAmps[off + m];
+        const v = Math.max(plotHistAmps[off + m], plotHistMax[off + m]);
         if (v > peakM[m]) peakM[m] = v;
       }
       if (plotHistEnv1[slot] > envMaxMT) envMaxMT = plotHistEnv1[slot];
@@ -2554,13 +2944,39 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       }
     }
 
-    // Plot curves for every nonzero or pinned mode
+    // Plot curves + preserved [min, max] extrema envelope bands for every nonzero or pinned mode
     if (visSlots.length >= 1) {
       for (const m of activeModes) {
         const isPinned = pinnedModes.has(m);
         const faint = !isPinned && activeModes.length > 8 && peakM[m] < Math.max(0.002, rawPeak * 0.06);
         const col = modeColor(m);
         modeTimeCtx.save();
+        // Shaded [plotHistMin, plotHistMax] envelope so fast-forward spikes/beating are preserved visually
+        if (visSlots.length >= 2 && !faint) {
+          let hasSpread = false;
+          for (let s = 0; s < visSlots.length; s++) {
+            const off = visSlots[s] * M;
+            if ((plotHistMax[off + m] - plotHistMin[off + m]) > plotYScale * 0.008) { hasSpread = true; break; }
+          }
+          if (hasSpread) {
+            modeTimeCtx.fillStyle = col;
+            modeTimeCtx.globalAlpha = isPinned ? 0.22 : 0.14;
+            modeTimeCtx.beginPath();
+            for (let s = 0; s < visSlots.length; s++) {
+              const slot = visSlots[s];
+              const x = Math.max(padL, Math.min(padL + pw, toX(plotHistTau[slot])));
+              const yMax = toY(plotHistMax[slot * M + m]);
+              if (s === 0) modeTimeCtx.moveTo(x, yMax); else modeTimeCtx.lineTo(x, yMax);
+            }
+            for (let s = visSlots.length - 1; s >= 0; s--) {
+              const slot = visSlots[s];
+              const x = Math.max(padL, Math.min(padL + pw, toX(plotHistTau[slot])));
+              modeTimeCtx.lineTo(x, toY(plotHistMin[slot * M + m]));
+            }
+            modeTimeCtx.closePath();
+            modeTimeCtx.fill();
+          }
+        }
         modeTimeCtx.strokeStyle = col;
         modeTimeCtx.globalAlpha = isPinned ? 1.0 : (faint ? 0.28 : 0.92);
         modeTimeCtx.lineWidth = isPinned ? 2.15 : (faint ? 0.9 : 1.5);
@@ -2718,21 +3134,37 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     drawModeTimePlot();
   });
 
+  function getSpecViewRange() {
+    const isModes = specBand === 'modes';
+    const absMin = isModes ? 1.5 : 0.0;
+    const absMax = isModes ? 2.3 : 6.5;
+    const fullSpan = absMax - absMin;
+    const z = Math.max(1.0, Math.min(20.0, Number(specCfg.zoom) || 1.0));
+    const span = fullSpan / z;
+    let c = Number.isFinite(specCfg.centerGHz) ? specCfg.centerGHz : 0.5 * (absMin + absMax);
+    if (specCfg.peakTrack && lastSpecPeakGHz >= absMin && lastSpecPeakGHz <= absMax && z > 1.02) {
+      c = lastSpecPeakGHz;
+    }
+    const half = span * 0.5;
+    c = Math.max(absMin + half, Math.min(absMax - half, c));
+    return { isModes, absMin, absMax, fMin: +(c - half).toFixed(5), fMax: +(c + half).toFixed(5), zoom: z, centerGHz: +c.toFixed(4) };
+  }
+
   function updateSpectrum() {
     const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * SPEC_DT);
     const nValid = Math.min(probeCount, SPEC_LEN);
     if (specSeq !== lastSpecFftSeq) {
       lastSpecFftSeq = specSeq;
       if (nValid >= 8) {
-        const start = (probeHead - nValid + SPEC_LEN) % SPEC_LEN;
+        const start = (probeHead - nValid + SPEC_RING_LEN) % SPEC_RING_LEN;
         let mean = 0;
-        for (let n = 0; n < nValid; n++) mean += probeSeries[(start + n) % SPEC_LEN];
+        for (let n = 0; n < nValid; n++) mean += probeSeries[(start + n) % SPEC_RING_LEN];
         mean /= nValid;
         fftRe.fill(0);
         fftIm.fill(0);
         const invNm1 = nValid > 1 ? 1 / (nValid - 1) : 1;
         for (let n = 0; n < nValid; n++) {
-          const s = probeSeries[(start + n) % SPEC_LEN] - mean;
+          const s = probeSeries[(start + n) % SPEC_RING_LEN] - mean;
           const hann = 0.5 * (1 - Math.cos(2 * Math.PI * n * invNm1));
           fftRe[n] = s * hann;
         }
@@ -2745,9 +3177,19 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       }
     }
 
-    const isModes = specBand === 'modes';
-    const fMin = isModes ? 1.5 : 0.0;
-    const fMax = isModes ? 2.3 : 6.5;
+    const cfgKey = `${specCfg.integUs}|${specCfg.segLen}|${specCfg.overlapPct}|${specCfg.window}|${specCfg.zpFactor}|${specBand}`;
+    if (!lastWelchResult || specSeq !== lastWelchSeq || cfgKey !== lastWelchCfgKey) {
+      lastWelchSeq = specSeq;
+      lastWelchCfgKey = cfgKey;
+      lastWelchResult = computeWelchPsd(specCfg);
+    }
+    const wRes = lastWelchResult;
+    const rawS1 = Math.max(1, nValid * 0.5);
+    const rawScale = 2.0 / rawS1; // Linear amplitude-equivalent matching wRes.amp directly
+
+    const vr = getSpecViewRange();
+    const isModes = vr.isModes;
+    const fMin = vr.fMin, fMax = vr.fMax;
     const kStart = Math.max(1, Math.floor((fMin / fsGHz) * SPEC_LEN));
     const kEnd = Math.min(SPEC_LEN / 2 - 1, Math.ceil((fMax / fsGHz) * SPEC_LEN));
 
@@ -2768,37 +3210,43 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       const denom = yL - 2 * yC + yR;
       if (denom < -1e-12) fracBin += Math.max(-0.5, Math.min(0.5, 0.5 * (yL - yR) / denom));
     }
-    const fPeak = (fracBin / SPEC_LEN) * fsGHz;
-    lastSpecPeakGHz = globalMax > 1e-4 ? +fPeak.toFixed(4) : 0;
+    const fPeakRaw = (fracBin / SPEC_LEN) * fsGHz;
+    const fPeak = (specCfg.mode === 'welch' && wRes && wRes.valid && wRes.peakGHz > 0) ? wRes.peakGHz : fPeakRaw;
+    lastSpecPeakGHz = (globalMax > 1e-4 || (wRes && wRes.peakVal > 1e-6)) ? +fPeak.toFixed(4) : 0;
 
-    const targetNorm = Math.max(1e-4, useVal);
+    const rawAmpPeak = useVal * rawScale;
+    const welchPeak = (wRes && wRes.valid) ? wRes.peakVal : 0;
+    const activePeakAmp = specCfg.mode === 'raw' ? rawAmpPeak : (specCfg.mode === 'welch' ? welchPeak : Math.max(rawAmpPeak, welchPeak));
+    const targetNorm = Math.max(1e-5, activePeakAmp);
     if (specMaxSmooth <= 0 || targetNorm > specMaxSmooth * 2.2) specMaxSmooth = targetNorm;
     else specMaxSmooth += 0.28 * (targetNorm - specMaxSmooth);
-    const normMax = Math.max(1e-4, specMaxSmooth);
+    const normMax = Math.max(1e-5, specMaxSmooth);
 
-    const { w: sw, h: sh } = prepHiDpiCanvas(specCanvas, specCtx, 460, 74);
+    const { w: sw, h: sh } = prepHiDpiCanvas(specCanvas, specCtx, 460, 86);
     specCtx.clearRect(0, 0, sw, sh);
     specCtx.fillStyle = 'rgba(130,185,255,0.08)';
     specCtx.fillRect(0, 0, sw, sh);
 
     const plotTop = 5, plotBottom = sh - 12;
     const plotSpan = Math.max(14, plotBottom - plotTop);
-    const toX = f => ((f - fMin) / (fMax - fMin)) * sw;
+    const toX = f => ((f - fMin) / Math.max(1e-6, fMax - fMin)) * sw;
     specCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
     specCtx.textBaseline = 'bottom';
 
-    if (isModes) {
-      for (let fg = 1.5; fg <= 2.301; fg += 0.1) {
-        const gx = toX(fg);
-        const major = Math.abs(Math.round(fg * 10) % 2) === 1;
-        specCtx.strokeStyle = major ? 'rgba(190,220,255,0.14)' : 'rgba(190,220,255,0.06)';
-        specCtx.lineWidth = 1;
-        specCtx.beginPath(); specCtx.moveTo(gx, 2); specCtx.lineTo(gx, plotBottom); specCtx.stroke();
-        if (major && gx > 2 && gx < sw - 18) {
-          specCtx.fillStyle = 'rgba(190,220,255,0.56)';
-          specCtx.fillText(fg.toFixed(1) + 'G', gx - 9, sh - 1);
-        }
+    const spanFSpec = fMax - fMin;
+    const gStep = spanFSpec <= 0.15 ? 0.02 : (spanFSpec <= 0.45 ? 0.05 : (isModes ? 0.1 : 1.0));
+    const gStart = Math.ceil(fMin / gStep) * gStep;
+    for (let fg = gStart; fg <= fMax + 1e-6; fg += gStep) {
+      const gx = toX(fg);
+      specCtx.strokeStyle = 'rgba(190,220,255,0.11)';
+      specCtx.lineWidth = 1;
+      specCtx.beginPath(); specCtx.moveTo(gx, 2); specCtx.lineTo(gx, plotBottom); specCtx.stroke();
+      if (gx > 2 && gx < sw - 20) {
+        specCtx.fillStyle = 'rgba(190,220,255,0.56)';
+        specCtx.fillText(fg.toFixed(gStep < 0.09 ? 2 : (isModes ? 1 : 0)) + 'G', gx - 9, sh - 1);
       }
+    }
+    if (isModes) {
       // 29 exact eigenmode frequency ticks + active mode needles across 1.5-2.3 GHz
       let maxModeAmp = 0;
       for (let m = 0; m < M; m++) { const a = cycleAvgModeAmp(m); if (a > maxModeAmp) maxModeAmp = a; }
@@ -2828,15 +3276,6 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       }
       specCtx.globalAlpha = 1;
       specCtx.textBaseline = 'bottom';
-    } else {
-      for (let fg = 1; fg <= 6; fg++) {
-        const gx = toX(fg);
-        specCtx.strokeStyle = 'rgba(190,220,255,0.11)';
-        specCtx.lineWidth = 1;
-        specCtx.beginPath(); specCtx.moveTo(gx, 2); specCtx.lineTo(gx, plotBottom); specCtx.stroke();
-        specCtx.fillStyle = 'rgba(190,220,255,0.48)';
-        specCtx.fillText(fg + 'G', gx - 6, sh - 1);
-      }
     }
 
     const drawRefLine = (fVal, color) => {
@@ -2852,20 +3291,21 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (!isModes) drawRefLine(driveFreq * 1.5, 'rgba(167,243,208,0.32)');
     specCtx.setLineDash([]);
 
-    if (nValid >= 8 && useVal > 1e-6) {
-      specCtx.strokeStyle = '#7cd4ff';
-      specCtx.lineWidth = 1.5;
+    // Draw Raw 4096-pt FFT curve when mode is 'raw' or 'both'
+    if ((specCfg.mode === 'raw' || specCfg.mode === 'both') && nValid >= 8 && useVal > 1e-6) {
+      specCtx.strokeStyle = specCfg.mode === 'raw' ? '#7cd4ff' : 'rgba(124,212,255,0.48)';
+      specCtx.lineWidth = specCfg.mode === 'raw' ? 1.5 : 1.05;
       specCtx.beginPath();
       let started = false, firstX = 0, lastX = 0;
       for (let k = kStart; k <= kEnd; k++) {
         const f = (k / SPEC_LEN) * fsGHz;
         const x = toX(f);
-        const y = plotBottom - Math.min(1, spectrum[k] / normMax) * plotSpan;
+        const y = plotBottom - Math.min(1, (spectrum[k] * rawScale) / normMax) * plotSpan;
         if (!started) { specCtx.moveTo(x, y); firstX = x; started = true; } else specCtx.lineTo(x, y);
         lastX = x;
       }
       specCtx.stroke();
-      if (started) {
+      if (started && specCfg.mode === 'raw') {
         specCtx.lineTo(lastX, plotBottom);
         specCtx.lineTo(firstX, plotBottom);
         specCtx.closePath();
@@ -2874,10 +3314,55 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       }
     }
 
+    // Draw Welch PSD curve when mode is 'welch' or 'both'
+    if ((specCfg.mode === 'welch' || specCfg.mode === 'both') && wRes && wRes.valid && wRes.amp.length > 0) {
+      const nW = wRes.nFft;
+      const wkS = Math.max(1, Math.floor((fMin / fsGHz) * nW));
+      const wkE = Math.min((nW >> 1) - 1, Math.ceil((fMax / fsGHz) * nW));
+      specCtx.strokeStyle = '#34d399';
+      specCtx.lineWidth = 1.65;
+      specCtx.beginPath();
+      let started = false, firstX = 0, lastX = 0;
+      for (let k = wkS; k <= wkE; k++) {
+        const f = (k / nW) * fsGHz;
+        const x = toX(f);
+        const y = plotBottom - Math.min(1, wRes.amp[k] / normMax) * plotSpan;
+        if (!started) { specCtx.moveTo(x, y); firstX = x; started = true; } else specCtx.lineTo(x, y);
+        lastX = x;
+      }
+      specCtx.stroke();
+      if (started) {
+        specCtx.lineTo(lastX, plotBottom);
+        specCtx.lineTo(firstX, plotBottom);
+        specCtx.closePath();
+        specCtx.fillStyle = 'rgba(52,211,153,0.13)';
+        specCtx.fill();
+      }
+    }
+
+    // Highlight peak tracking crosshair if peak is inside window
+    if (lastSpecPeakGHz >= fMin && lastSpecPeakGHz <= fMax && activePeakAmp > 1e-5) {
+      const px = toX(lastSpecPeakGHz);
+      specCtx.save();
+      specCtx.fillStyle = '#fbbf24';
+      specCtx.beginPath(); specCtx.arc(px, plotTop + 3, 2.3, 0, Math.PI * 2); specCtx.fill();
+      specCtx.restore();
+    }
+
     const spEl = document.getElementById('specPeak');
     if (spEl) {
-      if (useVal > 1e-4) spEl.textContent = `f_peak: ${fPeak.toFixed(isModes ? 4 : 2)} GHz`;
+      if (activePeakAmp > 1e-5 && lastSpecPeakGHz > 0) spEl.textContent = `f_peak: ${lastSpecPeakGHz.toFixed(isModes ? 4 : 2)} GHz${specCfg.peakTrack ? ' [TRK]' : ''}`;
       else spEl.textContent = nValid < 8 ? 'f_peak: sampling…' : 'f_peak: —';
+    }
+    const metaEl = document.getElementById('specMeta');
+    if (metaEl) {
+      const dfRawReal = ((1.5 * fsGHz * 1e3) / Math.max(8, nValid)).toFixed(2);
+      if (wRes && wRes.valid) {
+        const zpNote = wRes.zpFactor > 1 ? ` · ZP:${wRes.zpFactor}×(${wRes.dfBinMHz}M grid≠res)` : '';
+        metaEl.textContent = `Welch T=${wRes.tObsUs.toFixed(2)}µs · N=${wRes.nActual} · K=${wRes.kSegs}×${wRes.segLen} · Δf_real=${wRes.dfRealMHz}M (ENBW ${wRes.enbwBins}) · Raw=${dfRawReal}M${zpNote}`;
+      } else {
+        metaEl.textContent = `Sampling buffer (${probeCount} pts) · Δf_raw_real=${dfRawReal} MHz`;
+      }
     }
   }
 
@@ -3308,6 +3793,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     };
 
     const hCap = hMax + spanH * 0.28;
+    const avgStats = arnoldAvgUs > 0 ? evalAveragedArnoldStats(arnoldAvgUs) : null;
     let minTipMT = Infinity, maxTipMT = 0, maxShiftMHz = 0, maxSelfShiftMHz = 0, maxSelfSignedMHz = 0, maxW4B = 0, maxDh4B = 0;
 
     for (let m = 0; m < M; m++) {
@@ -3317,7 +3803,9 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       const fSelf = terms.t4A ? mutualNfsCoeffGHz(m, m) * aCur * aCur : 0;
       const f2Mut = 2 * (fGhzArr[m] + fMut);
       const f2Self = 2 * (fGhzArr[m] + fMut + fSelf);
-      if (Math.max(f0, f2Mut, f2Self) < fMin - 0.28 || Math.min(f0, f2Mut, f2Self) > fMax + 0.28) continue;
+      const f2Avg = avgStats ? 2 * (fGhzArr[m] + avgStats.dfMeanGHz[m]) : f2Self;
+      const f2Std = avgStats ? 2 * avgStats.dfStdGHz[m] : 0;
+      if (Math.max(f0, f2Mut, f2Self, f2Avg) < fMin - 0.28 || Math.min(f0, f2Mut, f2Self, f2Avg) > fMax + 0.28) continue;
       const col = modeColor(m);
       const hThStatic = parametricThresholdMT(m);
       const tipBlend = activePumpBlendAt(f2Mut);
@@ -3343,25 +3831,76 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
       const gamGHz = modeGammaGHz(m);
       const hasSelfShift = Math.abs(fSelf) >= 0.00025;
+      const isKey = m === closestMode || aCur > 0.002 || (avgStats && avgStats.powMean[m] > 4e-6);
 
       // Static/onset unshifted reference outline (dashed) whenever shifted by mutual 4A, self 4A, or reduced by 4B
       if (Math.abs(fMut) > 0.0004 || hasSelfShift || cp.resRateGHz > 1e-4) {
         const refFreqs = sampleArnoldFreqs(f0, gamGHz);
         if (traceThresholdPath(refFreqs, fp => arnoldThresholdMT(m, fp, 0), hCap, false)) {
-          arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.34; arnoldCtx.lineWidth = 0.95;
+          arnoldCtx.strokeStyle = col; arnoldCtx.globalAlpha = 0.30; arnoldCtx.lineWidth = 0.9;
           arnoldCtx.setLineDash([2, 3]); arnoldCtx.stroke(); arnoldCtx.setLineDash([]);
         }
       }
 
-      // Active Arnold tongue curve shifted by mutual 4A + live single-mode self-NFS (N_mm |a_m|^2)
-      if (terms.t2A || cp.resRateGHz > 1e-4) {
+      // Physical-time averaged curve (4A modal powers + rotating-frame 4B coherence) & ±1σ uncertainty band
+      if (arnoldAvgShowMean && avgStats && avgStats.count >= 2 && (terms.t2A || cp.resRateGHz > 1e-4)) {
+        const dfTotAvg = avgStats.dfMeanGHz[m];
+        const vGHzmT = Math.max(1e-9, vParamGHz_mT(m));
+        const evalAvgMT = (fp, wParOverride = null) => {
+          const wPar = wParOverride !== null ? wParOverride : (terms.t4B ? avgStats.w4BParMeanGHz[m] : 0);
+          const gammaEff = Math.max(1e-6, gamGHz - wPar);
+          const delta = 0.5 * (fp - 2 * (fGhzArr[m] + dfTotAvg));
+          return Math.hypot(gammaEff, delta) / vGHzmT;
+        };
+        const avgFreqs = sampleArnoldFreqs(f2Avg, gamGHz);
+        // Shaded ±1σ uncertainty ribbon across 4A frequency jitter and 4B cross-pump fluctuation
+        const w4BStd = terms.t4B ? avgStats.w4BParStdGHz[m] : 0;
+        const w4BMean = terms.t4B ? avgStats.w4BParMeanGHz[m] : 0;
+        if (isKey && (f2Std > 2e-4 || w4BStd > 1e-4)) {
+          arnoldCtx.beginPath();
+          let startedBand = false;
+          const bandLo = [], bandHi = [];
+          for (let i = 0; i < avgFreqs.length; i++) {
+            const fp = avgFreqs[i];
+            const h1 = Math.min(hCap, evalAvgMT(fp - f2Std, w4BMean + w4BStd));
+            const h2 = Math.min(hCap, evalAvgMT(fp + f2Std, w4BMean + w4BStd));
+            const h3 = Math.min(hCap, evalAvgMT(fp - f2Std, w4BMean - w4BStd));
+            const h4 = Math.min(hCap, evalAvgMT(fp + f2Std, w4BMean - w4BStd));
+            const hL = Math.min(h1, h2, h3, h4);
+            const hU = Math.max(h1, h2, h3, h4);
+            bandLo.push([toX(fp), toY(hL)]);
+            bandHi.push([toX(fp), toY(hU)]);
+          }
+          for (let i = 0; i < bandLo.length; i++) {
+            if (!startedBand) { arnoldCtx.moveTo(bandLo[i][0], bandLo[i][1]); startedBand = true; }
+            else arnoldCtx.lineTo(bandLo[i][0], bandLo[i][1]);
+          }
+          for (let i = bandHi.length - 1; i >= 0; i--) arnoldCtx.lineTo(bandHi[i][0], bandHi[i][1]);
+          arnoldCtx.closePath();
+          arnoldCtx.fillStyle = col; arnoldCtx.globalAlpha = 0.16; arnoldCtx.fill();
+        }
+        if (traceThresholdPath(avgFreqs, fp => evalAvgMT(fp), hCap, !arnoldAvgShowInst)) {
+          if (!arnoldAvgShowInst) {
+            arnoldCtx.globalAlpha = isKey ? 0.22 : 0.08;
+            arnoldCtx.fillStyle = col; arnoldCtx.fill();
+          }
+          arnoldCtx.globalAlpha = isKey ? 0.94 : (arnoldBand === 'all' ? 0.50 : 0.72);
+          arnoldCtx.strokeStyle = col; arnoldCtx.lineWidth = isKey ? 1.7 : 0.9; arnoldCtx.stroke();
+        }
+      }
+
+      // Active instantaneous Arnold tongue curve shifted by mutual 4A + live single-mode self-NFS (N_mm |a_m|^2)
+      if (arnoldAvgShowInst && (terms.t2A || cp.resRateGHz > 1e-4)) {
         const instFreqs = sampleArnoldFreqs(f2Self, gamGHz);
         if (traceThresholdPath(instFreqs, fp => evalInstArnoldMT(m, fp - 2 * fSelf), hCap, true)) {
-          const isKey = m === closestMode || aCur > 0.002;
-          arnoldCtx.globalAlpha = isKey ? 0.24 : (arnoldBand === 'all' ? 0.07 : 0.12);
+          arnoldCtx.globalAlpha = isKey ? 0.20 : (arnoldBand === 'all' ? 0.06 : 0.11);
           arnoldCtx.fillStyle = col; arnoldCtx.fill();
-          arnoldCtx.globalAlpha = isKey ? 0.96 : (arnoldBand === 'all' ? 0.62 : 0.80);
-          arnoldCtx.strokeStyle = col; arnoldCtx.lineWidth = isKey ? 1.6 : 0.85; arnoldCtx.stroke();
+          arnoldCtx.globalAlpha = isKey ? 0.96 : (arnoldBand === 'all' ? 0.58 : 0.78);
+          arnoldCtx.strokeStyle = col;
+          arnoldCtx.lineWidth = (arnoldAvgShowMean && avgStats && avgStats.count >= 2) ? 0.95 : (isKey ? 1.6 : 0.85);
+          if (arnoldAvgShowMean && avgStats && avgStats.count >= 2) arnoldCtx.setLineDash([4, 2]);
+          arnoldCtx.stroke();
+          arnoldCtx.setLineDash([]);
         }
       }
 
@@ -3538,6 +4077,19 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       if (terms.g3) extras.push('3M');
       if (terms.t4C || terms.t4D) extras.push('4CD');
       termsNoteEl.textContent = `${s4A} · ${s4B} · ${spreadTxt}${extras.length ? ' · ' + extras.join('+') : ''}`;
+    }
+    const avgReadEl = document.getElementById('arnoldAvgReadout');
+    if (avgReadEl) {
+      if (arnoldAvgUs <= 0) {
+        avgReadEl.textContent = 'AVG: OFF (Inst only)';
+      } else if (avgStats && avgStats.count >= 2) {
+        const dfM = (2000 * avgStats.dfMeanGHz[closestMode]).toFixed(1);
+        const dfS = (2000 * avgStats.dfStdGHz[closestMode]).toFixed(1);
+        const c4b = terms.t4B ? ` · γ₄B=${avgStats.coh4B[closestMode].toFixed(2)}` : '';
+        avgReadEl.textContent = `m${closestMode} ⟨Δf⟩=${dfM}±${dfS}M${c4b} (${avgStats.spanUs.toFixed(2)}µs)`;
+      } else {
+        avgReadEl.textContent = `avg ${arnoldAvgUs.toFixed(2)}µs (collecting…)`;
+      }
     }
 
     // Tone 1 & Tone 2 crosshairs
@@ -4025,6 +4577,21 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (outTP) outTP.textContent = `${timePanPct}%`;
     const sbBtn = document.getElementById('specBandBtn');
     if (sbBtn) { sbBtn.textContent = specBand === 'modes' ? '1.5–2.3G' : '0–6.5G'; sbBtn.classList.toggle('modes', specBand === 'modes'); }
+    const smBtn = document.getElementById('specModeBtn');
+    if (smBtn) { smBtn.textContent = specCfg.mode === 'both' ? 'RAW+WELCH' : (specCfg.mode === 'welch' ? 'WELCH PSD' : 'RAW FFT'); }
+    const stBtn = document.getElementById('specTrackBtn');
+    if (stBtn) stBtn.classList.toggle('active', specCfg.peakTrack);
+    const inSI = document.getElementById('inSpecIntegUs');
+    if (inSI && document.activeElement !== inSI) inSI.value = specCfg.integUs.toFixed(2);
+    const inSZ = document.getElementById('inSpecZoom');
+    if (inSZ && document.activeElement !== inSZ) inSZ.value = specCfg.zoom.toFixed(1);
+    const inSC = document.getElementById('inSpecCenterGHz');
+    if (inSC && document.activeElement !== inSC) inSC.value = specCfg.centerGHz.toFixed(3);
+    const inAA = document.getElementById('inArnoldAvgUs');
+    if (inAA && document.activeElement !== inAA) inAA.value = arnoldAvgUs.toFixed(2);
+    const btnAI = document.getElementById('arnoldAvgInstBtn'), btnAM2 = document.getElementById('arnoldAvgMeanBtn');
+    if (btnAI) btnAI.classList.toggle('active', arnoldAvgShowInst);
+    if (btnAM2) btnAM2.classList.toggle('active', arnoldAvgShowMean);
     document.getElementById('slDamp').value = damping;
     document.getElementById('outDamp').textContent = damping.toFixed(4);
     const slT = document.getElementById('slTemp'), outT = document.getElementById('outTemp');
@@ -5110,12 +5677,84 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   const specBandBtnEl = document.getElementById('specBandBtn');
   if (specBandBtnEl) specBandBtnEl.addEventListener('click', () => {
     specBand = specBand === 'modes' ? 'wide' : 'modes';
+    specCfg.zoom = 1.0;
+    specCfg.centerGHz = specBand === 'modes' ? 1.90 : 3.25;
     specMaxSmooth = 0;
     syncUi();
     updateSpectrum();
     announcePress(`Spectrum: ${specBand === 'modes' ? '1.5–2.3 GHz' : '0–6.5 GHz'}`, specBand === 'modes'
-      ? 'Zoomed spectrum onto 1.5–2.3 GHz mode band (4096-pt FFT, 3.4 MHz/bin) with all 29 eigenmode frequency markers.'
+      ? 'Zoomed spectrum onto 1.5–2.3 GHz mode band (4096-pt Raw FFT + Welch PSD) with all 29 eigenmode frequency markers.'
       : 'Switched to 0–6.5 GHz wide band to inspect f, 2f, and 3f nonlinear harmonics.');
+  });
+  const specModeBtnEl = document.getElementById('specModeBtn');
+  if (specModeBtnEl) specModeBtnEl.addEventListener('click', () => {
+    specCfg.mode = specCfg.mode === 'both' ? 'welch' : (specCfg.mode === 'welch' ? 'raw' : 'both');
+    specMaxSmooth = 0; syncUi(); updateSpectrum();
+    announcePress(`Spectrum: ${specCfg.mode.toUpperCase()}`, 'Toggled between Raw 4096-pt FFT + Welch PSD overlay, Welch PSD only, and Raw FFT only.');
+  });
+  const specTrackBtnEl = document.getElementById('specTrackBtn');
+  if (specTrackBtnEl) specTrackBtnEl.addEventListener('click', () => {
+    specCfg.peakTrack = !specCfg.peakTrack;
+    if (specCfg.peakTrack && lastSpecPeakGHz > 0) { specCfg.centerGHz = lastSpecPeakGHz; if (specCfg.zoom < 1.5) specCfg.zoom = 4.0; }
+    syncUi(); updateSpectrum();
+  });
+  const specCenterBtnEl = document.getElementById('specCenterBtn');
+  if (specCenterBtnEl) specCenterBtnEl.addEventListener('click', () => {
+    if (lastSpecPeakGHz > 0) { specCfg.centerGHz = lastSpecPeakGHz; if (specCfg.zoom < 2) specCfg.zoom = 4.0; }
+    syncUi(); updateSpectrum();
+  });
+  const specResetViewBtnEl = document.getElementById('specResetViewBtn');
+  if (specResetViewBtnEl) specResetViewBtnEl.addEventListener('click', () => {
+    specCfg.zoom = 1.0; specCfg.peakTrack = false; specCfg.centerGHz = specBand === 'modes' ? 1.90 : 3.25;
+    syncUi(); updateSpectrum();
+  });
+  const wireSpecInput = (id, handler) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', e => { handler(e.target.value); syncUi(); updateSpectrum(); });
+  };
+  wireSpecInput('inSpecIntegUs', v => { specCfg.integUs = Math.max(0.05, Math.min(2.35, Number(v) || 0.80)); });
+  wireSpecInput('selSpecSegLen', v => { specCfg.segLen = [512, 1024, 2048, 4096].includes(Number(v)) ? Number(v) : 1024; });
+  wireSpecInput('selSpecOverlap', v => { specCfg.overlapPct = Math.max(0, Math.min(75, Number(v) || 50)); });
+  wireSpecInput('selSpecWin', v => { specCfg.window = ['hann', 'hamming', 'blackman', 'rect'].includes(v) ? v : 'hann'; });
+  wireSpecInput('selSpecZp', v => { specCfg.zpFactor = [1, 2, 4].includes(Number(v)) ? Number(v) : 1; });
+  wireSpecInput('inSpecZoom', v => { specCfg.zoom = Math.max(1.0, Math.min(20.0, Number(v) || 1.0)); });
+  wireSpecInput('inSpecCenterGHz', v => { specCfg.peakTrack = false; specCfg.centerGHz = Math.max(0, Math.min(7.0, Number(v) || 1.90)); });
+  if (specCanvas && specCanvas.addEventListener) {
+    let specDrag = false, specDragX = 0;
+    specCanvas.addEventListener('wheel', e => {
+      if (e.preventDefault) e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.2 : (1 / 1.2);
+      specCfg.zoom = Math.max(1.0, Math.min(20.0, specCfg.zoom * factor));
+      syncUi(); updateSpectrum();
+    }, { passive: false });
+    specCanvas.addEventListener('pointerdown', e => { specDrag = true; specDragX = e.clientX; });
+    window.addEventListener('pointermove', e => {
+      if (!specDrag) return;
+      const dx = e.clientX - specDragX; specDragX = e.clientX;
+      const vr = getSpecViewRange();
+      const rect = specCanvas.getBoundingClientRect ? specCanvas.getBoundingClientRect() : { width: 460 };
+      specCfg.peakTrack = false;
+      specCfg.centerGHz -= (dx / Math.max(60, rect.width)) * (vr.fMax - vr.fMin);
+      syncUi(); updateSpectrum();
+    });
+    window.addEventListener('pointerup', () => { specDrag = false; });
+  }
+  const inArnoldAvgEl = document.getElementById('inArnoldAvgUs');
+  if (inArnoldAvgEl) inArnoldAvgEl.addEventListener('change', e => {
+    arnoldAvgUs = Math.max(0, Math.min(5.0, Number(e.target.value) || 0));
+    syncUi(); drawArnoldTongues();
+  });
+  const btnArnoldInstEl = document.getElementById('arnoldAvgInstBtn');
+  if (btnArnoldInstEl) btnArnoldInstEl.addEventListener('click', () => {
+    arnoldAvgShowInst = !arnoldAvgShowInst;
+    if (!arnoldAvgShowInst && !arnoldAvgShowMean) arnoldAvgShowMean = true;
+    syncUi(); drawArnoldTongues();
+  });
+  const btnArnoldMeanEl = document.getElementById('arnoldAvgMeanBtn');
+  if (btnArnoldMeanEl) btnArnoldMeanEl.addEventListener('click', () => {
+    arnoldAvgShowMean = !arnoldAvgShowMean;
+    if (!arnoldAvgShowInst && !arnoldAvgShowMean) arnoldAvgShowInst = true;
+    syncUi(); drawArnoldTongues();
   });
   document.getElementById('slDamp').addEventListener('input', e => {
     damping = +e.target.value; syncUi();
