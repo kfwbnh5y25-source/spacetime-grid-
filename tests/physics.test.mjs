@@ -431,7 +431,7 @@ function loadSpinWavesContext(seedStorage = {}) {
     applyPreset, swapTonesAction, SPEED_FRAME_STEPS,
     swLog, recordLogEvent, recordTelemetrySample, buildEvaluationReport,
     RLS_SQL_FIX, getDbConfig, saveDbConfig, resetDbConfig, uploadSwLog, getDbRlsBlockedUrl: () => dbRlsBlockedUrl, formatDbDiagText,
-    APP_RELEASE_VERSION, WHATS_NEW_KEY, shouldShowWhatsNew, openWhatsNew, dismissWhatsNew, openVerifyModal,
+    APP_RELEASE_VERSION, WHATS_NEW_KEY, shouldShowWhatsNew, openWhatsNew, dismissWhatsNew, openVerifyModal, swTutSteps, runSwTutDemo,
     getElHidden: id => !!document.getElementById(id).hidden,
     VERIFY_STAGES, runVerificationStage, runFullVerificationProtocol, runThroughputBenchmark,
     inspectLiveCalibration, probe4Avs4BCrossPump,
@@ -1162,7 +1162,7 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
 
   // 2. Launch "What's New" gating (shows once per release version)
   const freshCtx = loadSpinWavesContext();
-  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v82');
+  assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v83');
   assert.equal(freshCtx.shouldShowWhatsNew(), true);
   assert.equal(freshCtx.getElHidden('whatsNewModal'), false, 'Fresh launch must auto-open #whatsNewModal');
   freshCtx.dismissWhatsNew(true);
@@ -1175,9 +1175,9 @@ test("X. Long-Term 10-12 us Benchmarks, Stage 8, Handout Tab, SW v79 & Launch Wh
   seenCtx.openWhatsNew();
   assert.equal(seenCtx.getElHidden('whatsNewModal'), false, 'WHAT\'S NEW button must reopen #whatsNewModal');
 
-  // 3. Service Worker v82 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
+  // 3. Service Worker v83 + precached BENCHMARK_HANDOUT.md + portrait-safe cedricEggBtn placement
   const swSrc = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
-  assert.ok(swSrc.includes("'spacetime-shell-v82'"), 'sw.js must use spacetime-shell-v82');
+  assert.ok(swSrc.includes("'spacetime-shell-v83'"), 'sw.js must use spacetime-shell-v83');
   assert.ok(swSrc.includes('./spin-waves/BENCHMARK_HANDOUT.md'), 'sw.js must precache BENCHMARK_HANDOUT.md');
   const htmlSrc = fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
   const qbSlice = htmlSrc.slice(htmlSrc.indexOf('<div id="quickLaunchBar">'), htmlSrc.indexOf('<div id="readoutsDock">'));
@@ -1369,5 +1369,21 @@ test('Z. Smooth Dynamic Arnold Tongues at simTime > 0 & Idempotent Supabase RLS 
   assert.equal(fetchCount, 2);
   assert.equal(rlsCtx.swLog.dbStatus, 'DB SAVED ✓');
   assert.equal(rlsCtx.getDbRlsBlockedUrl(), null);
+
+  // 3. Updated 10-step Interactive Guide matches DOM pills, target IDs & executes all demo runners
+  assert.equal(spin.swTutSteps.length, 10);
+  const htmlSrc = fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
+  const pills = htmlSrc.match(/class="tutPill"/g) || [];
+  assert.equal(pills.length, 10, `Expected 10 .tutPill indicators in DOM, found ${pills.length}`);
+  const idSet = new Set([...htmlSrc.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+  for (let i = 0; i < spin.swTutSteps.length; i++) {
+    const step = spin.swTutSteps[i];
+    assert.ok(step.tag.includes(`STEP ${i + 1} OF 10`), `Unexpected tag on step ${i}: ${step.tag}`);
+    for (const sel of step.targets || []) {
+      const m = sel.match(/^#([A-Za-z0-9_-]+)/);
+      if (m) assert.ok(idSet.has(m[1]), `Tutorial step ${i + 1} references missing DOM #${m[1]}`);
+    }
+    assert.doesNotThrow(() => spin.runSwTutDemo(i), `runSwTutDemo(${i}) threw`);
+  }
 });
 
