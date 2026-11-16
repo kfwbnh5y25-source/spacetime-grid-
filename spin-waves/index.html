@@ -16,9 +16,6 @@
   .hudPill { padding: 4px 10px; border: 1px solid rgba(190,220,255,.22); border-radius: 99px; background: rgba(10,18,34,.86); font: 10.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; color: rgba(235,245,255,.92); white-space: nowrap; box-shadow: inset 0 1px 0 rgba(210,235,255,.06); }
   .hudPill.warn { border-color: rgba(255,200,95,.55); color: #ffd479; }
   .hudPill.active { border-color: rgba(110,225,175,.55); color: #8af0c4; }
-  .hudPill.cedric { pointer-events: auto; cursor: pointer; border-color: rgba(244,114,182,.65); background: linear-gradient(135deg, rgba(64,16,42,.88), rgba(32,18,58,.86)); color: #fbcfe8; animation: cedricPulse 2.4s ease-in-out infinite; }
-  .hudPill.cedric.on { border-color: #f9a8d4; box-shadow: 0 0 18px rgba(244,114,182,.65); color: #fff; }
-  @keyframes cedricPulse { 0%, 100% { box-shadow: 0 0 6px rgba(244,114,182,.25); } 50% { box-shadow: 0 0 16px rgba(244,114,182,.62); } }
 
   #quickLaunchBar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: center; padding: 5px 12px 6px; background: rgba(5,10,20,.88); border-bottom: 1px solid rgba(190,220,255,.12); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); z-index: 7; }
   .quickPill { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; padding: 0 10px; border: 1px solid rgba(190,220,255,.24); border-radius: 18px; background: rgba(12,22,40,.84); color: rgba(235,245,255,.94); font: 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; cursor: pointer; text-decoration: none; transition: border-color .15s, background .15s, transform .1s; }
@@ -48,7 +45,7 @@
   #modesBox { flex: 0 0 auto; }
   canvas#modeTimeCanvas { display: block; width: 100%; flex: none; height: 116px; border-radius: 6px; background: rgba(3,7,15,.68); cursor: ew-resize; touch-action: pan-y; }
   #spectrumBox { flex: 0 0 auto; }
-  canvas#specCanvas { display: block; width: 100%; flex: none; height: 78px; border-radius: 6px; }
+  canvas#specCanvas { display: block; width: 100%; flex: none; height: 112px; border-radius: 6px; background: rgba(3,7,15,.72); }
 
   .modeLegend { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; min-height: 18px; }
   .modeChip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(190,220,255,.20); background: rgba(15,28,50,.72); font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(232,243,255,.94); cursor: pointer; font-variant-numeric: tabular-nums; transition: background .15s, border-color .15s; }
@@ -110,14 +107,18 @@
   .termChk input { accent-color: #6cb8ff; margin: 0; }
 
   @keyframes coachPulse {
-    0%, 100% { box-shadow: 0 0 0 2px rgba(251,191,36,.95), 0 0 16px rgba(251,191,36,.55); border-color: #fbbf24; }
-    50% { box-shadow: 0 0 0 5px rgba(251,191,36,.32), 0 0 24px rgba(251,191,36,.88); border-color: #fde68a; }
+    0%, 100% { box-shadow: 0 0 0 3px rgba(251,191,36,.98), 0 0 22px rgba(251,191,36,.75), 0 0 40px rgba(56,189,248,.28); border-color: #fbbf24; }
+    50% { box-shadow: 0 0 0 6px rgba(251,191,36,.42), 0 0 32px rgba(251,191,36,.95), 0 0 54px rgba(56,189,248,.42); border-color: #fef08a; }
   }
-  .tutSpotlight { position: relative; animation: coachPulse 1.25s ease-in-out infinite !important; border-color: #fbbf24 !important; color: #fff !important; }
-  .tutSpotlight::after { content: 'PRESS'; position: absolute; top: -8px; right: -4px; padding: 1px 5px; border-radius: 4px; background: #fbbf24; color: #050a14; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; pointer-events: none; z-index: 20; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
-  .sliderRow.tutSpotlight { padding: 6px 8px; border-radius: 9px; background: rgba(251,191,36,.10); border: 1px solid rgba(251,191,36,.75); }
+  #tutBackdrop { position: fixed; inset: 0; z-index: 14; background: rgba(2, 5, 12, 0.58); pointer-events: none; transition: opacity .2s ease; }
+  body.tutActive #topHud, body.tutActive #quickLaunchBar { z-index: auto; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .tutSpotlight { position: relative; z-index: 19 !important; animation: coachPulse 1.15s ease-in-out infinite !important; border-color: #fbbf24 !important; color: #fff !important; background-color: rgba(38, 28, 8, 0.92) !important; }
+  .tutSpotlight::after { content: 'PRESS'; position: absolute; top: -9px; right: -4px; padding: 1px 6px; border-radius: 4px; background: #fbbf24; color: #050a14; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; pointer-events: none; z-index: 22; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
+  .sliderRow.tutSpotlight { padding: 6px 8px; border-radius: 9px; background: rgba(251,191,36,.14) !important; border: 1px solid rgba(251,191,36,.85) !important; }
   .sliderRow.tutSpotlight::after { content: 'SLIDE'; top: -7px; right: 4px; }
-  #swTutorial { position: fixed; z-index: 20; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(356px,calc(100vw - 24px)); padding: 12px 14px; border: 1px solid rgba(185,218,255,.26); border-radius: 15px; background: rgba(5,10,20,.94); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.64); }
+  .tutLookSpotlight { position: relative; z-index: 17 !important; border-color: rgba(56,189,248,.85) !important; box-shadow: 0 0 0 2px rgba(56,189,248,.75), 0 0 26px rgba(56,189,248,.42) !important; }
+  .tutLookSpotlight::after { content: 'LOOK HERE'; position: absolute; top: 6px; right: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(14,165,233,.92); color: #03111d; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; pointer-events: none; z-index: 21; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+  #swTutorial { position: fixed; z-index: 20; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(356px,calc(100vw - 24px)); padding: 12px 14px; border: 1px solid rgba(185,218,255,.26); border-radius: 15px; background: rgba(5,10,20,.94); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.64); transition: left .28s ease, top .28s ease; }
   #swTutorial[hidden] { display: none; }
   .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; cursor: grab; touch-action: none; }
   .tutHeader:active { cursor: grabbing; }
@@ -129,6 +130,12 @@
   .tutPill.active { background: #8ec5ff; }
   .tutTitle { margin: 0 0 4px; font-size: 13.5px; font-weight: 600; color: #fff; }
   .tutBody { margin: 0 0 7px; font-size: 11.5px; color: rgba(225,236,255,.84); }
+  .tutGuideGrid { display: grid; gap: 5px; margin: 4px 0 2px; }
+  .tutGuideRow { padding: 5px 7px; border-radius: 7px; border: 1px solid rgba(165,205,255,.16); background: rgba(12,22,42,.62); font-size: 11px; line-height: 1.38; color: rgba(228,240,255,.90); }
+  .tutGuideLbl { display: inline-block; margin-right: 5px; padding: 1px 5px; border-radius: 4px; font: 700 9px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; text-transform: uppercase; }
+  .tutGuideLbl.do { background: rgba(251,191,36,.18); border: 1px solid rgba(251,191,36,.45); color: #fde68a; }
+  .tutGuideLbl.look { background: rgba(56,189,248,.18); border: 1px solid rgba(56,189,248,.45); color: #bae6fd; }
+  .tutGuideLbl.obs { background: rgba(52,211,153,.18); border: 1px solid rgba(52,211,153,.45); color: #a7f3d0; }
   .tutFormula { display: inline-block; margin-top: 4px; padding: 2px 7px; border-radius: 6px; background: rgba(130,185,255,.12); border: 1px solid rgba(130,185,255,.22); font: 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color: #b9dcff; }
   .tutPromptBox { margin: 0 0 7px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(251,191,36,.45); background: rgba(251,191,36,.10); font-size: 11px; color: #fef3c7; }
   .tutPromptBox b { color: #fbbf24; }
@@ -152,9 +159,9 @@
   .nikCell.selected { border-color: #fbbf24; box-shadow: 0 0 0 1px #fbbf24; z-index: 3; }
   #nikConfig { margin-top: 6px; padding: 6px 8px; border-radius: 7px; background: rgba(14,26,46,.74); border: 1px solid rgba(130,185,255,.20); font: 9.5px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace; color: rgba(224,238,255,.92); }
 
-  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #arnoldExpBtn, #specBandBtn, #specModeBtn, #specTrackBtn, #specCenterBtn, #specResetViewBtn, #timeEnvBtn, #timeModeBtn, #timeExportBtn { padding: 2px 7px; border-radius: 5px; border: 1px solid rgba(130,185,255,.34); background: rgba(130,185,255,.14); color: #c4e2ff; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
+  #arnoldTargetBtn, #arnoldBandBtn, #arnoldAutoBtn, #arnoldPanBtn, #arnoldFitBtn, #arnoldExpBtn, #specBandBtn, #specModeBtn, #specScaleBtn, #specTrackBtn, #specCenterBtn, #specResetViewBtn, #timeEnvBtn, #timeModeBtn, #timeExportBtn { padding: 2px 7px; border-radius: 5px; border: 1px solid rgba(130,185,255,.34); background: rgba(130,185,255,.14); color: #c4e2ff; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #arnoldTargetBtn.t2, #arnoldPanBtn.active, #arnoldExpBtn.active, #specTrackBtn.active { border-color: rgba(251,191,36,.60); background: rgba(251,191,36,.22); color: #fde68a; }
-  #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes, #specModeBtn.active, #timeEnvBtn.active, #timeModeBtn.active { border-color: rgba(110,231,183,.55); background: rgba(16,185,129,.20); color: #a7f3d0; }
+  #arnoldBandBtn.all, #arnoldAutoBtn.active, #specBandBtn.modes, #specModeBtn.active, #specScaleBtn.active, #timeEnvBtn.active, #timeModeBtn.active { border-color: rgba(110,231,183,.55); background: rgba(16,185,129,.20); color: #a7f3d0; }
   canvas#arnoldCanvas.panMode { cursor: grab; }
   canvas#arnoldCanvas.panning { cursor: grabbing; }
   .arnoldNavBar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 5px; }
@@ -222,7 +229,7 @@
   .pulseTag.p2on { border-color: rgba(52,211,153,.85); background: rgba(16,185,129,.28); color: #a7f3d0; box-shadow: 0 0 8px rgba(52,211,153,.35); font-weight: 600; }
   #hResetBtn { padding: 2px 7px; border-radius: 5px; border: 1px solid rgba(190,220,255,.28); background: rgba(120,165,225,.16); color: #eef5ff; font: 9.5px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace; cursor: pointer; }
   #hResetBtn:hover { background: rgba(120,165,225,.3); border-color: rgba(165,215,255,.6); }
-  canvas#hInputCanvas { display: block; width: 100%; height: 28px; border-radius: 4px; background: rgba(3,7,15,.65); }
+  canvas#hInputCanvas { display: block; width: 100%; height: 40px; border-radius: 4px; background: rgba(3,7,15,.65); }
 
   .mainTabGroup { display: inline-flex; align-items: center; gap: 3px; padding: 2px; border: 1px solid rgba(130,190,255,.34); border-radius: 18px; background: rgba(6,13,26,.92); }
   .tabBtn { min-height: 24px; padding: 0 9px; border-radius: 14px; border-color: transparent; background: transparent; color: rgba(205,226,255,.82); font-weight: 600; }
@@ -298,10 +305,11 @@
   </span>
   <button class="quickPill" id="swTutorialBtn" type="button" aria-label="Open Spin Waves step-by-step guide">GUIDE ?</button>
   <button class="quickPill accent" id="quickWhatsNewBtn" type="button" title="Summary of experimental calibration, CSI2 analysis & dashboard updates">WHAT'S NEW</button>
-  <button class="quickPill cedric" id="cedricEggBtn" type="button" title="Click for a special spin-wave surprise">♥ FOR CÉDRIC</button>
   <button class="quickPill" id="tonguesToggleBtn" type="button" aria-label="Scroll to Arnold Tongues map">TONGUES</button>
   <button class="quickPill accent" id="quickCoexBtn" type="button" title="Scenario 1 (S_det > 0): coupled c++ coexistence between m13 (+2.99 GHz) & m23 (+0.38 GHz)">COEX c++</button>
   <button class="quickPill accent" id="quickNonrecipBtn" type="button" title="Scenario 2 (S_det < 0): 2-Tone 3.0µs Delayed Nonreciprocity on (m13, m16)">3µs NONRECIP</button>
+  <button class="quickPill accent" id="quickThreshRedBtn" type="button" title="Dual-tone 4B threshold reduction (m16→m15): Tone 1 lowers m15 threshold so sub-threshold Tone 2 (0.38 mT < 0.421 mT) ignites">THRESH RED</button>
+  <button class="quickPill accent" id="quickPhaseGateBtn" type="button" title="Dual-tone phase gating (m16→m27, Δf=120 MHz, 300 K): sweep Rel Phase Δφ between 0° (ON) and −150° (suppressed)">PHASE GATE</button>
   <button class="quickPill" id="quickSwapBtn" type="button" title="Swap Tone 1 & Tone 2 order (T1→T2 vs T2→T1)">SWAP T1↔T2</button>
   <button class="quickPill" id="quickResetTimeBtn" type="button" title="Reset time t = 0 and replay pulse turn-on">↺ t=0</button>
   <button class="quickPill" id="quickFastBtn" type="button" title="Fast-forward to steady state">FAST→SS</button>
@@ -318,6 +326,7 @@
   <a class="quickPill" id="backBtn" href="../">← SPACETIME</a>
 </div>
 <div id="pressToast" aria-live="polite"></div>
+<div id="tutBackdrop" hidden aria-hidden="true"></div>
 <section id="swTutorial" hidden aria-label="d'Aquino 2026 Spin Waves step-by-step guide">
   <div class="tutHeader">
     <span class="tutStepTag" id="swTutTag">STEP 1 OF 10</span>
@@ -360,7 +369,7 @@
         <button id="hResetBtn" type="button" title="Reset simulation time t = 0">↺ t=0</button>
       </span>
     </div>
-    <canvas id="hInputCanvas" width="290" height="28"></canvas>
+    <canvas id="hInputCanvas" width="290" height="40" aria-label="Dual-channel AWG pulse envelopes h1(t) and h2(t) in mT"></canvas>
   </div>
   <div id="diskStage">
     <canvas id="fieldCanvas" aria-label="d'Aquino 2026 Normal Modes Model YIG 3um disk spin-wave simulation. Tap or drag to pluck modes."></canvas>
@@ -457,18 +466,19 @@
       <span>SPECTRUM · FFT &amp; WELCH PSD</span>
       <span style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;">
         <button id="specBandBtn" class="modes" type="button" title="Toggle between Mode Band (1.5–2.3 GHz) and Wide Harmonics (0–6.5 GHz)">1.5–2.3G</button>
-        <button id="specModeBtn" class="active" type="button" title="Cycle Raw 4096-pt FFT + Welch PSD overlay vs Welch only vs Raw only">RAW+WELCH</button>
+        <button id="specModeBtn" class="active" type="button" title="Cycle Welch PSD vs Raw 4096-pt FFT vs Raw+Welch overlay">WELCH PSD</button>
+        <button id="specScaleBtn" class="active" type="button" title="Toggle Y-axis between Log Power Spectral Density (dB, 80 dB dynamic range) and Linear Amplitude">dB PSD</button>
         <button id="specTrackBtn" type="button" title="Track spectral peak &amp; center view when zooming">TRACK</button>
         <button id="specCenterBtn" type="button" title="Center view on detected spectral peak">⌖Peak</button>
         <button id="specResetViewBtn" type="button" title="Reset frequency zoom &amp; pan">1×</button>
       </span>
       <span id="specPeak">f_peak: —</span>
     </div>
-    <canvas id="specCanvas" width="460" height="86" aria-label="Raw 4096-point FFT and configurable Welch PSD spectrum"></canvas>
+    <canvas id="specCanvas" width="460" height="112" aria-label="High-resolution Welch PSD and FFT spectrum with dB power scale"></canvas>
     <div class="specCtrlBar">
-      <label title="Physical integration duration used for Welch PSD (µs)">T_obs µs <input id="inSpecIntegUs" class="miniNumIn" type="number" min="0.05" max="2.30" step="0.05" value="0.80"></label>
-      <label title="Welch segment length N_seg (determines real frequency resolution Δf_real = ENBW·fs/N_seg)">Seg
-        <select id="selSpecSegLen" class="miniSel"><option value="512">512</option><option value="1024" selected>1024</option><option value="2048">2048</option><option value="4096">4096</option></select>
+      <label title="Physical integration duration used for Welch PSD (µs; up to 9.0 µs)">T_obs µs <input id="inSpecIntegUs" class="miniNumIn" type="number" min="0.05" max="9.00" step="0.10" value="3.00"></label>
+      <label title="Welch segment length N_seg (determines real frequency resolution Δf_real = ENBW·fs/N_seg; 16384 ≈ 1.3 MHz)">Seg
+        <select id="selSpecSegLen" class="miniSel"><option value="1024">1024</option><option value="2048">2048</option><option value="4096">4096</option><option value="8192">8192</option><option value="16384" selected>16384 (~1M)</option><option value="32768">32768 (~0.6M)</option></select>
       </label>
       <label title="Segment overlap percentage">Ov
         <select id="selSpecOverlap" class="miniSel"><option value="0">0%</option><option value="25">25%</option><option value="50" selected>50%</option><option value="75">75%</option></select>
@@ -518,6 +528,8 @@
       <button class="btn" id="presetCoex" type="button" title="Scenario 1 (S_det > 0): Weakly coupled c++ coexistence (m13, m23)">Coex (13,23)</button>
       <button class="btn" id="presetOpp" type="button" title="Scenario 1 (S_det > 0, Fig. 5): Opposite-sign (m13 +2.99, m27 -2.38) coexistence">Opp (13,27)</button>
       <button class="btn" id="presetNonrecip" type="button" title="Scenario 2 (S_det < 0, Fig. 6): 2-Tone 3.0us delayed nonreciprocity (m13, m16)">Nonrecip (13,16)</button>
+      <button class="btn" id="presetThreshRed" type="button" title="Dual-tone 4B threshold reduction (m16→m15): Tone 1 (4.000 GHz, 0.55 mT) pulls m15 Arnold tongue down so sub-threshold Tone 2 (3.9967 GHz, 0.38 mT < 0.421 mT) ignites">Thresh Red (16→15)</button>
+      <button class="btn" id="presetPhaseGate" type="button" title="Dual-tone phase gating (m16→m27, Δf=120 MHz, 300 K): Tone 1 (4.000 GHz, 0.71 mT) + Tone 2 (4.120 GHz, 0.45 mT, τ₂=0.5 µs); sweep Δφ">Phase Gate (16→27)</button>
       <button class="btn" id="presetCross4B" type="button" title="4B Downward Arnold + Phase: prior m16 pulls m15 below h_th(15) (h_p = 0.90*h_th); toggle Phase φ₁ 0° vs 180°">4B Down+φ</button>
       <button class="btn" id="btnZeroDrive" type="button">Zero Drive</button>
     </div>
@@ -1424,7 +1436,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   // High-resolution 4096-point raw FFT + 32k-sample ring buffer & configurable Welch PSD
   const SPEC_LEN = 4096;
-  const SPEC_RING_LEN = 32768;
+  const SPEC_RING_LEN = 131072; // ~9.35 us at 14.01 GS/s for ~1 MHz Welch resolution
   const SPEC_DT = 2.21; // omega_M * 0.0713 ns -> fs ~ 14.01 GHz, Nyquist ~ 7.00 GHz
   const probeSeries = new Float32Array(SPEC_RING_LEN);
   let probeHead = 0, probeCount = 0, lastSpecSampleT = -1, prevSpecT = -1, prevSpecVal = 0;
@@ -1496,9 +1508,10 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     return cached;
   }
   const specCfg = {
-    mode: 'both',      // 'both' | 'welch' | 'raw'
-    integUs: 0.80,
-    segLen: 1024,
+    mode: 'welch',     // 'both' | 'welch' | 'raw'
+    logDb: true,       // true = 10*log10(PSD) dB scale (80 dB range), false = linear amplitude
+    integUs: 3.00,
+    segLen: 16384,
     overlapPct: 50,
     window: 'hann',
     zpFactor: 1,
@@ -1570,7 +1583,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   function computeWelchPsd(opts = {}) {
     const fsGHz = (2 * Math.PI) / (FREQ_TO_RAD * SPEC_DT);
-    const integUs = Math.max(0.02, Math.min(2.35, Number.isFinite(opts.integUs) ? opts.integUs : specCfg.integUs));
+    const integUs = Math.max(0.02, Math.min(9.30, Number.isFinite(opts.integUs) ? opts.integUs : specCfg.integUs));
     const reqSeg = Number.isFinite(opts.segLen) ? opts.segLen : specCfg.segLen;
     const overlapPct = Math.max(0, Math.min(87.5, Number.isFinite(opts.overlapPct) ? opts.overlapPct : specCfg.overlapPct));
     const winType = opts.window || specCfg.window || 'hann';
@@ -1583,13 +1596,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       return {
         valid: false, nActual, kSegs: 0, segLen: reqSeg, zpFactor, nFft: reqSeg * zpFactor,
         enbwBins: 1.5, dfRealMHz: (1.5 * fsGHz * 1e3) / reqSeg, dfBinMHz: (fsGHz * 1e3) / (reqSeg * zpFactor),
-        tObsUs, fsGHz, peakGHz: 0, peakVal: 0, psd: new Float32Array(0), amp: new Float32Array(0)
+        tObsUs, fsGHz, peakGHz: 0, peakVal: 0, peakPsd: 0, peakDb: -120, bandPow: 0, bandDb: -120,
+        psd: new Float32Array(0), amp: new Float32Array(0)
       };
     }
     let segLen = reqSeg;
     while (segLen > nActual && segLen > 64) segLen >>= 1;
-    segLen = Math.max(16, Math.min(4096, segLen));
-    const nFft = Math.min(16384, segLen * zpFactor);
+    segLen = Math.max(16, Math.min(32768, segLen));
+    const nFft = Math.min(131072, segLen * zpFactor);
     const halfFft = nFft >> 1;
     const winInfo = specWindowWeights(winType, segLen);
     const step = Math.max(1, Math.round(segLen * (1 - overlapPct / 100)));
@@ -1630,14 +1644,19 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const ampScale = 2.0 / Math.max(1e-12, winInfo.s1);
     const fBandMin = specBand === 'modes' ? 1.5 : 0.0;
     const fBandMax = specBand === 'modes' ? 2.3 : 6.5;
-    let peakVal = 0, peakBin = 1;
+    let peakVal = 0, peakBin = 1, peakPsd = 0, bandPow = 0;
+    const dfGHzBin = fsGHz / nFft;
     for (let k = 1; k < halfFft; k++) {
       const mSq = psdAccum[k] * invK;
-      psd[k] = mSq * psdScale;
+      const pVal = mSq * psdScale;
+      psd[k] = pVal;
       const aEq = Math.sqrt(mSq) * ampScale;
       amp[k] = aEq;
       const fk = (k / nFft) * fsGHz;
-      if (fk >= fBandMin && fk <= fBandMax && aEq > peakVal) { peakVal = aEq; peakBin = k; }
+      if (fk >= fBandMin && fk <= fBandMax) {
+        bandPow += pVal * dfGHzBin;
+        if (aEq > peakVal) { peakVal = aEq; peakBin = k; peakPsd = pVal; }
+      }
     }
     let fracBin = peakBin;
     if (peakBin > 1 && peakBin < halfFft - 2) {
@@ -1648,6 +1667,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const effSegSamples = Math.min(nActual, segLen);
     const dfRealMHz = (winInfo.enbwBins * fsGHz * 1e3) / effSegSamples;
     const dfBinMHz = (fsGHz * 1e3) / nFft;
+    const peakDb = 10 * Math.log10(Math.max(1e-14, peakPsd));
+    const bandDb = 10 * Math.log10(Math.max(1e-14, bandPow));
     return {
       valid: true, nActual, kSegs, segLen: effSegSamples, zpFactor, nFft,
       enbwBins: +winInfo.enbwBins.toFixed(3),
@@ -1659,6 +1680,10 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       overlapPct,
       peakGHz: +((fracBin / nFft) * fsGHz).toFixed(4),
       peakVal,
+      peakPsd,
+      peakDb: +peakDb.toFixed(2),
+      bandPow,
+      bandDb: +bandDb.toFixed(2),
       psd,
       amp
     };
@@ -2709,7 +2734,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     resetModeHistory();
     recordModeSample();
     reconstructSpatialSpins();
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetCross4B,#btnZeroDrive').forEach(b => { if (b && b.classList) b.classList.remove('active'); });
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetThreshRed,#presetPhaseGate,#presetCross4B,#btnZeroDrive').forEach(b => { if (b && b.classList) b.classList.remove('active'); });
     document.querySelectorAll('#eigenButtons button').forEach(b => { if (b && b.classList) b.classList.toggle('active', Number(b.dataset.mode) === mIdx); });
     syncUi();
   }
@@ -3248,16 +3273,35 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     else specMaxSmooth += 0.28 * (targetNorm - specMaxSmooth);
     const normMax = Math.max(1e-5, specMaxSmooth);
 
-    const { w: sw, h: sh } = prepHiDpiCanvas(specCanvas, specCtx, 460, 86);
+    const { w: sw, h: sh } = prepHiDpiCanvas(specCanvas, specCtx, 460, 112);
     specCtx.clearRect(0, 0, sw, sh);
     specCtx.fillStyle = 'rgba(130,185,255,0.08)';
     specCtx.fillRect(0, 0, sw, sh);
 
-    const plotTop = 5, plotBottom = sh - 12;
+    const plotTop = 6, plotBottom = sh - 13;
     const plotSpan = Math.max(14, plotBottom - plotTop);
     const toX = f => ((f - fMin) / Math.max(1e-6, fMax - fMin)) * sw;
+    const isLogDb = !!specCfg.logDb;
+    const rawPsdFactor = 1.0 / (fsGHz * Math.max(1, nValid * 0.375));
+    const peakDbRef = (wRes && wRes.valid && wRes.peakPsd > 0) ? wRes.peakDb : (10 * Math.log10(Math.max(1e-14, useVal * useVal * 2 * rawPsdFactor)));
+    const dbTop = Math.max(-40, Math.ceil(peakDbRef / 10) * 10);
+    const dbRange = 80;
+    const dbFloor = dbTop - dbRange;
+    const dbToY = db => plotBottom - Math.max(0, Math.min(1, (db - dbFloor) / dbRange)) * plotSpan;
+
     specCtx.font = '7.5px ui-monospace,SFMono-Regular,Menlo,monospace';
     specCtx.textBaseline = 'bottom';
+
+    if (isLogDb) {
+      for (let d = dbFloor + 20; d <= dbTop; d += 20) {
+        const gy = dbToY(d);
+        specCtx.strokeStyle = 'rgba(190,220,255,0.09)';
+        specCtx.lineWidth = 1;
+        specCtx.beginPath(); specCtx.moveTo(0, gy); specCtx.lineTo(sw, gy); specCtx.stroke();
+        specCtx.fillStyle = 'rgba(165,205,245,0.52)';
+        specCtx.fillText(`${d}dB`, 3, gy + 8);
+      }
+    }
 
     const spanFSpec = fMax - fMin;
     const gStep = spanFSpec <= 0.15 ? 0.02 : (spanFSpec <= 0.45 ? 0.05 : (isModes ? 0.1 : 1.0));
@@ -3326,7 +3370,9 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       for (let k = kStart; k <= kEnd; k++) {
         const f = (k / SPEC_LEN) * fsGHz;
         const x = toX(f);
-        const y = plotBottom - Math.min(1, (spectrum[k] * rawScale) / normMax) * plotSpan;
+        const y = isLogDb
+          ? dbToY(10 * Math.log10(Math.max(1e-14, spectrum[k] * spectrum[k] * 2 * rawPsdFactor)))
+          : (plotBottom - Math.min(1, (spectrum[k] * rawScale) / normMax) * plotSpan);
         if (!started) { specCtx.moveTo(x, y); firstX = x; started = true; } else specCtx.lineTo(x, y);
         lastX = x;
       }
@@ -3349,10 +3395,21 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       specCtx.lineWidth = 1.65;
       specCtx.beginPath();
       let started = false, firstX = 0, lastX = 0;
-      for (let k = wkS; k <= wkE; k++) {
-        const f = (k / nW) * fsGHz;
+      const pxStride = Math.max(1, Math.floor((wkE - wkS) / Math.max(1, sw * 2)));
+      for (let k = wkS; k <= wkE; k += pxStride) {
+        let kBest = k;
+        if (pxStride > 1) {
+          let bestV = -1;
+          const kLim = Math.min(wkE, k + pxStride - 1);
+          for (let kk = k; kk <= kLim; kk++) {
+            if (wRes.psd[kk] > bestV) { bestV = wRes.psd[kk]; kBest = kk; }
+          }
+        }
+        const f = (kBest / nW) * fsGHz;
         const x = toX(f);
-        const y = plotBottom - Math.min(1, wRes.amp[k] / normMax) * plotSpan;
+        const y = isLogDb
+          ? dbToY(10 * Math.log10(Math.max(1e-14, wRes.psd[kBest])))
+          : (plotBottom - Math.min(1, wRes.amp[kBest] / normMax) * plotSpan);
         if (!started) { specCtx.moveTo(x, y); firstX = x; started = true; } else specCtx.lineTo(x, y);
         lastX = x;
       }
@@ -3377,15 +3434,19 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
     const spEl = document.getElementById('specPeak');
     if (spEl) {
-      if (activePeakAmp > 1e-5 && lastSpecPeakGHz > 0) spEl.textContent = `f_peak: ${lastSpecPeakGHz.toFixed(isModes ? 4 : 2)} GHz${specCfg.peakTrack ? ' [TRK]' : ''}`;
-      else spEl.textContent = nValid < 8 ? 'f_peak: sampling…' : 'f_peak: —';
+      if (activePeakAmp > 1e-5 && lastSpecPeakGHz > 0) {
+        const pDbTxt = (wRes && wRes.valid) ? ` · P_pk: ${wRes.peakDb.toFixed(1)} dB` : '';
+        spEl.textContent = `f_peak: ${lastSpecPeakGHz.toFixed(isModes ? 4 : 2)} GHz${pDbTxt}${specCfg.peakTrack ? ' [TRK]' : ''}`;
+      } else {
+        spEl.textContent = nValid < 8 ? 'f_peak: sampling…' : 'f_peak: —';
+      }
     }
     const metaEl = document.getElementById('specMeta');
     if (metaEl) {
       const dfRawReal = ((1.5 * fsGHz * 1e3) / Math.max(8, nValid)).toFixed(2);
       if (wRes && wRes.valid) {
         const zpNote = wRes.zpFactor > 1 ? ` · ZP:${wRes.zpFactor}×(${wRes.dfBinMHz}M grid≠res)` : '';
-        metaEl.textContent = `Welch T=${wRes.tObsUs.toFixed(2)}µs · N=${wRes.nActual} · K=${wRes.kSegs}×${wRes.segLen} · Δf_real=${wRes.dfRealMHz}M (ENBW ${wRes.enbwBins}) · Raw=${dfRawReal}M${zpNote}`;
+        metaEl.textContent = `Welch T=${wRes.tObsUs.toFixed(2)}µs · N=${wRes.nActual} · K=${wRes.kSegs}×${wRes.segLen} · Δf_real=${wRes.dfRealMHz}M (ENBW ${wRes.enbwBins}) · P_band=${wRes.bandDb.toFixed(1)}dB · Raw=${dfRawReal}M${zpNote}`;
       } else {
         metaEl.textContent = `Sampling buffer (${probeCount} pts) · Δf_raw_real=${dfRawReal} MHz`;
       }
@@ -4157,44 +4218,65 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       else { p2El.textContent = 'P2 WAIT'; p2El.className = 'pulseTag wait'; }
     }
     if (!hInputCtx || !hInputCanvas) return;
-    const { w, h } = prepHiDpiCanvas(hInputCanvas, hInputCtx, 290, 28);
-    const midY = h * 0.5;
+    const { w, h } = prepHiDpiCanvas(hInputCanvas, hInputCtx, 290, 40);
     hInputCtx.clearRect(0, 0, w, h);
+    const baseY = h - 10, topY = 4, spanY = Math.max(10, baseY - topY);
     const tOnUs = !p2Conf ? 0 : (tone2WaitSS ? (tone2Released ? (tone2ReleaseT * FREQ_TO_RAD * 1e-3) / (2 * Math.PI) : Math.max(tCurUs + 0.5, tone2DelayNs)) : tone2DelayNs);
     const tMaxUs = Math.max(5.0, tOnUs * 1.6, Math.min(12.0, tCurUs * 1.15));
-    hInputCtx.strokeStyle = 'rgba(190,220,255,0.14)'; hInputCtx.lineWidth = 1;
-    hInputCtx.beginPath(); hInputCtx.moveTo(0, midY); hInputCtx.lineTo(w, midY); hInputCtx.stroke();
-    const hNormMax = Math.max(1.5, driveAmp * MU0_MS_MT, p2Conf ? driveAmp2 * MU0_MS_MT : 0);
-    const a1H = Math.min(midY - 2, ((driveAmp * MU0_MS_MT) / hNormMax) * (midY - 2));
-    const a2H = p2Conf ? Math.min(midY - 2, ((driveAmp2 * MU0_MS_MT) / hNormMax) * (midY - 2)) : 0;
+    const h1mT = driveAmp * MU0_MS_MT, h2mT = p2Conf ? driveAmp2 * MU0_MS_MT : 0;
+    const hNormMax = Math.max(1.0, h1mT * 1.15, h2mT * 1.15);
+    const toY = mT => baseY - Math.max(0, Math.min(1, mT / hNormMax)) * spanY;
     const xOn = p2Conf ? Math.max(2, Math.min(w - 14, (tOnUs / tMaxUs) * w)) : w + 1;
     const rampPx = Math.max(2, (0.001 / tMaxUs) * w);
+
+    // Baseline (0 mT) & mid-scale grid
+    hInputCtx.strokeStyle = 'rgba(190,220,255,0.18)'; hInputCtx.lineWidth = 1;
+    hInputCtx.beginPath(); hInputCtx.moveTo(0, baseY); hInputCtx.lineTo(w, baseY); hInputCtx.stroke();
+    hInputCtx.strokeStyle = 'rgba(190,220,255,0.08)';
+    hInputCtx.beginPath(); hInputCtx.moveTo(0, baseY - spanY * 0.5); hInputCtx.lineTo(w, baseY - spanY * 0.5); hInputCtx.stroke();
+
+    // Tone 1 Envelope h1(t)
     if (p1On) {
-      hInputCtx.fillStyle = 'rgba(56,189,248,0.14)'; hInputCtx.fillRect(0, midY - a1H, w, a1H * 2);
+      const y1 = toY(h1mT);
+      hInputCtx.fillStyle = 'rgba(56,189,248,0.16)';
+      hInputCtx.beginPath(); hInputCtx.moveTo(0, baseY); hInputCtx.lineTo(rampPx, y1); hInputCtx.lineTo(w, y1); hInputCtx.lineTo(w, baseY); hInputCtx.closePath(); hInputCtx.fill();
+      hInputCtx.strokeStyle = '#38bdf8'; hInputCtx.lineWidth = 1.6;
+      hInputCtx.beginPath(); hInputCtx.moveTo(0, baseY); hInputCtx.lineTo(rampPx, y1); hInputCtx.lineTo(w, y1); hInputCtx.stroke();
+    }
+    // Tone 2 Envelope h2(t)
+    if (p2Conf) {
+      const y2 = toY(h2mT);
+      const col2 = env2 > 0 ? '#34d399' : '#fbbf24';
+      hInputCtx.fillStyle = env2 > 0 ? 'rgba(52,211,153,0.18)' : 'rgba(251,191,36,0.12)';
+      hInputCtx.beginPath(); hInputCtx.moveTo(xOn, baseY); hInputCtx.lineTo(Math.min(w, xOn + rampPx), y2); hInputCtx.lineTo(w, y2); hInputCtx.lineTo(w, baseY); hInputCtx.closePath(); hInputCtx.fill();
+      hInputCtx.strokeStyle = col2; hInputCtx.lineWidth = 1.6;
+      hInputCtx.beginPath(); hInputCtx.moveTo(0, baseY); hInputCtx.lineTo(xOn, baseY); hInputCtx.lineTo(Math.min(w, xOn + rampPx), y2); hInputCtx.lineTo(w, y2); hInputCtx.stroke();
+      hInputCtx.setLineDash([2, 2]); hInputCtx.lineWidth = 1;
+      hInputCtx.beginPath(); hInputCtx.moveTo(xOn, topY); hInputCtx.lineTo(xOn, baseY); hInputCtx.stroke(); hInputCtx.setLineDash([]);
+    }
+    // Labels for f1/h1 and f2/h2 + time ticks
+    hInputCtx.font = '8.5px ui-monospace,SFMono-Regular,Menlo,monospace';
+    hInputCtx.textBaseline = 'top';
+    if (p1On) {
+      hInputCtx.fillStyle = '#7dd3fc';
+      hInputCtx.fillText(`h₁ ${h1mT.toFixed(2)}mT @ ${driveFreq.toFixed(3)}G`, 4, 2);
     }
     if (p2Conf) {
-      hInputCtx.fillStyle = env2 > 0 ? 'rgba(52,211,153,0.22)' : 'rgba(251,191,36,0.10)';
-      hInputCtx.fillRect(xOn, midY - a2H, w - xOn, a2H * 2);
-      hInputCtx.strokeStyle = env2 > 0 ? '#34d399' : '#fbbf24';
-      hInputCtx.setLineDash([2, 2]); hInputCtx.beginPath(); hInputCtx.moveTo(xOn, 0); hInputCtx.lineTo(xOn, h); hInputCtx.stroke(); hInputCtx.setLineDash([]);
+      hInputCtx.fillStyle = env2 > 0 ? '#6ee7b7' : '#fde68a';
+      const lbl2 = `h₂ ${h2mT.toFixed(2)}mT @ ${driveFreq2.toFixed(3)}G`;
+      const lbl2W = (typeof hInputCtx.measureText === 'function' && hInputCtx.measureText(lbl2)?.width) || (lbl2.length * 5.2);
+      hInputCtx.fillText(lbl2, Math.max(115, w - lbl2W - 4), 2);
     }
-    if (p1On || p2Conf) {
-      hInputCtx.strokeStyle = p2Conf && env2 > 0 ? 'rgba(130,245,215,0.88)' : 'rgba(124,212,255,0.85)';
-      hInputCtx.lineWidth = 1.1; hInputCtx.beginPath();
-      const fRatio = driveFreq > 0 ? driveFreq2 / driveFreq : 1;
-      for (let x = 0; x <= w; x += 2) {
-        const e1 = p1On ? (x < rampPx ? 0.5 * (1 - Math.cos(Math.PI * x / rampPx)) : 1) : 0;
-        const e2 = (p2Conf && x >= xOn) ? (x - xOn < rampPx ? 0.5 * (1 - Math.cos(Math.PI * (x - xOn) / rampPx)) : 1) : 0;
-        const sig = e1 * a1H * Math.sin(x * 0.52 + drivePhase1 - simTime * 0.12)
-                  + e2 * a2H * Math.sin(x * 0.52 * fRatio + drivePhase2 - simTime * 0.12);
-        const y = midY - Math.max(-midY + 1, Math.min(midY - 1, sig));
-        if (x === 0) hInputCtx.moveTo(x, y); else hInputCtx.lineTo(x, y);
-      }
-      hInputCtx.stroke();
-    }
+    hInputCtx.textBaseline = 'bottom';
+    hInputCtx.fillStyle = 'rgba(185,212,245,0.65)';
+    hInputCtx.fillText(`0`, 2, h);
+    hInputCtx.fillText(`${(tMaxUs * 0.5).toFixed(1)}µs`, w * 0.5 - 12, h);
+    hInputCtx.fillText(`${tMaxUs.toFixed(1)}µs`, w - 26, h);
+
+    // Current time playhead
     const xPlay = Math.max(2, Math.min(w - 3, (tCurUs / tMaxUs) * w));
-    hInputCtx.strokeStyle = '#fff'; hInputCtx.lineWidth = 1.3;
-    hInputCtx.beginPath(); hInputCtx.moveTo(xPlay, 0); hInputCtx.lineTo(xPlay, h); hInputCtx.stroke();
+    hInputCtx.strokeStyle = '#fff'; hInputCtx.lineWidth = 1.4;
+    hInputCtx.beginPath(); hInputCtx.moveTo(xPlay, 0); hInputCtx.lineTo(xPlay, baseY); hInputCtx.stroke();
   }
 
   function selectArnoldAt(clientX, clientY, forceT2 = false) {
@@ -4276,62 +4358,6 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     drawArnoldTongues();
   }, { passive: false });
 
-  let cedricHeartMode = false;
-  function drawCedricOverlay(cxD, cyD, rD) {
-    const tNow = nowWallMs() * 0.001;
-    const pulse = 1 + 0.06 * Math.sin(tNow * 3.4);
-    const sc = (rD * 0.028) * pulse;
-    ctx.save();
-    ctx.beginPath();
-    for (let k = 0; k <= 80; k++) {
-      const a = (k / 80) * Math.PI * 2;
-      const hx = 16 * Math.pow(Math.sin(a), 3);
-      const hy = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a));
-      const px = cxD + hx * sc, py = cyD + hy * sc;
-      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(244, 114, 182, 0.16)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(249, 168, 212, 0.92)';
-    ctx.lineWidth = 2.2;
-    ctx.shadowColor = 'rgba(244, 114, 182, 0.85)';
-    ctx.shadowBlur = 14;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    for (let j = 0; j < 8; j++) {
-      const ang = tNow * 0.9 + (j * Math.PI) / 4;
-      const orbR = rD * (0.76 + 0.05 * Math.sin(tNow * 2 + j));
-      ctx.fillStyle = j % 2 === 0 ? 'rgba(251, 191, 36, 0.85)' : 'rgba(249, 168, 212, 0.9)';
-      ctx.font = '13px system-ui,sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('♥', cxD + Math.cos(ang) * orbR, cyD + Math.sin(ang) * orbR);
-    }
-    ctx.fillStyle = '#fdf2f8';
-    ctx.font = '700 13px ui-monospace,SFMono-Regular,Menlo,monospace';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('FOR CÉDRIC ♥', cxD, cyD - 4);
-    ctx.fillStyle = '#fde68a';
-    ctx.font = '600 9.5px ui-monospace,SFMono-Regular,Menlo,monospace';
-    ctx.fillText('Δφ = 0° CONSTRUCTIVE COHERENCE ∞', cxD, cyD + 14);
-    ctx.restore();
-  }
-  function toggleCedricHeartMode(forceOn = null) {
-    cedricHeartMode = forceOn === null ? !cedricHeartMode : !!forceOn;
-    const btn = document.getElementById('cedricEggBtn');
-    if (btn && btn.classList) {
-      btn.classList.toggle('on', cedricHeartMode);
-      btn.textContent = cedricHeartMode ? '♥ CÉDRIC · Δφ=0° ON' : '♥ FOR CÉDRIC';
-    }
-    if (cedricHeartMode) {
-      exciteEigenmode(13, 0.04);
-      showLogToast('♥ FOR CÉDRIC', 'Phase-locked at Δφ = 0°: constructive resonance forever, Cédric ♥');
-    } else {
-      showLogToast('♥ HEART MODE OFF', 'Returned to standard YIG spatial profile.');
-    }
-    drawScene();
-  }
-
   function drawScene() {
     reconstructSpatialSpins();
     const data = imgData.data;
@@ -4385,7 +4411,6 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       }
     }
     ctx.stroke(); ctx.restore();
-    if (cedricHeartMode && ctx && typeof ctx.save === 'function') drawCedricOverlay(diskW * 0.5, diskH * 0.5, size * 0.495);
 
     const meanAmp = ampSum / NACT;
     lastMeanDynAmp = meanAmp; lastPeakDyn = peakDyn;
@@ -4725,6 +4750,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     if (sbBtn) { sbBtn.textContent = specBand === 'modes' ? '1.5–2.3G' : '0–6.5G'; sbBtn.classList.toggle('modes', specBand === 'modes'); }
     const smBtn = document.getElementById('specModeBtn');
     if (smBtn) { smBtn.textContent = specCfg.mode === 'both' ? 'RAW+WELCH' : (specCfg.mode === 'welch' ? 'WELCH PSD' : 'RAW FFT'); }
+    const ssBtn = document.getElementById('specScaleBtn');
+    if (ssBtn) { ssBtn.textContent = specCfg.logDb ? 'dB PSD' : 'LIN AMP'; ssBtn.classList.toggle('active', !!specCfg.logDb); }
     const stBtn = document.getElementById('specTrackBtn');
     if (stBtn) stBtn.classList.toggle('active', specCfg.peakTrack);
     const inSI = document.getElementById('inSpecIntegUs');
@@ -4773,114 +4800,145 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     syncSliderNumsFromRanges();
   }
 
-  // Slow-Motion Step-by-Step Interactive Guide + Button Spotlights + "What You're Pressing"
-  const swTutKey = 'spin-waves-tutorial-v4';
+  // Slow-Motion Step-by-Step Interactive Guide + Button Spotlights + Focus Backdrop
+  const swTutKey = 'spin-waves-tutorial-v5';
   const swTutEl = document.getElementById('swTutorial'), swTutBtn = document.getElementById('swTutorialBtn');
+  const tutBackdropEl = document.getElementById('tutBackdrop');
   const swTutPressEl = document.getElementById('swTutPress');
   const pressToastEl = document.getElementById('pressToast');
   let pressToastTimer = null;
-  let lastPressHtml = '<span class="tutPressTag">READY</span>Press any glowing button or slider — I\'ll tell you what you\'re pressing and what changes.';
+  let lastPressHtml = '<span class="tutPressTag">READY</span>Follow the glowing amber buttons (PRESS / SLIDE) and cyan panels (LOOK HERE) — or click <b>Run This Step</b>.';
 
   const swTutSteps = [
     {
-      tag: 'STEP 1 OF 10 · SLOW MOTION & KITTEL MODE',
-      title: 'Slow Down & Watch Uniform Precession',
-      body: 'Spin waves oscillate near 2 GHz, so we set SPEED to <b>1× SLOW</b> (or <b>0.25×</b>) so each wave crest glides gently. Click the glowing <b>m27 Kit</b> button to excite the Kittel uniform mode.',
+      tag: 'STEP 1 OF 10 · BASELINE & SLOW MOTION',
+      title: '1. Slow Motion & Uniform Kittel Mode (m27)',
+      doText: 'Click <b>0.25×</b> in the top <b>SPEED</b> bar so 2 GHz waves glide slowly, then click <b>m27 Kit</b> in the right Controls panel.',
+      lookText: '<b>YIG 3 µm Disk</b> (left canvas) and <b>Welch PSD Spectrum</b> (bottom-center).',
+      obsText: 'All spin arrows across the disk precess in unison at <b>f₂₇ = 2.055 GHz</b> (Kittel uniform mode, softening N₂₇,₂₇ = −2.38 GHz).',
       formula: 'm27 Kittel · f = 2.055 GHz · N = −2.38 GHz',
-      prompt: '<b>Press now:</b> Click <b>0.25×</b> (optional ultra-slow) and then click <b>m27 Kit</b> in the controls.',
+      prompt: '<b>Try it:</b> Click <b>0.25×</b> then <b>m27 Kit</b> (or press <b>Run This Step</b>).',
       targets: ['#speedBtns button[data-speed="0.25"]', '#eigenButtons button[data-mode="27"]'],
+      lookTargets: ['#diskStage', '#spectrumBox'],
       actions: ['speed:0.25', 'm27', 'eigen'],
       openControls: true
     },
     {
-      tag: 'STEP 2 OF 10 · BULK MODES, THRESHOLDS & EXP OVERLAY',
-      title: 'Bulk m13 vs Below/Above h_th & [EXP] Map',
-      body: 'Click <b>m13</b> to inspect spatial nodal rings, toggle <b>EXP</b> on the Arnold Instability Map to overlay 29/80-mode experimental anchors (<code>B_cal = 27.0 mT</code>), and compare <b>Below h_th</b> decay vs <b>m13 Param</b> (1.6× h_th, 1 ns Tukey ramp).',
-      formula: 'h_th = Γ_k / v_k · 1ns tukey(128,1)[:64] · |δf_h| ≤ 7.5 MHz',
-      prompt: '<b>Press now:</b> Click <b>m13</b>, toggle <b>EXP</b> on the Arnold map, or click <b>m13 Param</b>.',
-      targets: ['#eigenButtons button[data-mode="13"]', '#presetParam', '#arnoldExpBtn'],
-      actions: ['m13', 'preset:param', 'preset:sub', 'arnold:exp'],
+      tag: 'STEP 2 OF 10 · EXAMPLE 1: SINGLE-TONE PARAMETRIC',
+      title: '2. Single-Tone Parametric Pumping (m13 vs Below h_th)',
+      doText: 'Click <b>m13 Param</b> (1.6× h_th = 0.62 mT at 3.950 GHz). To reach steady state fast, click <b>FAST→SS</b> (or <b>150×</b>) in the top bar. Next, click <b>Below h_th</b> (0.35× h_th) to compare.',
+      lookText: '<b>Arnold Instability Map</b> (top-center: red dot = pump vs V-shaped tongue), <b>Time-Dependent Mode Analysis</b> (middle-center), and <b>YIG Disk</b> (nodal rings).',
+      obsText: 'Above threshold (<b>1.6× h_th</b>), the red dot sits inside the m13 Arnold tongue: <b>m13</b> grows exponentially from noise and saturates at |a₁₃| ≈ 0.052 (hardening shift +2.99 GHz). Below threshold (<b>0.35× h_th</b>), Gilbert damping α drains m13 back to 0.',
+      formula: 'f_p = 2f₁₃ + 2 MHz = 3.950 GHz · h_th(13) = 0.389 mT',
+      prompt: '<b>Try it:</b> Click <b>m13 Param</b> → <b>FAST→SS</b>, watch m13 saturate, then click <b>Below h_th</b>.',
+      targets: ['#presetParam', '#presetSub', '#quickFastBtn', '#arnoldExpBtn'],
+      lookTargets: ['#arnoldBox', '#modesBox', '#diskStage'],
+      actions: ['preset:param', 'preset:sub', 'arnold:exp'],
       openControls: true
     },
     {
-      tag: 'STEP 3 OF 10 · RELATIVE PHASE Δφ',
-      title: 'Constructive vs Destructive Phase (Δφ)',
-      body: 'With <b>Dual-Tone: ON</b>, overlapping tones at the same frequency interfere coherently: <b>0°</b> adds amplitudes above threshold while <b>±180°</b> cancels to zero.',
-      formula: 'h(t) = h₁ sin(ωt + φ₁) + h₂ sin(ωt + φ₂)',
-      prompt: '<b>Press now:</b> Turn on <b>Dual-Tone</b>, then drag <b>Rel Phase Δφ</b> between 0° and ±180°.',
-      targets: ['#btnDualTone', '#slPhase2'],
-      actions: ['dualTone', 'phase2'],
-      openControls: true
-    },
-    {
-      tag: 'STEP 4 OF 10 · SCENARIO 1 & TIME ANALYSIS',
-      title: 'Coupled Coexistence (COEX c++) & Window Stats',
-      body: 'Modes m13 (+2.99G) & m23 (+0.38G) have <b>S_det = +1.08 > 0</b>: both coexist simultaneously. Track them in <b>Time-Dependent Mode Analysis</b> — toggle <b>ENV</b> (h₁/h₂), scrub <b>Window</b>, or tap any mode chip to pin!',
-      formula: 'COEX c++ · μ / RMS / σ / Δ / γ_eff → CONVERGED',
-      prompt: '<b>Press now:</b> Click <b>COEX c++</b>, then toggle <b>ENV</b> or adjust <b>Window</b> in Time Analysis.',
-      targets: ['#quickCoexBtn', '#presetCoex', '#timeEnvBtn', '#slTimeZoom'],
-      actions: ['preset:coex', 'coex', 'time:env', 'time:zoom'],
+      tag: 'STEP 3 OF 10 · COUPLED COEXISTENCE (SCENARIO 1)',
+      title: '3. Dual-Tone Coupled Coexistence (m13, m23)',
+      doText: 'Click <b>COEX c++</b> in the top bar, then click <b>FAST→SS</b> (or <b>25×</b>) to advance to steady state. Toggle <b>ENV</b> in Time Analysis to overlay h₁(t)/h₂(t).',
+      lookText: '<b>Time-Dependent Mode Analysis</b> (both blue m13 and green m23 traces + <code>CONVERGED</code> status) and <b>Welch PSD Spectrum</b>.',
+      obsText: 'Because <b>S_det = +1.08 > 0</b>, neither mode suppresses the other: <b>m13</b> and <b>m23</b> coexist stably in the <b>c++</b> branch with two distinct sub-harmonic peaks.',
+      formula: 'COEX c++ · S_det = +1.08 > 0 · (m13, m23) stable',
+      prompt: '<b>Try it:</b> Click <b>COEX c++</b> → <b>FAST→SS</b>, then check <b>Time Analysis</b> &amp; <b>Spectrum</b>.',
+      targets: ['#quickCoexBtn', '#quickFastBtn', '#timeEnvBtn'],
+      lookTargets: ['#modesBox', '#spectrumBox'],
+      actions: ['preset:coex', 'coex', 'time:env'],
       openControls: false
     },
     {
-      tag: 'STEP 5 OF 10 · SCENARIO 2 (S_det < 0)',
-      title: '2-Tone 3.0 µs Delayed Nonreciprocity',
-      body: 'Modes m13 & m16 have <b>S_det = −12.84 < 0</b> (mutually exclusive). Tone 1 starts at t = 0 with a 1 ns Tukey ramp; Tone 2 waits until Tone 1 saturates (<b>WAIT T1 SS</b>), then cannot dethrone m13!',
-      formula: 'T1→T2: m13 wins, m16 quenched (~0)',
-      prompt: '<b>Press now:</b> Click <b>3µs NONRECIP</b>, then click <b>FAST→SS</b> (or <b>150×</b>) to watch Tone 2 release after T1 settles.',
+      tag: 'STEP 4 OF 10 · EXAMPLE 2A: DUAL-TONE NONRECIPROCAL',
+      title: '4. Dual-Tone Nonreciprocity: T1→T2 (m13 Locks Out m16)',
+      doText: 'Click <b>3µs NONRECIP</b> in the top bar. Tone 1 (m13) starts at t = 0 while Tone 2 (m16) waits (<b>WAIT T1 SS</b>). Click <b>FAST→SS</b> (or <b>150×</b>) so Tone 1 settles, Tone 2 releases, and the system converges.',
+      lookText: '<b>h(t) AWG Envelope View</b> (top-left: h₁(t) &amp; delayed h₂(t)), <b>Time Analysis</b> (m13 vs m16 curves), and <b>Top HUD</b> (MODE: m13).',
+      obsText: 'Because <b>S_det = −12.84 < 0</b>, modes m13 and m16 are mutually exclusive. Once m13 saturates first (|a₁₃| ≈ 0.090), delayed Tone 2 cannot dethrone it — <b>m16 stays quenched (~0)</b>.',
+      formula: 'T1→T2 (S_det = −12.84 < 0): m13 wins (~0.09), m16 ≈ 0',
+      prompt: '<b>Try it:</b> Click <b>3µs NONRECIP</b>, then click <b>FAST→SS</b> and wait for <code>CONVERGED</code>.',
       targets: ['#quickNonrecipBtn', '#quickFastBtn'],
+      lookTargets: ['#hInputBox', '#modesBox'],
       actions: ['preset:nonrecip', 'nonrecip', 'fast'],
       openControls: false
     },
     {
-      tag: 'STEP 6 OF 10 · SWAP ORDER & 300 K NOISE',
-      title: 'Flip T1↔T2 Memory & Brown FDT Bath',
-      body: 'Same amplitudes, opposite order! Clicking <b>SWAP T1↔T2</b> puts m16 first so m16 locks out m13. At <b>300 K</b>, Brown FDT noise nucleates modes from 0 and causes stochastic switching at zero delay.',
-      formula: 'T2→T1: (0, m16) · ⟨|a|²⟩_eq = k_B T / (μ₀ M_s² V)',
-      prompt: '<b>Press now:</b> Click <b>SWAP T1↔T2</b> and try sliding <b>Thermal Bath T</b> between 0 K and 300 K.',
-      targets: ['#quickSwapBtn', '#slTemp'],
+      tag: 'STEP 5 OF 10 · EXAMPLE 2B: SWAP ORDER & 300 K NOISE',
+      title: '5. Reverse Order (T2→T1) Proves Arrival-Order Memory',
+      doText: 'Now click <b>SWAP T1↔T2</b> in the top bar (which swaps Tone 1 ↔ Tone 2 and restarts from t = 0), then click <b>FAST→SS</b> again to reach the new steady state!',
+      lookText: '<b>Time Analysis</b> and <b>Top HUD</b> (compare which mode dominates vs Step 4), plus <b>Welch PSD Spectrum</b>.',
+      obsText: 'Same two drive amplitudes &amp; frequencies, opposite arrival order: now <b>m16 arrives first</b>, saturates, and <b>locks out m13 (~0)</b>. Optional: raise <b>Thermal Bath T</b> to 300 K to see Brown FDT noise.',
+      formula: 'T2→T1: m16 wins (>0.03), m13 ≈ 0 · Nonreciprocal latch',
+      prompt: '<b>Try it:</b> Click <b>SWAP T1↔T2</b> → <b>FAST→SS</b> and confirm m16 wins instead of m13!',
+      targets: ['#quickSwapBtn', '#quickFastBtn', '#slTemp'],
+      lookTargets: ['#modesBox', '#spectrumBox'],
       actions: ['swap', 'temp'],
       openControls: false
     },
     {
-      tag: 'STEP 7 OF 10 · 4B CROSS-PUMPING DOWNSHIFT',
-      title: '4B P_hk Threshold Reduction & Phase Gate (CSI2)',
-      body: 'Click <b>4B Down+φ</b> (0.90× h_th(15) with prior m16): <b>4B</b> (P₁₅,₁₆ a₁₅* a₁₆²) lowers the Arnold tongue downward so φ₁ = 0° ignites m15 while φ₁ = 180° suppresses it, whereas 4A N_hk shifts frequencies horizontally only.',
-      formula: '4B Downshift: P_hk a_h* a_k² · φ₁=0° ON vs 180° OFF',
-      prompt: '<b>Press now:</b> Click <b>4B Down+φ</b> and drag <b>Tone 1 Phase φ₁</b> between 0° and 180°.',
-      targets: ['#presetCross4B', '#slPhase1'],
-      actions: ['preset:cross4b', 'phase1'],
+      tag: 'STEP 6 OF 10 · EXAMPLE 3: DUAL-TONE THRESHOLD REDUCTION',
+      title: '6. Dual-Tone Threshold Reduction via 4B Cross-Pump (m16→m15)',
+      doText: 'Click <b>THRESH RED</b> and click <b>FAST→SS</b> (or <b>25×</b>). Tone 2 is set to <b>0.38 mT</b>, which is <i>below</i> m15\'s bare threshold (<b>0.421 mT</b>). To verify Tone 1 enables it, set <b>Tone 1 Amp μ₀h_p1</b> to <b>0.00 mT</b>, click <b>Reset Simulation</b>, then <b>FAST→SS</b>.',
+      lookText: '<b>Arnold Instability Map</b> (4B cross-pump pulls m15\'s tongue downward) and <b>Time Analysis</b> / <b>Welch PSD Spectrum</b> (m15 amplitude &amp; f₁₅ peak).',
+      obsText: 'With Tone 1 OFF (h₁ = 0), m15 stays in the 300 K thermal floor (|a₁₅| ≈ 0.0029). With Tone 1 ON (4.000 GHz, 0.55 mT exciting m16), <b>4B P₁₅,₁₆ a₁₅* a₁₆²</b> collapses m15\'s Arnold tongue tip from 0.421 mT down to 0.109 mT — so sub-threshold 0.38 mT ignites <b>m15</b> (|a₁₅| ≈ 0.012, >4×)!',
+      formula: 'h_th(15): 0.421 mT → 0.109 mT via 4B P₁₅,₁₆ · h₂ = 0.38 mT ignites!',
+      prompt: '<b>Try it:</b> Click <b>THRESH RED</b> → <b>FAST→SS</b>, then test <b>Tone 1 Amp = 0</b> + <b>Reset Simulation</b> → <b>FAST→SS</b>.',
+      targets: ['#quickThreshRedBtn', '#presetThreshRed', '#quickFastBtn', '#slAmp', '#btnResetSim'],
+      lookTargets: ['#arnoldBox', '#modesBox'],
+      actions: ['preset:threshred'],
       openControls: true
     },
     {
-      tag: 'STEP 8 OF 10 · FULL NMM & HARMONICS',
-      title: 'Switch RWA Fast ↔ Full Eq. (9) NMM',
-      body: 'RWA Fast keeps the resonant core (1M+2A+4A). Clicking <b>Full NMM</b> enables all 29-mode tensors (<b>2B+2C+3M+4B+4C+4D</b>) with smooth dynamic Arnold tongues and reveals <b>f, 2f, 3f</b> harmonics on the 4096-pt DFT spectrum!',
+      tag: 'STEP 7 OF 10 · EXAMPLE 4: DUAL-TONE PHASE GATING',
+      title: '7. Dual-Tone Phase Gating (Δφ Attractor & Coherence Control)',
+      doText: 'Click <b>PHASE GATE</b> (m16→m27: f₁=4.000 GHz/0.71 mT, f₂=4.120 GHz/0.45 mT, τ₂=0.5 µs, Δφ=0°), then click <b>FAST→SS</b>. Next, slide <b>Rel Phase Δφ</b> to <b>−150°</b>, click <b>Reset Simulation</b> → <b>FAST→SS</b> and compare!',
+      lookText: '<b>Time Analysis</b> (m27 amplitude &amp; mode chips) and <b>Welch PSD Spectrum</b> (~1 MHz resolution, P_pk dB near f₂₇ = 2.055 GHz).',
+      obsText: 'At <b>Δφ = 0°</b>, m27 ignites strongly (|a₂₇| ≈ 0.037). At <b>Δφ = −150°</b>, the 1 ns Tukey turn-on interference steers the trajectory into a different attractor basin and suppresses m27 (~0.013, ~3× lower amplitude / ~8–15× lower PSD)!',
+      formula: 'f₁=4.000G, f₂=4.120G (τ₂=0.5µs) · Δφ=0° ON vs −150° suppressed',
+      prompt: '<b>Try it:</b> Click <b>PHASE GATE</b> → <b>FAST→SS</b>, then slide <b>Rel Phase Δφ</b> to <b>−150°</b> + <b>Reset Simulation</b> → <b>FAST→SS</b>.',
+      targets: ['#quickPhaseGateBtn', '#presetPhaseGate', '#slPhase2', '#btnResetSim', '#quickFastBtn'],
+      lookTargets: ['#modesBox', '#spectrumBox'],
+      actions: ['preset:phasegate', 'phase2'],
+      openControls: true
+    },
+    {
+      tag: 'STEP 8 OF 10 · FULL EQ. (9) NMM & HARMONICS',
+      title: '8. Switch RWA Fast ↔ Full Eq. (9) NMM (All 29-Mode Tensors)',
+      doText: 'Click <b>Full NMM</b> in the right Controls panel to enable all 29-mode tensors (2B+2C+3M+4B+4C+4D), or click/drag directly on the <b>YIG Disk</b> to pluck modes.',
+      lookText: '<b>Welch PSD Spectrum</b> (switch band to 0–6.5G to see f, 2f, 3f harmonics) and <b>Arnold Instability Map</b> (dynamic 4A/4B tongue motion).',
+      obsText: 'Full NMM reveals non-secular <b>f, 2f, 3f</b> harmonic sidebands and multi-mode neighbor competition (e.g. m14, m15) beyond the RWA secular core.',
       formula: 'Eq. (9): G1 + G2 + G3 + G4 (29 modes, 0–6.5 GHz)',
-      prompt: '<b>Press now:</b> Click <b>Full NMM</b> in the controls, or pluck the YIG disk directly to excite harmonics.',
+      prompt: '<b>Try it:</b> Click <b>Full NMM</b> or pluck the YIG disk.',
       targets: ['#btnNmmFull'],
+      lookTargets: ['#spectrumBox', '#diskStage'],
       actions: ['nmm:full', 'pluck'],
       openControls: true
     },
     {
-      tag: 'STEP 9 OF 10 · 2 · ARNOLD SWEEP & 50 Ω V_pk',
-      title: 'Single-Freq Arnold Sweep Tab & AWG mV (V_pp/2)',
-      body: 'Open <b>2 · ARNOLD SWEEP</b> in the top bar to reproduce the experimental <code>halfaverage</code> sweep (<code>3760–4250 MHz</code>, <code>200–500 mV_pk</code>, 1 µs Tukey pulse, Viridis signal dB, Magma FWHM, Plasma N_eff, &amp; Zoom 4050–4080M), or convert AWG mV via <code>G_ref(f)</code> in Tab 1.',
+      tag: 'STEP 9 OF 10 · ARNOLD SWEEP & 50 Ω AWG',
+      title: '9. Experimental Single-Frequency Arnold Sweep Tab',
+      doText: 'Click <b>2 · ARNOLD SWEEP</b> in the top bar to reproduce the experimental <code>3760–4250 MHz × 200–500 mV_pk</code> 1 µs pulse sweep.',
+      lookText: '<b>Sweep Heatmap</b> (Viridis signal dB, Magma FWHM, Plasma N_eff) and the <b>1D 5 MHz SA Slice</b> below it.',
+      obsText: 'Each V-shaped experimental tongue matches the 29-mode NMM threshold spectrum at <code>B_cal = 27.0 mT</code>. Click any pixel to inspect its 5 MHz SA trace or send it back to Tab 1.',
       formula: 'P_AWG = V_pk² / (2·50Ω) · B_cal = 27.0 mT · |δf_h| ≤ 7.5 MHz',
-      prompt: '<b>Press now:</b> Click <b>2 · ARNOLD SWEEP</b> in the top bar (or enter Convert V_pk mV in Tab 1).',
-      targets: ['#tabSweepBtn', '#rfVpkTargetIn', '#btnOpenExpTab'],
-      actions: ['tab:sweep', 'rf:cal', 'modal:exp'],
-      openControls: true
+      prompt: '<b>Try it:</b> Click <b>2 · ARNOLD SWEEP</b> in the top bar.',
+      targets: ['#tabSweepBtn'],
+      lookTargets: [],
+      actions: ['tab:sweep'],
+      openControls: false
     },
     {
-      tag: 'STEP 10 OF 10 · 8-STAGE VERIFY & DB VAULT',
-      title: 'Verification Protocol, IndexedDB Vault & JSON',
-      body: 'Open <b>Verify & Cal</b> (<code>VERIFY / EXP</code>) to run all 8 physics/numerical checks, inspect the <b>Benchmark Handout</b>, or configure Supabase in <b>DB Vault</b>. Sessions auto-save offline in IndexedDB and export as JSON anytime.',
+      tag: 'STEP 10 OF 10 · VERIFICATION & DB VAULT',
+      title: '10. 8-Stage Verification Protocol & Session Logging',
+      doText: 'Click <b>VERIFY / EXP</b> in the top bar (or <b>Verify & Cal</b> in Controls) to run all 8 automated physics/numerical checks or inspect experimental mode tables.',
+      lookText: '<b>Verification Modal</b> (Stage 1–8 PASS/FAIL badges, Benchmark Handout, Exp Data, and Local IndexedDB / Supabase Vault).',
+      obsText: 'Every stage validates the exact browser solver against d\'Aquino (2026) benchmarks, energy/norm conservation, and experimental mode IDs.',
       formula: '29-mode Verify · Local IndexedDB Vault · JSON Trace Export',
-      prompt: '<b>Press now:</b> Click <b>Verify & Cal</b> (or <b>LOG DB</b> / <b>Save → DB</b>) to test verification & logging.',
-      targets: ['#btnOpenVerify', '#btnSaveLogDb', '#quickLogDbBtn'],
+      prompt: '<b>Try it:</b> Click <b>VERIFY / EXP</b> (or <b>LOG DB</b> to save your session).',
+      targets: ['#quickVerifyBtn', '#btnOpenVerify', '#quickLogDbBtn'],
+      lookTargets: [],
       actions: ['modal:verify', 'db_save'],
-      openControls: true
+      openControls: false
     }
   ];
 
@@ -4893,10 +4951,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   function clearCoachSpotlights() {
     document.querySelectorAll('.tutSpotlight').forEach(el => { if (el && el.classList) el.classList.remove('tutSpotlight'); });
+    document.querySelectorAll('.tutLookSpotlight').forEach(el => { if (el && el.classList) el.classList.remove('tutLookSpotlight'); });
   }
   function applyCoachSpotlights() {
     clearCoachSpotlights();
-    if (!swTutEl || swTutEl.hidden) return;
+    const isOpen = !!(swTutEl && !swTutEl.hidden);
+    if (document.body && document.body.classList) document.body.classList.toggle('tutActive', isOpen);
+    if (tutBackdropEl) tutBackdropEl.hidden = !isOpen;
+    if (!isOpen) return;
     const s = swTutSteps[swTutState.step] || swTutSteps[0];
     if (s.openControls && !isCompactViewport() && controlsPanel) controlsPanel.open = true;
     let scrolled = false;
@@ -4911,6 +4973,55 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         }
       });
     });
+    (s.lookTargets || []).forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        if (el && el.classList) el.classList.add('tutLookSpotlight');
+      });
+    });
+    if (typeof window !== 'undefined' && typeof swTutEl.getBoundingClientRect === 'function' && window.innerWidth >= 1024) {
+      const box = swTutEl.getBoundingClientRect();
+      const bw = Math.max(260, box.width || 356), bh = Math.max(220, box.height || 340);
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const topBarEl = document.getElementById('quickLaunchBar');
+      const minY = (topBarEl && topBarEl.getBoundingClientRect) ? Math.max(88, Math.ceil(topBarEl.getBoundingClientRect().bottom) + 8) : 92;
+      const avoid = [];
+      (s.lookTargets || []).forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          if (el && el.getBoundingClientRect) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0) avoid.push({ r, w: 3 });
+          }
+        });
+      });
+      (s.targets || []).forEach(sel => {
+        document.querySelectorAll(sel).forEach(el => {
+          if (el && el.getBoundingClientRect) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0) avoid.push({ r, w: 1 });
+          }
+        });
+      });
+      const candidates = [
+        { x: 14, y: minY },
+        { x: 14, y: Math.max(minY, vh - bh - 14) },
+        { x: Math.max(14, vw - bw - 14), y: minY },
+        { x: Math.max(14, vw - bw - 14), y: Math.max(minY, vh - bh - 14) },
+        { x: Math.max(14, Math.round((vw - bw) * 0.5)), y: Math.max(minY, vh - bh - 14) }
+      ];
+      let best = candidates[0], bestScore = Infinity;
+      for (const c of candidates) {
+        let score = 0;
+        for (const a of avoid) {
+          const ox = Math.max(0, Math.min(c.x + bw, a.r.right) - Math.max(c.x, a.r.left));
+          const oy = Math.max(0, Math.min(c.y + bh, a.r.bottom) - Math.max(c.y, a.r.top));
+          score += ox * oy * a.w;
+        }
+        if (score < bestScore) { bestScore = score; best = c; }
+      }
+      swTutEl.style.left = `${Math.round(best.x)}px`;
+      swTutEl.style.top = `${Math.round(best.y)}px`;
+      swTutEl.style.right = 'auto';
+    }
   }
 
   const DEFAULT_SW_DB_URL = 'https://dpnzgpmlbdrlwackyafa.supabase.co/rest/v1/spacetime_feedback_runs';
@@ -5354,7 +5465,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const s = swTutSteps[swTutState.step] || swTutSteps[0];
     document.getElementById('swTutTag').textContent = swTutState.done.every(Boolean) ? `ALL ${swTutSteps.length} STEPS COMPLETED` : s.tag;
     document.getElementById('swTutTitle').textContent = s.title;
-    document.getElementById('swTutBody').innerHTML = s.body + '<br><span class="tutFormula">' + s.formula + '</span>';
+    const bodyHtml = s.doText
+      ? `<div class="tutGuideGrid">` +
+        `<div class="tutGuideRow"><span class="tutGuideLbl do">What to do</span>${s.doText}</div>` +
+        `<div class="tutGuideRow"><span class="tutGuideLbl look">Where to look</span>${s.lookText}</div>` +
+        `<div class="tutGuideRow"><span class="tutGuideLbl obs">Observed</span>${s.obsText}</div>` +
+        `</div><span class="tutFormula">${s.formula}</span>`
+      : (s.body + '<br><span class="tutFormula">' + s.formula + '</span>');
+    document.getElementById('swTutBody').innerHTML = bodyHtml;
     const pr = document.getElementById('swTutPrompt');
     if (pr) pr.innerHTML = s.prompt || '';
     if (swTutPressEl) swTutPressEl.innerHTML = lastPressHtml;
@@ -5368,7 +5486,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     applyCoachSpotlights();
   }
   function openSwTut() { if (isCompactViewport()) controlsPanel.open = false; swTutState.dismissed = false; swTutEl.hidden = false; swTutBtn.classList.add('hidden'); if (pressToastEl && pressToastEl.classList) pressToastEl.classList.remove('show'); renderSwTut(); saveSwTut(); }
-  function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); clearCoachSpotlights(); saveSwTut(); }
+  function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); clearCoachSpotlights(); if (document.body && document.body.classList) document.body.classList.remove('tutActive'); if (tutBackdropEl) tutBackdropEl.hidden = true; saveSwTut(); }
   function notifySwTutorial(action) {
     const curStep = swTutSteps[swTutState.step];
     let changed = false;
@@ -5398,28 +5516,32 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       playbackSpeed = 0.25; exciteEigenmode(27);
       announcePress('Run Step 1 (m27 Kit at 0.25×)', 'Set speed to 0.25× ultra-slow and excited uniform Kittel mode m27 (2.055 GHz). Watch all spin arrows precess together!', 'm27');
     } else if (step === 1) {
-      playbackSpeed = 5; showExpMarkers = true; applyPreset('param'); syncUi(); drawArnoldTongues();
-      announcePress('Run Step 2 (m13 Param + [EXP])', 'Turned on [EXP] overlay on the Arnold Instability Map and loaded m13 Param (1.6× h_th, 1 ns Tukey ramp).', 'preset:param');
+      if (typeof switchMainTab === 'function') switchMainTab('live');
+      playbackSpeed = 25; showExpMarkers = true; applyPreset('param'); syncUi(); drawArnoldTongues();
+      announcePress('Run Step 2 (m13 Param)', 'Loaded Single-Tone Parametric m13 (1.6× h_th = 0.62 mT at 3.950 GHz). Click FAST→SS to jump to steady state, then compare Below h_th!', 'preset:param');
     } else if (step === 2) {
-      playbackSpeed = 5; temperatureK = 0;
-      driveMode = 'parallel'; damping = 0.0020; dualTone = true; tone2WaitSS = false; tone2DelayNs = 0;
-      const hSub = 0.75 * parametricThreshold(13);
-      driveFreq = 2 * fGhzArr[13]; driveAmp = hSub; driveFreq2 = 2 * fGhzArr[13]; driveAmp2 = hSub;
-      drivePhase1 = 0; drivePhase2 = 0; simTime = 0; seedSpins(0.005, [13]); syncUi();
-      announcePress('Run Step 3 (Δφ = 0° In-Phase)', 'Two sub-threshold tones (0.75·h_th each) overlap at Δφ = 0° → constructive sum 1.50·h_th excites m13! Now slide Δφ to ±180° to cancel.', 'dualTone');
-    } else if (step === 3) {
+      if (typeof switchMainTab === 'function') switchMainTab('live');
       playbackSpeed = 25; plotShowEnv = true; applyPreset('coex'); syncUi();
-      announcePress('Run Step 4 (COEX c++ & Time Analysis)', 'Scenario 1 (S_det = +1.08 > 0) with Time-Analysis ENV h₁/h₂ overlay ON — watch m13 & m23 climb toward CONVERGED!', 'preset:coex');
-    } else if (step === 4) {
+      announcePress('Run Step 3 (COEX c++)', 'Scenario 1 (S_det = +1.08 > 0) with Time-Analysis ENV ON. Click FAST→SS to watch m13 & m23 converge together!', 'preset:coex');
+    } else if (step === 3) {
+      if (typeof switchMainTab === 'function') switchMainTab('live');
       playbackSpeed = 150; applyPreset('nonrecip');
-      announcePress('Run Step 5 (3µs NONRECIP at 150×)', 'Scenario 2 (S_det = −12.84 < 0): m13 starts first while m16 waits (WAIT T1 SS). Click FAST→SS to jump right to release!', 'preset:nonrecip');
-    } else if (step === 5) {
+      announcePress('Run Step 4 (3µs NONRECIP T1→T2)', 'Scenario 2 (S_det = −12.84 < 0): m13 starts first while m16 waits (WAIT T1 SS). Click FAST→SS to jump to steady state!', 'preset:nonrecip');
+    } else if (step === 4) {
+      if (typeof switchMainTab === 'function') switchMainTab('live');
       playbackSpeed = 150; applyPreset('nonrecip'); swapTonesAction();
-      announcePress('Run Step 6 (SWAP T1↔T2)', 'Reversed pulse arrival order so Tone 1 pumps m16 first and Tone 2 (m13) waits — now m16 wins and locks out m13!', 'swap');
+      announcePress('Run Step 5 (SWAP T1↔T2)', 'Swapped arrival order from t = 0 so Tone 1 pumps m16 first and Tone 2 (m13) waits. Click FAST→SS to confirm m16 locks out m13!', 'swap');
+    } else if (step === 5) {
+      if (typeof switchMainTab === 'function') switchMainTab('live');
+      playbackSpeed = 25; applyPreset('threshred');
+      announcePress('Run Step 6 (Thresh Red 16→15)', 'Tone 1 (0.55 mT, m16) + sub-threshold Tone 2 (0.38 mT < 0.421 mT, m15). Click FAST→SS to see 4B P₁₅,₁₆ ignite m15!', 'preset:threshred');
     } else if (step === 6) {
-      playbackSpeed = 25; applyPreset('cross4b');
-      announcePress('Run Step 7 (4B Down+φ)', 'Prior m16 excitation + 4B P₁₅,₁₆ pulls m15 Arnold tongue downward so 0.90× h_th(15) ignites at φ₁ = 0° and shuts off at 180°!', 'preset:cross4b');
+      if (typeof switchMainTab === 'function') switchMainTab('live');
+      playbackSpeed = 25; applyPreset('phasegate');
+      drivePhase2 = 0; syncUi();
+      announcePress('Run Step 7 (Phase Gate Δφ = 0°)', 'Loaded Phase Gate (m16→m27, τ₂=0.5 µs) at Δφ = 0°. Click FAST→SS, then slide Rel Phase Δφ to −150° + Reset Simulation → FAST→SS!', 'preset:phasegate');
     } else if (step === 7) {
+      if (typeof switchMainTab === 'function') switchMainTab('live');
       playbackSpeed = 5; setNmmMode(true); pluckAt(width * 0.54, height * 0.46);
       announcePress('Run Step 8 (Full NMM + Pluck)', 'Enabled all 29-mode Eq. (9) terms (G1+G2+G3+4ABCD) and plucked the disk — smooth dynamic Arnold tongues & f/2f/3f harmonics!', 'nmm:full');
     } else if (step === 8) {
@@ -5452,7 +5574,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
 
   function applyPreset(name) {
     fastForwarding = false;
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetCross4B,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetThreshRed,#presetPhaseGate,#presetCross4B,#btnZeroDrive,#eigenButtons button').forEach(b => b.classList.remove('active'));
     if (name === 'param') {
       document.getElementById('presetParam').classList.add('active');
       driveMode = 'parallel'; damping = 0.0020; dualTone = false; driveAmp2 = 0;
@@ -5494,6 +5616,26 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       driveFreq2 = 2 * fGhzArr[16] + 2 * (-0.2 * r2); driveAmp2 = hp2 / MU0_MS_MT;
       nikSelPair = [13, 16]; arnoldTarget = 2; simTime = 0; seedSpins(0.004, [13, 16]);
       notifySwTutorial('nonrecip');
+    } else if (name === 'threshred') {
+      const btn = document.getElementById('presetThreshRed');
+      if (btn) btn.classList.add('active');
+      terms.g1 = true; terms.t2A = true; terms.t4A = true; terms.t4B = true;
+      driveMode = 'parallel'; damping = 0.0020; temperatureK = 300; thermalSeed = 101;
+      dualTone = true; tone2WaitSS = false; tone2DelayNs = 0.5;
+      driveFreq = 4.000; driveAmp = 0.55 / MU0_MS_MT; drivePhase1 = 0;
+      driveFreq2 = 3.9967; driveAmp2 = 0.38 / MU0_MS_MT; drivePhase2 = 0;
+      nikSelPair = [15, 16]; arnoldTarget = 2; simTime = 0; seedSpins('thermal');
+      notifySwTutorial('preset:threshred');
+    } else if (name === 'phasegate') {
+      const btn = document.getElementById('presetPhaseGate');
+      if (btn) btn.classList.add('active');
+      terms.g1 = true; terms.t2A = true; terms.t4A = true; terms.t4B = true;
+      driveMode = 'parallel'; damping = 0.0020; temperatureK = 300; thermalSeed = 101;
+      dualTone = true; tone2WaitSS = false; tone2DelayNs = 0.5;
+      driveFreq = 4.000; driveAmp = 0.71 / MU0_MS_MT; drivePhase1 = 0;
+      driveFreq2 = 4.120; driveAmp2 = 0.45 / MU0_MS_MT; drivePhase2 = 0;
+      nikSelPair = [16, 27]; arnoldTarget = 2; simTime = 0; seedSpins('thermal');
+      notifySwTutorial('preset:phasegate');
     } else if (name === 'cross4b') {
       document.getElementById('presetCross4B').classList.add('active');
       terms.g1 = true; terms.t2A = true; terms.t4A = true; terms.t4B = true;
@@ -5532,6 +5674,16 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     applyPreset('nonrecip');
     announcePress('Nonrecip (13,16)', 'Scenario 2 (S_det = −12.84 < 0): Tone 1 (m13) turns on first; Tone 2 (m16) waits until T1 steady state, then gets locked out.', 'preset:nonrecip');
   });
+  const presetThreshRedEl = document.getElementById('presetThreshRed');
+  if (presetThreshRedEl) presetThreshRedEl.addEventListener('click', () => {
+    applyPreset('threshred');
+    announcePress('Thresh Red (16→15)', 'Dual-tone 4B threshold reduction: Tone 1 (4.000 GHz, 0.55 mT) pulls m15 Arnold tongue down so sub-threshold Tone 2 (0.38 mT < 0.421 mT) ignites m15!', 'preset:threshred');
+  });
+  const presetPhaseGateEl = document.getElementById('presetPhaseGate');
+  if (presetPhaseGateEl) presetPhaseGateEl.addEventListener('click', () => {
+    applyPreset('phasegate');
+    announcePress('Phase Gate (16→27)', 'Dual-tone phase gating (4.000 + 4.120 GHz, τ₂=0.5 µs, 300 K): sweep Rel Phase Δφ between 0° (ON) and −150° (suppressed)!', 'preset:phasegate');
+  });
   const presetCross4BEl = document.getElementById('presetCross4B');
   if (presetCross4BEl) presetCross4BEl.addEventListener('click', () => {
     applyPreset('cross4b');
@@ -5547,6 +5699,18 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     applyPreset('nonrecip');
     announcePress('3µs NONRECIP', 'Scenario 2 (S_det = −12.84 < 0): Tone 1 (m13) locks out delayed Tone 2 (m16). Try FAST→SS then SWAP T1↔T2!', 'preset:nonrecip');
   });
+  const quickThreshRedBtnEl = document.getElementById('quickThreshRedBtn');
+  if (quickThreshRedBtnEl) quickThreshRedBtnEl.addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
+    applyPreset('threshred');
+    announcePress('THRESH RED', 'Dual-tone 4B threshold reduction (m16→m15): Tone 1 lowers m15 threshold so sub-threshold 0.38 mT ignites! Click FAST→SS.', 'preset:threshred');
+  });
+  const quickPhaseGateBtnEl = document.getElementById('quickPhaseGateBtn');
+  if (quickPhaseGateBtnEl) quickPhaseGateBtnEl.addEventListener('click', () => {
+    if (typeof activeMainTab !== 'undefined' && activeMainTab !== 'live' && typeof switchMainTab === 'function') switchMainTab('live');
+    applyPreset('phasegate');
+    announcePress('PHASE GATE', 'Dual-tone phase gating (m16→m27, τ₂=0.5 µs, 300 K): click FAST→SS, then sweep Rel Phase Δφ between 0° and −150°!', 'preset:phasegate');
+  });
   document.getElementById('btnZeroDrive').addEventListener('click', () => {
     driveAmp = 0; driveAmp2 = 0; syncUi();
     announcePress('Zero Drive', 'Turned both RF pump amplitudes to 0 mT — spin waves now freely relax via Gilbert damping α toward the thermal floor.');
@@ -5555,7 +5719,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const btn = e.target && e.target.closest ? e.target.closest('button[data-mode]') : null;
     if (!btn) return;
     const mIdx = Number(btn.dataset.mode);
-    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetCross4B,#btnZeroDrive').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#presetParam,#presetSub,#presetDirect,#presetCoex,#presetOpp,#presetNonrecip,#presetThreshRed,#presetPhaseGate,#presetCross4B,#btnZeroDrive').forEach(b => b.classList.remove('active'));
     exciteEigenmode(mIdx);
     const kind = mIdx === 27 ? 'uniform Kittel mode (all spins rotate together)' : 'bulk spin-wave mode (spatial nodal rings)';
     announcePress(`m${mIdx}${mIdx === 27 ? ' Kit' : ''}`, `Excited ${kind} at f = ${fGhzArr[mIdx].toFixed(4)} GHz, self-NFS N = ${mutualNfsCoeffGHz(mIdx, mIdx).toFixed(2)} GHz.`, `m${mIdx}`);
@@ -5837,7 +6001,13 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   if (specModeBtnEl) specModeBtnEl.addEventListener('click', () => {
     specCfg.mode = specCfg.mode === 'both' ? 'welch' : (specCfg.mode === 'welch' ? 'raw' : 'both');
     specMaxSmooth = 0; syncUi(); updateSpectrum();
-    announcePress(`Spectrum: ${specCfg.mode.toUpperCase()}`, 'Toggled between Raw 4096-pt FFT + Welch PSD overlay, Welch PSD only, and Raw FFT only.');
+    announcePress(`Spectrum: ${specCfg.mode.toUpperCase()}`, 'Toggled between Welch PSD, Raw 4096-pt FFT, and Raw+Welch overlay.');
+  });
+  const specScaleBtnEl = document.getElementById('specScaleBtn');
+  if (specScaleBtnEl) specScaleBtnEl.addEventListener('click', () => {
+    specCfg.logDb = !specCfg.logDb;
+    specMaxSmooth = 0; syncUi(); updateSpectrum();
+    announcePress(specCfg.logDb ? 'Scale: dB PSD' : 'Scale: Linear Amp', specCfg.logDb ? 'Switched spectrum Y-axis to logarithmic Power Spectral Density (10·log₁₀ PSD, 80 dB range).' : 'Switched spectrum Y-axis to linear amplitude.');
   });
   const specTrackBtnEl = document.getElementById('specTrackBtn');
   if (specTrackBtnEl) specTrackBtnEl.addEventListener('click', () => {
@@ -5859,8 +6029,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', e => { handler(e.target.value); syncUi(); updateSpectrum(); });
   };
-  wireSpecInput('inSpecIntegUs', v => { specCfg.integUs = Math.max(0.05, Math.min(2.35, Number(v) || 0.80)); });
-  wireSpecInput('selSpecSegLen', v => { specCfg.segLen = [512, 1024, 2048, 4096].includes(Number(v)) ? Number(v) : 1024; });
+  wireSpecInput('inSpecIntegUs', v => { specCfg.integUs = Math.max(0.05, Math.min(9.00, Number(v) || 3.00)); });
+  wireSpecInput('selSpecSegLen', v => { specCfg.segLen = [1024, 2048, 4096, 8192, 16384, 32768].includes(Number(v)) ? Number(v) : 16384; });
   wireSpecInput('selSpecOverlap', v => { specCfg.overlapPct = Math.max(0, Math.min(75, Number(v) || 50)); });
   wireSpecInput('selSpecWin', v => { specCfg.window = ['hann', 'hamming', 'blackman', 'rect'].includes(v) ? v : 'hann'; });
   wireSpecInput('selSpecZp', v => { specCfg.zpFactor = [1, 2, 4].includes(Number(v)) ? Number(v) : 1; });
@@ -8558,20 +8728,6 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       refreshIdbVault();
     }
   });
-
-  const cedricEggBtnEl = document.getElementById('cedricEggBtn');
-  if (cedricEggBtnEl && cedricEggBtnEl.addEventListener) {
-    cedricEggBtnEl.addEventListener('click', () => toggleCedricHeartMode());
-  }
-  let cedricKeyBuf = '';
-  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
-    document.addEventListener('keydown', e => {
-      const tag = e && e.target && e.target.tagName ? String(e.target.tagName).toLowerCase() : '';
-      if (tag === 'input' || tag === 'textarea' || !e || !e.key || e.key.length !== 1) return;
-      cedricKeyBuf = (cedricKeyBuf + e.key.toLowerCase()).slice(-6);
-      if (cedricKeyBuf === 'cedric') toggleCedricHeartMode(true);
-    });
-  }
 
   if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
     window.addEventListener('error', e => {

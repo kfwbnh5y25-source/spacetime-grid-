@@ -1834,12 +1834,9 @@ test(
           'sw.js must precache BENCHMARK_HANDOUT.md');
       const htmlSrc =
           fs.readFileSync(path.join(rootDir, 'spin-waves/index.html'), 'utf8');
-      const qbSlice = htmlSrc.slice(
-          htmlSrc.indexOf('<div id="quickLaunchBar">'),
-          htmlSrc.indexOf('<div id="readoutsDock">'));
       assert.ok(
-          qbSlice.includes('id="cedricEggBtn"'),
-          '#cedricEggBtn must live inside #quickLaunchBar so wrapped portrait #topHud never covers it');
+          !htmlSrc.includes('cedricEggBtn'),
+          '#cedricEggBtn must be removed');
 
       // 4. Saved 10-12 us benchmark JSON & BENCHMARK_HANDOUT.md prints
       const benchJson = JSON.parse(fs.readFileSync(
@@ -2448,7 +2445,7 @@ test(
         specCfg: { mode: 'both', integUs: 1.20, segLen: 1024, overlapPct: 50, window: 'hann', zpFactor: 1, zoom: 1.0, peakTrack: false } });
       runSteps(62000, 0.65); // ~1.28 us -> probeCount well past 4096 into 32768 ring
       const stSpec = spin.getDspArnoldPlotState();
-      assert.ok(spin.SPEC_RING_LEN === 32768, `Expected 32768 ring length, got ${spin.SPEC_RING_LEN}`);
+      assert.ok(spin.SPEC_RING_LEN >= 131072, `Expected >= 131072 ring length, got ${spin.SPEC_RING_LEN}`);
       assert.ok(stSpec.probeCount > 4096, `Expected probeCount > 4096, got ${stSpec.probeCount}`);
 
       const wZp1 = spin.computeWelchPsd({ integUs: 1.10, segLen: 1024, overlapPct: 50, window: 'hann', zpFactor: 1 });
