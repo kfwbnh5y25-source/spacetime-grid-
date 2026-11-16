@@ -1806,8 +1806,8 @@ test(
       assert.equal(freshCtx.APP_RELEASE_VERSION, 'spacetime-shell-v84');
       assert.equal(freshCtx.shouldShowWhatsNew(), true);
       assert.equal(
-          freshCtx.getElHidden('whatsNewModal'), false,
-          'Fresh launch must auto-open #whatsNewModal');
+          freshCtx.getElHidden('whatsNewModal'), true,
+          'Fresh launch must keep #whatsNewModal hidden while Welcome Guide is open');
       freshCtx.dismissWhatsNew(true);
       assert.equal(freshCtx.getElHidden('whatsNewModal'), true);
       assert.equal(freshCtx.shouldShowWhatsNew(), false);
