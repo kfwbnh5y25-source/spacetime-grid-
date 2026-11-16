@@ -118,7 +118,7 @@
   .sliderRow.tutSpotlight { padding: 6px 8px; border-radius: 9px; background: rgba(251,191,36,.14) !important; border: 1px solid rgba(251,191,36,.85) !important; }
   .sliderRow.tutSpotlight::after { content: 'SLIDE'; top: -7px; right: 4px; }
   .tutLookSpotlight { position: relative; z-index: 17 !important; border-color: rgba(56,189,248,.85) !important; box-shadow: 0 0 0 2px rgba(56,189,248,.75), 0 0 26px rgba(56,189,248,.42) !important; }
-  .tutLookSpotlight::after { content: 'LOOK HERE'; position: absolute; top: 6px; right: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(14,165,233,.92); color: #03111d; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; pointer-events: none; z-index: 21; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+  .tutLookSpotlight::after { content: 'LOOK HERE'; position: absolute; top: -9px; left: 10px; padding: 1px 6px; border-radius: 4px; background: rgba(14,165,233,.95); color: #03111d; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; pointer-events: none; z-index: 21; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
   #swTutorial { position: fixed; z-index: 20; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(380px,calc(100vw - 24px)); padding: 14px 16px; border: 1.5px solid rgba(103,210,255,.68); border-radius: 16px; background: rgba(6,12,24,.97); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 0 0 1px rgba(56,189,248,.28), 0 0 36px rgba(56,189,248,.24), 0 18px 48px rgba(0,0,0,.78); transition: left .28s ease, top .28s ease, box-shadow .25s ease, border-color .25s ease; }
   body.tutWelcome #swTutorial { width: min(440px,calc(100vw - 28px)); border-color: rgba(125,211,252,.92); box-shadow: 0 0 0 2px rgba(56,189,248,.45), 0 0 56px rgba(56,189,248,.38), 0 24px 64px rgba(0,0,0,.88); }
   #swTutorial[hidden] { display: none; }
@@ -4833,7 +4833,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       obsText: 'Above threshold (<b>1.6× h_th</b>), the red dot sits inside the m13 Arnold tongue: <b>m13</b> grows exponentially from noise and saturates at |a₁₃| ≈ 0.052 (hardening shift +2.99 GHz). Below threshold (<b>0.35× h_th</b>), Gilbert damping α drains m13 back to 0.',
       formula: 'f_p = 2f₁₃ + 2 MHz = 3.950 GHz · h_th(13) = 0.389 mT',
       prompt: '<b>Try it:</b> Click <b>m13 Param</b> → <b>FAST→SS</b>, watch m13 saturate, then click <b>Below h_th</b>.',
-      targets: ['#presetParam', '#presetSub', '#quickFastBtn', '#arnoldExpBtn'],
+      targets: ['#presetParam', '#presetSub', '#quickFastBtn'],
       lookTargets: ['#arnoldBox', '#modesBox', '#diskStage'],
       actions: ['preset:param', 'preset:sub', 'arnold:exp'],
       openControls: true
@@ -4856,8 +4856,8 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       title: '4. Dual-Tone Nonreciprocity: T1→T2 (m13 Locks Out m16)',
       doText: 'Click <b>3µs NONRECIP</b> in the top bar. Tone 1 (m13) starts at t = 0 while Tone 2 (m16) waits (<b>WAIT T1 SS</b>). Click <b>FAST→SS</b> (or <b>150×</b>) so Tone 1 settles, Tone 2 releases, and the system converges.',
       lookText: '<b>h(t) AWG Envelope View</b> (top-left: h₁(t) &amp; delayed h₂(t)), <b>Time Analysis</b> (m13 vs m16 curves), and <b>Top HUD</b> (MODE: m13).',
-      obsText: 'Because <b>S_det = −12.84 < 0</b>, modes m13 and m16 are mutually exclusive. Once m13 saturates first (|a₁₃| ≈ 0.090), delayed Tone 2 cannot dethrone it — <b>m16 stays quenched (~0)</b>.',
-      formula: 'T1→T2 (S_det = −12.84 < 0): m13 wins (~0.09), m16 ≈ 0',
+      obsText: 'Because <b>S_det = −12.84 < 0</b>, modes m13 and m16 are mutually exclusive. Once m13 saturates first (|a₁₃| ≈ 0.047), delayed Tone 2 cannot dethrone it — <b>m16 stays quenched (~0)</b>.',
+      formula: 'T1→T2 (S_det = −12.84 < 0): m13 wins (~0.047), m16 ≈ 0',
       prompt: '<b>Try it:</b> Click <b>3µs NONRECIP</b>, then click <b>FAST→SS</b> and wait for <code>CONVERGED</code>.',
       targets: ['#quickNonrecipBtn', '#quickFastBtn'],
       lookTargets: ['#hInputBox', '#modesBox'],
@@ -5015,10 +5015,14 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         document.querySelectorAll(sel).forEach(el => {
           if (el && el.getBoundingClientRect) {
             const r = el.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0) avoid.push({ r, w: 1 });
+            if (r.width > 0 && r.height > 0) avoid.push({ r, w: 2 });
           }
         });
       });
+      if (s.openControls && controlsPanel && controlsPanel.getBoundingClientRect) {
+        const cr = controlsPanel.getBoundingClientRect();
+        if (cr.width > 0 && cr.height > 0) avoid.push({ r: cr, w: 3 });
+      }
       const candidates = [
         { x: 14, y: minY },
         { x: 14, y: Math.max(minY, vh - bh - 14) },
@@ -8692,7 +8696,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   if (wnOpenVerifyBtn) wnOpenVerifyBtn.addEventListener('click', () => { dismissWhatsNew(true); openVerifyModal('protocol'); });
   const wnOpenHandoutBtn = document.getElementById('wnOpenHandoutBtn');
   if (wnOpenHandoutBtn) wnOpenHandoutBtn.addEventListener('click', () => { dismissWhatsNew(true); openVerifyModal('handout'); });
-  if (shouldShowWhatsNew()) openWhatsNew();
+  if (shouldShowWhatsNew() && (!swTutEl || swTutEl.hidden)) openWhatsNew();
 
   const quickVerifyBtn = document.getElementById('quickVerifyBtn');
   if (quickVerifyBtn) quickVerifyBtn.addEventListener('click', () => openVerifyModal('protocol'));
