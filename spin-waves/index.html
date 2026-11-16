@@ -5659,7 +5659,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       nikSelPair = [13, 27]; arnoldTarget = 2; simTime = 0; seedSpins(0.005, [13, 27]);
     } else if (name === 'nonrecip' || name === 'nij' || name === 'mutual') {
       document.getElementById('presetNonrecip').classList.add('active');
-      driveMode = 'parallel'; damping = 0.0010; dualTone = true; tone2WaitSS = true; tone2DelayNs = 3.0;
+      driveMode = 'parallel'; damping = 0.0010; dualTone = true; tone2WaitSS = true; tone2DelayNs = 1.0;
       const g1 = modeGammaGHz(13), g2 = modeGammaGHz(16);
       const hp1 = 2.4 * parametricThresholdMT(13), hp2 = 2.0 * parametricThresholdMT(16);
       const r1 = Math.sqrt(Math.max(0, (vParamGHz_mT(13) * hp1) ** 2 - g1 * g1));
@@ -6199,7 +6199,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     announcePress(`Speed ${b.textContent.trim()}`, desc, `speed:${playbackSpeed}`);
   });
 
-  function fastForwardStepsPerFrame() { return isRwaFast() ? 140 : 48; }
+  function fastForwardStepsPerFrame() { return isRwaFast() ? 160 : 64; }
 
   function captureConvSubSample() {
     const amps = new Float64Array(M), phases = new Float64Array(M);
@@ -8843,7 +8843,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         const wasFast = fastForwarding;
         let frameStepTau = 0;
         if (fastForwarding) {
-          const steps = fastForwardStepsPerFrame(), dtFast = 0.35;
+          const steps = fastForwardStepsPerFrame(), dtFast = 0.65;
           frameStepTau = steps * dtFast;
           for (let s = 0; s < steps; s++) stepLlg(dtFast, true);
           reconstructSpatialSpins();
