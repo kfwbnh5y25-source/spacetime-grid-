@@ -1100,7 +1100,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   let simTime = 0; // dimensionless tau = omega_M * t
   let carrierPhase1 = 0, carrierPhase2 = 0; // continuous accumulated carrier phase integral int 2*pi*f(s) ds
   let carrierAnchorTau1 = 0, carrierAnchorPhi1 = 0, carrierAnchorTau2 = 0, carrierAnchorPhi2 = 0;
-  let paramRampNs = 20; // configurable smooth parameter transition ramp (ns)
+  let paramRampNs = 1; // configurable smooth parameter transition ramp (ns)
   let liveApplyMode = true; // true: edits ramp immediately preserving state; false: stage until Apply Now
   const ramp1 = { active: false, t0: 0, dur: 0, f0: 0, f1: 0, h0: 0, h1: 0, p0: 0, p1: 0 };
   const ramp2 = { active: false, t0: 0, dur: 0, f0: 0, f1: 0, h0: 0, h1: 0, p0: 0, p1: 0 };
