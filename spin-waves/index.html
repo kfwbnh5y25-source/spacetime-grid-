@@ -110,7 +110,8 @@
     0%, 100% { box-shadow: 0 0 0 3px rgba(251,191,36,.98), 0 0 22px rgba(251,191,36,.75), 0 0 40px rgba(56,189,248,.28); border-color: #fbbf24; }
     50% { box-shadow: 0 0 0 6px rgba(251,191,36,.42), 0 0 32px rgba(251,191,36,.95), 0 0 54px rgba(56,189,248,.42); border-color: #fef08a; }
   }
-  #tutBackdrop { position: fixed; inset: 0; z-index: 14; background: rgba(2, 5, 12, 0.58); pointer-events: none; transition: opacity .2s ease; }
+  #tutBackdrop { position: fixed; inset: 0; z-index: 14; background: rgba(2, 5, 12, 0.62); pointer-events: none; transition: background .25s ease, opacity .2s ease; }
+  body.tutWelcome #tutBackdrop { background: rgba(2, 5, 14, 0.78); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); pointer-events: auto; }
   body.tutActive #topHud, body.tutActive #quickLaunchBar { z-index: auto; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .tutSpotlight { position: relative; z-index: 19 !important; animation: coachPulse 1.15s ease-in-out infinite !important; border-color: #fbbf24 !important; color: #fff !important; background-color: rgba(38, 28, 8, 0.92) !important; }
   .tutSpotlight::after { content: 'PRESS'; position: absolute; top: -9px; right: -4px; padding: 1px 6px; border-radius: 4px; background: #fbbf24; color: #050a14; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .05em; pointer-events: none; z-index: 22; box-shadow: 0 2px 8px rgba(0,0,0,.6); }
@@ -118,7 +119,8 @@
   .sliderRow.tutSpotlight::after { content: 'SLIDE'; top: -7px; right: 4px; }
   .tutLookSpotlight { position: relative; z-index: 17 !important; border-color: rgba(56,189,248,.85) !important; box-shadow: 0 0 0 2px rgba(56,189,248,.75), 0 0 26px rgba(56,189,248,.42) !important; }
   .tutLookSpotlight::after { content: 'LOOK HERE'; position: absolute; top: 6px; right: 8px; padding: 2px 6px; border-radius: 4px; background: rgba(14,165,233,.92); color: #03111d; font: 700 9px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing: .06em; pointer-events: none; z-index: 21; box-shadow: 0 2px 6px rgba(0,0,0,.45); }
-  #swTutorial { position: fixed; z-index: 20; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(356px,calc(100vw - 24px)); padding: 12px 14px; border: 1px solid rgba(185,218,255,.26); border-radius: 15px; background: rgba(5,10,20,.94); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 14px 36px rgba(0,0,0,.64); transition: left .28s ease, top .28s ease; }
+  #swTutorial { position: fixed; z-index: 20; left: max(14px,env(safe-area-inset-left)); top: max(92px,calc(env(safe-area-inset-top) + 80px)); width: min(380px,calc(100vw - 24px)); padding: 14px 16px; border: 1.5px solid rgba(103,210,255,.68); border-radius: 16px; background: rgba(6,12,24,.97); color: #ebf3ff; font: 12px/1.45 system-ui,-apple-system,sans-serif; -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 0 0 1px rgba(56,189,248,.28), 0 0 36px rgba(56,189,248,.24), 0 18px 48px rgba(0,0,0,.78); transition: left .28s ease, top .28s ease, box-shadow .25s ease, border-color .25s ease; }
+  body.tutWelcome #swTutorial { width: min(440px,calc(100vw - 28px)); border-color: rgba(125,211,252,.92); box-shadow: 0 0 0 2px rgba(56,189,248,.45), 0 0 56px rgba(56,189,248,.38), 0 24px 64px rgba(0,0,0,.88); }
   #swTutorial[hidden] { display: none; }
   .tutHeader { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; cursor: grab; touch-action: none; }
   .tutHeader:active { cursor: grabbing; }
@@ -4942,7 +4944,7 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
     }
   ];
 
-  let swTutState = { step: 0, done: Array(swTutSteps.length).fill(false), dismissed: false };
+  let swTutState = { step: 0, done: Array(swTutSteps.length).fill(false), dismissed: false, welcome: true };
   try {
     const s = JSON.parse(localStorage.getItem(swTutKey) || 'null');
     if (s && typeof s === 'object' && Array.isArray(s.done) && s.done.length === swTutSteps.length) swTutState = { ...swTutState, ...s };
@@ -4956,9 +4958,25 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   function applyCoachSpotlights() {
     clearCoachSpotlights();
     const isOpen = !!(swTutEl && !swTutEl.hidden);
-    if (document.body && document.body.classList) document.body.classList.toggle('tutActive', isOpen);
+    const isWelcome = isOpen && !!swTutState.welcome;
+    if (document.body && document.body.classList) {
+      document.body.classList.toggle('tutActive', isOpen);
+      document.body.classList.toggle('tutWelcome', isWelcome);
+    }
     if (tutBackdropEl) tutBackdropEl.hidden = !isOpen;
     if (!isOpen) return;
+    if (isWelcome) {
+      if (typeof window !== 'undefined' && typeof swTutEl.getBoundingClientRect === 'function') {
+        const box = swTutEl.getBoundingClientRect();
+        const bw = Math.max(300, box.width || 440), bh = Math.max(220, box.height || 260);
+        const cx = Math.max(12, Math.round((window.innerWidth - bw) * 0.5));
+        const cy = Math.max(24, Math.round((window.innerHeight - bh) * 0.45));
+        swTutEl.style.left = `${cx}px`;
+        swTutEl.style.top = `${cy}px`;
+        swTutEl.style.right = 'auto';
+      }
+      return;
+    }
     const s = swTutSteps[swTutState.step] || swTutSteps[0];
     if (s.openControls && !isCompactViewport() && controlsPanel) controlsPanel.open = true;
     let scrolled = false;
@@ -5462,6 +5480,33 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   }
 
   function renderSwTut() {
+    const pillsEl = typeof document.querySelector === 'function' ? document.querySelector('#swTutorial .tutPills') : null;
+    const pr = document.getElementById('swTutPrompt');
+    const demoBtn = document.getElementById('swTutDemo');
+    const prevBtn = document.getElementById('swTutPrev');
+    const nextBtn = document.getElementById('swTutNext');
+    if (swTutState.welcome) {
+      document.getElementById('swTutTag').textContent = 'WELCOME · INTERACTIVE GUIDE';
+      document.getElementById('swTutTitle').textContent = 'Spin-Wave Normal Modes Solver';
+      document.getElementById('swTutBody').innerHTML =
+        '<p style="margin:0 0 8px;color:rgba(228,240,255,.92);">Simulate nonlinear spin-wave dynamics in a 3 µm YIG disk (29 modes, d\'Aquino <i>et al.</i> 2026).</p>' +
+        '<p style="margin:0;color:rgba(195,224,252,.84);">This short 10-step tour highlights <b>what to press</b>, <b>where to look</b>, and <b>what you observe</b> across single-tone parametric, nonreciprocal, threshold-reduction, and phase-gating regimes.</p>';
+      if (pillsEl) pillsEl.style.display = 'none';
+      if (pr) pr.style.display = 'none';
+      if (swTutPressEl) swTutPressEl.style.display = 'none';
+      if (demoBtn) demoBtn.style.display = 'none';
+      if (prevBtn) { prevBtn.disabled = false; prevBtn.textContent = 'Skip'; }
+      if (nextBtn) { nextBtn.textContent = 'Start Guided Tour →'; nextBtn.classList.add('active'); }
+      applyCoachSpotlights();
+      return;
+    }
+    if (pillsEl) pillsEl.style.display = '';
+    if (pr) pr.style.display = '';
+    if (swTutPressEl) swTutPressEl.style.display = '';
+    if (demoBtn) demoBtn.style.display = '';
+    if (prevBtn) prevBtn.textContent = 'Back';
+    if (nextBtn) nextBtn.classList.remove('active');
+
     const s = swTutSteps[swTutState.step] || swTutSteps[0];
     document.getElementById('swTutTag').textContent = swTutState.done.every(Boolean) ? `ALL ${swTutSteps.length} STEPS COMPLETED` : s.tag;
     document.getElementById('swTutTitle').textContent = s.title;
@@ -5473,7 +5518,6 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
         `</div><span class="tutFormula">${s.formula}</span>`
       : (s.body + '<br><span class="tutFormula">' + s.formula + '</span>');
     document.getElementById('swTutBody').innerHTML = bodyHtml;
-    const pr = document.getElementById('swTutPrompt');
     if (pr) pr.innerHTML = s.prompt || '';
     if (swTutPressEl) swTutPressEl.innerHTML = lastPressHtml;
     document.querySelectorAll('#swTutorial .tutPill').forEach((el, idx) => {
@@ -5481,12 +5525,12 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
       el.classList.toggle('done', !!swTutState.done[idx]);
       el.classList.toggle('active', idx === swTutState.step && !swTutState.done[idx]);
     });
-    document.getElementById('swTutPrev').disabled = swTutState.step === 0;
-    document.getElementById('swTutNext').textContent = swTutState.step === swTutSteps.length - 1 ? 'Done' : 'Next →';
+    if (prevBtn) prevBtn.disabled = swTutState.step === 0;
+    if (nextBtn) nextBtn.textContent = swTutState.step === swTutSteps.length - 1 ? 'Done' : 'Next →';
     applyCoachSpotlights();
   }
   function openSwTut() { if (isCompactViewport()) controlsPanel.open = false; swTutState.dismissed = false; swTutEl.hidden = false; swTutBtn.classList.add('hidden'); if (pressToastEl && pressToastEl.classList) pressToastEl.classList.remove('show'); renderSwTut(); saveSwTut(); }
-  function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); clearCoachSpotlights(); if (document.body && document.body.classList) document.body.classList.remove('tutActive'); if (tutBackdropEl) tutBackdropEl.hidden = true; saveSwTut(); }
+  function closeSwTut() { swTutState.dismissed = true; swTutEl.hidden = true; swTutBtn.classList.remove('hidden'); clearCoachSpotlights(); if (document.body && document.body.classList) { document.body.classList.remove('tutActive'); document.body.classList.remove('tutWelcome'); } if (tutBackdropEl) tutBackdropEl.hidden = true; saveSwTut(); }
   function notifySwTutorial(action) {
     const curStep = swTutSteps[swTutState.step];
     let changed = false;
@@ -5558,8 +5602,12 @@ Fits: Radiative anchors (m13,m16,m27) B_cal = 26.975 mT (RMS 1.63 MHz) | 29-mode
   }
   swTutBtn.addEventListener('click', () => { openSwTut(); recordLogEvent('tutorial', 'Opened Guide', { step: swTutState.step + 1 }); });
   document.getElementById('swTutClose').addEventListener('click', () => { closeSwTut(); recordLogEvent('tutorial', 'Closed Guide', { step: swTutState.step + 1 }); });
-  document.getElementById('swTutPrev').addEventListener('click', () => { swTutState.step = Math.max(0, swTutState.step - 1); renderSwTut(); saveSwTut(); recordLogEvent('tutorial', `Back to Step ${swTutState.step + 1}`); });
+  document.getElementById('swTutPrev').addEventListener('click', () => {
+    if (swTutState.welcome) { swTutState.welcome = false; closeSwTut(); recordLogEvent('tutorial', 'Skipped Welcome Guide'); return; }
+    swTutState.step = Math.max(0, swTutState.step - 1); renderSwTut(); saveSwTut(); recordLogEvent('tutorial', `Back to Step ${swTutState.step + 1}`);
+  });
   document.getElementById('swTutNext').addEventListener('click', () => {
+    if (swTutState.welcome) { swTutState.welcome = false; swTutState.step = 0; renderSwTut(); saveSwTut(); recordLogEvent('tutorial', 'Started Guided Tour'); return; }
     if (swTutState.step >= swTutSteps.length - 1) { closeSwTut(); recordLogEvent('tutorial', 'Completed Guide Finish'); }
     else { swTutState.step++; renderSwTut(); saveSwTut(); recordLogEvent('tutorial', `Next to Step ${swTutState.step + 1}`); }
   });
