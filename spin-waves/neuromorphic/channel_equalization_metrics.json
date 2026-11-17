@@ -1,0 +1,22 @@
+{
+  "dataset": "/Users/davidzehner/Work/NMM_TOOL/spacetime-grid-/spin-waves/neuromorphic/data_sota_eq.h5",
+  "n_reservoir_trials": 100,
+  "n_control_trials": 40,
+  "pilot_drift_cv_pct": 2.7054387203128596,
+  "lag0_acc": 0.86,
+  "lag1_main_eq_acc": 0.77,
+  "lag1_ber": 0.22999999999999998,
+  "lag1_perm_pval": 0.0,
+  "lag2_acc": 0.66,
+  "control_03x_lag1_acc": 0.525,
+  "cm_lag1": [
+    [
+      37,
+      12
+    ],
+    [
+      11,
+      40
+    ]
+  ]
+}

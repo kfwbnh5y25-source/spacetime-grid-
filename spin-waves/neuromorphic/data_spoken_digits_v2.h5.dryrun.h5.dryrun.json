@@ -1,0 +1,103 @@
+{
+  "trials": 105,
+  "sample": [
+    {
+      "key": "PILOT_0",
+      "meta": {
+        "type": "pilot",
+        "idx": 0
+      },
+      "sig_sum": 0.0002067635157655253
+    },
+    {
+      "key": "DIGIT_V2_d1_theo_r3",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 1,
+        "speaker": "theo",
+        "rep": 3
+      },
+      "sig_sum": 6.352965423356756e-05
+    },
+    {
+      "key": "DIGIT_V2_d2_theo_r1",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 2,
+        "speaker": "theo",
+        "rep": 1
+      },
+      "sig_sum": 6.279811488169073e-05
+    },
+    {
+      "key": "DIGIT_V2_d2_jackson_r0",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 2,
+        "speaker": "jackson",
+        "rep": 0
+      },
+      "sig_sum": 6.441659749176974e-05
+    },
+    {
+      "key": "DIGIT_V2_d1_nicolas_r3",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 1,
+        "speaker": "nicolas",
+        "rep": 3
+      },
+      "sig_sum": 6.203663200625695e-05
+    },
+    {
+      "key": "DIGIT_V2_d3_jackson_r1",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 3,
+        "speaker": "jackson",
+        "rep": 1
+      },
+      "sig_sum": 6.464757460092182e-05
+    },
+    {
+      "key": "DIGIT_V2_d1_nicolas_r0",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 1,
+        "speaker": "nicolas",
+        "rep": 0
+      },
+      "sig_sum": 6.196319072168321e-05
+    },
+    {
+      "key": "DIGIT_V2_d0_jackson_r0",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 0,
+        "speaker": "jackson",
+        "rep": 0
+      },
+      "sig_sum": 6.20464097385608e-05
+    },
+    {
+      "key": "DIGIT_V2_d3_jackson_r0",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 3,
+        "speaker": "jackson",
+        "rep": 0
+      },
+      "sig_sum": 6.433133806416468e-05
+    },
+    {
+      "key": "DIGIT_V2_d1_jackson_r1",
+      "meta": {
+        "block": "DIGIT_RESERVOIR_V2",
+        "digit": 1,
+        "speaker": "jackson",
+        "rep": 1
+      },
+      "sig_sum": 6.203666337217392e-05
+    }
+  ]
+}

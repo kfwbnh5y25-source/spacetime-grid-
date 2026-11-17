@@ -1,0 +1,14 @@
+{
+  "E2_ovl": {
+    "Physical_Reservoir": 1.0,
+    "Order_Blind_Static": 0.541,
+    "LTI_StaticNL_Twin": 1.0,
+    "Digital_ESN_29node": 1.0
+  },
+  "S3_6class": {
+    "Physical_Reservoir_v2": 0.922,
+    "Order_Blind_Static": 0.167,
+    "LTI_StaticNL_Twin": 0.9944444444444445,
+    "Digital_ESN_29node": 1.0
+  }
+}

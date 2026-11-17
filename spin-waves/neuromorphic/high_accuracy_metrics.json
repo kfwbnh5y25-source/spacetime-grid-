@@ -1,0 +1,54 @@
+{
+  "eq_tuned": {
+    "acc_lag0": 0.8875,
+    "acc_lag1": 0.8875,
+    "acc_lag2": 0.975,
+    "acc_ctrl03x": 0.7,
+    "cm_lag1": [
+      [
+        33,
+        5
+      ],
+      [
+        4,
+        38
+      ]
+    ],
+    "N_res": 80,
+    "N_ctrl": 20
+  },
+  "spoken_digits_v3": {
+    "acc_all_4speakers": 0.325,
+    "acc_ctrl03x": 0.2,
+    "acc_single_speaker_jackson": 0.8,
+    "cm_jackson": [
+      [
+        4,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        4,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        3,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        5
+      ]
+    ],
+    "N_res": 80,
+    "N_ctrl": 20,
+    "N_jackson": 20
+  }
+}

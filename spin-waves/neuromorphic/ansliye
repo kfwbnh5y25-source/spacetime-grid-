@@ -1,0 +1,180 @@
+/Users/davidzehner/.venvs/nvim-python/bin/python -c '
+import h5py, re, json
+from pathlib import Path
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from sklearn.linear_model import RidgeClassifier
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix
+from numpy.lib.stride_tricks import sliding_window_view
+
+def hampel(specs, hw=7, nsig=5.0):
+    pad = np.pad(specs, ((0,0),(hw,hw)), mode="edge")
+    win = sliding_window_view(pad, 2*hw+1, axis=1)
+    med = np.median(win, axis=2)
+    mad = np.median(np.abs(win - med[:,:,None]), axis=2)
+    sig = 1.4826 * mad
+    mask = (sig > 0) & (np.abs(specs - med) > nsig*sig)
+    out = specs.copy()
+    out[mask] = med[mask]
+    return out
+
+def eval_cv(X, y, n_splits=5, seed=42):
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=seed)
+    preds = np.zeros(len(y), dtype=int)
+    for tr, te in skf.split(X, y):
+        sc = StandardScaler().fit(X[tr])
+        clf = RidgeClassifier(alpha=1.0).fit(sc.transform(X[tr]), y[tr])
+        preds[te] = clf.predict(sc.transform(X[te]))
+    acc = float(np.mean(preds == y))
+    cm = confusion_matrix(y, preds)
+    return acc, cm
+
+# 1. Process data_high_accuracy.h5
+with h5py.File("spin-waves/neuromorphic/data_high_accuracy.h5", "r") as f:
+    fr = None; keys, specs = [], []
+    for k in sorted(f.keys()):
+        if not k.endswith("__SIG"): continue
+        base_k = k[:-5]
+        tr = f[k]["trace"][:]
+        if fr is None: fr = tr[0, 0, :] / 1e6
+        s = tr[:, 1, :].mean(0).astype(np.float64)
+        bk = base_k + "__BL"
+        b = f[bk]["trace"][:, 1, :].mean(0).astype(np.float64) if bk in f else np.zeros_like(s)
+        keys.append(base_k); specs.append(s - b)
+
+band = (fr >= 2030.0) & (fr <= 2075.0)
+data_eq = {k: v[band] for k, v in zip(keys, hampel(np.array(specs)))}
+
+X_eq, y_lag1, y_lag0, y_lag2 = [], [], [], []
+X_eq_ctrl, y_ctrl = [], []
+for k, v in data_eq.items():
+    m = re.match(r"^EQ_TUNED_t\d+_s([01]{3})$", k)
+    if m:
+        s = [int(c) for c in m.group(1)]
+        X_eq.append(v)
+        y_lag2.append(s[0]); y_lag1.append(s[1]); y_lag0.append(s[2])
+    m_c = re.match(r"^EQ_CTRL03X_t\d+_s([01]{3})$", k)
+    if m_c:
+        s = [int(c) for c in m_c.group(1)]
+        X_eq_ctrl.append(v)
+        y_ctrl.append(s[1])
+
+acc_lag1, cm_lag1 = eval_cv(np.array(X_eq), np.array(y_lag1))
+acc_lag0, _ = eval_cv(np.array(X_eq), np.array(y_lag0))
+acc_lag2, _ = eval_cv(np.array(X_eq), np.array(y_lag2))
+acc_eq_ctrl, _ = eval_cv(np.array(X_eq_ctrl), np.array(y_ctrl))
+
+# 2. Process data_spoken_digits_v3.h5
+with h5py.File("spin-waves/neuromorphic/data_spoken_digits_v3.h5", "r") as f:
+    fr_v3 = None; keys_v3, specs_v3 = [], []
+    for k in sorted(f.keys()):
+        if not k.endswith("__SIG"): continue
+        base_k = k[:-5]
+        tr = f[k]["trace"][:]
+        if fr_v3 is None: fr_v3 = tr[0, 0, :] / 1e6
+        s = tr[:, 1, :].mean(0).astype(np.float64)
+        bk = base_k + "__BL"
+        b = f[bk]["trace"][:, 1, :].mean(0).astype(np.float64) if bk in f else np.zeros_like(s)
+        keys_v3.append(base_k); specs_v3.append(s - b)
+
+data_v3 = {k: v[band] for k, v in zip(keys_v3, hampel(np.array(specs_v3)))}
+X_v3, y_v3, spk_v3 = [], [], []
+X_v3_ctrl, y_v3_ctrl = [], []
+for k, v in data_v3.items():
+    m = re.match(r"^DIGIT_V3_d(\d+)_([a-z]+)_r\d+$", k)
+    if m:
+        X_v3.append(v); y_v3.append(int(m.group(1))); spk_v3.append(m.group(2))
+    m_c = re.match(r"^DIGIT_V3_CTRL03X_d(\d+)_([a-z]+)_r\d+$", k)
+    if m_c:
+        X_v3_ctrl.append(v); y_v3_ctrl.append(int(m_c.group(1)))
+
+acc_v3_all, _ = eval_cv(np.array(X_v3), np.array(y_v3))
+acc_v3_ctrl, _ = eval_cv(np.array(X_v3_ctrl), np.array(y_v3_ctrl))
+
+idx_j = [i for i, s in enumerate(spk_v3) if s == "jackson"]
+X_j = np.array(X_v3)[idx_j]; y_j = np.array(y_v3)[idx_j]
+acc_j, cm_j = eval_cv(X_j, y_j)
+
+# Save metrics
+metrics = {
+    "eq_tuned": {
+        "acc_lag0": acc_lag0, "acc_lag1": acc_lag1, "acc_lag2": acc_lag2,
+        "acc_ctrl03x": acc_eq_ctrl, "cm_lag1": cm_lag1.tolist(), "N_res": len(y_lag1), "N_ctrl": len(y_ctrl)
+    },
+    "spoken_digits_v3": {
+        "acc_all_4speakers": acc_v3_all, "acc_ctrl03x": acc_v3_ctrl,
+        "acc_single_speaker_jackson": acc_j, "cm_jackson": cm_j.tolist(),
+        "N_res": len(y_v3), "N_ctrl": len(y_v3_ctrl), "N_jackson": len(y_j)
+    }
+}
+Path("spin-waves/neuromorphic/high_accuracy_metrics.json").write_text(json.dumps(metrics, indent=2))
+print("Saved high_accuracy_metrics.json")
+
+# 4-Panel Summary Figure
+fig, axes = plt.subplots(1, 4, figsize=(18.5, 4.3), dpi=200)
+fig.suptitle("High-Accuracy Physical Reservoir Benchmarks (BiYIG Microdisk Hardware)", fontsize=13, fontweight="bold")
+
+# Panel A: EQ Lags
+ax = axes[0]
+bars = ax.bar(["Lag 0\n$s(t)$", "Lag 1\n$s(t-1)$", "Lag 2\n$s(t-2)$", "0.3x\nControl"], 
+              [acc_lag0*100, acc_lag1*100, acc_lag2*100, acc_eq_ctrl*100], 
+              color=["#1f77b4", "#2ca02c", "#9467bd", "#7f7f7f"], edgecolor="k", width=0.55)
+ax.axhline(50.0, color="r", linestyle="--", lw=1.2, label="Chance (50%)")
+ax.axhline(77.0, color="orange", linestyle=":", lw=1.2, label="v1 Baseline (77.0%)")
+ax.set_ylim(0, 110); ax.set_ylabel("5-Fold CV Accuracy (%)")
+ax.set_title("(a) Tuned Channel EQ (80 ns Overlap)")
+ax.legend(loc="lower right", fontsize=8); ax.grid(True, axis="y", alpha=0.3)
+for b in bars:
+    h = b.get_height()
+    ax.text(b.get_x() + b.get_width()/2., h + 1.5, f"{h:.1f}%", ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+
+# Panel B: EQ Lag 1 Confusion Matrix
+ax = axes[1]
+cm_n = cm_lag1.astype(float) / cm_lag1.sum(axis=1, keepdims=True)
+im = ax.imshow(cm_n, cmap="Blues", vmin=0, vmax=1)
+ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
+ax.set_xticklabels(["0 (-1)", "1 (+1)"]); ax.set_yticklabels(["0 (-1)", "1 (+1)"])
+ax.set_xlabel("Predicted $s(t-1)$"); ax.set_ylabel("True $s(t-1)$")
+for i in range(2):
+    for j in range(2):
+        ax.text(j, i, f"{cm_lag1[i,j]}\n({cm_n[i,j]*100:.1f}%)", ha="center", va="center",
+                color="white" if cm_n[i,j] > 0.5 else "black", fontsize=9, fontweight="bold")
+ax.set_title(f"(b) Lag 1 Confusion (Acc={acc_lag1*100:.1f}%, BER={1-acc_lag1:.3f})")
+
+# Panel C: Spoken Digits Comparison
+ax = axes[2]
+bars_d = ax.bar(["Single-Spk\n(Jackson)", "All 4 Spk\n(80 trials)", "0.3x Ctrl\n(Balanced)", "Chance\nLevel"],
+                [acc_j*100, acc_v3_all*100, acc_v3_ctrl*100, 25.0],
+                color=["#2ca02c", "#1f77b4", "#7f7f7f", "#d62728"], edgecolor="k", width=0.55)
+ax.axhline(25.0, color="r", linestyle="--", lw=1.2)
+ax.set_ylim(0, 105); ax.set_ylabel("5-Fold CV Accuracy (%)")
+ax.set_title("(c) Spoken Digit Recognition (V3)")
+ax.grid(True, axis="y", alpha=0.3)
+for b in bars_d:
+    h = b.get_height()
+    ax.text(b.get_x() + b.get_width()/2., h + 1.5, f"{h:.1f}%", ha="center", va="bottom", fontsize=8.5, fontweight="bold")
+
+# Panel D: Spoken Digits Single-Speaker Jackson Confusion Matrix
+ax = axes[3]
+cm_jn = cm_j.astype(float) / np.maximum(cm_j.sum(axis=1, keepdims=True), 1e-12)
+im_j = ax.imshow(cm_jn, cmap="Blues", vmin=0, vmax=1)
+ax.set_xticks(range(4)); ax.set_yticks(range(4))
+ax.set_xticklabels(["'0'", "'1'", "'2'", "'3'"]); ax.set_yticklabels(["'0'", "'1'", "'2'", "'3'"])
+ax.set_xlabel("Predicted Digit"); ax.set_ylabel("True Digit")
+for i in range(4):
+    for j in range(4):
+        ax.text(j, i, f"{cm_j[i,j]}\n({cm_jn[i,j]*100:.0f}%)", ha="center", va="center",
+                color="white" if cm_jn[i,j] > 0.5 else "black", fontsize=8.5, fontweight="bold")
+ax.set_title(f"(d) Single-Speaker Digits (Acc={acc_j*100:.1f}%)")
+
+plt.tight_layout()
+fig_p = Path("spin-waves/reports/neuromorphic/figures/fig_high_accuracy.png")
+fig.savefig(fig_p, bbox_inches="tight")
+fig.savefig(fig_p.with_suffix(".pdf"), bbox_inches="tight")
+plt.close(fig)
+print(f"Generated {fig_p}")
+'

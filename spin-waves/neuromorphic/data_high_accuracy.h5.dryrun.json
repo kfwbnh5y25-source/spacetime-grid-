@@ -1,0 +1,139 @@
+{
+  "trials": 183,
+  "sample": [
+    {
+      "key": "PILOT_0",
+      "meta": {
+        "type": "pilot",
+        "idx": 0
+      },
+      "sig_sum": 0.00021581395397916864
+    },
+    {
+      "key": "EQ_TUNED_t0_s011",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          -1,
+          1,
+          1
+        ],
+        "target_lag1": 1,
+        "target_lag0": 1
+      },
+      "sig_sum": 0.00029205650776661826
+    },
+    {
+      "key": "EQ_TUNED_t1_s001",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          -1,
+          -1,
+          1
+        ],
+        "target_lag1": 0,
+        "target_lag0": 1
+      },
+      "sig_sum": 0.0002655296217905474
+    },
+    {
+      "key": "EQ_TUNED_t2_s010",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          -1,
+          1,
+          -1
+        ],
+        "target_lag1": 1,
+        "target_lag0": 0
+      },
+      "sig_sum": 0.00023219708961799766
+    },
+    {
+      "key": "EQ_TUNED_t3_s011",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          -1,
+          1,
+          1
+        ],
+        "target_lag1": 1,
+        "target_lag0": 1
+      },
+      "sig_sum": 0.0002914188254620566
+    },
+    {
+      "key": "EQ_TUNED_t4_s111",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          1,
+          1,
+          1
+        ],
+        "target_lag1": 1,
+        "target_lag0": 1
+      },
+      "sig_sum": 0.0003473370252008666
+    },
+    {
+      "key": "EQ_TUNED_t5_s110",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          1,
+          1,
+          -1
+        ],
+        "target_lag1": 1,
+        "target_lag0": 0
+      },
+      "sig_sum": 0.00028674104276925203
+    },
+    {
+      "key": "EQ_TUNED_t6_s101",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          1,
+          -1,
+          1
+        ],
+        "target_lag1": 0,
+        "target_lag0": 1
+      },
+      "sig_sum": 0.0002417184707542527
+    },
+    {
+      "key": "EQ_TUNED_t7_s001",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          -1,
+          -1,
+          1
+        ],
+        "target_lag1": 0,
+        "target_lag0": 1
+      },
+      "sig_sum": 0.00026591288847539605
+    },
+    {
+      "key": "EQ_TUNED_t8_s110",
+      "meta": {
+        "block": "EQ_TUNED",
+        "symbols": [
+          1,
+          1,
+          -1
+        ],
+        "target_lag1": 1,
+        "target_lag0": 0
+      },
+      "sig_sum": 0.00028533817138485753
+    }
+  ]
+}

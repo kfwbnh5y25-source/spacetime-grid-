@@ -1,0 +1,41 @@
+{
+  "dataset": "/Users/davidzehner/Work/NMM_TOOL/spacetime-grid-/spin-waves/neuromorphic/data_spoken_digits.h5",
+  "n_trials": 80,
+  "accuracy_5fold_cv": 0.1875,
+  "cross_speaker_generalization": 0.175,
+  "loso_per_speaker": {
+    "jackson": 0.25,
+    "nicolas": 0.2,
+    "theo": 0.15,
+    "yweweler": 0.1
+  },
+  "control_03x_acc": 1.0,
+  "permutation_pval": 0.802,
+  "pilot_drift_cv": 10.50874051522945,
+  "confusion_matrix": [
+    [
+      2,
+      4,
+      6,
+      8
+    ],
+    [
+      5,
+      5,
+      6,
+      4
+    ],
+    [
+      5,
+      8,
+      2,
+      5
+    ],
+    [
+      6,
+      5,
+      3,
+      6
+    ]
+  ]
+}

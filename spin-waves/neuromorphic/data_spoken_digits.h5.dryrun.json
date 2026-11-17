@@ -1,0 +1,103 @@
+{
+  "trials": 105,
+  "sample": [
+    {
+      "key": "PILOT_0",
+      "meta": {
+        "type": "pilot",
+        "idx": 0
+      },
+      "sig_sum": 0.0002067635157655253
+    },
+    {
+      "key": "DIGIT_d0_jackson_r0",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "jackson",
+        "rep": 0
+      },
+      "sig_sum": 0.0004472393210146983
+    },
+    {
+      "key": "DIGIT_d0_jackson_r1",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "jackson",
+        "rep": 1
+      },
+      "sig_sum": 0.0004524548249402936
+    },
+    {
+      "key": "DIGIT_d0_jackson_r2",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "jackson",
+        "rep": 2
+      },
+      "sig_sum": 0.0004500314124666131
+    },
+    {
+      "key": "DIGIT_d0_jackson_r3",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "jackson",
+        "rep": 3
+      },
+      "sig_sum": 0.00045208327689123904
+    },
+    {
+      "key": "DIGIT_d0_jackson_r4",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "jackson",
+        "rep": 4
+      },
+      "sig_sum": 0.00044998796152386774
+    },
+    {
+      "key": "DIGIT_d0_nicolas_r0",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "nicolas",
+        "rep": 0
+      },
+      "sig_sum": 0.0004428855097432207
+    },
+    {
+      "key": "DIGIT_d0_nicolas_r1",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "nicolas",
+        "rep": 1
+      },
+      "sig_sum": 0.0004386141516728818
+    },
+    {
+      "key": "DIGIT_d0_nicolas_r2",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "nicolas",
+        "rep": 2
+      },
+      "sig_sum": 0.00044056954288423293
+    },
+    {
+      "key": "DIGIT_d0_nicolas_r3",
+      "meta": {
+        "block": "DIGIT_RESERVOIR",
+        "digit": 0,
+        "speaker": "nicolas",
+        "rep": 3
+      },
+      "sig_sum": 0.0004451619902183159
+    }
+  ]
+}

@@ -1,0 +1,4132 @@
+[
+  {
+    "key": "BIT3_001_r21",
+    "t_s": 4.64,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 21
+  },
+  {
+    "key": "BIT3_001_r22",
+    "t_s": 6.92,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 22
+  },
+  {
+    "key": "BIT3_03x_111_r8",
+    "t_s": 9.2,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "S3_03x_BAC_r7",
+    "t_s": 11.52,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 7
+  },
+  {
+    "key": "BIT3_000_r0",
+    "t_s": 13.83,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "S3_03x_ABC_r6",
+    "t_s": 16.12,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 6
+  },
+  {
+    "key": "S3_ABC_r12",
+    "t_s": 18.43,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 12
+  },
+  {
+    "key": "S3_ACB_r3",
+    "t_s": 20.7,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 3
+  },
+  {
+    "key": "S3_03x_BCA_r5",
+    "t_s": 22.98,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_001_r0",
+    "t_s": 25.26,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_111_r0",
+    "t_s": 30.01,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_000_r3",
+    "t_s": 32.39,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_110_r16",
+    "t_s": 34.71,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 16
+  },
+  {
+    "key": "BIT3_000_r17",
+    "t_s": 37.0,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 17
+  },
+  {
+    "key": "BIT3_010_r12",
+    "t_s": 39.29,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 12
+  },
+  {
+    "key": "S3_03x_CAB_r6",
+    "t_s": 41.59,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 6
+  },
+  {
+    "key": "BIT3_011_r21",
+    "t_s": 43.91,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 21
+  },
+  {
+    "key": "BIT3_001_r12",
+    "t_s": 46.24,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 12
+  },
+  {
+    "key": "S3_03x_BCA_r4",
+    "t_s": 48.52,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_001_r6",
+    "t_s": 50.94,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_03x_110_r9",
+    "t_s": 55.57,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "S3_CBA_r12",
+    "t_s": 57.92,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 12
+  },
+  {
+    "key": "S3_CAB_r4",
+    "t_s": 60.38,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 4
+  },
+  {
+    "key": "S3_BCA_r23",
+    "t_s": 62.7,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 23
+  },
+  {
+    "key": "BIT3_010_r5",
+    "t_s": 65.03,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "BIT3_100_r3",
+    "t_s": 67.32,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_100_r18",
+    "t_s": 69.73,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 18
+  },
+  {
+    "key": "S3_CAB_r14",
+    "t_s": 72.08,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 14
+  },
+  {
+    "key": "S3_BAC_r8",
+    "t_s": 74.41,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 8
+  },
+  {
+    "key": "BIT3_010_r14",
+    "t_s": 76.7,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 14
+  },
+  {
+    "key": "S3_ABC_r25",
+    "t_s": 81.33,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 25
+  },
+  {
+    "key": "BIT3_100_r22",
+    "t_s": 83.67,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 22
+  },
+  {
+    "key": "BIT3_010_r11",
+    "t_s": 86.05,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 11
+  },
+  {
+    "key": "BIT3_03x_001_r7",
+    "t_s": 88.37,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "BIT3_110_r14",
+    "t_s": 90.78,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 14
+  },
+  {
+    "key": "BIT3_010_r2",
+    "t_s": 93.1,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_011_r23",
+    "t_s": 95.41,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 23
+  },
+  {
+    "key": "S3_03x_CBA_r9",
+    "t_s": 97.74,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 9
+  },
+  {
+    "key": "BIT3_03x_101_r2",
+    "t_s": 100.03,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "S3_ACB_r19",
+    "t_s": 102.35,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 19
+  },
+  {
+    "key": "BIT3_03x_100_r8",
+    "t_s": 107.0,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "S3_CBA_r26",
+    "t_s": 109.32,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 26
+  },
+  {
+    "key": "S3_CAB_r2",
+    "t_s": 111.66,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_101_r14",
+    "t_s": 113.99,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 14
+  },
+  {
+    "key": "S3_BCA_r28",
+    "t_s": 116.34,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 28
+  },
+  {
+    "key": "BIT3_110_r4",
+    "t_s": 118.66,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_100_r9",
+    "t_s": 121.0,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "S3_03x_BAC_r5",
+    "t_s": 123.3,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_101_r2",
+    "t_s": 125.72,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "S3_03x_CAB_r2",
+    "t_s": 128.05,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_010_r8",
+    "t_s": 132.68,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "S3_03x_ACB_r5",
+    "t_s": 134.97,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_03x_001_r2",
+    "t_s": 137.26,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_111_r11",
+    "t_s": 139.65,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 11
+  },
+  {
+    "key": "BIT3_000_r22",
+    "t_s": 141.93,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 22
+  },
+  {
+    "key": "S3_BCA_r19",
+    "t_s": 144.26,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 19
+  },
+  {
+    "key": "BIT3_03x_001_r0",
+    "t_s": 146.59,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "S3_CAB_r8",
+    "t_s": 148.97,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 8
+  },
+  {
+    "key": "S3_CAB_r11",
+    "t_s": 151.27,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_101_r20",
+    "t_s": 153.66,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 20
+  },
+  {
+    "key": "S3_BAC_r26",
+    "t_s": 158.27,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 26
+  },
+  {
+    "key": "BIT3_010_r1",
+    "t_s": 160.63,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_000_r20",
+    "t_s": 162.95,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 20
+  },
+  {
+    "key": "S3_ACB_r24",
+    "t_s": 165.24,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 24
+  },
+  {
+    "key": "BIT3_010_r0",
+    "t_s": 167.57,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_03x_001_r5",
+    "t_s": 170.0,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "BIT3_011_r16",
+    "t_s": 172.29,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 16
+  },
+  {
+    "key": "S3_CAB_r5",
+    "t_s": 174.68,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_03x_101_r9",
+    "t_s": 177.04,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "BIT3_000_r15",
+    "t_s": 179.38,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 15
+  },
+  {
+    "key": "BIT3_110_r6",
+    "t_s": 184.11,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_100_r8",
+    "t_s": 186.45,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "S3_03x_BCA_r8",
+    "t_s": 188.73,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 8
+  },
+  {
+    "key": "BIT3_011_r0",
+    "t_s": 191.11,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "S3_ABC_r24",
+    "t_s": 193.42,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 24
+  },
+  {
+    "key": "S3_ABC_r5",
+    "t_s": 195.76,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 5
+  },
+  {
+    "key": "S3_03x_ACB_r14",
+    "t_s": 198.05,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 14
+  },
+  {
+    "key": "BIT3_03x_101_r8",
+    "t_s": 200.35,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "S3_ABC_r21",
+    "t_s": 202.71,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 21
+  },
+  {
+    "key": "S3_CBA_r5",
+    "t_s": 205.05,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_011_r14",
+    "t_s": 209.73,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 14
+  },
+  {
+    "key": "S3_03x_CBA_r4",
+    "t_s": 212.08,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_011_r4",
+    "t_s": 214.4,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "S3_BAC_r2",
+    "t_s": 216.82,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 2
+  },
+  {
+    "key": "S3_03x_BCA_r2",
+    "t_s": 219.15,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 2
+  },
+  {
+    "key": "S3_03x_ACB_r3",
+    "t_s": 221.47,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 3
+  },
+  {
+    "key": "BIT3_03x_000_r8",
+    "t_s": 223.77,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "S3_BAC_r4",
+    "t_s": 226.05,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 4
+  },
+  {
+    "key": "S3_03x_BAC_r1",
+    "t_s": 228.39,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 1
+  },
+  {
+    "key": "BIT3_03x_110_r2",
+    "t_s": 230.74,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_100_r17",
+    "t_s": 235.38,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 17
+  },
+  {
+    "key": "S3_CBA_r14",
+    "t_s": 237.79,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 14
+  },
+  {
+    "key": "BIT3_03x_110_r8",
+    "t_s": 240.11,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_110_r12",
+    "t_s": 242.45,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 12
+  },
+  {
+    "key": "BIT3_100_r23",
+    "t_s": 244.85,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 23
+  },
+  {
+    "key": "BIT3_100_r13",
+    "t_s": 247.2,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 13
+  },
+  {
+    "key": "BIT3_001_r3",
+    "t_s": 249.57,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "S3_CBA_r19",
+    "t_s": 251.86,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 19
+  },
+  {
+    "key": "S3_ACB_r23",
+    "t_s": 254.18,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 23
+  },
+  {
+    "key": "BIT3_100_r14",
+    "t_s": 256.52,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 14
+  },
+  {
+    "key": "BIT3_001_r15",
+    "t_s": 261.14,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 15
+  },
+  {
+    "key": "S3_03x_CAB_r1",
+    "t_s": 263.49,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 1
+  },
+  {
+    "key": "BIT3_100_r10",
+    "t_s": 265.91,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 10
+  },
+  {
+    "key": "S3_CBA_r18",
+    "t_s": 268.26,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 18
+  },
+  {
+    "key": "BIT3_03x_111_r3",
+    "t_s": 270.6,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_03x_000_r0",
+    "t_s": 273.04,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_010_r13",
+    "t_s": 275.35,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 13
+  },
+  {
+    "key": "BIT3_110_r17",
+    "t_s": 277.65,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 17
+  },
+  {
+    "key": "S3_03x_ACB_r13",
+    "t_s": 279.97,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 13
+  },
+  {
+    "key": "BIT3_011_r9",
+    "t_s": 282.29,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "S3_BAC_r17",
+    "t_s": 286.99,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 17
+  },
+  {
+    "key": "BIT3_010_r20",
+    "t_s": 289.28,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 20
+  },
+  {
+    "key": "BIT3_100_r12",
+    "t_s": 291.65,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 12
+  },
+  {
+    "key": "BIT3_000_r10",
+    "t_s": 294.0,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 10
+  },
+  {
+    "key": "S3_CAB_r7",
+    "t_s": 296.29,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 7
+  },
+  {
+    "key": "BIT3_010_r18",
+    "t_s": 298.56,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 18
+  },
+  {
+    "key": "S3_CBA_r3",
+    "t_s": 300.98,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 3
+  },
+  {
+    "key": "BIT3_03x_011_r2",
+    "t_s": 303.36,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_110_r18",
+    "t_s": 305.63,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 18
+  },
+  {
+    "key": "BIT3_101_r24",
+    "t_s": 307.9,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 24
+  },
+  {
+    "key": "S3_ACB_r10",
+    "t_s": 312.52,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 10
+  },
+  {
+    "key": "S3_CAB_r21",
+    "t_s": 314.85,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 21
+  },
+  {
+    "key": "BIT3_101_r17",
+    "t_s": 317.15,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 17
+  },
+  {
+    "key": "BIT3_111_r1",
+    "t_s": 319.46,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_001_r9",
+    "t_s": 321.78,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "BIT3_100_r2",
+    "t_s": 324.16,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "S3_BAC_r25",
+    "t_s": 326.51,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 25
+  },
+  {
+    "key": "BIT3_101_r4",
+    "t_s": 328.91,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_100_r4",
+    "t_s": 331.28,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_010_r0",
+    "t_s": 333.6,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "S3_CAB_r18",
+    "t_s": 338.31,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 18
+  },
+  {
+    "key": "BIT3_001_r2",
+    "t_s": 340.65,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "S3_CAB_r3",
+    "t_s": 342.97,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 3
+  },
+  {
+    "key": "S3_ACB_r9",
+    "t_s": 345.29,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 9
+  },
+  {
+    "key": "S3_ABC_r11",
+    "t_s": 347.64,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_110_r24",
+    "t_s": 349.99,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 24
+  },
+  {
+    "key": "BIT3_101_r22",
+    "t_s": 352.36,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 22
+  },
+  {
+    "key": "S3_03x_ACB_r6",
+    "t_s": 354.64,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 6
+  },
+  {
+    "key": "BIT3_000_r24",
+    "t_s": 356.94,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 24
+  },
+  {
+    "key": "S3_03x_BCA_r3",
+    "t_s": 359.24,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 3
+  },
+  {
+    "key": "S3_CBA_r20",
+    "t_s": 364.0,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 20
+  },
+  {
+    "key": "S3_03x_BCA_r13",
+    "t_s": 366.31,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 13
+  },
+  {
+    "key": "S3_ABC_r2",
+    "t_s": 368.69,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_03x_110_r1",
+    "t_s": 371.0,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_03x_100_r1",
+    "t_s": 373.32,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_010_r6",
+    "t_s": 375.65,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_010_r17",
+    "t_s": 378.0,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 17
+  },
+  {
+    "key": "S3_ACB_r7",
+    "t_s": 380.31,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 7
+  },
+  {
+    "key": "BIT3_011_r3",
+    "t_s": 382.69,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "S3_BAC_r0",
+    "t_s": 385.07,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 0
+  },
+  {
+    "key": "S3_03x_ABC_r4",
+    "t_s": 389.66,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_010_r3",
+    "t_s": 391.96,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "S3_ACB_r14",
+    "t_s": 394.28,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 14
+  },
+  {
+    "key": "BIT3_03x_001_r3",
+    "t_s": 396.58,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "S3_03x_CBA_r0",
+    "t_s": 398.91,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 0
+  },
+  {
+    "key": "S3_CAB_r22",
+    "t_s": 401.23,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 22
+  },
+  {
+    "key": "S3_ABC_r15",
+    "t_s": 403.54,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 15
+  },
+  {
+    "key": "BIT3_03x_010_r2",
+    "t_s": 405.92,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_03x_010_r9",
+    "t_s": 408.24,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "S3_03x_ACB_r9",
+    "t_s": 410.61,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 9
+  },
+  {
+    "key": "BIT3_100_r19",
+    "t_s": 415.25,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 19
+  },
+  {
+    "key": "BIT3_03x_111_r9",
+    "t_s": 417.6,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "BIT3_03x_011_r5",
+    "t_s": 419.98,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "S3_ACB_r5",
+    "t_s": 422.27,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_100_r16",
+    "t_s": 424.55,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 16
+  },
+  {
+    "key": "S3_03x_CBA_r8",
+    "t_s": 426.89,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 8
+  },
+  {
+    "key": "S3_CBA_r22",
+    "t_s": 429.2,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 22
+  },
+  {
+    "key": "S3_ABC_r16",
+    "t_s": 431.59,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 16
+  },
+  {
+    "key": "BIT3_03x_010_r4",
+    "t_s": 433.99,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_111_r2",
+    "t_s": 436.28,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_110_r21",
+    "t_s": 441.07,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 21
+  },
+  {
+    "key": "S3_ACB_r6",
+    "t_s": 443.41,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 6
+  },
+  {
+    "key": "BIT3_100_r7",
+    "t_s": 445.82,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "BIT3_001_r1",
+    "t_s": 448.16,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "S3_03x_CAB_r9",
+    "t_s": 450.49,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 9
+  },
+  {
+    "key": "S3_BCA_r12",
+    "t_s": 452.87,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 12
+  },
+  {
+    "key": "S3_ACB_r1",
+    "t_s": 455.23,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 1
+  },
+  {
+    "key": "S3_03x_ABC_r12",
+    "t_s": 457.57,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 12
+  },
+  {
+    "key": "S3_03x_CBA_r11",
+    "t_s": 459.86,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 11
+  },
+  {
+    "key": "S3_CBA_r13",
+    "t_s": 462.21,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 13
+  },
+  {
+    "key": "BIT3_03x_000_r6",
+    "t_s": 466.99,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "S3_03x_ABC_r10",
+    "t_s": 469.39,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 10
+  },
+  {
+    "key": "S3_03x_BAC_r3",
+    "t_s": 471.71,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 3
+  },
+  {
+    "key": "S3_BCA_r25",
+    "t_s": 474.04,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 25
+  },
+  {
+    "key": "BIT3_010_r16",
+    "t_s": 476.33,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 16
+  },
+  {
+    "key": "S3_03x_BCA_r0",
+    "t_s": 478.69,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 0
+  },
+  {
+    "key": "S3_BAC_r5",
+    "t_s": 481.01,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 5
+  },
+  {
+    "key": "S3_CBA_r16",
+    "t_s": 483.3,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 16
+  },
+  {
+    "key": "S3_ACB_r21",
+    "t_s": 485.64,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 21
+  },
+  {
+    "key": "S3_03x_ACB_r2",
+    "t_s": 487.97,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_03x_101_r3",
+    "t_s": 492.67,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_111_r13",
+    "t_s": 494.96,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 13
+  },
+  {
+    "key": "BIT3_000_r9",
+    "t_s": 497.32,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "S3_03x_CBA_r12",
+    "t_s": 499.67,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 12
+  },
+  {
+    "key": "S3_ABC_r27",
+    "t_s": 502.02,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 27
+  },
+  {
+    "key": "S3_03x_CBA_r5",
+    "t_s": 504.34,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_03x_000_r7",
+    "t_s": 506.66,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "BIT3_111_r2",
+    "t_s": 508.98,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_101_r19",
+    "t_s": 511.3,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 19
+  },
+  {
+    "key": "BIT3_010_r10",
+    "t_s": 513.65,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 10
+  },
+  {
+    "key": "S3_BCA_r6",
+    "t_s": 518.3,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 6
+  },
+  {
+    "key": "BIT3_110_r2",
+    "t_s": 520.68,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "S3_CBA_r1",
+    "t_s": 523.0,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 1
+  },
+  {
+    "key": "S3_03x_BCA_r14",
+    "t_s": 525.37,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 14
+  },
+  {
+    "key": "S3_BCA_r22",
+    "t_s": 527.75,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 22
+  },
+  {
+    "key": "S3_03x_CBA_r10",
+    "t_s": 530.08,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 10
+  },
+  {
+    "key": "S3_03x_ACB_r8",
+    "t_s": 532.36,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 8
+  },
+  {
+    "key": "S3_BAC_r9",
+    "t_s": 534.64,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 9
+  },
+  {
+    "key": "BIT3_03x_010_r6",
+    "t_s": 536.95,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_001_r11",
+    "t_s": 539.29,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 11
+  },
+  {
+    "key": "BIT3_010_r15",
+    "t_s": 543.99,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 15
+  },
+  {
+    "key": "BIT3_110_r7",
+    "t_s": 546.31,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "S3_BCA_r4",
+    "t_s": 548.69,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 4
+  },
+  {
+    "key": "S3_BAC_r28",
+    "t_s": 551.02,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 28
+  },
+  {
+    "key": "S3_03x_CAB_r14",
+    "t_s": 553.33,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 14
+  },
+  {
+    "key": "S3_CBA_r11",
+    "t_s": 555.72,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_011_r8",
+    "t_s": 558.02,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_03x_110_r5",
+    "t_s": 560.33,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "S3_03x_ACB_r11",
+    "t_s": 562.67,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_000_r7",
+    "t_s": 564.99,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "S3_CBA_r28",
+    "t_s": 569.66,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 28
+  },
+  {
+    "key": "S3_03x_BAC_r6",
+    "t_s": 571.94,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 6
+  },
+  {
+    "key": "S3_BCA_r24",
+    "t_s": 574.26,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 24
+  },
+  {
+    "key": "BIT3_03x_110_r0",
+    "t_s": 576.59,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "S3_03x_CAB_r4",
+    "t_s": 578.91,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 4
+  },
+  {
+    "key": "S3_BCA_r10",
+    "t_s": 581.26,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 10
+  },
+  {
+    "key": "BIT3_001_r14",
+    "t_s": 583.64,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 14
+  },
+  {
+    "key": "S3_CAB_r23",
+    "t_s": 585.93,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 23
+  },
+  {
+    "key": "S3_03x_ACB_r10",
+    "t_s": 588.28,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 10
+  },
+  {
+    "key": "S3_CAB_r19",
+    "t_s": 590.62,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 19
+  },
+  {
+    "key": "S3_CAB_r28",
+    "t_s": 595.32,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 28
+  },
+  {
+    "key": "S3_ACB_r13",
+    "t_s": 597.61,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 13
+  },
+  {
+    "key": "S3_CAB_r16",
+    "t_s": 599.94,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 16
+  },
+  {
+    "key": "BIT3_111_r23",
+    "t_s": 602.3,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 23
+  },
+  {
+    "key": "S3_ACB_r27",
+    "t_s": 604.65,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 27
+  },
+  {
+    "key": "S3_BCA_r18",
+    "t_s": 606.93,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 18
+  },
+  {
+    "key": "BIT3_100_r9",
+    "t_s": 609.27,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "S3_BCA_r8",
+    "t_s": 611.6,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 8
+  },
+  {
+    "key": "S3_BCA_r13",
+    "t_s": 613.94,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 13
+  },
+  {
+    "key": "BIT3_03x_100_r3",
+    "t_s": 616.4,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "S3_ABC_r28",
+    "t_s": 621.64,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 28
+  },
+  {
+    "key": "S3_ACB_r2",
+    "t_s": 623.97,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_111_r12",
+    "t_s": 626.29,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 12
+  },
+  {
+    "key": "BIT3_03x_011_r8",
+    "t_s": 628.62,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_101_r23",
+    "t_s": 630.91,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 23
+  },
+  {
+    "key": "BIT3_110_r10",
+    "t_s": 633.23,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 10
+  },
+  {
+    "key": "BIT3_011_r6",
+    "t_s": 635.52,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_110_r15",
+    "t_s": 637.81,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 15
+  },
+  {
+    "key": "BIT3_000_r14",
+    "t_s": 640.19,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 14
+  },
+  {
+    "key": "S3_ABC_r9",
+    "t_s": 642.63,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 9
+  },
+  {
+    "key": "BIT3_010_r7",
+    "t_s": 647.36,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "BIT3_100_r11",
+    "t_s": 649.64,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 11
+  },
+  {
+    "key": "S3_ABC_r10",
+    "t_s": 651.93,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 10
+  },
+  {
+    "key": "BIT3_03x_110_r3",
+    "t_s": 654.22,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "S3_03x_ABC_r11",
+    "t_s": 656.52,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_03x_000_r1",
+    "t_s": 658.86,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "S3_03x_CAB_r7",
+    "t_s": 661.19,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 7
+  },
+  {
+    "key": "S3_03x_BAC_r10",
+    "t_s": 663.53,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 10
+  },
+  {
+    "key": "S3_BAC_r21",
+    "t_s": 665.81,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 21
+  },
+  {
+    "key": "BIT3_111_r18",
+    "t_s": 668.11,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 18
+  },
+  {
+    "key": "S3_CAB_r9",
+    "t_s": 672.99,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 9
+  },
+  {
+    "key": "S3_03x_BAC_r9",
+    "t_s": 675.37,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 9
+  },
+  {
+    "key": "S3_BAC_r14",
+    "t_s": 677.66,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 14
+  },
+  {
+    "key": "BIT3_100_r6",
+    "t_s": 679.99,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "S3_03x_BAC_r12",
+    "t_s": 682.31,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 12
+  },
+  {
+    "key": "BIT3_101_r0",
+    "t_s": 684.69,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "S3_ABC_r8",
+    "t_s": 686.97,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 8
+  },
+  {
+    "key": "S3_ABC_r20",
+    "t_s": 689.3,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 20
+  },
+  {
+    "key": "BIT3_010_r3",
+    "t_s": 691.68,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_011_r22",
+    "t_s": 694.0,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 22
+  },
+  {
+    "key": "S3_03x_BAC_r14",
+    "t_s": 698.66,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 14
+  },
+  {
+    "key": "BIT3_101_r9",
+    "t_s": 701.09,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "S3_ACB_r0",
+    "t_s": 703.38,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 0
+  },
+  {
+    "key": "S3_ABC_r19",
+    "t_s": 705.71,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 19
+  },
+  {
+    "key": "S3_BAC_r24",
+    "t_s": 707.99,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 24
+  },
+  {
+    "key": "S3_CBA_r27",
+    "t_s": 710.31,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 27
+  },
+  {
+    "key": "BIT3_111_r10",
+    "t_s": 712.69,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 10
+  },
+  {
+    "key": "S3_BAC_r19",
+    "t_s": 714.96,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 19
+  },
+  {
+    "key": "BIT3_03x_000_r2",
+    "t_s": 717.28,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_001_r20",
+    "t_s": 719.61,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 20
+  },
+  {
+    "key": "BIT3_101_r6",
+    "t_s": 724.3,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_03x_010_r1",
+    "t_s": 726.7,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "S3_BAC_r12",
+    "t_s": 729.08,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 12
+  },
+  {
+    "key": "S3_ACB_r17",
+    "t_s": 731.52,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 17
+  },
+  {
+    "key": "S3_03x_ABC_r3",
+    "t_s": 733.89,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 3
+  },
+  {
+    "key": "S3_ABC_r3",
+    "t_s": 736.18,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 3
+  },
+  {
+    "key": "S3_BAC_r22",
+    "t_s": 738.53,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 22
+  },
+  {
+    "key": "S3_ABC_r14",
+    "t_s": 740.86,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 14
+  },
+  {
+    "key": "S3_CBA_r9",
+    "t_s": 743.24,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 9
+  },
+  {
+    "key": "BIT3_03x_111_r0",
+    "t_s": 745.55,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_011_r15",
+    "t_s": 750.24,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 15
+  },
+  {
+    "key": "BIT3_101_r8",
+    "t_s": 752.57,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_03x_011_r1",
+    "t_s": 754.89,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_110_r8",
+    "t_s": 757.22,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_111_r5",
+    "t_s": 759.85,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "S3_03x_CBA_r2",
+    "t_s": 762.24,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_011_r24",
+    "t_s": 764.62,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 24
+  },
+  {
+    "key": "BIT3_03x_101_r1",
+    "t_s": 767.04,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_001_r8",
+    "t_s": 769.35,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_010_r22",
+    "t_s": 771.68,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 22
+  },
+  {
+    "key": "BIT3_03x_111_r5",
+    "t_s": 776.28,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "S3_BCA_r27",
+    "t_s": 778.67,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 27
+  },
+  {
+    "key": "BIT3_011_r19",
+    "t_s": 781.03,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 19
+  },
+  {
+    "key": "S3_CBA_r2",
+    "t_s": 783.33,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_03x_000_r9",
+    "t_s": 785.68,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "S3_03x_BCA_r6",
+    "t_s": 787.97,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 6
+  },
+  {
+    "key": "S3_BCA_r9",
+    "t_s": 790.36,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 9
+  },
+  {
+    "key": "S3_ACB_r29",
+    "t_s": 792.76,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 29
+  },
+  {
+    "key": "S3_03x_CAB_r12",
+    "t_s": 795.08,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 12
+  },
+  {
+    "key": "BIT3_03x_000_r5",
+    "t_s": 797.42,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "BIT3_011_r11",
+    "t_s": 802.18,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 11
+  },
+  {
+    "key": "S3_03x_CAB_r8",
+    "t_s": 804.5,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 8
+  },
+  {
+    "key": "S3_03x_CAB_r11",
+    "t_s": 806.81,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 11
+  },
+  {
+    "key": "S3_03x_CBA_r1",
+    "t_s": 809.13,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 1
+  },
+  {
+    "key": "S3_ACB_r8",
+    "t_s": 811.48,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 8
+  },
+  {
+    "key": "BIT3_03x_101_r5",
+    "t_s": 813.75,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "BIT3_111_r8",
+    "t_s": 816.1,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_03x_100_r6",
+    "t_s": 818.51,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_011_r18",
+    "t_s": 820.83,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 18
+  },
+  {
+    "key": "S3_03x_CAB_r13",
+    "t_s": 823.18,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 13
+  },
+  {
+    "key": "S3_BAC_r10",
+    "t_s": 827.85,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 10
+  },
+  {
+    "key": "BIT3_03x_001_r8",
+    "t_s": 830.2,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_03x_101_r6",
+    "t_s": 832.51,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_110_r3",
+    "t_s": 834.92,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "S3_CAB_r25",
+    "t_s": 837.23,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 25
+  },
+  {
+    "key": "S3_03x_ACB_r0",
+    "t_s": 839.52,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 0
+  },
+  {
+    "key": "BIT3_010_r23",
+    "t_s": 841.93,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 23
+  },
+  {
+    "key": "BIT3_011_r17",
+    "t_s": 844.25,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 17
+  },
+  {
+    "key": "S3_03x_BCA_r11",
+    "t_s": 846.53,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 11
+  },
+  {
+    "key": "S3_ABC_r6",
+    "t_s": 848.97,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 6
+  },
+  {
+    "key": "S3_ACB_r11",
+    "t_s": 853.67,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_03x_000_r3",
+    "t_s": 855.94,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_111_r20",
+    "t_s": 858.22,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 20
+  },
+  {
+    "key": "BIT3_101_r10",
+    "t_s": 860.52,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 10
+  },
+  {
+    "key": "BIT3_001_r13",
+    "t_s": 862.9,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 13
+  },
+  {
+    "key": "S3_03x_ABC_r9",
+    "t_s": 865.18,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 9
+  },
+  {
+    "key": "S3_CBA_r17",
+    "t_s": 867.56,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 17
+  },
+  {
+    "key": "BIT3_101_r5",
+    "t_s": 869.84,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "S3_03x_ABC_r2",
+    "t_s": 872.12,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 2
+  },
+  {
+    "key": "BIT3_100_r21",
+    "t_s": 874.56,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 21
+  },
+  {
+    "key": "S3_03x_BAC_r11",
+    "t_s": 879.34,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 11
+  },
+  {
+    "key": "S3_BAC_r16",
+    "t_s": 881.7,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 16
+  },
+  {
+    "key": "S3_ABC_r23",
+    "t_s": 884.07,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 23
+  },
+  {
+    "key": "S3_BAC_r29",
+    "t_s": 886.43,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 29
+  },
+  {
+    "key": "BIT3_03x_111_r6",
+    "t_s": 888.75,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_111_r3",
+    "t_s": 891.08,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_111_r9",
+    "t_s": 893.37,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "BIT3_010_r19",
+    "t_s": 895.7,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 19
+  },
+  {
+    "key": "S3_ACB_r15",
+    "t_s": 898.0,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 15
+  },
+  {
+    "key": "BIT3_101_r18",
+    "t_s": 900.34,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 18
+  },
+  {
+    "key": "BIT3_010_r24",
+    "t_s": 905.01,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 24
+  },
+  {
+    "key": "BIT3_03x_011_r6",
+    "t_s": 907.74,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "S3_ACB_r12",
+    "t_s": 910.09,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 12
+  },
+  {
+    "key": "BIT3_111_r21",
+    "t_s": 912.44,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 21
+  },
+  {
+    "key": "BIT3_100_r24",
+    "t_s": 914.87,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 24
+  },
+  {
+    "key": "BIT3_011_r2",
+    "t_s": 917.15,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "S3_CBA_r0",
+    "t_s": 919.47,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 0
+  },
+  {
+    "key": "S3_03x_CAB_r10",
+    "t_s": 921.76,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 10
+  },
+  {
+    "key": "S3_BCA_r3",
+    "t_s": 924.11,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 3
+  },
+  {
+    "key": "BIT3_111_r6",
+    "t_s": 926.43,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_03x_110_r6",
+    "t_s": 931.21,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "S3_ACB_r25",
+    "t_s": 933.54,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 25
+  },
+  {
+    "key": "S3_CBA_r21",
+    "t_s": 936.11,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 21
+  },
+  {
+    "key": "BIT3_111_r4",
+    "t_s": 938.45,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_010_r4",
+    "t_s": 940.78,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "S3_03x_ACB_r7",
+    "t_s": 943.09,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 7
+  },
+  {
+    "key": "S3_ABC_r22",
+    "t_s": 945.4,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 22
+  },
+  {
+    "key": "S3_CBA_r29",
+    "t_s": 947.75,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 29
+  },
+  {
+    "key": "BIT3_011_r4",
+    "t_s": 950.08,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "S3_CAB_r6",
+    "t_s": 952.39,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 6
+  },
+  {
+    "key": "BIT3_000_r4",
+    "t_s": 957.1,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "S3_BCA_r14",
+    "t_s": 959.4,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 14
+  },
+  {
+    "key": "BIT3_110_r5",
+    "t_s": 961.76,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "S3_BCA_r16",
+    "t_s": 964.08,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 16
+  },
+  {
+    "key": "BIT3_110_r20",
+    "t_s": 966.91,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 20
+  },
+  {
+    "key": "S3_03x_BCA_r12",
+    "t_s": 969.26,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 12
+  },
+  {
+    "key": "S3_CBA_r10",
+    "t_s": 971.62,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 10
+  },
+  {
+    "key": "S3_BCA_r21",
+    "t_s": 974.01,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 21
+  },
+  {
+    "key": "BIT3_03x_011_r9",
+    "t_s": 976.31,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "S3_03x_ACB_r1",
+    "t_s": 978.67,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 1
+  },
+  {
+    "key": "S3_ABC_r29",
+    "t_s": 983.28,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 29
+  },
+  {
+    "key": "S3_BAC_r6",
+    "t_s": 985.6,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 6
+  },
+  {
+    "key": "S3_03x_ABC_r8",
+    "t_s": 988.01,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 8
+  },
+  {
+    "key": "S3_ACB_r22",
+    "t_s": 990.31,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 22
+  },
+  {
+    "key": "BIT3_000_r5",
+    "t_s": 992.6,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "S3_BAC_r23",
+    "t_s": 995.54,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 23
+  },
+  {
+    "key": "BIT3_03x_110_r7",
+    "t_s": 997.91,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "S3_CBA_r7",
+    "t_s": 1000.21,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 7
+  },
+  {
+    "key": "S3_CBA_r4",
+    "t_s": 1002.59,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_101_r4",
+    "t_s": 1004.98,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "S3_03x_BCA_r1",
+    "t_s": 1009.62,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 1
+  },
+  {
+    "key": "BIT3_101_r7",
+    "t_s": 1011.89,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "S3_03x_BCA_r7",
+    "t_s": 1014.16,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 7
+  },
+  {
+    "key": "BIT3_03x_111_r4",
+    "t_s": 1016.48,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_111_r16",
+    "t_s": 1018.89,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 16
+  },
+  {
+    "key": "S3_CAB_r27",
+    "t_s": 1021.24,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 27
+  },
+  {
+    "key": "S3_CAB_r15",
+    "t_s": 1023.59,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 15
+  },
+  {
+    "key": "BIT3_100_r0",
+    "t_s": 1026.09,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_03x_011_r7",
+    "t_s": 1028.45,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "S3_CBA_r6",
+    "t_s": 1030.75,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 6
+  },
+  {
+    "key": "BIT3_03x_011_r0",
+    "t_s": 1035.47,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_000_r1",
+    "t_s": 1037.8,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_001_r17",
+    "t_s": 1040.15,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 17
+  },
+  {
+    "key": "S3_BCA_r29",
+    "t_s": 1042.44,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 29
+  },
+  {
+    "key": "S3_03x_CBA_r14",
+    "t_s": 1044.73,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 14
+  },
+  {
+    "key": "BIT3_111_r17",
+    "t_s": 1047.02,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 17
+  },
+  {
+    "key": "BIT3_03x_100_r0",
+    "t_s": 1049.32,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_101_r15",
+    "t_s": 1051.68,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 15
+  },
+  {
+    "key": "BIT3_110_r9",
+    "t_s": 1054.08,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 9
+  },
+  {
+    "key": "BIT3_000_r11",
+    "t_s": 1056.42,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 11
+  },
+  {
+    "key": "BIT3_001_r6",
+    "t_s": 1061.07,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_03x_101_r0",
+    "t_s": 1063.38,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "S3_BCA_r1",
+    "t_s": 1065.7,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 1
+  },
+  {
+    "key": "S3_03x_ABC_r13",
+    "t_s": 1068.0,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 13
+  },
+  {
+    "key": "S3_BCA_r7",
+    "t_s": 1070.32,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 7
+  },
+  {
+    "key": "S3_03x_BAC_r2",
+    "t_s": 1072.68,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 2
+  },
+  {
+    "key": "S3_ACB_r26",
+    "t_s": 1075.0,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 26
+  },
+  {
+    "key": "BIT3_111_r14",
+    "t_s": 1077.3,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 14
+  },
+  {
+    "key": "S3_03x_BAC_r4",
+    "t_s": 1079.69,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 4
+  },
+  {
+    "key": "BIT3_110_r22",
+    "t_s": 1082.14,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 22
+  },
+  {
+    "key": "S3_BAC_r18",
+    "t_s": 1087.06,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 18
+  },
+  {
+    "key": "S3_CAB_r26",
+    "t_s": 1089.35,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 26
+  },
+  {
+    "key": "BIT3_011_r5",
+    "t_s": 1091.68,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 5
+  },
+  {
+    "key": "S3_03x_ABC_r14",
+    "t_s": 1094.1,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 14
+  },
+  {
+    "key": "S3_ACB_r16",
+    "t_s": 1096.43,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 16
+  },
+  {
+    "key": "BIT3_000_r8",
+    "t_s": 1098.76,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_111_r19",
+    "t_s": 1101.05,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 19
+  },
+  {
+    "key": "BIT3_101_r16",
+    "t_s": 1103.34,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 16
+  },
+  {
+    "key": "BIT3_010_r21",
+    "t_s": 1105.66,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 21
+  },
+  {
+    "key": "BIT3_011_r7",
+    "t_s": 1108.0,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "S3_BAC_r7",
+    "t_s": 1112.91,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 7
+  },
+  {
+    "key": "S3_CBA_r15",
+    "t_s": 1115.23,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 15
+  },
+  {
+    "key": "S3_ABC_r7",
+    "t_s": 1117.61,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 7
+  },
+  {
+    "key": "S3_CAB_r17",
+    "t_s": 1119.99,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 17
+  },
+  {
+    "key": "S3_BAC_r11",
+    "t_s": 1122.28,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_111_r7",
+    "t_s": 1124.59,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "BIT3_03x_001_r9",
+    "t_s": 1126.88,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "BIT3_101_r11",
+    "t_s": 1129.23,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 11
+  },
+  {
+    "key": "S3_ACB_r20",
+    "t_s": 1131.57,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 20
+  },
+  {
+    "key": "S3_03x_CAB_r3",
+    "t_s": 1133.91,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 3
+  },
+  {
+    "key": "BIT3_101_r21",
+    "t_s": 1138.51,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 21
+  },
+  {
+    "key": "S3_BAC_r20",
+    "t_s": 1140.83,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 20
+  },
+  {
+    "key": "BIT3_001_r19",
+    "t_s": 1143.32,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 19
+  },
+  {
+    "key": "S3_03x_ABC_r7",
+    "t_s": 1145.64,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 7
+  },
+  {
+    "key": "BIT3_03x_100_r2",
+    "t_s": 1147.93,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_001_r7",
+    "t_s": 1150.25,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "BIT3_100_r5",
+    "t_s": 1152.55,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "BIT3_110_r13",
+    "t_s": 1154.87,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 13
+  },
+  {
+    "key": "BIT3_001_r16",
+    "t_s": 1157.2,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 16
+  },
+  {
+    "key": "S3_ABC_r26",
+    "t_s": 1159.5,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 26
+  },
+  {
+    "key": "BIT3_110_r11",
+    "t_s": 1164.24,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 11
+  },
+  {
+    "key": "S3_CAB_r13",
+    "t_s": 1166.58,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 13
+  },
+  {
+    "key": "S3_BAC_r15",
+    "t_s": 1168.93,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 15
+  },
+  {
+    "key": "BIT3_100_r20",
+    "t_s": 1171.35,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 20
+  },
+  {
+    "key": "BIT3_101_r12",
+    "t_s": 1173.63,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 12
+  },
+  {
+    "key": "BIT3_100_r15",
+    "t_s": 1175.9,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 15
+  },
+  {
+    "key": "S3_BCA_r11",
+    "t_s": 1178.22,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 11
+  },
+  {
+    "key": "BIT3_03x_111_r7",
+    "t_s": 1180.56,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "BIT3_010_r9",
+    "t_s": 1182.9,
+    "task": "BIT3",
+    "word": "010",
+    "parity": 1,
+    "rep": 9
+  },
+  {
+    "key": "BIT3_110_r0",
+    "t_s": 1185.19,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 0
+  },
+  {
+    "key": "BIT3_011_r13",
+    "t_s": 1189.92,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 13
+  },
+  {
+    "key": "BIT3_001_r4",
+    "t_s": 1192.22,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "S3_03x_BAC_r0",
+    "t_s": 1194.58,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 0
+  },
+  {
+    "key": "BIT3_100_r4",
+    "t_s": 1196.98,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_001_r1",
+    "t_s": 1199.28,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "S3_CAB_r12",
+    "t_s": 1202.32,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 12
+  },
+  {
+    "key": "S3_CBA_r25",
+    "t_s": 1204.67,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 25
+  },
+  {
+    "key": "S3_BCA_r26",
+    "t_s": 1206.99,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 26
+  },
+  {
+    "key": "S3_03x_BCA_r10",
+    "t_s": 1209.32,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 10
+  },
+  {
+    "key": "S3_BAC_r13",
+    "t_s": 1211.65,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 13
+  },
+  {
+    "key": "S3_CBA_r23",
+    "t_s": 1216.37,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 23
+  },
+  {
+    "key": "S3_ABC_r13",
+    "t_s": 1218.7,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 13
+  },
+  {
+    "key": "BIT3_001_r5",
+    "t_s": 1221.03,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "BIT3_000_r18",
+    "t_s": 1223.43,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 18
+  },
+  {
+    "key": "S3_CAB_r1",
+    "t_s": 1225.7,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 1
+  },
+  {
+    "key": "BIT3_110_r23",
+    "t_s": 1228.07,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 23
+  },
+  {
+    "key": "S3_03x_ACB_r4",
+    "t_s": 1230.49,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 4
+  },
+  {
+    "key": "S3_03x_ABC_r5",
+    "t_s": 1232.85,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_011_r20",
+    "t_s": 1235.13,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 20
+  },
+  {
+    "key": "S3_ABC_r18",
+    "t_s": 1237.44,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 18
+  },
+  {
+    "key": "S3_BCA_r5",
+    "t_s": 1242.02,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_100_r1",
+    "t_s": 1244.32,
+    "task": "BIT3",
+    "word": "100",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_03x_001_r4",
+    "t_s": 1246.68,
+    "task": "BIT3_03x",
+    "word": "001",
+    "parity": 1,
+    "rep": 4
+  },
+  {
+    "key": "BIT3_000_r19",
+    "t_s": 1248.98,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 19
+  },
+  {
+    "key": "S3_03x_ABC_r0",
+    "t_s": 1251.33,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 0
+  },
+  {
+    "key": "S3_CAB_r10",
+    "t_s": 1253.65,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 10
+  },
+  {
+    "key": "S3_ACB_r28",
+    "t_s": 1255.98,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 28
+  },
+  {
+    "key": "BIT3_011_r10",
+    "t_s": 1258.3,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 10
+  },
+  {
+    "key": "S3_03x_CBA_r6",
+    "t_s": 1260.79,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 6
+  },
+  {
+    "key": "S3_CBA_r8",
+    "t_s": 1263.18,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 8
+  },
+  {
+    "key": "S3_BCA_r15",
+    "t_s": 1267.91,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 15
+  },
+  {
+    "key": "BIT3_000_r13",
+    "t_s": 1270.2,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 13
+  },
+  {
+    "key": "S3_03x_CBA_r3",
+    "t_s": 1272.55,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 3
+  },
+  {
+    "key": "BIT3_101_r1",
+    "t_s": 1274.93,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_101_r3",
+    "t_s": 1277.23,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "S3_BAC_r3",
+    "t_s": 1279.61,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 3
+  },
+  {
+    "key": "BIT3_111_r24",
+    "t_s": 1282.02,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 24
+  },
+  {
+    "key": "BIT3_001_r18",
+    "t_s": 1284.33,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 18
+  },
+  {
+    "key": "S3_BAC_r1",
+    "t_s": 1286.71,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 1
+  },
+  {
+    "key": "S3_CAB_r24",
+    "t_s": 1289.32,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 24
+  },
+  {
+    "key": "S3_03x_CAB_r5",
+    "t_s": 1294.02,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 5
+  },
+  {
+    "key": "BIT3_001_r23",
+    "t_s": 1296.35,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 23
+  },
+  {
+    "key": "S3_BAC_r27",
+    "t_s": 1298.67,
+    "task": "S3",
+    "word": "BAC",
+    "rep": 27
+  },
+  {
+    "key": "BIT3_111_r22",
+    "t_s": 1300.94,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 22
+  },
+  {
+    "key": "BIT3_000_r12",
+    "t_s": 1303.26,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 12
+  },
+  {
+    "key": "BIT3_03x_100_r7",
+    "t_s": 1305.6,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "S3_03x_BAC_r8",
+    "t_s": 1307.89,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 8
+  },
+  {
+    "key": "BIT3_011_r12",
+    "t_s": 1310.17,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 12
+  },
+  {
+    "key": "S3_ACB_r18",
+    "t_s": 1312.53,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 18
+  },
+  {
+    "key": "S3_CAB_r29",
+    "t_s": 1314.85,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 29
+  },
+  {
+    "key": "BIT3_03x_101_r7",
+    "t_s": 1320.43,
+    "task": "BIT3_03x",
+    "word": "101",
+    "parity": 0,
+    "rep": 7
+  },
+  {
+    "key": "S3_CAB_r0",
+    "t_s": 1322.82,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 0
+  },
+  {
+    "key": "S3_BCA_r17",
+    "t_s": 1325.13,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 17
+  },
+  {
+    "key": "BIT3_03x_111_r1",
+    "t_s": 1327.41,
+    "task": "BIT3_03x",
+    "word": "111",
+    "parity": 1,
+    "rep": 1
+  },
+  {
+    "key": "S3_ACB_r4",
+    "t_s": 1329.68,
+    "task": "S3",
+    "word": "ACB",
+    "rep": 4
+  },
+  {
+    "key": "S3_03x_BAC_r13",
+    "t_s": 1332.01,
+    "task": "S3_03x",
+    "word": "BAC",
+    "rep": 13
+  },
+  {
+    "key": "BIT3_111_r15",
+    "t_s": 1334.3,
+    "task": "BIT3",
+    "word": "111",
+    "parity": 1,
+    "rep": 15
+  },
+  {
+    "key": "BIT3_000_r16",
+    "t_s": 1336.63,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 16
+  },
+  {
+    "key": "S3_BCA_r0",
+    "t_s": 1338.98,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 0
+  },
+  {
+    "key": "BIT3_000_r23",
+    "t_s": 1341.29,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 23
+  },
+  {
+    "key": "BIT3_03x_010_r8",
+    "t_s": 1345.9,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 8
+  },
+  {
+    "key": "BIT3_011_r1",
+    "t_s": 1348.72,
+    "task": "BIT3",
+    "word": "011",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "S3_03x_CBA_r13",
+    "t_s": 1351.05,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 13
+  },
+  {
+    "key": "BIT3_03x_110_r4",
+    "t_s": 1353.34,
+    "task": "BIT3_03x",
+    "word": "110",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "S3_BCA_r2",
+    "t_s": 1355.62,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 2
+  },
+  {
+    "key": "S3_ABC_r4",
+    "t_s": 1357.89,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 4
+  },
+  {
+    "key": "BIT3_03x_010_r5",
+    "t_s": 1360.26,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "BIT3_000_r2",
+    "t_s": 1362.64,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 2
+  },
+  {
+    "key": "BIT3_000_r6",
+    "t_s": 1365.02,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 6
+  },
+  {
+    "key": "BIT3_000_r21",
+    "t_s": 1367.31,
+    "task": "BIT3",
+    "word": "000",
+    "parity": 0,
+    "rep": 21
+  },
+  {
+    "key": "S3_03x_ABC_r1",
+    "t_s": 1371.93,
+    "task": "S3_03x",
+    "word": "ABC",
+    "rep": 1
+  },
+  {
+    "key": "BIT3_03x_100_r5",
+    "t_s": 1374.28,
+    "task": "BIT3_03x",
+    "word": "100",
+    "parity": 1,
+    "rep": 5
+  },
+  {
+    "key": "S3_ABC_r1",
+    "t_s": 1376.66,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 1
+  },
+  {
+    "key": "S3_BCA_r20",
+    "t_s": 1379.64,
+    "task": "S3",
+    "word": "BCA",
+    "rep": 20
+  },
+  {
+    "key": "S3_03x_CAB_r0",
+    "t_s": 1381.97,
+    "task": "S3_03x",
+    "word": "CAB",
+    "rep": 0
+  },
+  {
+    "key": "S3_03x_BCA_r9",
+    "t_s": 1384.35,
+    "task": "S3_03x",
+    "word": "BCA",
+    "rep": 9
+  },
+  {
+    "key": "S3_CBA_r24",
+    "t_s": 1386.67,
+    "task": "S3",
+    "word": "CBA",
+    "rep": 24
+  },
+  {
+    "key": "BIT3_03x_010_r7",
+    "t_s": 1388.99,
+    "task": "BIT3_03x",
+    "word": "010",
+    "parity": 1,
+    "rep": 7
+  },
+  {
+    "key": "S3_ABC_r17",
+    "t_s": 1391.31,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 17
+  },
+  {
+    "key": "BIT3_001_r24",
+    "t_s": 1393.66,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 24
+  },
+  {
+    "key": "BIT3_101_r13",
+    "t_s": 1398.28,
+    "task": "BIT3",
+    "word": "101",
+    "parity": 0,
+    "rep": 13
+  },
+  {
+    "key": "S3_ABC_r0",
+    "t_s": 1400.62,
+    "task": "S3",
+    "word": "ABC",
+    "rep": 0
+  },
+  {
+    "key": "BIT3_110_r1",
+    "t_s": 1402.89,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 1
+  },
+  {
+    "key": "BIT3_03x_011_r3",
+    "t_s": 1405.24,
+    "task": "BIT3_03x",
+    "word": "011",
+    "parity": 0,
+    "rep": 3
+  },
+  {
+    "key": "BIT3_110_r19",
+    "t_s": 1407.71,
+    "task": "BIT3",
+    "word": "110",
+    "parity": 0,
+    "rep": 19
+  },
+  {
+    "key": "S3_03x_CBA_r7",
+    "t_s": 1410.0,
+    "task": "S3_03x",
+    "word": "CBA",
+    "rep": 7
+  },
+  {
+    "key": "BIT3_03x_000_r4",
+    "t_s": 1412.32,
+    "task": "BIT3_03x",
+    "word": "000",
+    "parity": 0,
+    "rep": 4
+  },
+  {
+    "key": "S3_CAB_r20",
+    "t_s": 1414.71,
+    "task": "S3",
+    "word": "CAB",
+    "rep": 20
+  },
+  {
+    "key": "BIT3_001_r10",
+    "t_s": 1417.08,
+    "task": "BIT3",
+    "word": "001",
+    "parity": 1,
+    "rep": 10
+  },
+  {
+    "key": "S3_03x_ACB_r12",
+    "t_s": 1419.4,
+    "task": "S3_03x",
+    "word": "ACB",
+    "rep": 12
+  }
+]
