@@ -1,0 +1,44 @@
+=== Eq (2): single drive threshold (eigenvalue bisection) ===
+delta=+0 MHz: sim = 8.000000 MHz, pred = 8.000000 MHz  PASS  (rel 1.16e-16)
+delta=+3 MHz: sim = 8.544004 MHz, pred = 8.544004 MHz  PASS  (rel 6.21e-12)
+delta=-3 MHz: sim = 8.544004 MHz, pred = 8.544004 MHz  PASS  (rel 6.21e-12)
+
+=== Eq (6)/(7): external + internal 4B pump (W = 3 MHz) ===
+delta=+0 MHz Psi=  0 deg: sim = 5.0847 MHz, pred = 5.0847 MHz  PASS
+delta=+0 MHz Psi= 45 deg: sim = 5.2231 MHz, pred = 5.2231 MHz  PASS
+delta=+0 MHz Psi= 90 deg: sim = 6.5824 MHz, pred = 6.5824 MHz  PASS
+delta=+0 MHz Psi=135 deg: sim = 8.9468 MHz, pred = 8.9468 MHz  PASS
+delta=+0 MHz Psi=180 deg: sim = 10.8167 MHz, pred = 10.8167 MHz  PASS
+delta=+0 MHz Psi=210 deg: sim = 10.8976 MHz, pred = 10.8976 MHz  PASS
+delta=+0 MHz Psi=225 deg: sim = 10.5301 MHz, pred = 10.5301 MHz  PASS
+delta=+0 MHz Psi=270 deg: sim = 8.3556 MHz, pred = 8.3556 MHz  PASS
+delta=+0 MHz Psi=315 deg: sim = 6.1474 MHz, pred = 6.1474 MHz  PASS
+delta=+2 MHz Psi=  0 deg: sim = 5.3324 MHz, pred = 5.3324 MHz  PASS
+delta=+2 MHz Psi= 45 deg: sim = 5.4731 MHz, pred = 5.4731 MHz  PASS
+delta=+2 MHz Psi= 90 deg: sim = 6.8456 MHz, pred = 6.8456 MHz  PASS
+delta=+2 MHz Psi=135 deg: sim = 9.2073 MHz, pred = 9.2073 MHz  PASS
+delta=+2 MHz Psi=180 deg: sim = 11.0644 MHz, pred = 11.0644 MHz  PASS
+delta=+2 MHz Psi=210 deg: sim = 11.1447 MHz, pred = 11.1447 MHz  PASS
+delta=+2 MHz Psi=225 deg: sim = 10.7800 MHz, pred = 10.7800 MHz  PASS
+delta=+2 MHz Psi=270 deg: sim = 8.6187 MHz, pred = 8.6187 MHz  PASS
+delta=+2 MHz Psi=315 deg: sim = 6.4079 MHz, pred = 6.4079 MHz  PASS
+
+=== Eq (8a): sub-threshold coherent gain, delta = 0 ===
+s = (1+1j)sigma/rt2 (amplified)  |A|/G=0.00: sim |b|^2 = 1.5625e-26, pred = 1.5625e-26  PASS
+s = (1+1j)sigma/rt2 (amplified)  |A|/G=0.30: sim |b|^2 = 3.1888e-26, pred = 3.1888e-26  PASS
+s = (1+1j)sigma/rt2 (amplified)  |A|/G=0.60: sim |b|^2 = 9.7656e-26, pred = 9.7656e-26  PASS
+s = (1+1j)sigma/rt2 (amplified)  |A|/G=0.85: sim |b|^2 = 6.9444e-25, pred = 6.9444e-25  PASS
+s = (1-1j)sigma/rt2 (damped)     |A|/G=0.00: sim |b|^2 = 1.5625e-26, pred = 1.5625e-26  PASS
+s = (1-1j)sigma/rt2 (damped)     |A|/G=0.30: sim |b|^2 = 9.2456e-27, pred = 9.2456e-27  PASS
+s = (1-1j)sigma/rt2 (damped)     |A|/G=0.60: sim |b|^2 = 6.1035e-27, pred = 6.1035e-27  PASS
+s = (1-1j)sigma/rt2 (damped)     |A|/G=0.85: sim |b|^2 = 4.5654e-27, pred = 4.5654e-27  PASS
+s = sigma (real)                 |A|/G=0.00: sim |b|^2 = 1.5625e-26, pred = 1.5625e-26  PASS
+s = sigma (real)                 |A|/G=0.30: sim |b|^2 = 2.0567e-26, pred = 2.0567e-26  PASS
+s = sigma (real)                 |A|/G=0.60: sim |b|^2 = 5.1880e-26, pred = 5.1880e-26  PASS
+s = sigma (real)                 |A|/G=0.85: sim |b|^2 = 3.4950e-25, pred = 3.4950e-25  PASS
+
+=== RK4 cross-check (asymptotic log-slope = 0 bisection) ===
+delta=+0 MHz RK4: |A_th| = 8.0000 MHz vs pred 8.0000 MHz  PASS
+delta=+3 MHz RK4: |A_th| = 8.5440 MHz vs pred 8.5440 MHz  PASS
+
+SUMMARY: ALL PASS

@@ -1,0 +1,10 @@
+  function closestArnoldMode(fPumpGHz) {
+    let bestM = 13, bestD = 1e9;
+    for (let m = 0; m < M; m++) {
+      const d = Math.abs(fPumpGHz - 2 * fGhzArr[m]);
+      if (d < bestD) { bestD = d; bestM = m; }
+    }
+    return bestM;
+  }
+
+  function symPairIdx(i, j) {

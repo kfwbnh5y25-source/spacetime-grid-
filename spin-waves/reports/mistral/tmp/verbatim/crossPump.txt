@@ -1,0 +1,59 @@
+  function crossPump4BGHz(mIdx = 0, fProbeGHz = null, pumpPhaseRad = null, pumpRefFreqGHz = null) {
+    if (!terms.t4B) return { resRateGHz: 0, totalRateGHz: 0, resRe: 0, resIm: 0, wParGHz: 0, wPerpGHz: 0, cosPhase: 0, maxDriver: -1 };
+    let totRe = 0, totIm = 0, resRe = 0, resIm = 0, resMagSum = 0, bestContrib = 0, maxDriver = -1;
+    const bw = Math.max(0.008, 3 * modeGammaGHz(mIdx));
+    for (let k = 0; k < M; k++) {
+      if (k === mIdx) continue;
+      const sqk = aRe[k] * aRe[k] + aIm[k] * aIm[k];
+      if (sqk < 1e-8) continue;
+      const hk2 = (mIdx * M + k) * 2;
+      const pR = P4B[hk2] * F_M, pI = P4B[hk2 + 1] * F_M;
+      const pAbs = Math.hypot(pR, pI);
+      if (pAbs <= 1e-8) continue;
+      const k2R = aRe[k] * aRe[k] - aIm[k] * aIm[k];
+      const k2I = 2 * aRe[k] * aIm[k];
+      const wR = pR * k2R - pI * k2I;
+      const wI = pR * k2I + pI * k2R;
+      totRe += wR;
+      totIm += wI;
+      const contrib = pAbs * sqk;
+      if (contrib > bestContrib) { bestContrib = contrib; maxDriver = k; }
+      if (fProbeGHz !== null) {
+        const fkEff = fGhzArr[k] + modeNfsShiftGHz(k);
+        const detK = 0.5 * (fProbeGHz - 2 * fkEff);
+        const overlap = bw / Math.hypot(bw, detK);
+        resRe += wR * overlap;
+        resIm += wI * overlap;
+        resMagSum += contrib * overlap;
+      }
+    }
+    const totalRateGHz = Math.hypot(totRe, totIm);
+    if (fProbeGHz === null) { resRe = totRe; resIm = totIm; resMagSum = totalRateGHz; }
+    const resVecMag = Math.hypot(resRe, resIm);
+    const resRateGHz = Math.max(resMagSum, resVecMag);
+    let wParGHz = resRateGHz, wPerpGHz = 0, cosPhase = 1;
+    if (typeof pumpPhaseRad === 'number' && Number.isFinite(pumpPhaseRad) && resVecMag > 1e-9) {
+      const i2 = (mIdx * M + mIdx) * 2;
+      const qR = Q2x[i2], qI = Q2x[i2 + 1], qMag = Math.hypot(qR, qI);
+      if (qMag > 1e-12) {
+        const fp = (typeof pumpRefFreqGHz === 'number' && Number.isFinite(pumpRefFreqGHz))
+          ? pumpRefFreqGHz
+          : (fProbeGHz !== null ? fProbeGHz : 2 * fGhzArr[mIdx]);
+        const curF1 = ramp1.active ? channelStateAt(1, simTime).freq : driveFreq;
+        const curF2 = ramp2.active ? channelStateAt(2, simTime).freq : driveFreq2;
+        const useC1 = !ramp1.active && Math.abs(fp - curF1) < 1e-6;
+        const useC2 = dualTone && !ramp2.active && Math.abs(fp - curF2) < 1e-6;
+        const thBase = useC1 ? carrierPhase1 : (useC2 ? carrierPhase2 : (fp * FREQ_TO_RAD) * simTime);
+        const thP = thBase + pumpPhaseRad;
+        // Exact Eq. (9) 2A rotating sideband multiplying a_h*: (-i Q2x / |Q2x|) * e^{i(omega_p tau + phi_p)}
+        const c = Math.cos(thP), s = Math.sin(thP);
+        const uR = (qI * c + qR * s) / qMag;
+        const uI = (qI * s - qR * c) / qMag;
+        wParGHz = resRe * uR + resIm * uI;
+        wPerpGHz = Math.abs(resRe * uI - resIm * uR);
+        cosPhase = wParGHz / resVecMag;
+      }
+    }
+    return { resRateGHz, totalRateGHz, resRe, resIm, wParGHz, wPerpGHz, cosPhase, maxDriver };
+  }
+  function arnoldThresholdMT(mIdx, fPumpGHz, fShiftGHz = 0) {

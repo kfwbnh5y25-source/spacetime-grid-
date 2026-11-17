@@ -1,0 +1,124 @@
+
+########## delay (Delta = 61 MHz) ##########
+blocks used: 423 / 462  (sigma_A1 ~ 975.80 nW)
+
+-- A1 = a*exp(-t/tau)+c on positive delays (bounds: a>=0, tau in [1e-4,1e7], c>=-50uW) --
+  0.0   125.91    16.874    0.520   -50.00     9.21     90.58  185
+  1.5   139.90    13.947    0.394   -50.00     6.99     52.27  166
+  2.0   146.07    13.044    0.368   -50.00     6.17     40.76  159
+  3.0   141.65     7.699    0.151   -22.16     5.10     27.91  148
+  5.0   339.81     3.009    0.047     0.71     2.33      5.83  119  [supplementary: decay-onset window]
+  6.0   655.11     2.294    0.048     3.50     1.81      3.54  105  [supplementary: decay-onset window]
+
+-- fit-quality cross-checks (t>=0 window, A1-weighted, bounded) --
+   exponential a*exp(-t/tau)+c     : tau/sig/ta=   16.874+-  0.520 ns  c=-50.00 uW  wchi2/dof=   90.58
+   gaussian   a*exp(-t^2/2sg^2)+c  : tau/sig/ta=    6.984+-  0.049 ns  c= -9.52 uW  wchi2/dof=   43.27
+   algebraic  a/(1+(t/ta)^2)+c     : tau/sig/ta=   12.083+-  0.128 ns  c=-50.00 uW  wchi2/dof=   47.43
+
+plateau A1(1-2 ns) = 58.68 uW ; half = 29.34 uW
+   binned-data half-contrast time: 7.38 ns
+   fit-curve (t0=0 params) half-contrast time: 7.79 ns
+   A1[0-1.5 ns] =   55.98 uW
+   A1[4.5-7 ns] =   52.36 uW
+   A1[7-10 ns] =   21.18 uW
+
+-- phi0 slew (t_gap >= -2 ns, A1 > 11.7 uW = 20% plateau, 160 points) --
+   slope =  15.32 +- 0.04 deg/ns ; prediction 360*Delta/1000 = 21.96 deg/ns ; ratio = 69.7 %
+   intercept = 202.6 deg
+   implied Delta_eff = 42.5 MHz (69.7% of nominal)
+   unweighted slope = 12.45 deg/ns
+   sub-window -2..+2 ns: slope =  16.49 +- 0.13 deg/ns (n=52)
+   sub-window -2..+4 ns: slope =  17.29 +- 0.07 deg/ns (n=79)
+   sub-window +0..+3 ns: slope =  17.56 +- 0.19 deg/ns (n=38)
+
+-- two-exponential A1 = a1*e^(-t/t1)+a2*e^(-t/t2)+c (t>=0) --
+   a1=   0.00+-47.40 uW  t1= 8.817+-0.000 ns
+   a2= 125.91+-29.25 uW  t2= 16.874+-7.783 ns
+   c = -50.00+-18.22 uW  rms=9.21 uW  wchi2/dof=91.59
+
+-- A1(t), A2(t) [uW] every 1 ns (mean of available blocks, clean+repaired) --
+   t= -8.0.. -7.0: A1=  42.09  A2=  30.18  (n=2)
+   t= -7.0.. -6.0: A1=  42.68  A2=  30.98  (n=10)
+   t= -6.0.. -5.0: A1=  43.11  A2=  31.16  (n=13)
+   t= -5.0.. -4.0: A1=  41.54  A2=  30.85  (n=9)
+   t= -4.0.. -3.0: A1=  40.68  A2=  30.72  (n=11)
+   t= -3.0.. -2.0: A1=  42.31  A2=  32.02  (n=11)
+   t= -2.0.. -1.0: A1=  44.22  A2=  32.56  (n=14)
+   t= -1.0.. +0.0: A1=  47.66  A2=  31.68  (n=11)
+   t= +0.0.. +1.0: A1=  54.73  A2=  28.33  (n=12)
+   t= +1.0.. +2.0: A1=  58.56  A2=  24.05  (n=14)
+   t= +2.0.. +3.0: A1=  61.04  A2=  17.42  (n=11)
+   t= +3.0.. +4.0: A1=  62.18  A2=  11.61  (n=16)
+   t= +4.0.. +5.0: A1=  61.51  A2=  13.80  (n=13)
+   t= +5.0.. +6.0: A1=  55.91  A2=  19.01  (n=14)
+   t= +6.0.. +7.0: A1=  43.17  A2=  17.98  (n=13)
+   t= +7.0.. +8.0: A1=  27.51  A2=  10.13  (n=13)
+   t= +8.0.. +9.0: A1=  19.10  A2=   2.16  (n=12)
+   t= +9.0..+10.0: A1=  14.80  A2=   0.90  (n=9)
+   t=+10.0..+11.0: A1=  12.12  A2=   1.17  (n=13)
+   t=+11.0..+12.0: A1=   8.30  A2=   1.00  (n=12)
+   t=+12.0..+13.0: A1=   6.34  A2=   1.70  (n=14)
+   t=+13.0..+14.0: A1=   5.10  A2=   1.75  (n=9)
+   t=+14.0..+15.0: A1=   3.45  A2=   2.23  (n=10)
+
+########## delay2 (Delta = 74 MHz) ##########
+blocks used: 596 / 615  (sigma_A1 ~ 1277.63 nW)
+
+-- A1 = a*exp(-t/tau)+c on positive delays (bounds: a>=0, tau in [1e-4,1e7], c>=-50uW) --
+  0.0   131.34     2.128    0.013     3.91     7.66     36.39  240
+  1.5   325.15     1.103    0.012     6.93     5.17     16.61  216
+  2.0   679.46     0.838    0.014     7.45     4.98     15.41  208
+  3.0    71.50    44.742   26.283   -50.00     3.35      6.99  192
+  5.0    56.80    19.479    5.869   -26.40     1.84      2.11  160  [supplementary: decay-onset window]
+  6.0    66.38     5.419    0.568    -3.45     1.28      1.03  144  [supplementary: decay-onset window]
+
+-- fit-quality cross-checks (t>=0 window, A1-weighted, bounded) --
+   exponential a*exp(-t/tau)+c     : tau/sig/ta=    2.128+-  0.013 ns  c=  3.91 uW  wchi2/dof=   36.39
+   gaussian   a*exp(-t^2/2sg^2)+c  : tau/sig/ta=    1.691+-  0.006 ns  c=  7.43 uW  wchi2/dof=   15.82
+   algebraic  a/(1+(t/ta)^2)+c     : tau/sig/ta=    1.884+-  0.010 ns  c=  1.22 uW  wchi2/dof=   23.47
+
+plateau A1(1-2 ns) = 82.89 uW ; half = 41.45 uW
+   binned-data half-contrast time: 2.68 ns
+   fit-curve (t0=0 params) half-contrast time: 2.67 ns
+   A1[0-1.5 ns] =  102.49 uW
+   A1[4.5-7 ns] =   14.03 uW
+   A1[7-10 ns] =   11.18 uW
+
+-- phi0 slew (t_gap >= -2 ns, A1 > 20.6 uW = 20% plateau, 84 points) --
+   slope =  20.70 +- 0.07 deg/ns ; prediction 360*Delta/1000 = 26.64 deg/ns ; ratio = 77.7 %
+   intercept = 209.7 deg
+   implied Delta_eff = 57.5 MHz (77.7% of nominal)
+   unweighted slope = 20.03 deg/ns
+   sub-window -2..+2 ns: slope =  20.91 +- 0.08 deg/ns (n=65)
+   sub-window -2..+4 ns: slope =  20.70 +- 0.07 deg/ns (n=84)
+   sub-window +0..+3 ns: slope =  19.94 +- 0.18 deg/ns (n=49)
+
+-- two-exponential A1 = a1*e^(-t/t1)+a2*e^(-t/t2)+c (t>=0) --
+   a1= 131.34+-0.76 uW  t1= 2.128+-0.025 ns
+   a2=   0.00+-2.52 uW  t2= 30.000+-0.000 ns
+   c =   3.91+-1.71 uW  rms=7.66 uW  wchi2/dof=36.70
+
+-- A1(t), A2(t) [uW] every 1 ns (mean of available blocks, clean+repaired) --
+   t= -8.0.. -7.0: A1= 104.35  A2=  33.38  (n=14)
+   t= -7.0.. -6.0: A1= 105.14  A2=  35.28  (n=11)
+   t= -6.0.. -5.0: A1= 104.77  A2=  36.48  (n=12)
+   t= -5.0.. -4.0: A1= 105.71  A2=  35.72  (n=16)
+   t= -4.0.. -3.0: A1= 106.34  A2=  34.14  (n=16)
+   t= -3.0.. -2.0: A1= 108.32  A2=  30.38  (n=16)
+   t= -2.0.. -1.0: A1= 111.96  A2=  19.69  (n=16)
+   t= -1.0.. +0.0: A1= 111.81  A2=   6.01  (n=16)
+   t= +0.0.. +1.0: A1= 106.65  A2=  20.80  (n=16)
+   t= +1.0.. +2.0: A1=  84.13  A2=  32.10  (n=16)
+   t= +2.0.. +3.0: A1=  46.99  A2=  25.22  (n=16)
+   t= +3.0.. +4.0: A1=  15.68  A2=  13.50  (n=16)
+   t= +4.0.. +5.0: A1=   8.36  A2=   7.20  (n=16)
+   t= +5.0.. +6.0: A1=  14.43  A2=   2.84  (n=16)
+   t= +6.0.. +7.0: A1=  15.91  A2=   2.06  (n=16)
+   t= +7.0.. +8.0: A1=  14.40  A2=   2.15  (n=16)
+   t= +8.0.. +9.0: A1=  10.81  A2=   2.35  (n=16)
+   t= +9.0..+10.0: A1=   8.32  A2=   2.69  (n=16)
+   t=+10.0..+11.0: A1=   5.86  A2=   2.16  (n=16)
+   t=+11.0..+12.0: A1=   4.05  A2=   1.87  (n=16)
+   t=+12.0..+13.0: A1=   2.30  A2=   2.21  (n=16)
+   t=+13.0..+14.0: A1=   1.68  A2=   1.69  (n=16)
+   t=+14.0..+15.0: A1=   2.46  A2=   1.81  (n=16)

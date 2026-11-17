@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" width="1200" height="1200" style="background:#080f1e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <rect width="1200" height="1200" fill="#080f1e"/>
+
+  <!-- Title Header -->
+  <text x="50" y="48" fill="#f8fafc" font-size="22" font-weight="700">FIGURE 3: High-Resolution Power Spectrum (Welch PSD, 4096-pt)</text>
+  <text x="50" y="74" fill="#94a3b8" font-size="14">Spectral Output at Disk Inductive Pickup: Constructive Phase vs Quenched Phase vs No Tone 1 Baseline (Δf = 120 MHz)</text>
+
+  <rect x="110" y="120" width="980" height="960" fill="#0b172a" stroke="#1e293b" rx="6"/>
+
+  <!-- Y-Axis Grid -->
+  
+    <line x1="110" y1="1080" x2="1090" y2="1080" stroke="#334155" stroke-dasharray="none"/>
+    <text x="96" y="1084" fill="#94a3b8" font-size="12" text-anchor="end">10^-5</text>
+    <line x1="110" y1="925.1612903225806" x2="1090" y2="925.1612903225806" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <text x="96" y="929.1612903225806" fill="#94a3b8" font-size="12" text-anchor="end">10^-4</text>
+    <line x1="110" y1="770.3225806451612" x2="1090" y2="770.3225806451612" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <text x="96" y="774.3225806451612" fill="#94a3b8" font-size="12" text-anchor="end">10^-3</text>
+    <line x1="110" y1="615.483870967742" x2="1090" y2="615.483870967742" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <text x="96" y="619.483870967742" fill="#94a3b8" font-size="12" text-anchor="end">10^-2</text>
+    <line x1="110" y1="460.64516129032256" x2="1090" y2="460.64516129032256" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <text x="96" y="464.64516129032256" fill="#94a3b8" font-size="12" text-anchor="end">10^-1</text>
+    <line x1="110" y1="305.8064516129033" x2="1090" y2="305.8064516129033" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <text x="96" y="309.8064516129033" fill="#94a3b8" font-size="12" text-anchor="end">10^0</text>
+    <line x1="110" y1="150.9677419354839" x2="1090" y2="150.9677419354839" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <text x="96" y="154.9677419354839" fill="#94a3b8" font-size="12" text-anchor="end">10^1</text>
+  <text x="45" y="600" fill="#cbd5e1" font-size="13" font-weight="600" text-anchor="middle" transform="rotate(-90 45 600)">Inductive Pickup Power Spectral Density (log)</text>
+
+  <!-- X-Axis Grid -->
+  
+    <line x1="110" y1="120" x2="110" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="110" y1="1080" x2="110" y2="1086" stroke="#475569"/>
+    <text x="110" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">1.94 GHz</text>
+    <line x1="218.88888888888889" y1="120" x2="218.88888888888889" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="218.88888888888889" y1="1080" x2="218.88888888888889" y2="1086" stroke="#475569"/>
+    <text x="218.88888888888889" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">1.96 GHz</text>
+    <line x1="327.77777777777777" y1="120" x2="327.77777777777777" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="327.77777777777777" y1="1080" x2="327.77777777777777" y2="1086" stroke="#475569"/>
+    <text x="327.77777777777777" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">1.98 GHz</text>
+    <line x1="436.66666666666663" y1="120" x2="436.66666666666663" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="436.66666666666663" y1="1080" x2="436.66666666666663" y2="1086" stroke="#475569"/>
+    <text x="436.66666666666663" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">2.00 GHz</text>
+    <line x1="545.5555555555555" y1="120" x2="545.5555555555555" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="545.5555555555555" y1="1080" x2="545.5555555555555" y2="1086" stroke="#475569"/>
+    <text x="545.5555555555555" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">2.02 GHz</text>
+    <line x1="654.4444444444445" y1="120" x2="654.4444444444445" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="654.4444444444445" y1="1080" x2="654.4444444444445" y2="1086" stroke="#475569"/>
+    <text x="654.4444444444445" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">2.04 GHz</text>
+    <line x1="763.3333333333333" y1="120" x2="763.3333333333333" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="763.3333333333333" y1="1080" x2="763.3333333333333" y2="1086" stroke="#475569"/>
+    <text x="763.3333333333333" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">2.06 GHz</text>
+    <line x1="872.2222222222223" y1="120" x2="872.2222222222223" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="872.2222222222223" y1="1080" x2="872.2222222222223" y2="1086" stroke="#475569"/>
+    <text x="872.2222222222223" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">2.08 GHz</text>
+    <line x1="981.1111111111111" y1="120" x2="981.1111111111111" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="981.1111111111111" y1="1080" x2="981.1111111111111" y2="1086" stroke="#475569"/>
+    <text x="981.1111111111111" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">2.10 GHz</text>
+    <line x1="1090" y1="120" x2="1090" y2="1080" stroke="#1e293b" stroke-dasharray="3,3"/>
+    <line x1="1090" y1="1080" x2="1090" y2="1086" stroke="#475569"/>
+    <text x="1090" y="1104" fill="#94a3b8" font-size="12" text-anchor="middle">2.12 GHz</text>
+  <text x="600" y="1130" fill="#cbd5e1" font-size="13" font-weight="600" text-anchor="middle">Microwave Frequency (GHz)</text>
+
+  <!-- Markers for f1/2 and f2/2 -->
+  <line x1="436.66666666666663" y1="120" x2="436.66666666666663" y2="1080" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="4,4"/>
+  <text x="436.66666666666663" y="146" fill="#38bdf8" font-size="12" font-weight="600" text-anchor="middle">f₁/2 = 2.000 GHz (m16)</text>
+
+  <line x1="763.3333333333333" y1="120" x2="763.3333333333333" y2="1080" stroke="#fb7185" stroke-width="1.8" stroke-dasharray="4,4"/>
+  <text x="763.3333333333333" y="146" fill="#fb7185" font-size="12" font-weight="600" text-anchor="middle">f₂/2 = 2.060 GHz (m27 Kittel)</text>
+
+  <!-- Spectra -->
+  <path d="M 135.0 829.5 L 209.6 733.5 L 284.2 694.9 L 358.8 723.2 L 433.4 701.8 L 508.0 688.5 L 582.6 707.2 L 657.2 712.5 L 731.8 728.5 L 806.3 752.4 L 880.9 831.9 L 955.5 905.8 L 1029.6 936.2" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="4,3"/>
+  <path d="M 135.0 730.8 L 209.6 732.8 L 284.2 647.4 L 358.8 247.6 L 433.4 145.4 L 508.0 227.5 L 582.6 515.0 L 657.2 576.7 L 731.8 405.7 L 806.3 419.4 L 880.9 654.3 L 955.5 786.9 L 1029.6 562.3" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-dasharray="none"/>
+  <path d="M 135.0 654.5 L 209.6 722.3 L 284.2 678.5 L 358.8 253.7 L 433.4 151.4 L 508.0 235.6 L 582.6 641.3 L 657.2 415.1 L 731.8 221.0 L 806.3 234.0 L 880.9 471.6 L 955.5 703.7 L 1029.6 606.2" fill="none" stroke="#10b981" stroke-width="2.8" stroke-dasharray="none"/>
+
+  <!-- Legend Box -->
+  <rect x="130" y="156" width="410" height="105" fill="#030712" fill-opacity="0.90" stroke="#334155" rx="6"/>
+  <circle cx="150" cy="178" r="5.5" fill="#10b981"/>
+  <text x="166" y="182" fill="#6ee7b7" font-size="13" font-weight="600">Constructive Phase Δφ = −150° (ON State)</text>
+
+  <circle cx="150" cy="202" r="5.5" fill="#ef4444"/>
+  <text x="166" y="206" fill="#fca5a5" font-size="13" font-weight="600">Destructive Phase Δφ = −60° (Quenched State)</text>
+
+  <line x1="142" y1="226" x2="158" y2="226" stroke="#64748b" stroke-width="2" stroke-dasharray="4,2"/>
+  <text x="166" y="230" fill="#94a3b8" font-size="12">Tone 2 Alone (No F1, Thermal Noise Floor)</text>
+
+</svg>

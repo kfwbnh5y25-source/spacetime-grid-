@@ -1,0 +1,32 @@
+=== Eq (2): single drive threshold ===
+delta=+0 MHz phi=0.0:  sim |A_th| = 11.753451 MHz, pred sqrt(G^2+d^2) = 8.000000 MHz   FAIL
+delta=+0 MHz phi=1.0:  sim |A_th| = 11.937633 MHz, pred sqrt(G^2+d^2) = 8.000000 MHz   FAIL
+delta=+0 MHz phi=2.3:  sim |A_th| = 11.890377 MHz, pred sqrt(G^2+d^2) = 8.000000 MHz   FAIL
+delta=+3 MHz phi=0.0:  sim |A_th| = 12.151657 MHz, pred sqrt(G^2+d^2) = 8.544004 MHz   FAIL
+delta=+3 MHz phi=1.0:  sim |A_th| = 12.409505 MHz, pred sqrt(G^2+d^2) = 8.544004 MHz   FAIL
+delta=+3 MHz phi=2.3:  sim |A_th| = 12.203586 MHz, pred sqrt(G^2+d^2) = 8.544004 MHz   FAIL
+delta=-3 MHz phi=0.0:  sim |A_th| = 12.102678 MHz, pred sqrt(G^2+d^2) = 8.544004 MHz   FAIL
+delta=-3 MHz phi=1.0:  sim |A_th| = 12.235711 MHz, pred sqrt(G^2+d^2) = 8.544004 MHz   FAIL
+delta=-3 MHz phi=2.3:  sim |A_th| = 12.334350 MHz, pred sqrt(G^2+d^2) = 8.544004 MHz   FAIL
+
+=== Eq (6): external + internal 4B pump (W = 3 MHz) ===
+delta=+0 MHz Psi=  0 deg:  sim A_ext_th = 8.7535 MHz, pred = 5.0000 MHz   FAIL
+delta=+0 MHz Psi= 45 deg:  sim A_ext_th = 9.4222 MHz, pred = 5.5923 MHz   FAIL
+delta=+0 MHz Psi= 90 deg:  sim A_ext_th = 11.3406 MHz, pred = 7.4162 MHz   FAIL
+delta=+0 MHz Psi=135 deg:  sim A_ext_th = 13.6649 MHz, pred = 9.8349 MHz   FAIL
+delta=+0 MHz Psi=180 deg:  sim A_ext_th = 14.7535 MHz, pred = 11.0000 MHz   FAIL
+delta=+0 MHz Psi=210 deg:  sim A_ext_th = 14.2692 MHz, pred = 10.4562 MHz   FAIL
+delta=+2 MHz Psi=  0 deg:  sim A_ext_th = 8.9377 MHz, pred = 5.2462 MHz   FAIL
+delta=+2 MHz Psi= 45 deg:  sim A_ext_th = 9.6069 MHz, pred = 5.8474 MHz   FAIL
+delta=+2 MHz Psi= 90 deg:  sim A_ext_th = 11.5275 MHz, pred = 7.6811 MHz   FAIL
+delta=+2 MHz Psi=135 deg:  sim A_ext_th = 13.8496 MHz, pred = 10.0900 MHz   FAIL
+delta=+2 MHz Psi=180 deg:  sim A_ext_th = 14.9377 MHz, pred = 11.2462 MHz   FAIL
+delta=+2 MHz Psi=210 deg:  sim A_ext_th = 14.4569 MHz, pred = 10.7067 MHz   FAIL
+
+=== Eq (8a): sub-threshold coherent gain, delta=0, seed on amplified quadrature ===
+|A|/G = 0.00:  sim P = 1.5625e-26, pred |s|^2/(G-|A|)^2 = 1.5625e-26   PASS
+|A|/G = 0.30:  sim P = 2.0567e-26, pred |s|^2/(G-|A|)^2 = 3.1888e-26   FAIL
+|A|/G = 0.60:  sim P = 5.1880e-26, pred |s|^2/(G-|A|)^2 = 9.7656e-26   FAIL
+|A|/G = 0.85:  sim P = 3.4779e-25, pred |s|^2/(G-|A|)^2 = 6.9444e-25   FAIL
+
+SUMMARY: ok2=False ok6=False ok8=False

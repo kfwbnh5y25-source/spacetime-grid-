@@ -1,0 +1,52 @@
+{
+  "figure": "smoke_test",
+  "created_utc": "2026-11-17T16:43:22.048799+00:00",
+  "env": {
+    "python": "3.13.16",
+    "numpy": "2.3.3",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "modules": {
+      "h5py": "3.15.1",
+      "scipy": "1.16.2",
+      "matplotlib": "3.10.6"
+    }
+  },
+  "sources": [
+    {
+      "path": "/Users/davidzehner/Work/NMM_TOOL/spacetime-grid-/spin-waves/reports/mistral/A_old_params/short/other_dir/data_broad2.h5",
+      "keys_used_n": 0,
+      "keys_used": [],
+      "pass_agg": "mean"
+    },
+    {
+      "path": "/Users/davidzehner/Work/NMM_TOOL/spacetime-grid-/spin-waves/phase gating/detune_fine031126.h5",
+      "sha256": "9625bf65773275b4d37d89e628523ea2e0f5d90a34d2cacac340cacb1239a2c8",
+      "size_bytes": 48261731,
+      "mtime": "2026-11-17T15:31:02.506287",
+      "note": "fig4 source",
+      "script_content_sha256": "a748bc0bd251102ebfb7e166143b5c48e0a03687dd39b81a0445713d6e135182"
+    }
+  ],
+  "steps": [
+    {
+      "step": "smoke",
+      "time_utc": "2026-11-17T16:43:22.348049+00:00",
+      "params": {
+        "x": 1
+      },
+      "note": "",
+      "result": {
+        "n": 0
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "file": "smoke_test.png",
+      "sha256": "f93fb8d47b2c74c3cfc980c76c23ac1102cf17143065a688ee90fd1ad9e68747"
+    }
+  ],
+  "panels": [
+    "panel_a"
+  ]
+}

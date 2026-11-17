@@ -1,0 +1,7 @@
+  const M = NMM_DATA.M; // 29 modes > 1.6 GHz (npz 6..34)
+  const NX = NMM_DATA.nv, NY = NMM_DATA.nv, N = NX * NY;
+  const BDC_MT = NMM_DATA.BDC_mT; // 27.0 mT
+  const MU0_MS_MT = NMM_DATA.mu0Ms_mT; // 176.0 mT
+  const OMEGA_M = NMM_DATA.omegaM; // 3.099113e10 rad/s
+  const F_M = NMM_DATA.fM; // 4.932392 GHz
+  const FREQ_TO_RAD = 1 / F_M;

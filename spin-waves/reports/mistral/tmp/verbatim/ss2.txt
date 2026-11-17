@@ -1,0 +1,5 @@
+  function steadyState2Mode(i, j, fp1, hp1Norm, fp2, hp2Norm) {
+    return analyzeTwoMode(i, j, fp1, hp1Norm, fp2, hp2Norm, true).pred;
+  }
+
+  function closestArnoldMode(fPumpGHz) {

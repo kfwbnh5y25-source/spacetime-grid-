@@ -1,0 +1,328 @@
+{
+  "channel": "halfaverage",
+  "sigma_noise_A_nW": 0.3363849363287314,
+  "sigma_noise_B_nW": 0.596933143241488,
+  "sigma_a0_reference_B_nW": 0.4595792118504981,
+  "n_points_A": 6630,
+  "n_points_B": 4188,
+  "n_repeats_A": 67245,
+  "n_repeats_B": 76291,
+  "native_coverage_A": 0.0448606478067,
+  "mean_sumP_A_nW_around_fexc": 14.49249016025537,
+  "mean_sumP_B_nW_same_window": 69.57781621925638,
+  "trim_min_repeats": 5,
+  "trim_points_fraction_A": 0.7063348416289593,
+  "trim_points_fraction_B": 0.9682425978987583,
+  "trim_rel_change_median_B": 0.0,
+  "trim_rel_change_p95_B": 0.0,
+  "trim_rel_change_median_A": 0.0,
+  "trim_rel_change_p95_A": 0.0,
+  "despike_bins_fraction_B": 0.04165199652305669,
+  "despike_points_fraction_B": 1.0,
+  "despike_bins_fraction_A": 0.04254870318218734,
+  "despike_points_fraction_A": 1.0,
+  "despike_rel_change_median_B": 0.0020269294933622506,
+  "despike_rel_change_p95_B": 0.1719602244954198,
+  "despike_rel_change_median_A": 0.0027877006920888903,
+  "despike_rel_change_p95_A": 0.026601371095728358,
+  "calib_exponent_A": 1.9653002711536993,
+  "calib_exponent_B": 1.9940054562860932,
+  "calib_rms_lnres_A": 0.006374231993045142,
+  "calib_rms_lnres_B": 0.004338587493835614,
+  "calib_c_range_A_nW_per_mV2": [
+    0.16151752661943586,
+    0.22018838744666774
+  ],
+  "calib_c_range_B_nW_per_mV2": [
+    0.15524127495571657,
+    0.16447235048204323
+  ],
+  "calib_c_ripple_A_dB": 1.3457475544155548,
+  "calib_c_ripple_B_dB": 0.25085698160133996,
+  "calib_points_from_fit_A": 0,
+  "calib_points_from_fit_B": 58,
+  "calib_enbw_factor": 1.056,
+  "calib_bin_over_enbw": 0.47347878787878783,
+  "drive_power_range_A_dBm": [
+    -25.95856820982111,
+    -16.77333723853972
+  ],
+  "drive_power_range_B_dBm": [
+    -23.517501369032793,
+    -20.345700850374186
+  ],
+  "drive_dBm_at_250_300_350mV_4065": [
+    -23.473566743619937,
+    -21.89468837707498,
+    -20.55976573903218
+  ],
+  "valid_fraction_A_sig1.5x0.1": 0.9993242418838635,
+  "sigma_smooth_A_MHz": 1.5,
+  "sigma_smooth_A_dB": 0.1,
+  "valid_fraction_A": 0.9993242418838635,
+  "neff_A_median": 3.453570755889846,
+  "neff_A_frac_below2": 0.06593096971119981,
+  "sigma_smooth_B_MHz": 1.0,
+  "sigma_smooth_B_dB": 0.03,
+  "valid_fraction_B": 1.0,
+  "native_coverage_B": 0.9987925621830476,
+  "landscape_threshold_minima_f_MHz_dBm": [
+    [
+      3812.0,
+      -20.66690187547364
+    ],
+    [
+      3912.0,
+      -23.27690187547374
+    ],
+    [
+      3934.0,
+      -23.156901875473736
+    ],
+    [
+      4003.0,
+      -21.896901875473688
+    ],
+    [
+      4102.0,
+      -22.286901875473703
+    ],
+    [
+      4151.0,
+      -21.896901875473688
+    ],
+    [
+      4218.0,
+      -22.49690187547371
+    ]
+  ],
+  "landscape_threshold_at_4065_dBm_overview": -21.98690187547369,
+  "slice_amp_mV": 335.0,
+  "slice_band_mV": 2.0,
+  "slice_n_band": 110,
+  "slice_n_exact": 21,
+  "slice_n_above_3sigma": 105,
+  "slice_peak_f_MHz": 4117.0,
+  "slice_peak_smoothed_nW": 231.1642949054941,
+  "slice_drive_dBm_median": -20.77378160090837,
+  "slice_median_spacing_MHz": 4.0,
+  "slice_jumps": [
+    {
+      "df_MHz": 6.0,
+      "dP_nW": 47.690907262639556,
+      "f_lo": 4080.0,
+      "f_hi": 4086.0,
+      "P_lo": 4.232681184383052,
+      "P_hi": 51.92358844702261
+    },
+    {
+      "df_MHz": 4.0,
+      "dP_nW": 142.23147635981582,
+      "f_lo": 4093.0,
+      "f_hi": 4097.0,
+      "P_lo": 60.065534336198326,
+      "P_hi": 202.29701069601413
+    }
+  ],
+  "slice_plateau_between_jumps_nW": 54.402777236312474,
+  "sem_inflation_factor": 4.512404317838893,
+  "sem_inflation_n_pairs": 573,
+  "n_zoom_points_below_A_MIN_excluded": 44,
+  "n_cut_points": 100,
+  "n_interpolated_at_fexc": 3,
+  "n_missing_at_fexc": 6,
+  "a_threshold_3sigma_mV": 260.82628048874943,
+  "a_threshold_3sigma_dBm": -23.10644362955422,
+  "n_loo": 100,
+  "loo_median_rel_err": 0.030662275000964967,
+  "loo_p90_rel_err": 0.10637933739145988,
+  "loo_max_rel_err": 0.24749501708374133,
+  "loo_n_strong": 77,
+  "loo_rms_abs_err_all_nW": 2.442980443686517,
+  "loo_rms_abs_err_over_sigma": 4.092552861817247,
+  "onset_hinge_mV": 258.0,
+  "k1_mV": 317.5,
+  "k1_ci68_mV": [
+    316.0,
+    319.0
+  ],
+  "k1_dBm": -21.403714883930167,
+  "k1_slope_below": 0.7983986808641488,
+  "k1_slope_above": 2.9187282847349727,
+  "k1_slope_below_ci68": [
+    0.7725158313324495,
+    0.8208267922388603
+  ],
+  "k1_slope_above_ci68": [
+    2.7341812609410887,
+    3.196572678144611
+  ],
+  "k1_F": 128.27992691968845,
+  "k1_slope_ratio": 3.6557278395999853,
+  "k1_cv_rmse_285_335": {
+    "poly1": 7.757722517881796,
+    "poly2": 3.982252239552322,
+    "poly3": 3.7523489819505773,
+    "poly4": 3.7043278392767607,
+    "hinge": 3.2111075749489286
+  },
+  "k1_cv_rmse_295_340": {
+    "poly1": 7.748807943951034,
+    "poly2": 3.972149921024702,
+    "poly3": 4.068105595433797,
+    "poly4": 4.032748191155386,
+    "hinge": 3.4812953614843445
+  },
+  "k1_cv_rmse_280_350": {
+    "poly1": 15.456727611062515,
+    "poly2": 5.086341316986544,
+    "poly3": 4.064309162156499,
+    "poly4": 4.119869795628727,
+    "hinge": 4.898558111238384
+  },
+  "k1_wild_p_cubic": 0.048,
+  "k1_wild_p_quartic": 0.058,
+  "k1_wild_p_quintic": 0.371,
+  "k2_mV": 338.0,
+  "k2_ci68_mV": [
+    337.0,
+    339.0
+  ],
+  "k2_dBm": -20.861884366540924,
+  "k2_slope_below": 2.8428509379566727,
+  "k2_slope_above": 5.05632978411673,
+  "k2_F": 13.90561562514613,
+  "k2_slope_ratio": 1.7786123488243872,
+  "k1_raw_mV": 317.5,
+  "k1_raw_F": 117.15310885933728,
+  "k1_raw_slopes": [
+    0.7890744597228848,
+    2.952936701713139
+  ],
+  "k1_trim_mV": 317.5,
+  "k1_trim_F": 117.15310885933728,
+  "k1_trim_slopes": [
+    0.7890744597228848,
+    2.952936701713139
+  ],
+  "ln_slope_peak_a_mV": 323.0,
+  "ln_slope_peak": 0.0662490211982751,
+  "ln_slope_peak_se": 0.010554323369973008,
+  "ln_slope_baseline_295_312": 0.033621560437939464,
+  "ln_slope_baseline_sd": 0.005541779177383093,
+  "ln_slope_peak_z": 3.091383465960554,
+  "ln_k1_mV": 318.0,
+  "ln_k1_F": 9.146564732038563,
+  "ln_wild_p_cubic": 0.335,
+  "ln_wild_p_quartic": 0.275,
+  "ln_cv_rmse_285_335": {
+    "poly1": 0.08578907008331381,
+    "poly2": 0.08083921387729923,
+    "poly3": 0.08098634547060139,
+    "poly4": 0.08056100933225709,
+    "hinge": 0.07605947214026516
+  },
+  "ln_slope_mean_290_345_per_mV": 0.03930398477187915,
+  "ln_slope_min_max_290_345": [
+    0.02265244428979235,
+    0.0662490211982751
+  ],
+  "ln_slope_below_k1_mean": 0.03259916650962511,
+  "ln_slope_above_k1_mean": 0.045926605459381716,
+  "control_full_dev_from_a2_rms_pct": 0.36407859487972116,
+  "control_full_dev_from_a2_maxabs_pct": 1.2213403806156764,
+  "control_full_dev_near_k1_rms_pct": 0.25059577822813656,
+  "control_full_exponent_4065": 1.9919404251850683,
+  "control_full_rms_lnres_4065": 0.0035504090925625818,
+  "control_full_local_exponent_around_k1": [
+    1.8354175596354487,
+    2.0264911492489737
+  ],
+  "control_full_hinge_F_lnP": 30.64545060291547,
+  "control_full_hinge_ak_lnP": 308.5,
+  "control_full_exp_min_290_345": 1.8354175596354487,
+  "control_full_exp_max_290_345": 2.179861653962537,
+  "kink_line_f_range_MHz": [
+    4059.0,
+    4074.0
+  ],
+  "kink_line_n_rows": 12,
+  "kink_line_n_rows_cv_supported": 7,
+  "kink_line_n_rows_cv_supported_ln": 2,
+  "kink_line_ak_range_mV": [
+    297.5,
+    326.5
+  ],
+  "kink_line_slope_mV_per_MHz": 0.9794547609641504,
+  "kink_line_rms_resid_mV": 8.967894760837659,
+  "fwhm510_below_k1_median_kHz": 533.0031503585833,
+  "fwhm510_above_k1_median_kHz": 514.7745666076611,
+  "centroid510_below_k1_median_kHz": -4.582485530817408,
+  "centroid510_above_k1_median_kHz": -6.285937818432693,
+  "spectra_amplitudes_mV": [
+    300.0,
+    310.0,
+    325.0,
+    335.0,
+    348.0
+  ],
+  "rbw20_n_points_below": 8,
+  "rbw20_n_points_above": 8,
+  "rbw20_fwhm_below_kHz": 36.43540822839189,
+  "rbw20_fwhm_above_kHz": 37.27707888566699,
+  "rbw20_centre_below_kHz": -2.2131368824954443,
+  "rbw20_centre_above_kHz": -2.3920782897383113,
+  "validation": {
+    "zoom cut a=276: pipeline vs independent re-reduction of the raw HDF5 (nW)": [
+      8.937144201763905,
+      8.937144168423096
+    ],
+    "zoom cut a=301: pipeline vs independent re-reduction of the raw HDF5 (nW)": [
+      23.525496739555674,
+      23.525496734085515
+    ],
+    "zoom cut a=313: pipeline vs independent re-reduction of the raw HDF5 (nW)": [
+      32.45325345745554,
+      32.45325356399715
+    ],
+    "zoom cut a=333: pipeline vs independent re-reduction of the raw HDF5 (nW)": [
+      81.2368437680725,
+      81.23684399554175
+    ],
+    "broad point a=205,f=3955: pipeline vs independent re-reduction (nW)": [
+      -0.44183339208830885,
+      -0.44183338913465303
+    ],
+    "broad point a=253,f=3821: pipeline vs independent re-reduction (nW)": [
+      -1.1088664424166104,
+      -1.1088664567301028
+    ],
+    "broad point a=444,f=4017: pipeline vs independent re-reduction (nW)": [
+      11.6293483780755,
+      11.629348354623579
+    ],
+    "full channel a=300,f=4079: cache vs raw HDF5 (nW)": [
+      13558.05264701133,
+      13558.052584767736
+    ],
+    "full channel a=311,f=4056: cache vs raw HDF5 (nW)": [
+      14931.453525067462,
+      14931.453392416159
+    ],
+    "panel f spectrum a=300 mV equals independent re-reduction of the raw HDF5": true,
+    "panel f spectrum a=348 mV equals independent re-reduction of the raw HDF5": true,
+    "SA axis (halfaverage): centre minus f/2 (kHz)": 0.12800000607967377,
+    "SA axis (halfaverage): span (MHz)": 5.000063896179199,
+    "SA axis (full): centre minus f (kHz), max over points": 0.000575424637645483,
+    "map_A: cell values equal the raw points falling in the cell (rows=P_dr, cols=f), fraction": 1.0,
+    "map_B: cell values equal the raw points falling in the cell (rows=P_dr, cols=f), fraction": 1.0,
+    "mean_A_raw_vs_smoothed_nW": [
+      31.425131531163494,
+      24.98097038580852
+    ],
+    "synthetic_hinge_test_passed": true,
+    "interp_no_extrapolation_ok": true,
+    "panel_f_spectrum_markers_on_acquired_points": true,
+    "drive power (dBm) is monotonic in a at f_exc": true
+  }
+}

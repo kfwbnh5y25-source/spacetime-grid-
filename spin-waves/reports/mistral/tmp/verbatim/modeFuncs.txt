@@ -1,0 +1,16 @@
+  function modeFreqGHz(mIdx = 0) { return fGhzArr[mIdx]; }
+  function modeGammaGHz(mIdx = 0) { return Math.max(1e-7, damping * Kp[(mIdx * M + mIdx) * 2] * F_M); }
+  function modeGamma(mIdx = 0) { return modeGammaGHz(mIdx) * FREQ_TO_RAD; }
+  function vParamGHz_mT(mIdx = 0) {
+    return 0.5 * Math.hypot(Q2x[(mIdx * M + mIdx) * 2], Q2x[(mIdx * M + mIdx) * 2 + 1]) * F_M / MU0_MS_MT;
+  }
+  function parametricThresholdMT(mIdx = 0) {
+    return modeGammaGHz(mIdx) / Math.max(1e-9, vParamGHz_mT(mIdx));
+  }
+  function parametricThreshold(mIdx = 0) {
+    return parametricThresholdMT(mIdx) / MU0_MS_MT;
+  }
+  function mutualNfsCoeffGHz(mIdx, jIdx) { return N4A[mIdx * M + jIdx] * F_M; }
+  function mutualNfsCoeff(mIdx, jIdx) { return mutualNfsCoeffGHz(mIdx, jIdx) * FREQ_TO_RAD; }
+  function selfNfsCoeff(mIdx) { return mutualNfsCoeff(mIdx, mIdx); }
+  function modeNfsShiftGHz(mIdx = 0, ignoreToggle = false) {

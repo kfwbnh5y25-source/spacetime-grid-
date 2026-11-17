@@ -1,0 +1,298 @@
+{
+  "figure": "fig1_overview",
+  "created_utc": "2026-11-17T17:43:01.544255+00:00",
+  "env": {
+    "python": "3.13.16",
+    "numpy": "2.3.3",
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "modules": {
+      "h5py": "3.15.1",
+      "scipy": "1.16.2",
+      "matplotlib": "3.10.6"
+    }
+  },
+  "sources": [
+    {
+      "path": "/Users/davidzehner/Work/NMM_TOOL/spacetime-grid-/spin-waves/Figure!/Figure1_arnold_plot/data.h5",
+      "sha256": "9e875b8c58b30f3fd30fa49d3fe80751034fbab9fd7d1f9aeae110d4e974c285",
+      "size_bytes": 2712198714,
+      "mtime": "2026-11-12T17:28:42",
+      "note": "single-tone parameter sweep, read-only source",
+      "script_content_sha256": "78b60aa727510ae9473060ec55d42c42b0763dd2826e560b727d54f982fbaf6c"
+    },
+    {
+      "path": "/Users/davidzehner/Work/NMM_TOOL/spacetime-grid-/spin-waves/Figure!/arnold_tongue_zoom/data2.h5",
+      "sha256": "00179b0ee7e9274e132a5f293c748ffbbe0e1abc576d532e495332ed216415f4",
+      "size_bytes": 953552764,
+      "mtime": "2026-11-16T02:19:56",
+      "note": "single-tone parameter sweep, read-only source",
+      "script_content_sha256": "164e9fb88211ed42569caa6ee9560159f2158ed7e7df28e60645c2e456ac7749"
+    }
+  ],
+  "steps": [
+    {
+      "step": "revision_1_pcolor",
+      "time_utc": "2026-11-17T17:43:01.554191+00:00",
+      "params": {
+        "boss_feedback": "panel (c) was to become dual-tone pcolor maps from detune_fine031126.h5"
+      },
+      "note": "SUPERSEDED by revision 2: dual-tone content withdrawn to Figs 2-5",
+      "result": {}
+    },
+    {
+      "step": "revision_2_single_tone_port",
+      "time_utc": "2026-11-17T17:43:01.554209+00:00",
+      "params": {
+        "boss_directive": "Fig 1 = port of figure1_single_tone.py (single tone only), provenance framework, style conventions of the reference, plus pulse-timing panel (h) and reserved sample-characterisation slot (i)"
+      },
+      "note": "current revision",
+      "result": {}
+    },
+    {
+      "step": "extract_cache_hit",
+      "time_utc": "2026-11-17T17:43:05.144350+00:00",
+      "params": {
+        "tag": "broad",
+        "cache": [
+          "broad.npz",
+          "broadT.npz"
+        ]
+      },
+      "note": "",
+      "result": {
+        "n_points": 6630
+      }
+    },
+    {
+      "step": "extract_cache_hit",
+      "time_utc": "2026-11-17T17:43:05.267600+00:00",
+      "params": {
+        "tag": "zoom",
+        "cache": [
+          "zoom.npz",
+          "zoomT.npz"
+        ]
+      },
+      "note": "",
+      "result": {
+        "n_points": 4188
+      }
+    },
+    {
+      "step": "extract_cache_hit",
+      "time_utc": "2026-11-17T17:43:21.668345+00:00",
+      "params": {
+        "tag": "broad_full",
+        "cache": [
+          "broad_full.npz",
+          "broad_fullT.npz"
+        ]
+      },
+      "note": "",
+      "result": {
+        "n_points": 8968
+      }
+    },
+    {
+      "step": "extract_cache_hit",
+      "time_utc": "2026-11-17T17:43:21.811592+00:00",
+      "params": {
+        "tag": "zoom_full",
+        "cache": [
+          "zoom_full.npz",
+          "zoom_fullT.npz"
+        ]
+      },
+      "note": "",
+      "result": {
+        "n_points": 4130
+      }
+    },
+    {
+      "step": "analysis_despike",
+      "time_utc": "2026-11-17T17:43:21.811644+00:00",
+      "params": {
+        "protect_kHz_overview": 100.0,
+        "win": 15,
+        "nsig": 5.0,
+        "dil": 3
+      },
+      "note": "Hampel despike of the trimmed mean spectra; narrow RBW-20 kHz line protected in the overview",
+      "result": {
+        "broad": {
+          "bins_replaced_fraction": 0.04254870318218734,
+          "points_with_replaced_bins": 1.0
+        },
+        "zoom": {
+          "bins_replaced_fraction": 0.04165199652305669,
+          "points_with_replaced_bins": 1.0
+        }
+      }
+    },
+    {
+      "step": "analysis_noise",
+      "time_utc": "2026-11-17T17:43:21.818950+00:00",
+      "params": {
+        "estimator": "median(|P| | P<0)/0.6745 of bin-summed power"
+      },
+      "note": "",
+      "result": {
+        "sigma_A_nW": 0.3363849363287314,
+        "sigma_B_nW": 0.596933143241488,
+        "thresholds_3sigma_nW": [
+          1.0091548089861941,
+          1.7907994297244643
+        ]
+      }
+    },
+    {
+      "step": "analysis_drive_calibration",
+      "time_utc": "2026-11-17T17:43:22.128785+00:00",
+      "params": {
+        "source": "channel `full`, ln SigmaP = ln c(f) + e ln a",
+        "ENBW_factor": 1.056,
+        "RBW_full_Hz": 20000.0
+      },
+      "note": "every f/2 point gets the measured `full` drive power at the same (a, f); fit c(f) a^e for the rest",
+      "result": {
+        "exponent_A": 1.9653002711536993,
+        "exponent_B": 1.9940054562860932,
+        "points_from_fit_A": 0,
+        "points_from_fit_B": 58
+      }
+    },
+    {
+      "step": "analysis_smooth_maps",
+      "time_utc": "2026-11-17T17:43:22.138355+00:00",
+      "params": {
+        "kernel": "normalised anisotropic Gaussian in (f, P_dr), linear power",
+        "sigma_overview": [
+          1.5,
+          0.1
+        ],
+        "sigma_zoom": [
+          1.0,
+          0.03
+        ],
+        "y_axis": "calibrated drive power P_dr (dBm)"
+      },
+      "note": "cells > 2.5 sigma away from every point stay NaN (white via cmap.set_bad)",
+      "result": {
+        "grid_A": [
+          217,
+          491
+        ],
+        "grid_B": [
+          268,
+          41
+        ],
+        "valid_fraction_A": 0.9993242418838635,
+        "valid_fraction_B": 1.0
+      }
+    },
+    {
+      "step": "save_array",
+      "name": "fig1_overview__map_overview_ZA_linear_mW.npy",
+      "shape": [
+        217,
+        491
+      ],
+      "sha256": "04f36650f9acb0f81b618049372df4584134dddc2502e53d97585ba75904c900"
+    },
+    {
+      "step": "save_array",
+      "name": "fig1_overview__map_zoom_ZB_linear_mW.npy",
+      "shape": [
+        268,
+        41
+      ],
+      "sha256": "6eb8346e87c3d89ead35b64379d5730e20aedd8b7b68a0eb5bfd41449a3be547"
+    },
+    {
+      "step": "save_array",
+      "name": "fig1_overview__cut_fexc_a_mV.npy",
+      "shape": [
+        100
+      ],
+      "sha256": "4aed107379d39c060aaa937ae5cf3b75beb7eb4b37bd99c58caed58c3b507e17"
+    },
+    {
+      "step": "save_array",
+      "name": "fig1_overview__cut_fexc_SigmaP_nW.npy",
+      "shape": [
+        100
+      ],
+      "sha256": "f114be4eb44eb1ba0e8c6118126add4c59dc460bbd79c438461cec52c611cd44"
+    },
+    {
+      "step": "analysis_hinge",
+      "time_utc": "2026-11-17T17:43:23.176797+00:00",
+      "params": {
+        "windows_mV": [
+          [
+            285.0,
+            335.0
+          ],
+          [
+            322.0,
+            350.0
+          ]
+        ],
+        "model": "two straight segments, hinge scanned on 0.5 mV grid"
+      },
+      "note": "broken-stick fits, bootstrap CIs, LOO cross-validation and wild-bootstrap p-values follow",
+      "result": {}
+    },
+    {
+      "step": "analysis_complete",
+      "time_utc": "2026-11-17T17:43:35.358274+00:00",
+      "params": {
+        "note": "all reductions done; figure next"
+      },
+      "note": "",
+      "result": {}
+    },
+    {
+      "step": "validation",
+      "time_utc": "2026-11-17T17:43:37.781309+00:00",
+      "params": {
+        "n_checks": 21
+      },
+      "note": "independent re-reads of raw HDF5 groups; all asserts passed",
+      "result": {
+        "n_checks": 21,
+        "n_fail": 0
+      }
+    },
+    {
+      "step": "numbers_json",
+      "time_utc": "2026-11-17T17:43:37.781887+00:00",
+      "params": {
+        "path": "/Users/davidzehner/Work/NMM_TOOL/spacetime-grid-/spin-waves/reports/mistral/figures/manifests/fig1_overview_numbers.json"
+      },
+      "note": "ported numbers dump of the reference script",
+      "result": {}
+    }
+  ],
+  "outputs": [
+    {
+      "file": "fig1_overview.png",
+      "sha256": "a606d2cf1a97c6132a666a6c40179a963c7ba7d5098bc7a5307fc0989c2265a8"
+    },
+    {
+      "file": "fig1_overview.pdf",
+      "sha256": "d03c718ccf1a88043f0e055abfd5a7315f7f832478491232b381bdfb83d19747"
+    }
+  ],
+  "panels": [
+    "a overview map + zoom inset (single tone)",
+    "b excitation/measurement schematic",
+    "c frequency slice",
+    "d cut at f_exc",
+    "e local slope",
+    "f f/2 spectra",
+    "g drive-chain control",
+    "h two-tone pulse timing (Figs 3-4)",
+    "i reserved: sample characterisation"
+  ]
+}

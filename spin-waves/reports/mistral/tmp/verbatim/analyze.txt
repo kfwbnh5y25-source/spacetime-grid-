@@ -1,0 +1,82 @@
+  function analyzeTwoMode(m1, m2, fp1, hp1Norm, fp2, hp2Norm, pwm = true) {
+    const hp1 = hp1Norm * MU0_MS_MT, hp2 = hp2Norm * MU0_MS_MT;
+    const n11 = mutualNfsCoeffGHz(m1, m1), n12 = mutualNfsCoeffGHz(m1, m2);
+    const n21 = mutualNfsCoeffGHz(m2, m1), n22 = mutualNfsCoeffGHz(m2, m2);
+    const g1 = modeGammaGHz(m1), g2 = modeGammaGHz(m2);
+    const v1 = vParamGHz_mT(m1), v2 = vParamGHz_mT(m2);
+    const above1 = v1 * hp1 > g1, above2 = v2 * hp2 > g2;
+    const r1 = above1 ? Math.sqrt((v1 * hp1) ** 2 - g1 * g1) : 0;
+    const r2 = above2 ? Math.sqrt((v2 * hp2) ** 2 - g2 * g2) : 0;
+    const d1 = 0.5 * (fp1 - 2 * fGhzArr[m1]), d2 = 0.5 * (fp2 - 2 * fGhzArr[m2]);
+    const s1p = n11 >= 0 ? 1 : -1, s2p = n22 >= 0 ? 1 : -1;
+
+    const u1Exists = above1 && (s1p * d1 > -r1) && (!pwm || Math.abs(d1) < r1);
+    const u1Sq = (above1 && (s1p * d1 > -r1)) ? Math.max(0, (d1 + s1p * r1) / n11) : 0;
+    const u1Stab = u1Exists && u1Sq > 0 && (!above2 || Math.abs(d2 - n21 * u1Sq) > r2);
+
+    const u2Exists = above2 && (s2p * d2 > -r2) && (!pwm || Math.abs(d2) < r2);
+    const u2Sq = (above2 && (s2p * d2 > -r2)) ? Math.max(0, (d2 + s2p * r2) / n22) : 0;
+    const u2Stab = u2Exists && u2Sq > 0 && (!above1 || Math.abs(d1 - n12 * u2Sq) > r1);
+
+    const det = n11 * n22 - n12 * n21;
+    const S_det = s1p * s2p * det;
+    const branches = {};
+    if (above1 && above2 && Math.abs(det) > 1e-12) {
+      for (const [lbl, sh, sn] of [['c++', 1, 1], ['c+-', 1, -1], ['c-+', -1, 1], ['c--', -1, -1]]) {
+        const b1 = d1 + sh * s1p * r1, b2 = d2 + sn * s2p * r2;
+        const a1sq = (b1 * n22 - b2 * n12) / det;
+        const a2sq = (n11 * b2 - n21 * b1) / det;
+        if (a1sq > 0 && a2sq > 0) {
+          const st = checkCoupledStab(m1, m2, a1sq, a2sq, d1, d2, g1, g2);
+          branches[lbl] = { a1: Math.sqrt(a1sq), a2: Math.sqrt(a2sq), stable: st.stable, hopf: st.hopf };
+        }
+      }
+    }
+
+    // Select predicted outcome under configured Tone 1 -> Tone 2 protocol (or simultaneous)
+    const isDelayed = tone2WaitSS || tone2DelayNs > 0;
+    let pred = [0, 0], regime = 'z';
+    if (isDelayed) {
+      if (Math.abs(d1) < r1 && above1 && u1Sq > 0) {
+        const a1First = Math.sqrt(u1Sq);
+        if (!above2 || Math.abs(d2 - n21 * u1Sq) >= r2) {
+          pred = [a1First, 0]; regime = u1Stab ? 'uh' : 'uh*';
+        } else if (S_det > 0 && branches['c++'] && branches['c++'].stable) {
+          pred = [branches['c++'].a1, branches['c++'].a2]; regime = 'c++';
+        } else if (S_det < 0 && branches['c+-'] && branches['c+-'].stable) {
+          pred = [branches['c+-'].a1, branches['c+-'].a2]; regime = 'c+-';
+        } else if (u2Stab && !u1Stab) {
+          pred = [0, Math.sqrt(u2Sq)]; regime = 'un';
+        } else {
+          pred = [a1First, 0]; regime = 'Q/osc';
+        }
+      } else if (Math.abs(d2) < r2 && above2 && u2Sq > 0) {
+        pred = [0, Math.sqrt(u2Sq)]; regime = 'un';
+      }
+    } else {
+      if (branches['c++'] && branches['c++'].stable) {
+        pred = [branches['c++'].a1, branches['c++'].a2]; regime = 'c++';
+      } else if (S_det < 0 && branches['c+-'] && branches['c+-'].stable) {
+        pred = [branches['c+-'].a1, branches['c+-'].a2]; regime = 'c+-';
+      } else if (S_det < 0 && branches['c-+'] && branches['c-+'].stable) {
+        pred = [branches['c-+'].a1, branches['c-+'].a2]; regime = 'c-+';
+      } else if (u1Stab && !u2Stab) {
+        pred = [Math.sqrt(u1Sq), 0]; regime = 'uh';
+      } else if (u2Stab && !u1Stab) {
+        pred = [0, Math.sqrt(u2Sq)]; regime = 'un';
+      } else if (u1Stab && u2Stab) {
+        const z1 = Math.sqrt(Math.max(0, (v1 * hp1) ** 2 - d1 * d1)) - g1;
+        const z2 = Math.sqrt(Math.max(0, (v2 * hp2) ** 2 - d2 * d2)) - g2;
+        if (z2 > z1) { pred = [0, Math.sqrt(u2Sq)]; regime = 'uh|un(n)'; }
+        else { pred = [Math.sqrt(u1Sq), 0]; regime = 'uh|un(h)'; }
+      }
+    }
+    return {
+      pred, regime, S_det, scenario: S_det >= 0 ? 1 : 2,
+      u1: u1Sq > 0 ? Math.sqrt(u1Sq) : 0, u1Stab,
+      u2: u2Sq > 0 ? Math.sqrt(u2Sq) : 0, u2Stab,
+      branches
+    };
+  }
+
+  function steadyState2Mode(i, j, fp1, hp1Norm, fp2, hp2Norm) {

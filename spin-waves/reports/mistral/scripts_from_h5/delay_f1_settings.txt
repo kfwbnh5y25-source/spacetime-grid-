@@ -1,0 +1,1 @@
+{"Name": "Agilent Technologies, E4440A, MY42510118, A.11.21", "center_frequency": 2071500000.0, "frequency_span": 30000000.0, "points": 1001, "bandwidth": 1000000.0, "sweep_type": "SWE", "avg_count": 1, "avg_state": true, "sweep_time": 0.5, "attenuation": 0.0, "reference_level": -53.8, "scale_division": 0.5}

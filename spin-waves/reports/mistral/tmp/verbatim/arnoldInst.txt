@@ -1,0 +1,25 @@
+  function arnoldThresholdMT(mIdx, fPumpGHz, fShiftGHz = 0) {
+    const hTh = parametricThresholdMT(mIdx);
+    const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fShiftGHz));
+    const gamma = modeGammaGHz(mIdx);
+    return hTh * Math.hypot(1, delta / gamma);
+  }
+  function instantaneousArnoldThresholdMT(mIdx, fPumpGHz, pumpPhaseRad = null, pumpRefFreqGHz = null) {
+    const fMut = modeMutualNfsShiftGHz(mIdx); // strictly 0 if 4A N_hk is unchecked!
+    const vm = Math.max(1e-9, vParamGHz_mT(mIdx));
+    const gamma = modeGammaGHz(mIdx);
+    const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fMut));
+    const reqRate = Math.hypot(gamma, delta);
+    const cp = crossPump4BGHz(mIdx, fPumpGHz, pumpPhaseRad, pumpRefFreqGHz);
+    if (typeof pumpPhaseRad === 'number' && Number.isFinite(pumpPhaseRad)) {
+      const wVec = Math.hypot(cp.resRe, cp.resIm);
+      if (!terms.t2A) return cp.resRateGHz >= reqRate ? 0 : Infinity;
+      if (wVec >= reqRate) return 0;
+      const radSq = reqRate * reqRate - cp.wPerpGHz * cp.wPerpGHz;
+      if (radSq <= 0) return reqRate / vm;
+      return Math.max(0, Math.sqrt(radSq) - cp.wParGHz) / vm;
+    }
+    if (!terms.t2A) return cp.resRateGHz >= reqRate ? 0 : Infinity;
+    return Math.max(0, reqRate - cp.resRateGHz) / vm;
+  }
+  function arnoldThreshold(mIdx, fPumpGHz, fShiftGHz = 0) {

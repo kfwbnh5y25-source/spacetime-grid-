@@ -1,0 +1,17 @@
+  function channelStateAt(ch, tau) {
+    const isT2 = ch === 2;
+    const r = isT2 ? ramp2 : ramp1;
+    const ancTau = isT2 ? carrierAnchorTau2 : carrierAnchorTau1;
+    const ancPhi = isT2 ? carrierAnchorPhi2 : carrierAnchorPhi1;
+    const fDef = isT2 ? driveFreq2 : driveFreq;
+    const hDef = isT2 ? driveAmp2 : driveAmp;
+    const pDef = isT2 ? drivePhase2 : drivePhase1;
+    const f = r.active ? evalRampVal(r.f0, r.f1, r.t0, r.dur, tau) : fDef;
+    const h = r.active ? evalRampVal(r.h0, r.h1, r.t0, r.dur, tau) : hDef;
+    const pOff = r.active ? evalRampVal(r.p0, r.p1, r.t0, r.dur, tau) : pDef;
+    const phi = (!r.active && ancTau === 0 && ancPhi === 0)
+      ? (fDef * FREQ_TO_RAD) * tau
+      : ancPhi + FREQ_TO_RAD * integrateRampFreq(ancTau, tau, r, fDef);
+    return { freq: f, amp: h, phaseOff: pOff, phi, theta: phi + pOff };
+  }
+  function syncCarrierPhaseToSimTime(tau = simTime) {

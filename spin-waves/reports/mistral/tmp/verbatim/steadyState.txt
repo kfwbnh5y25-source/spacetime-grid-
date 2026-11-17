@@ -1,0 +1,16 @@
+  function steadyStateAmp(mIdx, fPumpGHz, hPumpNorm, fMutGHz = 0, pwm = true) {
+    const hpMT = hPumpNorm * MU0_MS_MT;
+    const gam = modeGammaGHz(mIdx), vm = vParamGHz_mT(mIdx);
+    if (hpMT * vm <= gam) return 0;
+    const rad = Math.sqrt((vm * hpMT) ** 2 - gam * gam);
+    const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fMutGHz));
+    if (pwm && Math.abs(delta) >= rad) return 0;
+    const nkk = mutualNfsCoeffGHz(mIdx, mIdx);
+    if (Math.abs(nkk) < 1e-8) return 0;
+    const sgn = nkk >= 0 ? 1 : -1;
+    if (sgn * delta < -rad) return 0;
+    const a2 = (delta + sgn * rad) / nkk;
+    return a2 > 0 ? Math.sqrt(a2) : 0;
+  }
+
+  function routhHurwitzStable(c1, c2, c3, c4) {

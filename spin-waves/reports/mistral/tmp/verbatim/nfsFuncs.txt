@@ -1,0 +1,20 @@
+  function modeNfsShiftGHz(mIdx = 0, ignoreToggle = false) {
+    if (!ignoreToggle && !terms.t4A) return 0;
+    let df = 0;
+    for (let j = 0; j < M; j++) {
+      const sq = aRe[j] * aRe[j] + aIm[j] * aIm[j];
+      if (sq > 0) df += mutualNfsCoeffGHz(mIdx, j) * sq;
+    }
+    return df;
+  }
+  function modeMutualNfsShiftGHz(mIdx = 0, ignoreToggle = false) {
+    if (!ignoreToggle && !terms.t4A) return 0;
+    let df = 0;
+    for (let j = 0; j < M; j++) {
+      if (j === mIdx) continue;
+      const sq = aRe[j] * aRe[j] + aIm[j] * aIm[j];
+      if (sq > 0) df += mutualNfsCoeffGHz(mIdx, j) * sq;
+    }
+    return df;
+  }
+  // Exact 4-magnon parametric cross-pumping rate W_4B = sum_{k != m} P_{mk} a_k^2 from Eq. (9) 4B term

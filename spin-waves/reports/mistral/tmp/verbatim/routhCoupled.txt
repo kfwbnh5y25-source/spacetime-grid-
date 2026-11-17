@@ -1,0 +1,27 @@
+    const delta = 0.5 * (fPumpGHz - 2 * (fGhzArr[mIdx] + fMutGHz));
+    if (pwm && Math.abs(delta) >= rad) return 0;
+    const nkk = mutualNfsCoeffGHz(mIdx, mIdx);
+    if (Math.abs(nkk) < 1e-8) return 0;
+    const sgn = nkk >= 0 ? 1 : -1;
+    if (sgn * delta < -rad) return 0;
+    const a2 = (delta + sgn * rad) / nkk;
+    return a2 > 0 ? Math.sqrt(a2) : 0;
+  }
+
+  function routhHurwitzStable(c1, c2, c3, c4) {
+    if (!(c1 > 0 && c2 > 0 && c3 > 0 && c4 > 0)) return false;
+    return (c1 * c2 - c3) > 0 && ((c1 * c2 - c3) * c3 - c1 * c1 * c4) > 0;
+  }
+  function checkCoupledStab(m1, m2, a1sq, a2sq, d1, d2, g1, g2) {
+    const n11 = mutualNfsCoeffGHz(m1, m1), n12 = mutualNfsCoeffGHz(m1, m2);
+    const n21 = mutualNfsCoeffGHz(m2, m1), n22 = mutualNfsCoeffGHz(m2, m2);
+    const s1 = n11 * a1sq + n12 * a2sq - d1;
+    const s2 = n21 * a1sq + n22 * a2sq - d2;
+    const A11 = 4 * s1 * n11 * a1sq, A22 = 4 * s2 * n22 * a2sq;
+    const c1 = 2 * (g1 + g2);
+    const c2 = 4 * g1 * g2 + A11 + A22;
+    const c3 = 2 * g2 * A11 + 2 * g1 * A22;
+    const c4 = 16 * s1 * s2 * (n11 * n22 - n12 * n21) * a1sq * a2sq;
+    return { stable: routhHurwitzStable(c1, c2, c3, c4), hopf: c4 > 0 && !routhHurwitzStable(c1, c2, c3, c4) };
+  }
+

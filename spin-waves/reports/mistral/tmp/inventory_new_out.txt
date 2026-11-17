@@ -1,0 +1,123 @@
+========== delay_f1_JULY_varyf1a1.h5 ==========
+root attrs: ['script_content', 'settings']
+---- embedded script (first 2600 chars) ----
+import time
+
+import numpy as np
+from tqdm import tqdm
+
+from kNET import kNETInterface
+
+np.set_printoptions(suppress=True)
+from scipy.signal.windows import tukey
+from kNET import HDF5Buffer
+
+sa_mask = (2.110e9, 2.170e9)
+
+knet = kNETInterface()
+knet.switch_to_sample()
+awg = knet.awg
+awg.output_voltage = 1.0
+
+awg.clear_data()
+sa = knet.sa
+sa.write(":FORM REAL,32")
+awg.sampling_freq = 64e9
+awg.abort_generation()
+awg.clear_data()
+sa.points = 1001
+sa.averageNumber = 1
+sa.sweepTime = 1 / 4
+sa.spanFrequency = 15e6
+sa.resolutionBandwidthAutoState = True
+sa.resolutionBandwidth = 1e6
+sa.referenceLevel = -53.8
+sa.scaleDiv = 0.5
+
+_cached_bl, _cached_bl_time = None, None
+_BASELINE_MAX_AGE = 90
+
+
+def get_baseline():
+    global _cached_bl, _cached_bl_time
+
+    now = time.time()
+
+    # If baseline older than 1 hour â†’ remeasure
+    if _cached_bl is None or (now - _cached_bl_time) > _BASELINE_MAX_AGE:
+        bl = np.power(10.0, sa.trigAndWait() / 10)
+        sa_freq = sa.get_frequencies()
+        bl[(sa_freq > sa_mask[0]) & (sa_freq < sa_mask[1])] = 0
+        _cached_bl = bl
+        _cached_bl_time = now
+        print(f"[Baseline] Recalculated at {time.ctime(now)}")
+
+    return _cached_bl
+
+
+hdf_buf = HDF5Buffer(
+    r"D:\Python_GIT\RF_probestation_1\experiments\BiYIG_3mum_F7_NEW\40G\experiments_dedalo_02062025\2_adapted\delay_f1_JULY_varyf1a1.h5",
+    script_filename=__file__,
+    settings=sa.get_settings(),
+    append=True,
+)
+keys = hdf_buf.get_keys()
+print(len(keys))
+
+alpha = 0.01
+
+amps = np.array([0, 588])
+freqs = np.array([0, 4150])
+
+
+def waveform(a1, f1, phase):
+
+    t_full = np.arange(96000) / 64e9
+    lf1_steps = round(1000 * 64)
+    lf2_steps = round(150 * 64)
+    delay_steps = round(-250 * 64)
+
+    wf = np.zeros_like(t_full)
+    window1, window2 = np.zeros_like(t_full), np.zeros_like(t_full)
+    if lf1_steps != 0:
+        window1[64000 - lf1_steps : 64000] = tukey(lf1_steps, 64 / lf1_steps)
+    if lf2_steps != 0:
+        window2[64000 + delay_steps - 6400 * 2 : 64000 + lf2_steps + delay_steps] = (
+            tukey((lf2_steps + 6400 * 2), 64 / (lf2_steps + 6400 * 2))
+        )
+    windows = [window1, window2]
+    phases = [phase / 2, -phase / 2]
+    freqs_ = [f1, freqs[1]]
+    amps_ = [a1, amps[1]]
+
+    for i in range(len(amps)):
+        wf += (amps_[i] / 1e3 * windows[i]) * np.sin(
+            2
+            * np.pi
+            * freqs_[i]
+            * 1e6
+            * (t_full - (64000 + delay_steps - 6400 * 2) / 64e9)
+            + phases[i]
+        )
+    if np.abs(wf).max() > 1:
+        raise AssertionError
+
+    return wf
+
+
+def measure(a1, f1, phase, readof
+
+31399 keys
+first keys: ['256.0000_4020_0.000_1', '256.0000_4020_0.393_1', '256.0000_4020_0.785_1', '256.0000_4020_1.178_1', '256.0000_4020_1.571_1']
+last keys: ['328.0000_4118_4.320_1', '328.0000_4118_4.712_1', '328.0000_4118_5.105_1', '328.0000_4118_5.498_1', '328.0000_4118_5.890_1']
+parsed 31399/31399; delay level count=31, f1 level count=95, phases-per-combo=[9, 10, 11]
+delay range: 256.0 .. 328.0
+delays: [256.0, 264.0, 268.0, 272.0, 276.0, 278.0, 280.0, 282.0, 284.0, 286.0, 288.0, 290.0, 292.0, 294.0, 296.0, 298.0, 300.0, 302.0, 304.0, 306.0, 308.0, 310.0, 312.0, 314.0, 316.0, 318.0, 320.0, 322.0, 324.0, 326.0, 328.0]
+f1 range: 4020.0 .. 4119.0
+example group members: ['timestamp', 'trace']
+trace shape/dtype: (1, 2, 1001) float32
+
+========== fig1.zip ==========
+2 members
+  delay2.h5  525.0 MB
+  delay.h5  393.1 MB

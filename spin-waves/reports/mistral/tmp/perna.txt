@@ -1,0 +1,993 @@
+                                                       Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+                                                                    Contents lists available at ScienceDirect
+
+
+                                            Journal of Magnetism and Magnetic Materials
+                                                          journal homepage: www.elsevier.com/locate/jmmm
+
+
+Research articles
+
+Computational micromagnetics based on normal modes: Bridging the gap
+between macrospin and full spatial discretization
+S. Perna a ,∗, F. Bruckner b , C. Serpico a , D. Suess b , M. d’Aquino a
+a
+    Department of Electrical Engineering and ICT, University of Naples Federico II, Naples, Italy
+b
+    University of Vienna Research Platform MMM Mathematics - Magnetism - Materials, University of Vienna, Austria
+
+
+
+ARTICLE                 INFO                               ABSTRACT
+
+Keywords:                                                  The Landau–Lifshitz equation governing magnetization dynamics is written in terms of the amplitudes of
+Magnetic normal modes                                      normal modes associated with the micromagnetic system’s appropriate ground state. This results in a system of
+Nonlinear magnetization dynamics                           nonlinear ordinary differential equations (ODEs), the right-hand side of which can be expressed as the sum of a
+Magnonic waveguides
+                                                           linear term and nonlinear terms with increasing order of nonlinearity (quadratic, cubic, etc.). The application
+Ferromagnetic resonance
+                                                           of the method to nanostructured magnetic systems demonstrates that the accurate description of magnetization
+Spin-transfer torque nanoscillators
+                                                           dynamics requires a limited number of normal modes, which results in a considerable improvement in
+                                                           computational speed. The proposed method can be used to obtain a reduced-order dynamical description
+                                                           of magnetic nanostructures which allows to adjust the accuracy between low-dimensional models, such as
+                                                           macrospin, and micromagnetic models with full spatial discretization. This new paradigm for micromagnetic
+                                                           simulations is tested for three problems relevant to the areas of spintronics and magnonics: directional spin–
+                                                           wave coupling in magnonic waveguides, high power ferromagnetic resonance in a magnetic nanodot, and
+                                                           injection-locking in spin-torque nano-oscillators. The case studies considered demonstrate the validity of the
+                                                           proposed approach to systematically obtain an intermediate order dynamical model based on normal modes
+                                                           for the analysis of magnetic nanosystems. The time-consuming calculation of the normal modes has to be done
+                                                           only one time for the system. These modes can be used to optimize and predict the system response for all
+                                                           possible time-varying external excitations (magnetic fields, spin currents). This is of utmost importance for
+                                                           applications where fast and accurate system simulations are required, such as in electronic circuits including
+                                                           magnetic devices.
+
+
+
+0. Introduction                                                                                and the LLG dynamics can be described in a low-dimensional state
+                                                                                               space. This is the case of the macrospin model, in which magnetization
+    Micromagnetism [1–4] is the most effective theory to predict mag-                          is assumed to be spatially uniform, used in the studying of magne-
+netization behavior of systems, at micrometer and sub-micrometer                               tization switching [25,26], ferromagnetic resonance [27–32], chaotic
+length scales, relevant to magnetic information and communication                              magnetization dynamics [33] and noise induced transitions [34] in
+technologies [5,6], and to the related research areas of spintronics [7]                       magnetic nanosystems. Other special cases are those related to motion
+and magnonics [8,9]. A crucial role in the theory is played by the                             of domain walls or vortices which can be treated with the method of
+Landau–Lifshitz–Gilbert (LLG) equation [10–12], the nonlinear par-                             collective variables [35,36]. Recently, also neural networks have been
+tial differential equation governing magnetization dynamics, and its
+                                                                                               used in order to predict magnetization dynamics of systems that are
+generalizations [13–15]. In most cases, the LLG equation is solved
+                                                                                               trained with full micromagnetic simulations [37] or with single domain
+numerically due to nonlinearities and nontrivial geometrical and phys-
+                                                                                               simulations [38]. Except these notable cases, the solution of LLG is
+ical features of micromagnetic systems [16,17]. This has given rise to
+                                                                                               obtained by discretizing the body in a grid of small cells or finite
+the area of Computational Micromagnetics [18–23]. There are special
+                                                                                               elements with linear dimensions smaller than the exchange length.
+situations where the solutions of the LLG equation can be obtained
+analytically. This is usually possible when the geometrical dimensions                         The LLG equation is then reduced to a nonlinear many-body evolution
+of the magnet are not much larger than the exchange length, a char-                            problem in which the state variables are the magnetization vectors
+acteristic length below which magnetization is spatial uniform [24],                           defined on the grid.
+
+
+
+     ∗ Corresponding author.
+       E-mail address: salvatore.perna@unina.it (S. Perna).
+
+https://doi.org/10.1016/j.jmmm.2021.168683
+Received 11 June 2021; Received in revised form 30 September 2021; Accepted 18 October 2021
+Available online 10 November 2021
+0304-8853/© 2021 Elsevier B.V. All rights reserved.
+S. Perna et al.                                                                                        Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+    This paper presents a new computational micromagnetic approach               where 𝒎0 (𝒓) is the (inhomogeneous) magnetic ground state (see Ta-
+that bridges the gap between low-dimensional modeling, such as the               ble 1), and 𝛿𝒎⟂ (𝒓, 𝑡) is the projection of the magnetization on the plane
+Stoner–Wohlfarth model, and full spatially-discretized LLG equation.             pointwise perpendicular to the micromagnetic equilibrium 𝒎0 . We refer
+It relies on a spectral method where the degrees-of-freedom are not              to the class of vector fields perpendicular pointwise to 𝒎0 as  (𝒎0 ).
+the magnetic moments associated with cells, but the amplitudes of                The transverse magnetization 𝛿𝒎⟂ (𝒓, 𝑡) can be expressed as:
+normal modes obtained by the linearized LLG equation around the                               ∑
+reference (ground) state of the problem under-investigation [39–41].             𝛿𝒎⟂ (𝒓, 𝑡) =    𝑎ℎ (𝑡)𝝋ℎ (𝒓) ,                                         (2)
+                                                                                              ℎ
+Although the expression of the LLG equation in terms of normal modes
+is mathematically equivalent to the original LLG, it turns out that in           where the set {𝝋1 , 𝝋2 , … , 𝝋ℎ , … } spans square-integrable vector fields
+many situations of interest in the study of magnetic nanostructures, the         defined in  (𝒎0 ) and the vectors 𝝋ℎ are solutions of suitable general-
+confined nature of the problem leads to magnetization dynamics which             ized eigenvalue problem [41] (see Table 1 and section Methods). From
+can be described by a relatively small number of normal modes [42].              the knowledge of eigenmodes 𝝋ℎ (𝒓) and time evolution of coefficients
+Thus, using the proposed spectral approach is possible to obtain a               𝑎ℎ (𝑡) (projection of 𝛿𝒎⟂ (𝒓, 𝑡) on the generic eigenmode 𝝋ℎ (𝒓)) one can
+reduced dimensionality numerical model, which can be solved more                 reconstruct the magnetization field by using Eq. (1). It is worth to
+efficiently than usual fully discretized micromagnetic problems. The             remark that the eigenmodes can be determined once the ground state
+normal modes-based method is also related to spin–wave theory, in                is defined, independently from the micromagnetic dynamics. In this
+which the deviation of magnetization field from the ground state is de-          framework, the complex amplitudes 𝑎ℎ (𝑡) are the degrees of freedom
+composed into a sum of Fourier-like plane-waves [43]. This approach is           of the magnetization dynamics and their evolution is mathematically
+very convenient for the theoretical analysis of linear waves propagation         formulated by the following system of coupled nonlinear ordinary
+in extended magnonic structures [44]. For confined structures, spin–             differential equations, here and on referred to as Normal Modes Model
+wave theory is affected by the difficulty that plane-waves do not cor-           (NMM):
+rectly take into account boundary conditions [45,46]. Normal modes,                             (
+on the other hand, are obtained by solving the appropriate eigenvalues                    𝑗𝜔ℎ             ∑            ∑                  1∑
+                                                                                  𝑎̇ ℎ =          𝑏ℎ +        𝑏ℎ𝑖 𝑎𝑖 +     𝑐ℎ𝑖𝑗 𝑎𝑖 𝑎𝑗 +          𝑑 𝑎𝑎 𝑎 +
+problem which includes the correct boundary conditions [41]. In ad-                           2
+                                                                                         1 + 𝛼G            𝑖           𝑖,𝑗
+                                                                                                                                          2 𝑖,𝑗,𝑘 ℎ𝑖𝑗𝑘 𝑖 𝑗 𝑘
+dition, the normal mode formulation of LLG enables to naturally take                                                                                          )
+into account nonlinear coupling between the modes. In this respect, the                          1 ∑                           1 ∑
+                                                                                                          𝑒     𝑎𝑎 𝑎 𝑎 +                  𝑓       𝑎 𝑎 𝑎 𝑎 𝑎 +… .
+proposed approach allows extending the Suhl’s analysis for the bulk                              4 𝑖,𝑗,𝑘,𝑙 ℎ𝑖𝑗𝑘𝑙 𝑖 𝑗 𝑘 𝑙       4 𝑖,𝑗,𝑘,𝑙,𝑚 ℎ𝑖𝑗𝑘𝑙𝑚 𝑖 𝑗 𝑘 𝑙 𝑚
+magnet of nonlinear coupling of spin–waves [47–49] to the case of                                                                                               (3)
+confined magnetic nanostructures.
+    We demonstrate the effectiveness of the proposed approach by                 The NMM can be derived by substituting Eq. (1) in the LLGS, then
+studying nonlinear magnetization dynamics in three distinct magnetic             expressing the field 𝛿𝒎⟂ (𝒓, 𝑡) as a function of eigenmodes (see Eq. (2))
+structures which are relevant for applications in the emerging field             and complex amplitudes and finally using the orthogonality property
+of spintronics [5], namely: directional spin–wave mode coupling in a             of eigenmodes to project the LLGS equation on each eigenmode (see
+magnonic waveguide, high-power ferromagnetic resonance (FMR) in a                Table 1). In section Methods, such procedure is detailed for the case
+rectangular magnetic nanodot, and synchronization in injection-locked            where the expansion (1) is truncated at second-order terms in 𝛿𝒎⟂ (𝒓, 𝑡).
+spin-torque oscillator.                                                          Such approximation has been termed parabolic approximation and the
+    The paper is organized as follows. First, the normal modes-based             resulting NMM with all the coefficient expressions is also listed in
+nonlinear model is introduced in connection with the Landau–Lifshitz–            Table 1. The highest order nonlinear terms involve the product of 5
+Gilbert equation with Slonczewski spin-torque [13] (LLGS). Then, it              complex amplitudes. In situations where magnetization goes far from
+is shown that this model is able to make quantitative predictions on             the equilibrium beyond the validity of the parabolic approximation,
+the aforementioned three magnetic systems using a small number of                terms with the product of a larger number of complex amplitudes may
+normal modes. These predictions are in very good agreement with full             be added to the NMM in order to obtain more accurate description.
+micromagnetic simulations. Finally, the advantages of the proposed                  Differently from what happens for micromagnetic simulations where
+model with respect to full micromagnetic simulations are discussed.              the number of the degrees of freedom reflects that of elementary
+                                                                                 magnetized cells, the NMM involves a preliminary computation of
+1. Results                                                                       magnetization eigenpairs (𝜔ℎ , 𝝋ℎ ) by solving suitable generalized eigen-
+                                                                                 value problem (see Table 1, or Eq. (16) in Methods) which depends
+    The main result of this is work is the quantitative description of
+                                                                                 exclusively on material and geometrical parameters and is performed
+nonlinear magnetization dynamics in micromagnetic systems evolving
+                                                                                 only once for a given system under investigation. The special nature
+around a given arbitrary (spatially inhomogeneous) ground state by
+                                                                                 of the generalized eigenvalue problem allows the determination of
+using reduced-order models with incremental accuracy controlled by
+                                                                                 a prescribed number of eigenmodes [41] using Arnoldi-like iterative
+the number of involved degrees-of-freedom, whose role is played by
+                                                                                 methods using classical computational routines adopted within micro-
+selected magnetization normal modes [41]. From the mathematical
+                                                                                 magnetic codes in a large-scale fashion. It is worthwhile to remark
+point of view, such description is formalized with a system of nonlinear
+                                                                                 that this preliminary computation is independent from external forcing
+differential equations where the unknowns are complex functions of
+                                                                                 terms in LLGS equation (e.g. microwave field, spin currents, etc.). By
+time which are the amplitudes of the aforementioned selected normal
+                                                                                 using eigenpairs (𝜔ℎ , 𝝋ℎ ) along with computational routines for com-
+modes. The detailed derivation of such a description is reported in
+                                                                                 puting the micromagnetic effective field, all the coefficients appearing
+the section Methods. In the following, we outline the main points
+instrumental to the illustration of the results. The starting point is the       in Eq. (3) can be also efficiently computed in the set-up phase. In
+LLGS equation in dimensionless form (see Table 1), which models the              the following, we show that Eq. (3) considering a limited number
+dynamics of the magnetization (unit-vector) field 𝒎(𝒓, 𝑡) (normalized            of normal modes and terms is able to reproduce with quantitative
+by the saturation magnetization) in the magnetic body 𝛺 under inves-             accuracy the results of full micromagnetic simulations. Moreover, we
+tigation. Consistently with the fundamental micromagnetic constraint             show that this description allows the development of general analytical
+(𝒎2 = 1), the magnetization field is decomposed according to the                 formulas for magnetization dynamics which can be instrumental in
+following equations (see section Methods for details):                           optimization and design of magnetic technologies. In the sequel, the
+                             (                      )                            NMM is applied to the study of three model-problems in nonlinear
+                                 1       3
+𝒎(𝒓, 𝑡) = 𝛿𝒎⟂ (𝒓, 𝑡) + 𝒎0 (𝒓) 1 − 𝛿𝒎2⟂ − 𝛿𝒎4⟂ + … ,                    (1)       magnetization dynamics which span relevant applications in the world
+                                 2      4!
+
+                                                                             2
+S. Perna et al.                                                                                                          Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+                              Table 1
+                              Normal Modes-based Model in connection with LLGS equation. All the quantities are in dimensionless units. Derivation
+                              of parameters and coefficients can be found in the Methods section.
+                               Landau–Lifshitz–Gilbert–Slonczewski (LLGS) equation (in dimensionless form)
+                               𝜕𝒎
+                                𝜕𝑡
+                                   − 𝛼G 𝒎 × 𝜕𝒎
+                                             𝜕𝑡
+                                                = −𝒎 × 𝒉ef f [𝒎] − 𝒎 × 𝒉rf + 𝛽𝒎 × (𝒎 × 𝒑)
+                                                                             2
+                               Effective field 𝒉ef f [𝒎] = −𝒎 + 𝒉a ,  = −𝑙ex ∇2 +  + 𝜅an 𝒆an ⊗ 𝒆an (exchange, magnetostatic, anisotropy),
+                                                                                                        𝜕𝒎
+                               Micromagnetic equilibrium (ground state) 𝒎0 × 𝒉ef f [𝒎0 ] = 0, in 𝛺, 𝜕𝒏0 = 0 on 𝜕𝛺,
+                               Radio-frequency applied field 𝒉rf (𝑡), spin-torque intensity 𝛽 with polarizer unit-vector 𝒑.
+                               Normal Modes Model (NMM)
+                               Generalized eigenvalue problem [41] 0⟂ 𝝋𝑘 = 𝜔𝑘 0⟂ 𝝋𝑘 ; 𝝋𝑘 , 𝜔𝑘 eigenmodes, eigenfrequencies,
+                               0⟂ = 𝑚0 ( + ℎ0 ), 𝒎0 =  − 𝒎0 ⊗ 𝒎0 , 0⟂ = −𝑗𝛬(𝒎0 ), ℎ0 = 𝒎0 ⋅ 𝒉ef f [𝒎0 ], 𝛬(𝒎) ⋅ 𝒉 = 𝒎 × 𝒉 .
+                               Orthogonality of Eigenmodes: (𝝋𝑘 , 0⟂ 𝝋ℎ ) = 𝑉1 ∫𝛺 𝝋∗𝑘 ⋅, 0⟂ 𝝋ℎ 𝑑𝑉 = 𝛿𝑘ℎ
+                                                                               𝛺(           )                        ∑
+                               Magnetization field decomposition: 𝒎(𝒓, 𝑡) = 𝒎0 1 − 12 𝛿𝒎2⟂ + 𝛿𝒎⟂ , 𝛿𝒎⟂ (𝒓, 𝑡) = 𝑘 𝑎𝑘 (𝑡)𝝋𝑘 (𝒓)
+
+                               Nonlinear mode dynamics (𝑎ℎ amplitude of ℎth mode) equation (3)
+                                                             ∑              ∑                𝑗𝜔ℎ ∑
+                               (1 + 𝛼G2 ) 𝑎̇ ℎ =𝑗𝜔ℎ 𝑏ℎ + 𝑗𝜔ℎ   𝑏ℎ𝑖 𝑎𝑖 + 𝑗𝜔ℎ     𝑐ℎ𝑖𝑗 𝑎𝑖 𝑎𝑗 +         𝑑 𝑎𝑎 𝑎 +
+                                                             𝑖              𝑖,𝑗
+                                                                                              2 𝑖,𝑗,𝑘 ℎ𝑖𝑗𝑘 𝑖 𝑗 𝑘
+                                               𝑗𝜔ℎ ∑                    𝑗𝜔ℎ ∑
+                                                         𝑒     𝑎𝑎 𝑎 𝑎 +             𝑓      𝑎𝑎 𝑎 𝑎𝑎 ,
+                                                4 𝑖,𝑗,𝑘,𝑙 ℎ𝑖𝑗𝑘𝑙 𝑖 𝑗 𝑘 𝑙  4 𝑖,𝑗,𝑘,𝑙,𝑚 ℎ𝑖𝑗𝑘𝑙𝑚 𝑖 𝑗 𝑘 𝑙 𝑚
+
+                               Coefficients 𝑏, 𝑐, 𝑑, 𝑒, 𝑓 (computed once for the system under investigation, see section Methods):
+                               𝑏ℎ = −(𝝋ℎ , 𝒇 𝑐 ) + (𝝋ℎ , 𝒎0 × 𝒇 𝑑 ) ,
+                               𝒇 𝑐 = 𝒉rf + 𝛼G 𝛽𝒑 , 𝒇 𝑑 = 𝛼G 𝒉rf − 𝛽 𝒑
+                               𝑏ℎ𝑖 = 𝛿ℎ𝑖 + 𝛼G 𝑏𝛼ℎ𝑖 + 𝑏𝑓ℎ𝑖 ,
+                                          (        )                     (                ) (                      )
+                               𝑏𝛼ℎ𝑖 = 𝑗 𝜔𝑖 𝝋ℎ , 𝝋𝑖 ,             𝑏𝑓ℎ𝑖 = − 𝝋ℎ , 𝒎0 ⋅ 𝒇 𝑐 𝝋𝑖 − 𝒎0 × 𝝋ℎ , 𝒎0 ⋅ 𝒇 𝑑 𝝋𝑖
+                                        0              𝑓
+                               𝑐ℎ𝑖𝑗 = 𝑐ℎ𝑖𝑗  + 𝛼 𝑐 𝛼 + 𝑐ℎ𝑖𝑗 ,
+                                            ( G ℎ𝑖𝑗    ) (                  )
+                                0
+                               𝑐ℎ𝑖𝑗 = − 12 𝝋ℎ , 𝜓𝑖𝑗 𝒎0 − 𝝋ℎ , 𝒎0 ⋅ 𝝋𝑗 𝝋𝑖 , 𝜓𝑖𝑗 = 𝝋𝑖 ⋅ 𝝋𝑗
+                                𝛼      1 (                   ) (                       )
+                               𝑐ℎ𝑖𝑗 = 2 𝒎0 × 𝝋ℎ , 𝜓𝑖𝑗 𝒎0 + 𝒎0 × 𝝋ℎ , 𝒎0 ⋅ 𝝋𝑗 𝝋𝑖
+                                          (          ) (                      )
+                                𝑓
+                               𝑐ℎ𝑖𝑗 = 12 𝝋ℎ , 𝜓𝑖𝑗 𝒇 𝑐 − 𝒎0 × 𝝋ℎ , 𝝋𝑗 ⋅ 𝒇 𝑑 𝝋𝑖
+                                         0
+                               𝑑ℎ𝑖𝑗𝑘 = 𝑑ℎ𝑖𝑗𝑘       𝛼
+                                             + 𝛼G 𝑑ℎ𝑖𝑗𝑘 + 𝑑𝑓
+                                0
+                                          (             ) (ℎ𝑖𝑗𝑘              )
+                               𝑑ℎ𝑖𝑗𝑘 = − 𝝋ℎ , 𝜓𝑗𝑘 𝝋𝑖 + 𝝋ℎ , 𝒎0 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖
+                                𝛼
+                                       (                    ) (                       )   (                      )
+                               𝑑ℎ𝑖𝑗𝑘 = 𝒎0 × 𝝋ℎ , ℎ0 𝜓𝑗𝑘 𝝋𝑖 − 𝒎0 × 𝝋ℎ , 𝒎0 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖 + 2 𝒎0 × 𝝋ℎ , 𝝋𝑘 ⋅ 𝝋𝑗 𝝋𝑖
+                                𝑓      (                         )
+                               𝑑ℎ𝑖𝑗𝑘 = 𝒎0 × 𝝋ℎ , 𝜓𝑗𝑘 𝒎0 ⋅ 𝒇 𝑑 𝝋𝑖
+                               𝑒ℎ𝑖𝑗𝑘𝑙 = 𝑒0ℎ𝑖𝑗𝑘𝑙 + 𝛼G 𝑒𝛼ℎ𝑖𝑗𝑘𝑙 ,
+                                        (                    )
+                               𝑒0ℎ𝑖𝑗𝑘𝑙 = 𝝋ℎ , 𝜓𝑘𝑙 𝜓𝑖𝑗 𝒎0
+                                 𝛼
+                                             (                      )   (                          )
+                               𝑒ℎ𝑖𝑗𝑘𝑙 = −2 𝒎0 × 𝝋ℎ , 𝜓𝑘𝑙 𝒎0 ⋅ 𝝋𝑗 𝝋𝑖 − 2 𝒎0 × 𝝋ℎ , 𝝋𝑙 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖
+                                             𝛼
+                               𝑓ℎ𝑖𝑗𝑘𝑙𝑚 = 𝛼G 𝑓ℎ𝑖𝑗𝑘𝑙𝑚 ,
+                                𝛼
+                                         (                             )
+                               𝑓ℎ𝑖𝑗𝑘𝑙𝑚 = 𝒎0 × 𝝋ℎ , 𝜓𝑙𝑚 𝒎0 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖
+
+
+
+
+         Fig. 1. Sketch of the micromagnetic systems under investigation with the NMM: (a) magnonic waveguide, (b) rectangular nanodot and (c) spintronic oscillator.
+
+
+of spintronics: nonlinear spin–wave coupling in a magnonic waveg-                                    133 kA/m, damping 𝛼G = 2×10−4 and exchange stiffness 𝐴ex = 3.5 pJ/m.
+uide, high-power ferromagnetic resonance in a rectangular magnetic                                   The micromagnetic equilibrium 𝒎0 is obtained by letting magnetization
+nanodot, and synchronization in injection-locked spin-torque oscillator.                             relax from a saturated state under a dc magnetic field of 50 mT applied
+The sketches of these devices with their dimensions are shown in Fig. 1.                             along the same 𝑥 direction.
+In order to check the accuracy of the method, the results obtained by                                    The computation of eigenmodes 𝝋ℎ and related eigenfrequencies
+NMM are compared with full-scale micromagnetic simulations of the                                    𝜔ℎ provides in itself several insightful information, which are reported
+investigated systems.                                                                                in Fig. 2(a). One can see that the system exhibits modes with spatial
+                                                                                                     distribution confined in a small region of the magnonic waveguide
+1.1. Directional spin–wave mode coupling in magnonic waveguide                                       (e.g. mode labeled as 7) and modes which extend throughout the guide
+                                                                                                     in different ways (e.g. modes 64, 73, 95). In particular, it is very
+   The first considered magnetic system is the magnonic waveguide                                    interesting to notice that selected modes with distinct eigenfrequencies
+shown in Fig. 2(a). The analysis of such a system has been inspired                                  extend differently across the upper and lower arms in the rightmost part
+from Ref. [50], where a YIG magnonic waveguide has been studied                                      of the waveguide. Specifically, there are modes, such as mode 73 (mode
+and proposed as directional coupler to build a magnonic logic circuit.                               95) extending only in the right upper (lower) arm of the structure,
+The material parameters used are: saturation magnetization 𝑀𝑠 =                                      and modes such as the 64 oscillating in both arms. These macro
+
+                                                                                                3
+S. Perna et al.                                                                                                      Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+
+
+Fig. 2. Normal mode analysis for the magnonic waveguide shown in Fig. 1-(a). (a) Plots of the function ‖𝝋‖2 , normalized in the range (0, 1), for different spatial distributions of
+normal modes. In order from the top: confined mode, double arm mode, upper arm mode and lower arm mode respectively. The color scale is the same as for (b). (b) Dispersion
+curve. (c) Normal modes frequencies resulting from the solution of the eigenvalue problem (16). Blue filled dots are the frequencies values corresponding to the normal modes
+plotted in (a). (d) Comparison between the prediction of Eq. (5) (solid lines) and micromagnetic simulations (dots) for linear magnetization dynamics. (e) Power transmitted by the
+waveguide in the linear regime as a function of the excitation frequency. The red line indicates the power transmitted on the lower arm while the blue line the power transmitted
+on the upper arm. (f) Comparison of the power transmitted by the waveguide as a function of the microwave field amplitude, computed with the NMM and by micromagnetic
+simulations. The colors are coherent to (e). Solid and dashed lines refer to NMM integrated with 5 and 20 modes respectively. Filled circles refer to micromagnetic simulation
+results.
+
+
+features are shared by several other modes associated with different                         of non-reciprocal propagation of spin waves [51]. This is a great
+eigenfrequencies. From the knowledge of the eigenpairs (𝜔ℎ , 𝝋ℎ ), the                       advantage with respect to its evaluation based on long micromagnetic
+dispersion curve of spin–waves propagating in the magnonic waveguide                         simulations of magnetization dynamics driven by external excitations
+can be straightforwardly computed. The result is reported in Fig. 2(b).                      with suitable space–time profile. In this respect, we remark that the
+In fact, for each 𝜔ℎ the two-dimensional Fourier Transform of the                            computation of the dispersion relation based on normal modes does
+associated mode spatial distribution 𝝋ℎ (𝒓) is computed in order to                          not involve the knowledge of the external excitation, which is not the
+have its representation in the wavenumber domain (𝑘𝑥 , 𝑘𝑦 ). Then, the                       case of time-domain techniques. In Ref. [50], magnetization dynamics
+spectral magnitude peaks along 𝑘𝑦 of the Fourier-transformed vector                          is excited in the magnonic waveguide by applying a microwave ex-
+field are plotted as function of 𝑘𝑥 . By inspecting Fig. 2(b), one can                       ternal field with a U-shaped antenna located in the initial part of the
+see that dominant spin–wave modes follow an approximately parabolic                          magnonic waveguide. Here we reproduce a similar scenario by applying
+dispersion curve starting close to frequency values ∼3.45 GHz. On one                        a sinusoidal time-varying magnetic field with (normalized) amplitude
+hand, this curve can qualitatively describe the oscillation pattern of                       ℎrf and frequency 𝜔rf , directed along the 𝑦 direction, spatially-uniform
+spin–waves interpreted in terms of normal modes distribution, since                          in a region 1 𝜇m-long of the upper left arm of the waveguide. For weak
+confined (extended) spin–wave modes exhibit broad (narrow) spectra                           amplitudes of the microwave field (in dimensionless units ℎrf ≪ 𝛼G ),
+owing to Fourier Transform’s duality property. On the other hand,                            magnetization dynamics can be analyzed in the linear regime, where
+the diagram is instrumental for analyzing the working condition of                           the NMM can be written as:
+                                                                                                           (              )
+the magnonic waveguide. For instance, one can see that propagat-                                     𝑗𝜔ℎ         ∑
+ing extended modes with positive group velocity (narrow spectrum)                            𝑎̇ ℎ =         𝑏ℎ +    𝑏ℎ𝑖 𝑎𝑖 ,                                        (4)
+                                                                                                         2
+                                                                                                    1 + 𝛼G        𝑖
+are possible for positive 𝑘𝑥 starting from 𝜔∕2𝜋 ∼ 3.6 GHz upwards.
+Vice versa, negative group velocities occur in the same range of fre-                        where 𝑏ℎ ≈ −(𝝋ℎ , 𝒇 𝑐 ) = 𝐵ℎ cos(𝜔rf 𝑡) (𝐵ℎ is the projection of the
+quencies, but for negative 𝑘𝑥 values. By using this approach, the                            external field spatial distribution on 𝝋ℎ ). It turns out that terms 𝑏ℎ𝑖 =
+dispersion relation is readily obtained once eigenmodes and associated                       𝛿ℎ𝑖 + 𝑏𝛼ℎ𝑖 + 𝑏𝑓ℎ𝑖 are such that |𝑏𝛼ℎ𝑖 ∕𝛼G | ≪ 1 for ℎ ≠ 𝑖, |𝑏𝛼ℎℎ ∕𝛼G | ∼ 1, and all
+eigenfrequencies, such as those reported in Fig. 2(c), are computed.                         the terms |𝑏𝑓ℎ𝑖 ∕𝛼G | ≪ 1. For excitation frequency 𝜔rf less than twice
+Moreover, this analysis immediately permits to reveal the presence                           the value of the frequency corresponding to the first normal mode,
+
+                                                                                         4
+S. Perna et al.                                                                                                    Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+parametric resonances can be excluded. This permits to consider a                           shown in Ref. [50] that the switching of output power between arms
+diagonal approximation of Eqs. (4) where 𝑏ℎ𝑖 ≈ 𝛿ℎ𝑖 (1 + 𝑏𝛼ℎ𝑖 ). In this way,                can be achieved as function of the microwave field amplitude, as a con-
+we can give a closed form expression for the normal modes dynamics                          sequence of nonlinearity. In order to analyze this effect with the NMM,
+as in the following equation:                                                               we consider Eq. (3) including terms up to the fourth order in mode
+         ( 𝑡                                                           )                    amplitudes, while considering five normal modes (modes 58–62) whose
+            −                             𝜔rf
+𝑎ℎ = 𝐴ℎ 𝑒 𝜏ℎ (cos 𝜔ℎ 𝑡 + 𝑗 sin 𝜔ℎ 𝑡) +            sin 𝜔rf 𝑡 − cos 𝜔rf 𝑡 ,                   frequencies (𝑓58 , 𝑓59 , 𝑓60 , 𝑓61 , 𝑓62 = 3.6168, 3.6186, 3.6226, 3.6267, 3.6322
+                                       𝑗𝜔ℎ − 1∕𝜏ℎ                                           GHz) are centered around the chosen microwave field frequency 𝑓 =
+                  −𝜔2ℎ 𝐵ℎ                                                                   3.618 GHz. In the linear regime, for such frequency, the relative power
+𝐴ℎ =                             , 𝜏ℎ = |𝑏𝛼ℎℎ |−1 = (𝛼G 𝜔2ℎ ‖𝝋ℎ ‖2 )−1 .
+        𝜔2rf − 𝜔2ℎ − 2𝑗 𝜔ℎ ∕𝜏ℎ                                                              exhibits a sharp transition of output power between the arms (high
+                                                                                            sensitivity in frequency) and, therefore, it is expected that by inducing
+                                                                                  (5)       a nonlinear frequency shift, one can observe similar power switching
+where the initial condition 𝑎ℎ (0) = 0 is assumed. The predictions                          between the waveguide arms. The NMM Eq. (3) with the above five
+of this formula in terms of |𝑎ℎ (𝑡)| are compared with the results of                       modes is integrated for 1000 ns with different amplitudes of the
+micromagnetic simulations [52] in Fig. 2(d), where the microwave field                      excitation field. As a result of these computations, the relative power
+amplitude is 𝜇0 𝐻rf = 10 μT and its frequency 𝑓 is equal to mode 95                         is evaluated as a function of the microwave amplitude according to
+frequency 𝑓95 = 3.946 GHz, which only extends in the lower arm of                           Eq. (6) and plotted using solid lines in Fig. 2(f). The diagram shows
+the waveguide (see the bottom of Fig. 2(a)). This situation is useful                       a dependence of the relative power on the microwave field amplitude
+to elucidate general properties of the NMM. In fact, when 𝑓 = 𝑓ℎ ,                          which is very similar to the one reported in Ref. [50]. In the same
+the denominator of the term |𝐴ℎ | in Eq. (5) is minimized and the                           figure, the results of full micromagnetic simulations are shown (filled
+                                                     − 𝑡                                    dots). The agreement is quantitative and improves as far as the field
+amplitude |𝑎ℎ (𝑡)| = (1∕2) 𝜔rf 𝜏ℎ |𝐵ℎ |(1 − 𝑒 𝜏ℎ ) has the typical aspect
+                                                                                            amplitude increases. The NMM predicts a power switching field value
+of first-order linear dynamical systems forced response. The maximum
+                                                                                            (upper arm output power equals lower arm’s one) ∼170 μT, while
+amplitude that is reached in steady-state conditions is proportional to
+                                                                                            from micromagnetic simulations we have ∼70 μT. It is expected that
+𝜏ℎ ∼ 1∕𝛼G and to 𝑏ℎ . The latter coefficient 𝑏ℎ has a very important
+                                                                                            this discrepancy can be reduced by increasing the number of modes
+meaning in that it quantifies the strength of the coupling between the
+                                                                                            considered in the integration of the NMM. In Fig. 2(f), the power vs
+spatial distribution of the ℎth mode and the excitation field, as it can
+                                                                                            microwave amplitude curves obtained from the NMM integrated with
+be inferred from its expression (see Table 1 and section Methods).
+                                                                                            20 modes (modes 41–60) are also plotted (dashed lines), which con-
+From the knowledge of the desired mode profile to excite, by using
+                                                                                            firm the expected improvement of the agreement with micromagnetic
+the latter formula, one can accordingly tune the external microwave
+                                                                                            simulations. We observe that, despite the limited number of modes
+field direction and localization in order to maximize the excitation
+                                                                                            considered, this analysis is in good agreement with micromagnetic
+of the selected mode. These considerations are independent from the
+                                                                                            simulations when the magnetization dynamics is in nonlinear regime
+particular mode considered here and, therefore, hold in general for
+                                                                                            and driven by moderate microwave field amplitudes 𝜇0 𝐻rf ∼ 0.1 mT. As
+modes with different spatial distributions.
+                                                                                            soon as the field amplitudes is increased to 𝜇0 𝐻rf ∼ 1 mT, the number
+    Thus, in the linear regime (low microwave power), there are two
+                                                                                            of modes involved in the nonlinear dynamics grows dramatically with
+selection mechanisms for magnetization oscillations: (i) selection due
+                                                                                            the microwave field power, leading to a chaotic regime.
+to the excitation field spatial distribution; (ii) selection due to the
+                                                                                                A systematic analysis of which modes are dominant in weakly
+excitation field frequency. These mechanisms can be used to interpret
+                                                                                            nonlinear conditions is a topic of great interest for dimensionality
+the results reported in Ref. [50] where, depending on the frequency,
+                                                                                            reduction of nonlinear magnetization dynamics in magnonic systems
+magnetization oscillations were observed to occur either in one arm
+                                                                                            and will be the focus of future investigation based on the NMM.
+(upper or lower) or in both. Indeed, if one considers a situation where
+the coupling of the first kind (spatial distribution) is of the same order
+                                                                                            1.2. High-power ferromagnetic resonance in rectangular magnetic nanodot
+of magnitude for modes in a given frequency range, then the coupling
+of the second kind (frequency) can be essential to produce larger
+                                                                                                In this section, the magnetic system considered is a rectangular
+magnetization oscillations in one arm (e.g. the lower one) rather than
+                                                                                            thin-film with dimensions 𝐿x = 100 nm, 𝐿y = 50 nm and 𝐿z =
+in the other (e.g. upper) arm. Such a difference can be quantitatively
+                                                                                            3 nm. The material parameters are 𝑀s = 800 000 A/m, 𝛼G = 0.02,
+appreciated by introducing the following expression for the waveguide
+                                                                                            𝑙ex = 5.69 nm. The micromagnetic equilibrium is a quasi-uniform S-state
+output power:
+                                                                                            along the 𝑥 direction obtained by relaxing a spatially-homogeneous
+                        ∬𝑇 ×𝛺 ‖𝛿𝒎⟂ ‖2 𝑑𝑉 𝑑𝜏                                                 magnetization slightly tilted in the transverse direction 𝑦. The rectangu-
+                            up
+𝑃up =                                                           ,     𝑃lw = 1 − 𝑃up ,       lar nanodot magnetized at remanence is excited by a spatially-uniform
+        ∬𝑇 ×𝛺 ‖𝛿𝒎⟂ ‖2 𝑑𝑉 𝑑𝜏 + ∬𝑇 ×𝛺 ‖𝛿𝒎⟂ ‖2 𝑑𝑉 𝑑𝜏                                           and sinusoidally time-varying magnetic field applied along the 𝑦 di-
+                  up                        lw
+                                                                                            rection with given amplitude and frequency to probe the steady-state
+                                                                                  (6)
+                                                                                            response of magnetization oscillations. This situation is investigated
+where 𝛺up(low) indicate the final 1 μm-long part of the upper (lower)                       with the NMM and compared with micromagnetic simulations [52]
+arm. In Eq. (6) magnetization oscillation is expressed according to Eq. (2)                 both performed by changing amplitude and frequency of the driving
+and 𝑇 is the period of the excitation field. The time-average is com-                       field as it is done in experiments to characterize the nonlinear FMR
+puted starting at 𝑡 = 1000 ns when the transients are reasonably                            frequency response of the magnetic system. The NMM considered for
+extinguished (see. Fig. 2(d)). In Fig. 2(e), the dependence of excitation                   the analysis of the above situation is obtained retaining the summation
+field frequency on the relative power in each arm is plotted according                      terms involving the product of up to 4 amplitudes of normal modes
+to Eq. (6). One can easily see that, in the considered frequency range,                     (see Table 1 and section Methods). The integration of the modes non-
+there are multiple transitions of output power from the lower to the                        linear dynamics described by Eq. (3) is carried out by considering the
+upper arm (and vice-versa) with different efficiency. In the linear                         first five modes. The initial magnetization state is the aforementioned
+regime, as it is expected from the above discussion according to Eq. (6)                    equilibrium S-state, which is perturbed by the microwave field with
+and to the linear dependence of steady-state normal modes amplitudes                        constant amplitude and frequency varying in the range 2–5 GHz. The
+on the microwave field magnitude (see Eq. (5)), the field frequency is                      numerical simulations are performed by linearly increasing (with a
+the only parameter able to switch the output power between upper and                        prescribed rate) the microwave frequency from the lowest to the largest
+lower arms. By increasing the microwave power, it is experimentally                         value and decreasing it back to the lowest one in order to discriminate
+
+                                                                                        5
+S. Perna et al.                                                                                                        Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+
+
+Fig. 3. Normal mode analysis for the rectangular nanodot shown in Fig. 1-(b). (a) Plots of the function ‖𝝋‖2 , normalized in the range (0, 1), for the first 4 normal modes. (b, c, d)
+Steady-state oscillation amplitude of spatially-averaged magnetization 𝑦-component for three microwave field amplitudes: (b) 𝜇0 𝐻rf = 1 mT, (c) 𝜇0 𝐻rf = 1.5 mT, (d) 𝜇0 𝐻rf = 2 mT.
+Solid lines refer to NMM, filled dots are the result of micromagnetic simulations. Blue (red) color refers to increasing (decreasing) frequency.
+
+
+hysteretic effects in the frequency response as function of microwave                         not able to describe the observed dynamics, while the NMM with 5
+field amplitude. In this respect, to rule out dynamical artifacts in the                      degrees-of-freedom leads to quantitative estimation, providing also a
+response curve related to the increasing/decreasing frequency rate of                         way to extend the low-dimensional analysis of nonlinear magnetization
+change, preliminary simulations have been performed to establish that                         oscillations to magnetic systems non uniformly magnetized.
+no appreciable variation of results occurs below a value ±0.01 GHz/ns,                            By further increasing the field amplitude, the deviation of NMM
+which is consequently used to obtain the results presented in the sequel.                     from micromagnetic computations increases. This is due to the small
+                                                                                              number (five) of normal modes adopted to describe the magnetization
+    The comparison of the results of the NMM and micromagnetic                                dynamics. In particular, as far as the microwave amplitude is increased,
+simulations has been done in terms of average magnetization com-                              a larger number of modes is required in Eq. (3) for the correct descrip-
+ponent. In particular, from the 𝑦-component of the spatially-averaged                         tion of the dynamics. In this respect, the proposed NMM provides a
+magnetization vector, the amplitude of steady-state oscillation has been                      class of low-dimensional dynamical models with increasing accuracy
+considered. In Fig. 3, such a comparison is shown for three amplitudes                        and predictive power comparable to full-scale micromagnetics.
+of the microwave field: (b) 𝜇0 𝐻rf = 1 mT, (c) 𝜇0 𝐻rf = 1.5 mT and
+(d) 𝜇0 𝐻rf = 2 mT. First, one can clearly see that there is quantitative                      1.3. Synchronization in injection-locked spin-torque oscillator
+agreement between the NMM and full micromagnetic simulations.
+Second, it is apparent that, as far as the microwave amplitude is                                 In this section, the phase-locking of magnetization self-oscillations
+increased, more and more pronounced hysteresis in frequency response                          with an external microwave current is investigated for a spin transfer-
+of magnetization oscillation appears, which is a strong evidence of non-                      torque nano-oscillator (STNO). The magnetic system under investiga-
+linear FMR. These results point out the capability of NMM of capturing                        tion is a thin-disk with diameter 𝐷 = 100 nm and thickness 𝑑 =
+strongly nonlinear magnetization dynamics with a very small number                            12 nm. The material parameters are 𝑀𝑠 = 800 000 A/m, 𝛼G = 0.02,
+of degrees-of-freedom. It is worthwhile remarking that, for uniformly                         𝑙ex = 5.69 nm. The micromagnetic equilibrium is obtained by relax-
+magnetized nanoparticles, nonlinear FMR is amenable of analytical                             ing magnetization under a spatially-uniform dc magnetic field 𝐻a =
+treatment in terms of bifurcation theory [53]. Interestingly, despite                         0.8 𝑀𝑠 along the out-of-plane 𝑧-direction which is the symmetry axis
+the magnetic thin-film is almost uniformly magnetized, the frequency                          of the disk. This produces a quasi-uniform magnetization aligned with
+response exhibit multiple peaks (∼3.2 GHz and ∼4 Ghz), which is the                           the 𝑧 axis. In Fig. 4(e), three normal modes computed around this
+fingerprint of coexisting resonances. The resonance peaks are located                         equilibrium state are reported. Magnetization dynamics is excited in
+at frequency values close to those of the first and second normal modes.                      the STNO by injecting a spin-polarized current in the perpendicular
+From Fig. 3(a, b), one can see that such modes have a similar amplitude                       direction with dc+ac components, expressed in dimensionless form as:
+spatial distribution and, according to what has been discussed in the                         𝛽 = 𝛽𝑑𝑐 + 𝛽𝑎𝑐 cos(𝜔rf 𝑡). The current value in dimensional units, can be
+previous section for the linear regime, they can couple with the external                     obtained with the following expression: 𝐽 = 𝛽𝐽𝑝 ∕(2𝜂) A/m2 , where 𝐽𝑝 =
+microwave field by matching the spatial distribution and the frequency.                       𝑒𝛾𝑀𝑠2 𝐿𝑧 ∕(𝑔𝜇𝐵 ) with 𝛾 the absolute value of the gyromagnetic ratio, 𝑒
+When the system is driven in nonlinear conditions by increasing the                           is the absolute value of the electron charge, 𝑔 is the Landé factor, and
+microwave amplitude, the interpretation of the hysteretic behavior of                         𝜇𝐵 is the Bohr magneton. The coefficient 𝜂 is the polarization factor,
+the frequency response is rather complex to infer from micromagnetic                          and is assumed to be 𝜂 = 0.1 [54]. The ac current amplitude is much
+simulations, whereas it becomes remarkably simple in terms of normal                          smaller than the dc one. The spin-polarizer of the electric current is
+modes. On the other hand, the uniform mode (macrospin) theory is                              directed 45 degrees off the out-of-plane 𝑧 axis. In this situation, the
+
+                                                                                          6
+S. Perna et al.                                                                                                     Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+
+
+Fig. 4. Normal mode analysis for the spintronic oscillator shown in Fig. 1-(c). Comparison of the spectrograms of the in plane component of the average magnetization vector
+obtained for two distinct ac current values 𝐽𝑎𝑐 = 7.33 MA/cm2 and 𝐽𝑎𝑐 = 11.73 MA/cm2 : (a,c) NMM and (b,d) micromagnetic simulations. (e) Plots of the function ‖𝝋‖2 , normalized
+in the range (0, 1), for the 3 normal modes (out of the 5 considered in the integration of the NMM) mainly involved in the synchronization dynamics.
+
+
+dc spin-polarized current excites magnetization self-oscillations while                     in terms of oscillating states correspond to the transition SS→US. At
+the weak ac current is used to synchronize such oscillations with the                       this point, similar considerations hold for the reverse experiment where
+external excitation, which is referred to as injection-locking. This is                     the excitation frequency is decreased back to 1 GHz (with same rate
+realized by slowly varying the ac excitation frequency back and forth in                    0.01 GHz/ns), but the synchronization band is different with respect
+a range centered around the unperturbed self-oscillations (free running)                    to the forward experiment and the transition SS→US corresponds to
+frequency, In addition, for sufficiently large ac excitation, hysteretic                    an upward jump. From these diagrams, the hysteretic nature of the
+synchronization in injection-locking is expected. Here we analyze such                      synchronization process can be immediately recognized. Indeed, for
+a complex nonlinear phenomenon by using the proposed NMM with                               excitation frequency ranges (phase-locking bands) there is coexistence
+five normal modes.                                                                          of SS and US. The actual observed magnetization regime depends on
+    In Fig. 4, the comparison of (normalized) power spectrograms of the                     the past history of the dynamics.
+𝑦 component of the spatially-averaged magnetization vector, obtained                            Hysteretic synchronization of magnetization oscillations in a STNO
+from the NMM (see Fig. 4(a, c)) and micromagnetic simulations [52]                          has been theoretically investigated in previous works where the mag-
+(see Fig. 4(b, d)), are reported. The dc spin polarized current density                     netization field distribution in the free layer of the STNO was spatially-
+value is 𝐽𝑑𝑐 = 29.34 MA/cm2 , while the ac current is 𝐽𝑎𝑐 = 7.33 MA/cm2                     uniform [55] and in a vortex state [56,57]. In both cases, the magne-
+for Fig. 4(a, b) and 𝐽𝑎𝑐 = 11.73 MA/cm2 for Fig. 4(c, d). In dimensionless
+                                                                                            tization dynamics was described by models with 2 degrees-of-freedom
+units, they correspond to 𝛽𝑑𝑐 = 0.2 𝛼G and 𝛽𝑎𝑐 = 0.05 𝛼G , 0.08 𝛼G ,
+                                                                                            (collective variables). For the STNO considered in this paper, the above
+respectively. The free-running magnetization self-oscillation frequency
+                                                                                            approaches cannot be used to obtain quantitative predictions because
+is ∼4 GHz and the excitation frequency is linearly varied upwards and
+                                                                                            the magnetization state is neither spatially-uniform nor in a vortex
+downwards in the range 1–6 GHz with a rate of change ±0.01 GHz/ns.
+                                                                                            state. Nevertheless, even in this intermediate situation, the NMM is able
+No significant variation of the results for lower rate is observed. In
+                                                                                            to provide a low-dimensional dynamical model with predictive power
+order to outline the synchronization mechanism, we consider the spec-
+                                                                                            comparable with full-scale micromagnetic simulations. In this respect,
+trogram reported in Fig. 4(a). The simulated experiment starts from an
+unsynchronized state (US) oscillating at the unperturbed self-oscillation                   Fig. 4(e) reports three of the five normal modes considered in the NMM
+frequency (USF). Then, the excitation frequency is increased from 1                         which play the main role in the injection-locking of the STNO.
+to 6 GHz. White arrows in the figure panels help understanding the
+synchronization process. In fact, magnetization oscillation frequency                       2. Discussion
+coincides with the free-running frequency before approaching a value
+of approximately 4 GHz. In this condition, the oscillation gets phase-                         The generality of the proposed approach based on the description
+locked to a synchronized state (SS) which is kept until the excitation                      of nonlinear magnetization dynamics in terms of the normal modes
+frequency value reaches around 5 GHz, after which magnetization os-                         associated with a micromagnetic equilibrium has been established by a
+cillations frequency drops at the USF. This abrupt change of frequency                      quantitative reproduction of the results of micromagnetic simulations
+
+                                                                                        7
+S. Perna et al.                                                                                          Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+for three different systems of great interest for magnetic technologies,         introducing the magnetization unit vector 𝒎(𝑟, 𝑡), the micromagnetic
+subject to different external excitations (magnetic fields and spin-             constraint can be rewritten as:
+polarized currents). The main advantage of using such a model is
+                                                                                 𝒎2 (𝒓, 𝑡) = 1 .                                                                  (7)
+twofold. On one hand, it allows to study the nonlinear magnetization
+dynamics with a strongly reduced number of degrees-of-freedom with               In terms of energy, the magnetic state is characterized by the Gibbs–
+respect to full micromagnetic simulations. For instance, the analysis            Landau free energy functional, which in dimensionless units can be
+of the magnonic waveguide in Section 1.1 required discretization on              written as:
+𝑁𝑐 = 𝑁𝑥 ×𝑁𝑦 ×𝑁𝑧 = 650×62×1 = 40 300 computational cells (3𝑁𝑐 ∼ 105                            𝐺 (𝑴; 𝑯 a )
+degrees-of-freedom), while the NMM allowed quantitative and increas-             𝑔𝐿 (𝒎; 𝒉a ) = 𝐿
+                                                                                               𝜇0 𝑀s2 𝑉𝛺
+ingly accurate description of the relevant features of the nonlinear                          [                                                        ]
+                                                                                                 2
+                                                                                                𝑙ex
+dynamics with 𝑁𝑚 = 5 and 𝑁𝑚 = 20 normal modes. Moreover, since                          1               2 1                                 2
+                                                                                     =              (∇𝒎) − 𝒉m [𝒎] ⋅ 𝒎 + 𝜿 an [1 − (𝒎 ⋅ 𝒆an ) ] − 𝒉a ⋅ 𝒎 𝑑𝑉 ,
+normal modes are independent from the external (forcing) excitation,                   𝑉𝛺 ∫𝛺 2            2
+the NMM can be used to perform fast engineering and optimization                                                                                                  (8)
+of microwave external fields and/or spin current on the basis of the
+                                                                                 where 𝜇0 is the vacuum √
+                                                                                                        magnetic permeability, 𝑉𝛺 is the volume of
+desired feature (e.g. output power switch from upper to lower arms
+                                                                                 the magnetic body, 𝑙ex = 2𝐴∕(𝜇0 𝑀𝑠2 ) is the exchange length, 𝐴 is the
+of the waveguide), which conversely would require repeating very
+                                                                                 exchange stiffness of the material, 𝜅an , 𝒆an are the anisotropy constant
+long micromagnetic simulations (thousands nanoseconds to reach the
+                                                                                 and direction respectively, 𝒉𝑎 is the applied magnetic field and 𝒉m [𝒎]
+steady-state) as far as the excitation is changed. On the other hand, the
+                                                                                 is the magnetostatic field, expressed in operator form as follows:
+NMM is a nonlinear system of ordinary differential equations which
+is much more manageable with analytical techniques. Indeed, in the                                   1     𝒎(𝒓′ )
+                                                                                 𝒉m [𝒎] = −∇∇ ⋅                    𝑑𝑉 ′ .                                         (9)
+case of linear magnetization dynamics, we have derived the expressions                              4𝜋 ∫𝛺 |𝒓 − 𝒓′ | 𝑟
+governing the time evolution of modes and, consequently, that of the             The minimization of Gibbs-Landau free energy functional (8) con-
+magnetization field. Such formulas are independent from the magnetic             strained on the unit-sphere (7) allows to derive the equations for
+system considered. Indeed, they have been derived independently from             micromagnetic equilibria, referred to as Brown’s equations [1]:
+the magnetic equilibrium or the normal modes spatial profile. When                                     𝜕𝒎0
+nonlinear mode coupling is considered in the dynamics, the NMM                   𝒎0 × 𝒉ef f [𝒎0 ] = 𝟎 𝑖𝑛 𝛺,= 𝟎 𝑜𝑛 𝜕𝛺,                           (10)
+                                                                                                        𝜕𝒏
+includes a large number of terms involving products of 2, 3, . . . normal
+                                                                                 where 𝒏 is the outward normal to the boundary of the magnetic body
+modes amplitudes. These terms become more important as the mag-
+                                                                                 𝜕𝛺, and
+netic state deviates by a large angle from the equilibrium configuration.
+In this respect, it is worth to point out that, when the deviation of                            𝛿𝑔𝐿
+                                                                                 𝒉ef f [𝒎] = −       = −𝒎 + 𝒉a
+magnetization from the equilibrium becomes very large, as it may be                              𝛿𝒎
+                                                                                             2 2
+the case of highly nonlinear processes such as magnetization switching,                   = 𝑙ex ∇ 𝒎 + 𝒉m [𝒎] + 2𝜅an (𝒎 ⋅ 𝒆an )𝒆an + 𝒉a ,                        (11)
+although the NMM could be in principle used, it would become rather
+                                                                                 is the effective field given by the functional derivative with respect to
+soon impractically expensive in terms of computational cost. In fact,
+                                                                                 the magnetization. The effective field is recast as the sum of a linear
+it would require to include a huge (ideally infinite) number of terms
+                                                                                 operator − acting on the magnetization field plus the external applied
+in both magnetization expansions (1) and (2), which means on one
+                                                                                 field.
+hand going far beyond the parabolic approximation of the unit-sphere,
+                                                                                     When the equilibrium is perturbed, magnetization dynamics occurs.
+and on the other hand using a large number of eigenmodes. The a-
+                                                                                 For the time being, let us consider magnetization dynamics described
+priori estimation of the number of eigenmodes required to guarantee              by the conservative form of Landau–Lifshitz equation [10], which in
+a prescribed accuracy in the description of magnetization dynamics is            dimensionless units reads as:
+a very interesting topic and will be the focus of future investigations.
+                                                                                 𝜕𝒎
+Nevertheless, there are many situations relevant for the design of                    = −𝒎 × 𝒉ef f [𝒎] ,                                             (12)
+                                                                                  𝜕𝑡
+magnetic technologies, such as those analyzed in this paper, where the
+NMM can quantitatively describe nonlinear magnetization dynamics                 where time is measured in units of (𝛾 𝑀𝑠 )−1 , with 𝛾 being the abso-
+                                                                                 lute value of the gyromagnetic factor. The magnetization field can be
+by using a small number of modes, becoming a powerful alternative
+                                                                                 written in perturbation form as:
+tool to full-scale micromagnetic simulations. In addition, the NMM
+allows to define a hierarchy of models which differ by the number of             𝒎(𝒓, 𝑡) = 𝒎0 (𝒓) + 𝛿𝒎(𝒓, 𝑡) .                                                  (13)
+normal modes considered and type of nonlinear mode coupling (prod-
+                                                                                                                              2                       2
+uct of multiple modes amplitudes). In conclusion, we believe that the            The micromagnetic constraint |𝒎(𝒓, 𝑡)| = |𝒎0 (𝒓) + 𝛿𝒎(𝒓, 𝑡)| = 1 implies
+proposed model will change the current perspective of computational              that the following expansion (Eq. (1) in section Results, see next section
+micromagnetics and will help the design and optimization of current              for details) holds for magnetization:
+                                                                                                              (                       )
+and novel magnetic nanotechnologies.                                                                              1       3
+                                                                                 𝒎(𝒓, 𝑡) = 𝛿𝒎⟂ (𝒓, 𝑡) + 𝒎0 (𝒓) 1 − 𝛿𝒎2⟂ − 𝛿𝒎4⟂ + … ,                   (14)
+                                                                                                                  2       4!
+3. Methods                                                                       where 𝛿𝒎⟂ (𝒓, 𝑡) is the component of 𝛿𝒎 pointwise perpendicular to the
+                                                                                 equilibrium 𝒎0 (𝒓). It is apparent that when |𝛿𝒎| ≪ 1, one can retain
+3.1. Normal modes formulation - conservative dynamics in the linear regime       terms up to first order in Eq. (14), leading to a perturbation field 𝛿𝒎 ≈
+                                                                                 𝛿𝒎⟂ that lies in the plane perpendicular to the equilibrium. We denote
+    In this section, a brief review of the formulation of normal modes           the function space of square-integrable vector fields of this type as the
+in micromagnetic systems is given. For details, the reader can refer to          tangent space  (𝒎0 ). The time-evolution of such small perturbation
+Ref. [41].                                                                       field can be then described by the linearized form of Eq. (12) around
+                                                                                 the equilibrium 𝒎0 , which can be expressed as follows [41]:
+    Let us consider a magnetic body occupying the region 𝛺 whose
+magnetization field is denoted as 𝑴(𝒓, 𝑡). For a given temperature,              𝜕𝛿𝒎⟂
+                                                                                       = 𝒎0 × ( + ℎ0 )𝛿𝒎⟂ = 𝒎0 × 0⟂ 𝛿𝒎⟂ ,                       (15)
+well below the Curie temperature of the material, the fundamental                  𝜕𝑡
+micromagnetic constraint |𝑴(𝒓, 𝑡)| = 𝑀s (𝑇 ) is assumed, where 𝑀s (𝑇 )           where 0⟂ = 𝒎0 ( + ℎ0 ), with 𝒎0 =  − 𝒎0 ⊗ 𝒎0 the projection
+is the saturation magnetization of the material at temperature 𝑇 . By            operator on plane orthogonal to 𝒎0 ,  the identity operator and ℎ0 =
+
+                                                                             8
+S. Perna et al.                                                                                                Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+𝒎0 ⋅ 𝒉ef f [𝒎0 ]. If[ one searches
+                            ]      for time-harmonic solutions of the type           3.2. Conservative dynamics - nonlinear regime
+𝛿𝒎⟂ (𝒓, 𝑡) = Re 𝝋(𝒓) 𝑒𝑗𝜔𝑡 oscillating in each point around the ground
+state, which means using the phasor notation, Eq. (15) can be recast as                  When the perturbation of the equilibrium state brings the magneti-
+the following generalized eigenvalue problem [41]:                                   zation dynamics out of the linear regime, the assumption of Section 3.1
+                                                                                     𝛿𝒎 ≈ 𝛿𝒎⟂ does not hold any longer and hence Eq. (21) describing the
+0⟂ 𝝋 = 𝜔 0 𝝋 ,                                                         (16)
+                                                                                     normal modes amplitude evolution is no more valid. In the following,
+where 0 𝝋 = −𝑗𝒎0 × 𝝋. The summary of the main properties of the                     we arrive at a new system of ODEs which generalizes Eq. (21) for
+above problem, which will be extensively used in the next sections, are              nonlinear magnetization dynamics. As a first step, we decompose the
+the following (detailed derivations can be found in Ref. [41]):                      magnetization field according to the following formula:
+
+    1. The eigenvalues 𝜔𝑘 (eigenfrequencies) are real.                               𝒎(𝒓, 𝑡) = 𝒎0 (𝒓) + 𝛿𝒎(𝒓, 𝑡) = 𝒎0 (𝒓) + 𝛿𝒎0 (𝒓, 𝑡) + 𝛿𝒎⟂ (𝒓, 𝑡) ,                     (22)
+    2. If the eigenpair (𝜔𝑘 , 𝝋𝑘 ) is solution of the problem (16), then so is
+                                                                                     where for each point 𝒓 𝜖 𝛺, 𝛿𝒎0 (𝒓, 𝑡) = 𝛿𝑚0 (𝒓, 𝑡) 𝒎0 (𝒓) is the projection of
+       also the eigenpair (−𝜔𝑘 , 𝝋∗𝑘 ), where 𝜑∗𝑘 is the complex conjugate
+                                                                                     𝛿𝒎(𝒓, 𝑡) along the equilibrium 𝒎0 (𝒓). Then, plugging Eq. (22) into the
+       of 𝜑𝑘 .
+                                                                                     conservative LLG Eq. (12), we obtain:
+    3. The spectrum {𝜔𝑘 }𝑘𝜖Z is discrete (the essential spectrum is at
+       infinity), with 𝜔−𝑘 = −𝜔𝑘 .                                                   𝜕𝛿𝒎
+                                                                                         = 𝒎0 × ( + ℎ0 )𝛿𝒎 + 𝛿𝒎 ×  𝛿𝒎 ,                                                 (23)
+                                                                                      𝜕𝑡
+    4. The set of eigenvectors (eigenmodes) {𝝋𝑘 }𝑘𝜖Z constitute a basis
+       of the tangent space  (𝒎0 ), with 𝝋−𝑘 = 𝝋∗𝑘 .                               which can be expanded in the following equation:
+    5. The eigenmodes of different and non degenerate eigenfrequen-                       𝜕𝛿𝑚0 𝜕𝛿𝒎⟂
+                                                                                     𝒎0       +     =𝒎0 × 0⟂ 𝛿𝒎⟂ + 𝒎0 ×  𝛿𝒎0 + 𝛿𝒎0 ×  𝛿𝒎0
+       cies are 0⟂ -orthogonal.                                                           𝜕𝑡    𝜕𝑡                                              (24)
+                                                                                                     + 𝛿𝒎⟂ ×  𝛿𝒎0 + 𝛿𝒎0 ×  𝛿𝒎⟂ + 𝛿𝒎⟂ ×  𝛿𝒎⟂ ,
+According to property 4 one can represent any vector field in  (𝒎0 )
+and in particular 𝛿𝒎⟂ as:                                                            where we use the fact that 𝒎0 × ℎ0 𝛿𝒎 = 𝒎0 × ℎ0 𝛿𝒎⟂ . By decomposing
+                                                                                     the operator  as
+                  ∑
+                  ∞
+𝛿𝒎⟂ (𝒓, 𝑡) =          𝑎𝑘 (𝑡) 𝝋𝑘 (𝒓) ,                                    (17)         = ⟂ + 0 ,               ⟂ = 𝒎0  ,                                             (25)
+               𝑘=−∞
+while property 5 can be explicitly specified as follows:                             Eq. (24) is also decomposed in the following system of coupled equa-
+                                                                                     tions:
+                                          1
+(𝝋ℎ , 𝝋𝑘 )0⟂ = (𝝋ℎ , 0⟂ 𝝋𝑘 ) =              𝝋∗ ⋅ 0⟂ 𝝋𝑘 𝑑𝑉 = 𝛿ℎ𝑘 ,     (18)           𝜕𝛿𝒎⟂
+                                         𝑉𝛺 ∫𝛺 ℎ                                               =𝒎0 × 0⟂ 𝛿𝒎⟂ + 𝒎0 × ⟂ 𝛿𝒎0 + 𝛿𝒎0 × ⟂ 𝛿𝒎0 +
+                                                                                           𝜕𝑡
+with 𝑉𝛺 being the volume of the region 𝛺 occupied by the magnetic
+                                                                                                 𝛿𝒎0 × ⟂ 𝛿𝒎⟂ + 𝛿𝒎⟂ × 0 𝛿𝒎0 + 𝛿𝒎⟂ × 0 𝛿𝒎⟂ ,             (26)
+body. It is useful to remark that due to the self adjointness of the
+operator 0⟂ , the equation above can be rewritten as:                                   𝜕𝛿𝑚0
+                                                                                     𝒎0        =𝛿𝒎⟂ × ⟂ 𝛿𝒎0 + 𝛿𝒎⟂ × ⟂ 𝛿𝒎⟂ .
+                                                                                           𝜕𝑡
+(𝝋ℎ , 𝝋𝑘 )0⟂ = (0⟂ 𝝋ℎ , 𝝋𝑘 ) = 𝑗𝜔ℎ (𝒎0 × 𝝋ℎ , 𝝋𝑘 ) = 𝛿ℎ𝑘 .             (19)        Up to this point, we have rewritten the conservative Landau–Lifshitz
+It is worthwhile to remark that the magnetization perturbation field                 equation in the reference frame defined by the unit vector 𝒎0 and
+𝛿𝒎(𝒓, 𝑡) associated to the ℎth magnetic normal mode with eigenfre-                   the plane perpendicular to 𝒎0 . The system of ordinary differential
+quency 𝜔ℎ is real and can be expressed as 𝛿𝒎⟂ (𝒓, 𝑡) = 𝑎ℎ (𝑡) 𝝋ℎ (𝒓) +               equations in the 𝑎ℎ (𝑡) could be obtained by applying property 5 to
+𝑎∗ℎ (𝑡) 𝝋∗ℎ (𝒓) = 2 Re [𝑎ℎ (𝑡) 𝝋ℎ (𝒓)].                                              the first of Eqs. (26). However, the occurrence of terms including 𝛿𝑚0
+      Now, we substitute Eq. (17) in Eq. (15), and use the orthogonality             couples the projected equation with the second of Eqs. (26). This can be
+of the eigenmodes (18) as follows:                                                   circumvented by expressing 𝛿𝑚0 as a function of complex amplitudes
+ (               )                                                                   𝑎ℎ (𝑡) and eigenmodes 𝝋ℎ (𝒓). Such a relationship exists as a consequence
+         𝜕𝛿𝒎⟂             ∑(            )
+   𝝋ℎ ,                =        𝝋ℎ , 𝝋𝑘  𝑎̇ 𝑘 = 𝑎̇ ℎ ,                              of the fundamental micromagnetic constraint imposed on Eq. (22).
+            𝜕𝑡    0⟂
+                                           0⟂
+ (                      )
+                           𝑘
+                                  ∑(                    )                            Therefore, by substituting Eq. (22) in Eq. (7), we obtain the following
+  𝝋ℎ , 𝒎0 × 0⟂ 𝛿𝒎⟂  =                 𝝋ℎ , 𝒎0 × 0⟂ 𝝋𝑘  𝑎𝑘      (20)              expressions:
+                            0⟂                            0⟂
+                                     𝑘                                                                                      √
+       ∑       (       )
+   =        𝑗𝜔𝑘 𝝋ℎ , 𝝋𝑘           𝑎𝑘 = 𝑗𝜔ℎ 𝑎ℎ .                                     𝛿𝑚2⟂ + 2𝛿𝑚0 + 𝛿𝑚20 = 0 ⇔ 𝛿𝑚0 = −1 ± 1 − 𝛿𝑚2⟂ .                       (27)
+                              0⟂
+        𝑘
+                                                                                     If the magnetization dynamics occurs around the equilibrium 𝒎0 , then
+Then, one can conclude that the micromagnetic dynamics is described                  the + sign has to be selected. Indeed, when 𝛿𝒎⟂ = 𝟎 such sign choice
+by the following system of ordinary differential equations whose un-                 produces 𝛿𝑚0 = 0. The right hand side of Eq. (27) can be expanded in
+knowns are the normal modes amplitudes:                                              Taylor series as follows:
+𝑎̇ ℎ = 𝑗𝜔ℎ 𝑎ℎ .                                                          (21)                1       3
+                                                                                     𝛿𝑚0 = − 𝛿𝑚2⟂ − 𝛿𝑚4⟂ + … ,                                        (28)
+                                                                                             2      4!
+According to the latter equation, each amplitude evolves independently
+from the others according to the following law: 𝑎ℎ (𝑡) = 𝑎ℎ0 𝑒𝑗𝜔ℎ (𝑡−𝑡0 ) ,          where by considering only the first term of the expansion and express-
+with 𝑎ℎ0 = 𝑎ℎ (𝑡 = 𝑡0 ) being the initial amplitude at time 𝑡0 .                     ing 𝛿𝒎⟂ as a function of the normal modes, we obtain the following
+    As it will be shown in the next sections, when also material dissi-              equation:
+pation and external forcing are taken into account, even in the linear
+                                                                                                      1 ∑                                       1 ∑
+                                                                                                           +∞                                        +∞
+regime, coupling between different normal modes occurs. For moder-                   𝛿𝑚0 (𝒓, 𝑡) ≈ −            𝝋𝑖 (𝒓) ⋅ 𝝋𝑗 (𝒓) 𝑎𝑖 (𝑡)𝑎𝑗 (𝑡) = −         𝜓 (𝒓) 𝑎𝑖 (𝑡)𝑎𝑗 (𝑡) .
+ately larger amplitude values, more pronounced coupling of nonlinear                                  2 𝑖,𝑗=−∞                                  2 𝑖,𝑗=−∞ 𝑖𝑗
+nature sets in.                                                                                                                                                           (29)
+    In the sequel, we derive the general system of coupled differential
+equations for the complex amplitudes describing nonlinear magneti-                   This equation represents an approximation which will be referred to as
+zation processes. By neglecting nonlinear terms in such system, one                  parabolic approximation. It is quite accurate when 𝛿𝑚0 < 0.2, which
+can describe linear magnetization dynamics driven by generic external                corresponds to 𝛿𝑚⟂ < 0.6. We will discover in the following that this
+excitations in terms of mode amplitudes’ evolution. For instance, this               range is enough to quantitatively describe nonlinear dynamics around
+kind of analysis can provide the basis for investigations of magnonic                the equilibrium state in most cases of interest for applications. More-
+devices (see section Results).                                                       over, the accuracy and the range of validity of the model developed in
+
+                                                                                 9
+S. Perna et al.                                                                                                  Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+the following can be increased by inserting further terms in Eq. (29)                                    − 𝛿𝒎⟂ ⋅ (𝛿𝒎⟂ + 𝛿𝒎0 ) .                                        (37)
+coming from the Taylor series (28). The set constituted by Eq. (29) and
+                                                                                     By combining the two above equations, we arrive at the following
+the property 5 allows to derive the projection of the first of Eqs. (26)
+                                                                                     equation:
+in the normal mode basis as follows:
+                                                                                                        |
+ (                )         (           )      𝑗𝜔 ∑ (                )               𝒎 × (𝒎 × 𝒉ef f [𝒎])| =0⟂ 𝛿𝒎⟂ + ℎ0 𝛿𝑚0 𝛿𝒎⟂ + ⟂ 𝛿𝒎0
+                                                                                                        |⟂
+  𝝋ℎ , 𝒎0 × ⟂ 𝛿𝒎0     =𝑗𝜔ℎ 𝝋ℎ , 𝛿𝒎0 = − ℎ             𝝋ℎ , 𝜓𝑖𝑗 𝒎0 𝑎𝑖 𝑎𝑗 ,
+                     0⟂                         2 𝑖,𝑗                                                      − (1 + 𝛿𝑚0 ) 𝒎0 ⋅ (𝛿𝒎⟂ + 𝛿𝒎0 ) 𝛿𝒎⟂ +                        (38)
+(                  )     𝑗𝜔 ∑ (                      )                                                            − 𝛿𝒎⟂ ⋅ (𝛿𝒎⟂ + 𝛿𝒎0 ) 𝛿𝒎⟂ ,
+  𝝋ℎ , 𝛿𝒎0 × ⟂ 𝛿𝒎0  = ℎ          𝝋 , 𝜓 𝜓𝑖𝑗 𝒎0 𝑎𝑖 𝑎𝑗 𝑎𝑘 𝑎𝑙 ,
+                     0⟂   4 𝑖,𝑗,𝑘,𝑙 ℎ 𝑘𝑙
+                                                                                     from which, similarly as we did for Eqs. (30), we can derive the
+(                  )       𝑗𝜔ℎ ∑ (                  )
+                                                                                     projection of the damping torque in the normal modes basis expressed
+ 𝝋ℎ , 𝛿𝒎0 × ⟂ 𝛿𝒎⟂  = −               𝝋 , 𝜓 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 ,
+                     0⟂     2 𝑖,𝑗,𝑘,𝑙 ℎ 𝑗𝑘                                           by the following terms:
+(                  )           (                       )
+  𝝋ℎ , 𝛿𝒎⟂ × 0 𝛿𝒎0  = − 𝑗𝜔ℎ 𝝋ℎ , 𝒎0 ⋅ 𝛿𝒎0 𝛿𝒎⟂                                      (            )         ∑ (            )
+                     0⟂                                                                𝝋ℎ , 0⟂ 𝛿𝒎⟂  = 𝜔ℎ     𝜔 𝑖 𝝋 ℎ , 𝝋 𝑖 𝑎𝑖 ,
+                              𝑗𝜔ℎ ∑ (                         )                                             0⟂
+                                                                                                                       𝑖
+                           =            𝝋 , 𝒎 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 ,
+                                2 𝑖,𝑗,𝑘 ℎ 0                                          (               )          𝑗𝜔ℎ ∑ (                      )
+                                                                                      𝝋ℎ , ℎ0 𝛿𝑚0 𝛿𝒎⟂           =−       𝒎 × 𝝋ℎ , ℎ0 𝜓𝑗𝑘 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 ,
+(                  )           (                       )                                                 0⟂      2 𝑖,𝑗,𝑘 0
+ 𝝋ℎ , 𝛿𝒎⟂ × 0 𝛿𝒎⟂  = − 𝑗𝜔ℎ 𝝋ℎ , 𝒎0 ⋅ 𝛿𝒎⟂ 𝛿𝒎⟂
+                     0⟂
+                                    ∑(                    )                          (           )          𝑗𝜔 ∑ (                    )
+                           = −𝑗𝜔ℎ        𝝋ℎ , 𝒎0 ⋅ 𝝋𝑗 𝝋𝑖 𝑎𝑖 𝑎𝑗 .                     𝝋ℎ , ⟂ 𝛿𝒎0  = − ℎ            𝒎0 × 𝝋ℎ , 𝜓𝑖𝑗 𝒎0 𝑎𝑖 𝑎𝑗 ,
+                                                                                                   0⟂        2 𝑖,𝑗
+                                       𝑖,𝑗
+                                                                                     (                                )
+                                                                         (30)         𝝋ℎ , −(1 + 𝛿𝑚0 ) 𝒎0 ⋅ 𝛿𝒎⟂ 𝛿𝒎⟂ 
+                                                                                                ∑(                       0⟂
+                                                                                                                           )
+By putting Eqs. (20) and (30) together, we arrive at the following                     = −𝑗𝜔ℎ        𝒎0 × 𝝋ℎ , 𝒎0 ⋅ 𝝋𝑗 𝝋𝑖 𝑎𝑖 𝑎𝑗
+                                                                                                   𝑖,𝑗
+system of ODEs in the normal modes amplitudes:
+                                                                                            𝑗𝜔ℎ ∑ (                             )
+                     ∑                 𝑗𝜔ℎ ∑ 0                                          +              𝒎 × 𝝋ℎ , 𝜓𝑘𝑙 𝒎0 ⋅ 𝝋𝑗 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 𝑎𝑙 ,
+𝑎̇ ℎ = 𝑗𝜔ℎ 𝑎ℎ + 𝑗𝜔ℎ        0
+                          𝑐ℎ𝑖𝑗 𝑎𝑖 𝑎𝑗 +         𝑑 𝑎𝑎 𝑎                                        2 𝑖,𝑗,𝑘,𝑙 0
+                                        2 𝑖,𝑗,𝑘 ℎ𝑖𝑗𝑘 𝑖 𝑗 𝑘
+                      𝑖,𝑗                                                            (                       )         𝑗𝜔ℎ ∑ (                           )
+         𝑗𝜔ℎ ∑ 0                                                                       𝝋ℎ , − 𝒎0 ⋅ 𝛿𝒎0 𝛿𝒎⟂  =
+                                                                                                                 0⟂
+                                                                                                                               𝒎 × 𝝋ℎ , 𝒎0 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘
+                                                                                                                        2 𝑖,𝑗,𝑘 0
+       +           𝑒      𝑎𝑎 𝑎 𝑎 ,                            (31)
+          4 𝑖,𝑗,𝑘,𝑙 ℎ𝑖𝑗𝑘𝑙 𝑖 𝑗 𝑘 𝑙                                                    (                             )
+                                                                                      𝝋ℎ , −𝛿𝑚0 𝒎0 ⋅ 𝛿𝒎0 𝛿𝒎⟂ 
+                                                                                                                     0⟂
+where:                                                                                        𝑗𝜔ℎ ∑ (                                   )
+ 0        1(             ) (               )                                            =−                𝒎 × 𝝋ℎ , 𝜓𝑙𝑚 𝒎0 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 𝑎𝑙 𝑎𝑚 ,
+                                                                                               4 𝑖,𝑗,𝑘,𝑙,𝑚 0
+𝑐ℎ𝑖𝑗 =−     𝝋 , 𝜓𝑖𝑗 𝒎0 − 𝝋ℎ , 𝒎0 ⋅ 𝝋𝑗 𝝋𝑖 ,
+          2( ℎ           ) (                   )                                     (                         )              ∑(                        )
+  0
+𝑑ℎ𝑖𝑗𝑘   = − 𝝋ℎ , 𝜓𝑗𝑘 𝝋𝑖 + 𝝋ℎ , 𝒎0 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖 ,                        (32)          𝝋ℎ , −𝛿𝒎⟂ ⋅ 𝛿𝒎⟂ 𝛿𝒎⟂  = −𝑗𝜔ℎ              𝒎0 × 𝝋ℎ , 𝝋𝑘 ⋅ 𝝋𝑗 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 ,
+                                                                                                                       0⟂
+          (               )                                                                                                          𝑖,𝑗,𝑘
+𝑒0ℎ𝑖𝑗𝑘𝑙 = 𝝋ℎ , 𝜓𝑘𝑙 𝜓𝑖𝑗 𝒎0 .                                                         (                      )
+                                                                                      𝝋ℎ , −𝛿𝒎⟂ ⋅ 𝛿𝒎0 𝛿𝒎⟂ 
+                                                                                                                0⟂
+Then we arrived to an equivalent formulation of the conservative                           𝑗𝜔ℎ ∑ (                             )
+Landau–Lifshitz equation in terms of the normal modes amplitudes.                      =              𝒎0 × 𝝋ℎ , 𝝋𝑙 ⋅ 𝜓𝑗𝑘 𝒎0 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 𝑎𝑙 .
+                                                                                            2 𝑖,𝑗,𝑘,𝑙
+The only approximation used, as discussed previously, is the parabolic
+approximation expressed by Eq. (29).                                                                                                                                    (39)
+
+3.3. Damped dynamics - nonlinear regime                                              At this point, we are ready to generalize the system of odes (31)
+                                                                                     including damping terms. In this respect, we have:
+    When the damping is included, magnetization dynamics is assumed
+                                                                                           2
+                                                                                                             ∑                  ∑             𝑗𝜔ℎ ∑
+to be described by the Landau–Lifshitz–Gilbert equation [12], which in               (1 + 𝛼G ) 𝑎̇ ℎ =𝑗𝜔ℎ         𝑏ℎ𝑖 𝑎𝑖 + 𝑗𝜔ℎ       𝑐ℎ𝑖𝑗 𝑎𝑖 𝑎𝑗 +         𝑑 𝑎𝑎 𝑎
+                                                                                                             𝑖                   𝑖,𝑗
+                                                                                                                                                2 𝑖,𝑗,𝑘 ℎ𝑖𝑗𝑘 𝑖 𝑗 𝑘
+dimensionless units reads as:
+                                                                                                           𝑗𝜔ℎ ∑                           𝑗𝜔ℎ ∑
+𝜕𝒎           𝜕𝒎                                                                                          +            𝑒ℎ𝑖𝑗𝑘𝑙 𝑎𝑖 𝑎𝑗 𝑎𝑘 𝑎𝑙 +             𝑓      𝑎𝑎 𝑎 𝑎𝑎 ,
+    − 𝛼G 𝒎 ×     = −𝒎 × 𝒉ef f [𝒎] ,                               (33)                                      4 𝑖,𝑗,𝑘,𝑙                       4 𝑖,𝑗,𝑘,𝑙,𝑚 ℎ𝑖𝑗𝑘𝑙𝑚 𝑖 𝑗 𝑘 𝑙 𝑚
+ 𝜕𝑡           𝜕𝑡
+where 𝛼G ∼ 10−2 is the Gilbert damping. This equation can be put in the                                                                                                 (40)
+explicit form ̇𝒙 = 𝒇 [𝒙; 𝑡], obtaining the Landau–Lifshitz equation [12]:
+                                                                                     where:
+      2  𝜕𝒎
+(1 + 𝛼G )    = −𝒎 × 𝒉ef f [𝒎] − 𝛼G 𝒎 × (𝒎 × 𝒉ef f [𝒎]) .        (34)                 𝑏ℎ𝑖 = 𝛿ℎ𝑖 + 𝛼G 𝑏𝛼ℎ𝑖 ,
+         𝜕𝑡
+                                                                                             0         𝛼
+In order to include damping effects in the normal modes dynamics, we                 𝑐ℎ𝑖𝑗 = 𝑐ℎ𝑖𝑗 + 𝛼G 𝑐ℎ𝑖𝑗 ,
+project the Landau–Lifshitz equation in the tangent space  (𝒎0 ) as                         0
+                                                                                     𝑑ℎ𝑖𝑗𝑘 = 𝑑ℎ𝑖𝑗𝑘       𝛼
+                                                                                                   + 𝛼G 𝑑ℎ𝑖𝑗𝑘 ,                                                         (41)
+follows:
+                                                                                     𝑒ℎ𝑖𝑗𝑘𝑙 = 𝑒0ℎ𝑖𝑗𝑘𝑙 + 𝛼G 𝑒𝛼ℎ𝑖𝑗𝑘𝑙 .
+      2     𝜕𝛿𝒎⟂                                                                                   𝛼
+(1 + 𝛼G )        =𝒎0 × 0⟂ 𝛿𝒎⟂ + 𝒎0 × ⟂ 𝛿𝒎0                                         𝑓ℎ𝑖𝑗𝑘𝑙𝑚 = 𝛼G 𝑓ℎ𝑖𝑗𝑘𝑙𝑚 ,
+              𝜕𝑡
+                  + 𝛿𝒎0 × ⟂ 𝛿𝒎0 + 𝛿𝒎0 × ⟂ 𝛿𝒎⟂ +                                    with 𝑏𝛼ℎ𝑖 , 𝑐ℎ𝑖𝑗
+                                                                                                  𝛼 , 𝑑 𝛼 , 𝑒𝛼
+                                                                                                       ℎ𝑖𝑗𝑘 ℎ𝑖𝑗𝑘𝑙
+                                                                                                                     𝛼
+                                                                                                                  , 𝑓ℎ𝑖𝑗𝑘𝑙𝑚 being the coefficients inferred from
+                                                                       |             Eq. (39) which multiply the product of 1, 2, 3, 4 and 5 normal modes
+                   𝛿𝒎⟂ × 0 𝛿𝒎0 + 𝛿𝒎⟂ × 0 𝛿𝒎⟂ − 𝛼G 𝒎 × (𝒎 × 𝒉ef f [𝒎])| ,
+                                                                       |⟂            amplitudes, respectively.
+                                                                         (35)
+
+where, according to Eqs. (22) and (25), we have:                                     3.4. Forced dynamics - nonlinear regime
+
+                    |
+𝒎 × (𝒎 × 𝒉ef f [𝒎])| = 𝒎 ⋅ ℎef f [𝒎] 𝛿𝒎⟂ + ⟂ (𝛿𝒎⟂ + 𝛿𝒎0 ) ,             (36)           The last step for the study of magnetization dynamics in the frame-
+                    |⟂
+                                                                                     work of normal modes is the inclusion of external excitation terms
+with:
+                                                                                     in the model. Two different kinds of excitation will be considered:
+                          (                       )
+𝒎 ⋅ 𝒉ef f [𝒎] = (1 + 𝛿𝑚0 ) ℎ0 − 𝒎0 ⋅ (𝛿𝒎⟂ + 𝛿𝒎0 )                                   magnetic field and spin-polarized current. In general, no restriction
+
+                                                                                10
+S. Perna et al.                                                                                                      Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+on spatial distribution and time dependence is required. The spin-                           the manuscript. F. Bruckner: Provided consultation in developing the
+transfer torque term will be assumed of the Slonczewski type. In this                        formalism of the normal modes-based model and the numerical simu-
+respect, the equation describing LLGS magnetization dynamics is the                          lation code, Discussed the results, Wrote the manuscript. C. Serpico:
+following [12]:                                                                              Planned the study, Discussed the results, Wrote the manuscript. D.
+𝜕𝒎            𝜕𝒎                                                                             Suess: Planned the study, Provided consultation in developing the
+    − 𝛼G 𝒎 ×      = −𝒎 × 𝒉ef f [𝒎] − 𝒎 × 𝒉rf + 𝛽𝒎 × (𝒎 × 𝒑) ,          (42)
+ 𝜕𝑡           𝜕𝑡                                                                             formalism of the normal modes-based model and the numerical simu-
+where 𝒉rf is the normalized microwave magnetic field and (𝛽, 𝒑) is the                       lation code, Discussed the results, Wrote the manuscript. M. d’Aquino:
+pair identifying the normalized amplitude and the polarization unit                          Planned the study, Developed the formalism of the normal modes-based
+vector of the spin current. As we did in the previous section, it is useful                  model and the numerical simulation code, Discussed the results, Wrote
+to rewrite Eq. (42) in explicit form as follows:                                             the manuscript.
+      2      𝜕𝒎
+(1 + 𝛼G )       = −𝒎 × 𝒉ef f [𝒎] − 𝛼G 𝒎 × (𝒎 × 𝒉ef f [𝒎])                                    Declaration of competing interest
+             𝜕𝑡
+                   − 𝒎 × 𝒇 𝑐 − 𝒎 × (𝒎 × 𝒇 𝑑 ) ,                                  (43)
+                                                                                                 The authors declare that they have no known competing finan-
+where 𝒇 𝑐 = 𝒉rf + 𝛼G 𝛽𝒑 and 𝒇 𝑑 = 𝛼G 𝒉rf − 𝛽 𝒑. At this point, we can                        cial interests or personal relationships that could have appeared to
+derive the several terms to be included in the system of ODEs (40).                          influence the work reported in this paper.
+Specifically, the terms due to 𝒇 𝑐 are expressed in the following:
+                                                                                             Acknowledgments
+𝒎 × 𝒇 𝑐 = (1 + 𝛿𝑚0 ) 𝒎0 × 𝒇 𝑐 + 𝛿𝒎⟂ × 𝒇 𝑐 ,
+(                        )          (        ) 𝑗𝜔ℎ ∑ (                )                         The financial support of the FWF project I 4917 and the support
+ 𝝋ℎ , (1 + 𝛿𝑚0 ) 𝒎0 × 𝒇 𝑐  = 𝑗𝜔ℎ 𝝋ℎ , 𝒇 𝑐 −              𝝋ℎ , 𝜓𝑖𝑗 𝒇 𝑐 𝑎𝑖 𝑎𝑗 ,
+                           0⟂                       2 𝑖,𝑗                                    from the Christian Doppler Laboratory ‘‘Advanced Magnetic Sensing
+(                )            ∑(                  )                                          and Materials’’ and the commercial Partner Infineon is acknowledged.
+ 𝝋ℎ , 𝛿𝒎⟂ × 𝒇 𝑐  = −𝑗𝜔ℎ          𝝋ℎ , 𝒎0 ⋅ 𝒇 𝑐 𝝋𝑖 𝑎𝑖 ,
+                      0⟂
+                                          𝑖                                                  We acknowledge financial support from the Horizon 2020 Frame-
+                                                                                             work Programme of the European Commission under FET-Open grant
+                                                                                 (44)
+                                                                                             agreement no. 899646 (k-NET).
+while the terms due to 𝒇 𝑑 are expressed by the following relations:
+                                                                                             References
+              |
+𝒎 × (𝒎 × 𝒇 𝑑 )| = (1 + 𝛿𝑚0 ) 𝒎0 ⋅ 𝒇 𝑑 𝛿𝒎⟂ + 𝛿𝒎⟂ ⋅ 𝒇 𝑑 𝛿𝒎⟂ + 𝒎0 × (𝒎0 × 𝒇 𝑑 ) ,
+              |⟂
+(                             )         ∑(                        )                           [1] W.F. Brown, Micromagnetics, Krieger Publishing Co., New York, 1963.
+  𝝋ℎ , (1 + 𝛿𝑚0 ) 𝒎0 ⋅ 𝒇 𝑑 𝛿𝒎⟂  = 𝑗𝜔ℎ       𝒎0 × 𝝋ℎ , 𝒎0 ⋅ 𝒇 𝑑 𝝋𝑖 𝑎𝑖
+                                    0⟂                                                        [2] A. Aharoni, Introduction to the Theory of Ferromagnetism, Oxford Press, New
+                                               𝑖
+                                                                                                  York, 1996.
+       𝑗𝜔ℎ ∑ (                           )
+     −           𝒎 × 𝝋ℎ , 𝜓𝑖𝑗 𝒎0 ⋅ 𝒇 𝑑 𝝋𝑖 𝑎𝑖 𝑎𝑗 𝑎𝑘 ,                                          [3] G. Bertotti, Hysteresis in Magnetism: For Physicists, Materials Scientists, and
+        2 𝑖,𝑗,𝑘 0                                                                                 Engineers, Academic Press, San Diego (Calif), 1998.
+(                   )            ∑(                         )                                 [4] H. Kronmueller, General micromagnetic theory, in: Hand-Book of Magnetism and
+  𝝋ℎ , 𝛿𝒎⟂ ⋅ 𝒇 𝑑 𝛿𝒎⟂  = 𝑗𝜔ℎ           𝒎0 × 𝝋ℎ , 𝝋𝑗 ⋅ 𝒇 𝑑 𝝋𝑖 𝑎𝑖 𝑎𝑗 ,
+                           0⟂                                                                     Advanced Magnetic Materials, John Wiley & Sons, NJ, 2007.
+                                         𝑖,𝑗
+(                        )            (             )                                         [5] B. Dieny, I.L. Prejbeanu, K. Garello, et al., Opportunities and challenges for
+    𝝋ℎ , 𝒎0 × (𝒎0 × 𝒇 𝑑 )       = 𝑗𝜔ℎ 𝝋ℎ , 𝒎0 × 𝒇 𝑑 .                                            spintronics in the microelectronics industry, Nature Electron. 3 (2020) 446–459.
+                            0⟂
+                                                                                              [6] S. Parkin, S.H. Yang, Memory on the racetrack, Nature Nanotech. 10 (2015)
+                                                                                 (45)             195–198.
+                                                                                              [7] A. Hirohata, K. Yamada, Y. Nakatani, I.-L. Prejbeanu, B. Diény, P. Pirro, B.
+Once that the terms due to the driving force of magnetization dynamics                            Hillebrands, Review on spintronics: Principles and device applications, J. Magn.
+are projected on the normal modes basis, we arrive at the following                               Magn. Mater. 509 (2020) 166711.
+model:                                                                                        [8] S.O. Demokritov, A.N. Slavin, N. Andrei (Eds.), Magnonics, from Fundamentals
+                             ∑              ∑                                                     to Applications, in: Topics in Applied Physics, vol. 125, Springer-Verlag Berlin,
+      2
+(1 + 𝛼G ) 𝑎̇ ℎ =𝑗𝜔ℎ 𝑏ℎ + 𝑗𝜔ℎ   𝑏ℎ𝑖 𝑎𝑖 + 𝑗𝜔ℎ   𝑐ℎ𝑖𝑗 𝑎𝑖 𝑎𝑗                                          2013.
+                                     𝑖             𝑖,𝑗                                        [9] A. Chumak, V. Vasyuchka, A. Serga, et al., Magnon spintronics, Nature Phys. 11
+                      𝑗𝜔ℎ ∑                   𝑗𝜔ℎ ∑                                               (2015) 453–461.
+                    +          𝑑 𝑎𝑎 𝑎 +                 𝑒     𝑎𝑎 𝑎 𝑎
+                       2 𝑖,𝑗,𝑘 ℎ𝑖𝑗𝑘 𝑖 𝑗 𝑘      4 𝑖,𝑗,𝑘,𝑙 ℎ𝑖𝑗𝑘𝑙 𝑖 𝑗 𝑘 𝑙           (46)        [10] L. Landau, E. Lifshits, On the theory of the dispersion of magnetic permeability
+                                                                                                  in ferromagnetic bodies, Phys. Zeitsch. Der Sow. 8 (1935) 153–169.
+                      𝑗𝜔ℎ ∑                                                                  [11] T.L. Gilbert, A phenomenological theory of damping in ferromagnetic materials,
+                    +             𝑓      𝑎𝑎 𝑎 𝑎𝑎 ,
+                       4 𝑖,𝑗,𝑘,𝑙,𝑚 ℎ𝑖𝑗𝑘𝑙𝑚 𝑖 𝑗 𝑘 𝑙 𝑚                                               IEEE Trans. Magn. 40 (2004) 3443.
+                                                                                             [12] G. Bertotti, I.D. Mayergoyz, C. Serpico, Nonlinear Magnetization Dynamics in
+where:                                                                                            Nanosystems, Elsevier, 2009.
+                                                                                             [13] J.C. Slonczewski, Current-driven excitation of magnetic multilayers, J. Magn.
+𝑏ℎ = 𝑏𝑓ℎ ,                                                                                        Magn. Mater. 159 (1996) L1.
+𝑏ℎ𝑖 = 𝛿ℎ𝑖 + 𝛼G 𝑏𝛼ℎ𝑖 + 𝑏𝑓ℎ𝑖 ,                                                                 [14] S. Zhang, Z. Li, Roles of nonequilibrium conduction electrons on the
+                                                                                                  magnetization dynamics of ferromagnets, Phys. Rev. Lett. 93 (2004) 127204.
+        0         𝛼      𝑓
+𝑐ℎ𝑖𝑗 = 𝑐ℎ𝑖𝑗 + 𝛼G 𝑐ℎ𝑖𝑗 + 𝑐ℎ𝑖𝑗 ,                                                               [15] A. Brataas, A. Kent, H. Ohno, Current-induced torques in magnetic materials,
+                            𝑓
+                                                                                 (47)             Nature Mater. 11 (2012) 372–381.
+         0          𝛼
+𝑑ℎ𝑖𝑗𝑘 = 𝑑ℎ𝑖𝑗𝑘 + 𝛼G 𝑑ℎ𝑖𝑗𝑘 + 𝑑ℎ𝑖𝑗𝑘 ,                                                           [16] T. Schrefl, G. Hrkac, S. Bance, D. Suess, O. Ertl, J. Fidler, Numerical methods
+                                                                                                  in micromagnetics (finite element method), in: Handbook of Magnetism and
+𝑒ℎ𝑖𝑗𝑘𝑙 = 𝑒0ℎ𝑖𝑗𝑘𝑙 + 𝛼G 𝑒𝛼ℎ𝑖𝑗𝑘𝑙 ,                                                                   Advanced Magnetic Materials, John Wiley & Sons, NJ, 2007.
+              𝛼                                                                              [17] C. Abert, Micromagnetics and spintronics: models and numerical methods, Eur.
+𝑓ℎ𝑖𝑗𝑘𝑙𝑚 = 𝛼G 𝑓ℎ𝑖𝑗𝑘𝑙𝑚 ,
+                                                                                                  Phys. J. B 92 (2019) 120.
+with 𝑏𝑓ℎ , 𝑏𝑓ℎ𝑖 , 𝑐ℎ𝑖𝑗
+                   𝑓      𝑓
+                       , 𝑑ℎ𝑖𝑗𝑘 being the coefficients inferred from Eq. (44)                 [18] M.J. Donahue, D.G. Porter, OOMMF User’s Guide, Version 1.0, No. NIST IR 6376,
+                                                                                                  National Institute of Standards and Technology, 1999.
+which multiply the product of 0 (purely additive), 1, 2, and 3 normal                        [19] R. Chang, S. Li, M.V. Lubarda, B. Livshitz, V. Lomakin, J. Appl. Phys. 109 (2011)
+modes amplitudes, respectively. The above model with formulas for the                             07D358.
+coefficients is reported in Table 1 of section Results.                                      [20] C. Andreas, S. Gliga, R. Hertel, J. Magn. Magn. Mater. 362 (2014) 7.
+                                                                                             [21] R.F.L. Evans, W.J. Fan, P. Chureemart, T.A. Ostler, M.O.A. Ellis, R.W. Chantrell,
+CRediT authorship contribution statement                                                          J. Phys.: Condens. Matter 26 (2014) 103202.
+                                                                                             [22] M.-A. Bisotti, M. Beg, W. Wang, M. Albert, D. Chernyshenko, D. Cortés-Ortuño,
+                                                                                                  R.A. Pepper, M. Vousden, R. Carey, H. Fuchs, A. Johansen, G. Balaban, L. Breth,
+  S. Perna: Developed the formalism of the normal modes-based                                     T. Kluyver, H. Fangohr, Finmag: Finite-Element Micromagnetic Simulation Tool,
+model and the numerical simulation code, Discussed the results, Wrote                             Zenodo, 2018.
+
+
+                                                                                        11
+S. Perna et al.                                                                                                        Journal of Magnetism and Magnetic Materials 546 (2022) 168683
+
+
+[23] J. Leliaert, J. Mulker, Tomorrow’s micromagnetic simulations, J. Appl. Phys. 125          [42] M. d’Aquino, C. Serpico, G. Bertotti, T. Schrefl, I.D. Mayergoyz, Spectral
+     (2019) 180901.                                                                                 micromagnetic analysis of switching processes, J. Appl. Phys. 105 (2009)
+[24] W.F. Brown, The fundamental theorem of the theory of fine ferromagnetic                        07D540.
+     particles, J. Appl. Phys. 39 (1968) 993.                                                  [43] C. Herring, C. Kittel, On the theory of spin waves in ferromagnetic media, Phys.
+[25] E.C. Stoner, E.P. Wohlfarth, A mechanism of magnetic hysteresis in heteroge-                   Rev. 81, 869; Erratum Phys. Rev. 88 (1952) 1435.
+     neous alloys, Phil. Trans. R. Soc. A 240 (826) (1948) 599–642, http://dx.doi.             [44] D.D. Stancil, A. Prabhakar, Spin Waves, Theory and Applications, Springer-Verlag
+     org/10.1098/rsta.1948.0007.                                                                    Berlin, 2009.
+[26] C. Thirion, W. Wernsdorfer, D. Mailly, Switching of magnetization by nonlinear            [45] S.O. Demokritov (Ed.), Spin Wave Confinement, Jenny Stanford Publishing, 2007.
+     resonance studied in single nanoparticles, Nature Mater. 2 (2003) 524–527.                [46] B.A. Kalinikos, A.N. Slavin, Theory of dipole-exchange spin wave spectrum for
+[27] C. Kittel, Interpretation of anomalous larmor frequencies in ferromagnetic                     ferromagnetic films with mixed exchange boundary conditions, J. Phys. C: Solid
+     resonance experiment, Phys. Rev. 71 (1947) 270–271, https://link.aps.org/doi/                  State Phys. 19 (35) (1986) 7013–7033.
+     10.1103/PhysRev.71.270.2.                                                                 [47] H. Suhl, The nonlinear behaviour of ferrites at high microwave signal levels,
+[28] J.H.E. Griffiths, Anomalous high-frequency resistance of ferromagnetic metals,                 Proc. IRE 44 (10) (1956) 1270–1284, http://dx.doi.org/10.1109/JRPROC.1956.
+     Nature 158 (1946) 670–671, http://dx.doi.org/10.1038/158670a0.                                 274950.
+[29] C. Kittel, On the theory of ferromagnetic resonance absorption, Phys. Rev. 73             [48] H. Suhl, The theory of ferromagnetic resonance at high signal powers, J. Phys.
+     (1948) 155.                                                                                    Chem. Solids 1 (4) (1957) 209–227, http://dx.doi.org/10.1016/0022-3697(57)
+[30] L.R. Walker, Magnetostatic modes in ferromagnetic resonance, Phys. Rev. 105                    90010-0.
+     (2) (1957) 390–399, https://link.aps.org/doi/10.1103/PhysRev.105.390.                     [49] G. Bertotti, I.D. Mayergoyz, C. Serpico, Spin-wave instabilities in large-scale
+[31] G. Bertotti, C. Serpico, I.D. Mayergoyz, Nonlinear magnetization dynamics under                nonlinear magnetization dynamics, Phys. Rev. Lett. 87 (21) (2001) 217203,
+     circularly polarized field, Phys. Rev. Lett. 86 (4) (2001) 724–727, http://dx.doi.             http://dx.doi.org/10.1103/PhysRevLett.87.217203.
+     org/10.1103/PhysRevLett.86.724.                                                           [50] Q. Wang, M. Kewenig, M. Schneider, et al., A magnonic directional coupler for
+[32] J.C. Sankey, P.M. Braganca, A.G.F. Garcia, I.N. Krivorotov, R.A. Buhrman, D.C.                 integrated magnonic half-adders, Nature Electron. (2020) http://dx.doi.org/10.
+     Ralph, Spin-transfer-driven ferromagnetic resonance of individual nanomagnets,                 1038/s41928-020-00485-6.
+     Phys. Rev. Lett. 96 (2006) 227601.                                                        [51] M. Jamali, J. Kwon, S.M. Seo, et al., Spin wave nonreciprocity for logic device
+[33] E.A. Montoya, S. Perna, Y.J. Chen, et al., Magnetization reversal driven by low                applications, Sci. Rep. 3 (2013) 3160.
+     dimensional chaos in a nanoscale ferromagnet, Nature Commun. 10 (2019) 543.               [52] M. d’Aquino, C. Serpico, G. Miano, Geometrical integration of Landau–Lifshitz–
+[34] W.F. Brown Jr., Thermal fluctuations of a single-domain particle, Phys. Rev. 130               Gilbert equation based on the mid-point rule, J. Comput. Phys. (ISSN: 0021-9991)
+     (1963) 1677.                                                                                   209 (2005) 730–753, http://dx.doi.org/10.1016/j.jcp.2005.04.001.
+[35] O.A. Tretiakov, D. Clarke, Gia-Wei Chern, Ya.B. Bazaliy, O. Tchernyshyov,                 [53] M. d’Aquino, et al., Analytical treatment of nonlinear ferromagnetic resonance
+     Dynamics of domain walls in magnetic nanostrips, Phys. Rev. Lett. 100 (2008)                   in nanomagnets, IEEE Trans. Magn. 53 (11) (2017) 1–5, http://dx.doi.org/10.
+     127204.                                                                                        1109/TMAG.2017.2702641, Art no. 4301005.
+[36] K.Y. Guslienko, R.H. Heredero, O. Chubykalo-Fesenko, Nonlinear gyrotropic                 [54] M. d’Aquino, S. Perna, C. Serpico, Micromagnetic study of statistical switching
+     vortex dynamics in ferromagnetic dots, Phys. Rev. B 82 (2010) 014402.                          in magnetic tunnel junctions stabilized by perpendicular shape anisotropy, 577,
+[37] A. Kovacs, et al., Learning magnetization dynamics, J. Magn. Magn. Mater. 491                  2020, p. 41744, http://dx.doi.org/10.1016/j.physb.2019.411744.
+     (2019) 165548.                                                                            [55] C. Serpico, R. Bonin, G. Bertotti, M. d’Aquino, I.D. Mayergoyz, Theory of
+[38] J.Y. Miao, Machine learning and micromagnetic studies of magnetization                         injection locking for large magnetization motion in spin-transfer nano-oscillators,
+     switching, Chin. Phys. Lett. 36 (9) (2019) 097501.                                             IEEE Trans. Magn. 45 (10) (2009) 3441–3444, http://dx.doi.org/10.1109/TMAG.
+[39] M. Grimsditch, L. Giovannini, F. Montoncello, F. Nizzoli, Gary K. Leaf, Hans G.                2009.2025515.
+     Kaper, Magnetic normal modes in ferromagnetic nanoparticles: A dynamical                  [56] S. Perna, L. Lopez-Diaz, M. d’Aquino, et al., Large hysteresis effect in synchro-
+     matrix approach, Phys. Rev. B 70 (2004) 054409.                                                nization of nanocontact vortex oscillators by microwave fields, Sci. Rep. 6 (2016)
+[40] R.D. McMichael, M.D. Stiles, Magnetic normal modes of nanoelements, J. Appl.                   31630, http://dx.doi.org/10.1038/srep31630.
+     Phys. 97 (2005) 10J901.                                                                   [57] M. d’Aquino, S. Perna, A. Quercia, V. Scalera, C. Serpico, Current-driven
+[41] M. d’Aquino, C. Serpico, G. Miano, C. Forestiere, A novel formulation for                      hysteretic synchronization in vortex nanopillar spin-transfer oscillators, IEEE
+     the numerical computation of magnetization modes in complex micromagnetic                      Magn. Lett. 8 (2017) 1–5, http://dx.doi.org/10.1109/LMAG.2017.2655490, Art
+     systems, J. Comput. Phys. 228 (2009) 6130–6149, http://dx.doi.org/10.1016/j.                   no. 3504005.
+     jcp.2009.05.026.
+
+
+
+
+                                                                                          12
+

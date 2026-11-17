@@ -1,0 +1,2209 @@
+{
+  "trials": 96,
+  "sample": [
+    {
+      "key": "DUTY_D3_CW_p1.1781_t1",
+      "meta": {
+        "variant": "D3_CW",
+        "phi": 1.1780972450961724,
+        "trial": 1
+      },
+      "delta": 0.0029184119922651707
+    },
+    {
+      "key": "DUTY_D1_burst140_p4.7124_t0",
+      "meta": {
+        "variant": "D1_burst140",
+        "phi": 4.71238898038469,
+        "trial": 0
+      },
+      "delta": 0.0001640580796115371
+    },
+    {
+      "key": "DUTY_D0_june_p5.8905_t1",
+      "meta": {
+        "variant": "D0_june",
+        "phi": 5.890486225480862,
+        "trial": 1
+      },
+      "delta": 1.2872580000272394e-05
+    },
+    {
+      "key": "DUTY_D0_june_p0.7854_t1",
+      "meta": {
+        "variant": "D0_june",
+        "phi": 0.7853981633974483,
+        "trial": 1
+      },
+      "delta": 1.2912412552999813e-05
+    },
+    {
+      "key": "DUTY_D0_june_p2.3562_t0",
+      "meta": {
+        "variant": "D0_june",
+        "phi": 2.356194490192345,
+        "trial": 0
+      },
+      "delta": 1.2907711984535104e-05
+    },
+    {
+      "key": "DUTY_D3_CW_p1.5708_t0",
+      "meta": {
+        "variant": "D3_CW",
+        "phi": 1.5707963267948966,
+        "trial": 0
+      },
+      "delta": 0.002919796583906283
+    },
+    {
+      "key": "DUTY_D1_burst140_p1.9635_t1",
+      "meta": {
+        "variant": "D1_burst140",
+        "phi": 1.9634954084936207,
+        "trial": 1
+      },
+      "delta": 0.00016435301681239512
+    },
+    {
+      "key": "DUTY_D3_CW_p2.3562_t1",
+      "meta": {
+        "variant": "D3_CW",
+        "phi": 2.356194490192345,
+        "trial": 1
+      },
+      "delta": 0.00291752603991463
+    },
+    {
+      "key": "DUTY_D1_burst140_p0.3927_t0",
+      "meta": {
+        "variant": "D1_burst140",
+        "phi": 0.39269908169872414,
+        "trial": 0
+      },
+      "delta": 0.00016396007075406596
+    },
+    {
+      "key": "DUTY_D1_burst140_p1.5708_t0",
+      "meta": {
+        "variant": "D1_burst140",
+        "phi": 1.5707963267948966,
+        "trial": 0
+      },
+      "delta": 0.0001645380266892587
+    }
+  ],
+  "waveforms": {
+    "DUTY_D3_CW_p1.1781_t1": {
+      "digest": "783e7c8c3001",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.5890486225480862
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.5890486225480862
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p4.7124_t0": {
+      "digest": "d813e62be905",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 4.71238898038469
+        }
+      ]
+    },
+    "DUTY_D0_june_p5.8905_t1": {
+      "digest": "050c14f9b52f",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 5.890486225480862
+        }
+      ]
+    },
+    "DUTY_D0_june_p0.7854_t1": {
+      "digest": "25ef5a2a4308",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 0.7853981633974483
+        }
+      ]
+    },
+    "DUTY_D0_june_p2.3562_t0": {
+      "digest": "d4ccd72f8bb8",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 2.356194490192345
+        }
+      ]
+    },
+    "DUTY_D3_CW_p1.5708_t0": {
+      "digest": "009cc76e4d2c",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.7853981633974483
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.7853981633974483
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p1.9635_t1": {
+      "digest": "2aadbef3ca98",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 1.9634954084936207
+        }
+      ]
+    },
+    "DUTY_D3_CW_p2.3562_t1": {
+      "digest": "9c721a1d9f8d",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.1780972450961724
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.1780972450961724
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p0.3927_t0": {
+      "digest": "5de5304fffd6",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 0.39269908169872414
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p1.5708_t0": {
+      "digest": "9ce4ea5da15c",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 1.5707963267948966
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p3.5343_t0": {
+      "digest": "1ea6d5a5cc02",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 3.5342917352885173
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p5.4978_t1": {
+      "digest": "c5cf83f4e76a",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 5.497787143782138
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p4.7124_t1": {
+      "digest": "d813e62be905",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 4.71238898038469
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p2.3562_t0": {
+      "digest": "3235caf10ae3",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 2.356194490192345
+        }
+      ]
+    },
+    "DUTY_D3_CW_p0.7854_t1": {
+      "digest": "f47a289f09d1",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.39269908169872414
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.39269908169872414
+        }
+      ]
+    },
+    "DUTY_D0_june_p1.9635_t0": {
+      "digest": "4baf373d27ce",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 1.9634954084936207
+        }
+      ]
+    },
+    "DUTY_D3_CW_p2.7489_t0": {
+      "digest": "d9bbcf2748e5",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.3744467859455345
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.3744467859455345
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p3.5343_t1": {
+      "digest": "1ea6d5a5cc02",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 3.5342917352885173
+        }
+      ]
+    },
+    "DUTY_D0_june_p5.1051_t0": {
+      "digest": "2318e367396a",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 5.105088062083414
+        }
+      ]
+    },
+    "DUTY_D0_june_p4.7124_t1": {
+      "digest": "c5e5a2a24285",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 4.71238898038469
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p3.1416_t0": {
+      "digest": "362b28b2d0d3",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 3.141592653589793
+        }
+      ]
+    },
+    "DUTY_D3_CW_p4.3197_t0": {
+      "digest": "e21a2ff16d9f",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.1598449493429825
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.1598449493429825
+        }
+      ]
+    },
+    "DUTY_D0_june_p5.4978_t1": {
+      "digest": "e886c1d89bc8",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 5.497787143782138
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p2.7489_t1": {
+      "digest": "3bea44d5f32d",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 2.748893571891069
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p5.4978_t0": {
+      "digest": "c5cf83f4e76a",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 5.497787143782138
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p5.1051_t0": {
+      "digest": "5d46be28f476",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 5.105088062083414
+        }
+      ]
+    },
+    "DUTY_D3_CW_p0.3927_t0": {
+      "digest": "a35cde75e386",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.19634954084936207
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.19634954084936207
+        }
+      ]
+    },
+    "DUTY_D0_june_p1.5708_t1": {
+      "digest": "b425fb532462",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 1.5707963267948966
+        }
+      ]
+    },
+    "DUTY_D0_june_p0.3927_t1": {
+      "digest": "66ffb109ef8d",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 0.39269908169872414
+        }
+      ]
+    },
+    "DUTY_D3_CW_p2.3562_t0": {
+      "digest": "9c721a1d9f8d",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.1780972450961724
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.1780972450961724
+        }
+      ]
+    },
+    "DUTY_D3_CW_p5.1051_t0": {
+      "digest": "a23fd3660102",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.552544031041707
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.552544031041707
+        }
+      ]
+    },
+    "DUTY_D3_CW_p1.5708_t1": {
+      "digest": "009cc76e4d2c",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.7853981633974483
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.7853981633974483
+        }
+      ]
+    },
+    "DUTY_D3_CW_p3.1416_t0": {
+      "digest": "8703300fbd60",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.5707963267948966
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.5707963267948966
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p0.0000_t0": {
+      "digest": "155d22d90cef",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 0.0
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p3.9270_t1": {
+      "digest": "bdb7c0b375dc",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 3.9269908169872414
+        }
+      ]
+    },
+    "DUTY_D0_june_p0.0000_t1": {
+      "digest": "b67750e9f4c2",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 0.0
+        }
+      ]
+    },
+    "DUTY_D0_june_p2.7489_t0": {
+      "digest": "3f4543641d7e",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 2.748893571891069
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p1.1781_t0": {
+      "digest": "11545dffd668",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 1.1780972450961724
+        }
+      ]
+    },
+    "DUTY_D3_CW_p4.7124_t1": {
+      "digest": "b9ea0a692c4a",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.356194490192345
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.356194490192345
+        }
+      ]
+    },
+    "DUTY_D3_CW_p5.8905_t0": {
+      "digest": "708c365fd5ca",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.945243112740431
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.945243112740431
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p2.3562_t1": {
+      "digest": "3235caf10ae3",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 2.356194490192345
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p4.3197_t0": {
+      "digest": "0bf862137999",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 4.319689898685965
+        }
+      ]
+    },
+    "DUTY_D3_CW_p1.9635_t0": {
+      "digest": "75d301948cbb",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.9817477042468103
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.9817477042468103
+        }
+      ]
+    },
+    "DUTY_D3_CW_p5.8905_t1": {
+      "digest": "708c365fd5ca",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.945243112740431
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.945243112740431
+        }
+      ]
+    },
+    "DUTY_D0_june_p3.5343_t0": {
+      "digest": "d6b0c4f9624e",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 3.5342917352885173
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p0.7854_t1": {
+      "digest": "74c11c645f82",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 0.7853981633974483
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p5.1051_t1": {
+      "digest": "5d46be28f476",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 5.105088062083414
+        }
+      ]
+    },
+    "DUTY_D0_june_p0.3927_t0": {
+      "digest": "66ffb109ef8d",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 0.39269908169872414
+        }
+      ]
+    },
+    "DUTY_D0_june_p3.5343_t1": {
+      "digest": "d6b0c4f9624e",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 3.5342917352885173
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p3.1416_t1": {
+      "digest": "362b28b2d0d3",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 3.141592653589793
+        }
+      ]
+    },
+    "DUTY_D0_june_p3.9270_t1": {
+      "digest": "e454a1b1bec4",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 3.9269908169872414
+        }
+      ]
+    },
+    "DUTY_D3_CW_p4.7124_t0": {
+      "digest": "b9ea0a692c4a",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.356194490192345
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.356194490192345
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p1.9635_t0": {
+      "digest": "2aadbef3ca98",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 1.9634954084936207
+        }
+      ]
+    },
+    "DUTY_D0_june_p4.3197_t0": {
+      "digest": "32a5283b50ec",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 4.319689898685965
+        }
+      ]
+    },
+    "DUTY_D0_june_p3.1416_t1": {
+      "digest": "b4c24db0b571",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 3.141592653589793
+        }
+      ]
+    },
+    "DUTY_D3_CW_p5.4978_t1": {
+      "digest": "b4c77959d571",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.748893571891069
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.748893571891069
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p5.8905_t0": {
+      "digest": "1f3274c29631",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 5.890486225480862
+        }
+      ]
+    },
+    "DUTY_D0_june_p5.4978_t0": {
+      "digest": "e886c1d89bc8",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 5.497787143782138
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p4.3197_t1": {
+      "digest": "0bf862137999",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 4.319689898685965
+        }
+      ]
+    },
+    "DUTY_D3_CW_p0.7854_t0": {
+      "digest": "f47a289f09d1",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.39269908169872414
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.39269908169872414
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p1.5708_t1": {
+      "digest": "9ce4ea5da15c",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 1.5707963267948966
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p1.1781_t1": {
+      "digest": "11545dffd668",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 1.1780972450961724
+        }
+      ]
+    },
+    "DUTY_D0_june_p3.9270_t0": {
+      "digest": "e454a1b1bec4",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 3.9269908169872414
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p5.8905_t1": {
+      "digest": "1f3274c29631",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 5.890486225480862
+        }
+      ]
+    },
+    "DUTY_D3_CW_p3.9270_t1": {
+      "digest": "06a4c3ff3a3d",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.9634954084936207
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.9634954084936207
+        }
+      ]
+    },
+    "DUTY_D0_june_p5.1051_t1": {
+      "digest": "2318e367396a",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 5.105088062083414
+        }
+      ]
+    },
+    "DUTY_D0_june_p3.1416_t0": {
+      "digest": "b4c24db0b571",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 3.141592653589793
+        }
+      ]
+    },
+    "DUTY_D3_CW_p0.0000_t1": {
+      "digest": "ee9365865113",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.0
+        }
+      ]
+    },
+    "DUTY_D0_june_p1.1781_t0": {
+      "digest": "28ea8977deff",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 1.1780972450961724
+        }
+      ]
+    },
+    "DUTY_D0_june_p2.7489_t1": {
+      "digest": "3f4543641d7e",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 2.748893571891069
+        }
+      ]
+    },
+    "DUTY_D0_june_p5.8905_t0": {
+      "digest": "050c14f9b52f",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 5.890486225480862
+        }
+      ]
+    },
+    "DUTY_D3_CW_p5.1051_t1": {
+      "digest": "a23fd3660102",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.552544031041707
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.552544031041707
+        }
+      ]
+    },
+    "DUTY_D0_june_p4.3197_t1": {
+      "digest": "32a5283b50ec",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 4.319689898685965
+        }
+      ]
+    },
+    "DUTY_D0_june_p1.5708_t0": {
+      "digest": "b425fb532462",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 1.5707963267948966
+        }
+      ]
+    },
+    "DUTY_D3_CW_p3.5343_t1": {
+      "digest": "07ff95a6dacf",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.7671458676442586
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.7671458676442586
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p0.7854_t0": {
+      "digest": "74c11c645f82",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 0.7853981633974483
+        }
+      ]
+    },
+    "DUTY_D0_june_p1.1781_t1": {
+      "digest": "28ea8977deff",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 1.1780972450961724
+        }
+      ]
+    },
+    "DUTY_D3_CW_p1.1781_t0": {
+      "digest": "783e7c8c3001",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.5890486225480862
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.5890486225480862
+        }
+      ]
+    },
+    "DUTY_D0_june_p1.9635_t1": {
+      "digest": "4baf373d27ce",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 1.9634954084936207
+        }
+      ]
+    },
+    "DUTY_D0_june_p0.7854_t0": {
+      "digest": "25ef5a2a4308",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 0.7853981633974483
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p2.7489_t0": {
+      "digest": "3bea44d5f32d",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 2.748893571891069
+        }
+      ]
+    },
+    "DUTY_D3_CW_p3.9270_t0": {
+      "digest": "06a4c3ff3a3d",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.9634954084936207
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.9634954084936207
+        }
+      ]
+    },
+    "DUTY_D0_june_p4.7124_t0": {
+      "digest": "c5e5a2a24285",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 4.71238898038469
+        }
+      ]
+    },
+    "DUTY_D3_CW_p0.0000_t0": {
+      "digest": "ee9365865113",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.0
+        }
+      ]
+    },
+    "DUTY_D3_CW_p5.4978_t0": {
+      "digest": "b4c77959d571",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.748893571891069
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.748893571891069
+        }
+      ]
+    },
+    "DUTY_D3_CW_p3.5343_t0": {
+      "digest": "07ff95a6dacf",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.7671458676442586
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.7671458676442586
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p3.9270_t0": {
+      "digest": "bdb7c0b375dc",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 3.9269908169872414
+        }
+      ]
+    },
+    "DUTY_D3_CW_p0.3927_t1": {
+      "digest": "a35cde75e386",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.19634954084936207
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.19634954084936207
+        }
+      ]
+    },
+    "DUTY_D0_june_p2.3562_t1": {
+      "digest": "d4ccd72f8bb8",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 2.356194490192345
+        }
+      ]
+    },
+    "DUTY_D0_june_p0.0000_t0": {
+      "digest": "b67750e9f4c2",
+      "n_samples": 130560,
+      "loop_period_ns": 2020.0000000000002,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 995.3125,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 1000.0,
+          "dur_ns": 6.25,
+          "phase": 0.0
+        }
+      ]
+    },
+    "DUTY_D3_CW_p1.9635_t1": {
+      "digest": "75d301948cbb",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 0.9817477042468103
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -0.9817477042468103
+        }
+      ]
+    },
+    "DUTY_D3_CW_p4.3197_t1": {
+      "digest": "e21a2ff16d9f",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 2.1598449493429825
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -2.1598449493429825
+        }
+      ]
+    },
+    "DUTY_D3_CW_p3.1416_t1": {
+      "digest": "8703300fbd60",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.5707963267948966
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.5707963267948966
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p0.3927_t1": {
+      "digest": "5de5304fffd6",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 0.39269908169872414
+        }
+      ]
+    },
+    "DUTY_D3_CW_p2.7489_t1": {
+      "digest": "d9bbcf2748e5",
+      "n_samples": 576000,
+      "loop_period_ns": 9000.0,
+      "t0_ref_ns": 2000.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 6000.0,
+          "phase": 1.3744467859455345
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 2000.0,
+          "dur_ns": 5000.0,
+          "phase": -1.3744467859455345
+        }
+      ]
+    },
+    "DUTY_D1_burst140_p0.0000_t1": {
+      "digest": "155d22d90cef",
+      "n_samples": 10240,
+      "loop_period_ns": 160.0,
+      "t0_ref_ns": 0.0,
+      "pulses": [
+        {
+          "amp_mv": 327.0,
+          "freq_mhz": 4075.0,
+          "start_ns": 0.0,
+          "dur_ns": 4.6875,
+          "phase": 0.0
+        },
+        {
+          "amp_mv": 588.0,
+          "freq_mhz": 4149.0,
+          "start_ns": 4.6875,
+          "dur_ns": 6.25,
+          "phase": 0.0
+        }
+      ]
+    }
+  }
+}
