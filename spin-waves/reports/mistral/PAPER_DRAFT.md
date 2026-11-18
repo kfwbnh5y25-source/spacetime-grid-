@@ -124,21 +124,21 @@ sequence-non-commutativity companion; claim phase-continuum memory + gap-control
 - Li et al. 2026, Nat. Comms (DOI 10.1038/s41467-026-71916-9) (A): parametric pumping →
   spontaneous + idler propagating modes via four-wave mixing in a YIG delay line — the
   traveling-wave cousin of our 4B idler mechanism.
-- Kim & Merbouche 2024, "Stimulated magnon scattering by non-degenerate parametric
-  excitation", arXiv:2406.09032 (v1 Jun 2024, v2 Sep 2024); HAL hal-04625827 (A,
-  resolved 1118): micromagnetics of two-frequency pumping generating NEW magnon modes
-  via stimulated scattering; outcome depends on film geometry AND SEQUENCE of the pumping
-  fields. Closest prior art to our tone-1 3-wave $k{+}m$ idler channel. STILL CHASE the
-  published venue before print (arXiv may be the final version — it is a simulation-only
-  companion, whereas our 3-wave channel is measured analytically extracted).
-- Zautkin & Orel (with Cherepanov per Zotero note) ~1980, "Parametric excitation of spin
-  waves by noise modulation of their frequencies", best match: Zh. Eksp. Teor. Fiz. 79,
-  281–287 (1980) [Sov. Phys. JETP 52, 142–147] (A, resolved 1118 via citation lists in
-  the L'vov S-theory school's collected reprints — NOT the article itself). S-theory-era
-  precursor for noise-modulated / partially-coherent parametric excitation: supports our
-  A3 (thermal seeding homogeneous) and the burst-wise statistics picture (GAMMA §4.3).
-  CHASE the article (Google Scholar/library) to confirm title, author list
-  (is Cherepanov on this one?), and page numbers before print.
+- Kim & Merbouche, "Stimulated magnon scattering by non-degenerate parametric
+  excitation", **Appl. Phys. Lett. 125, 122401 (2024)** — RESOLVED 1118 23:2x (Kim's
+  own publication list; arXiv:2406.09032, HAL hal-04625827): micromagnetics of
+  two-frequency pumping generating NEW magnon modes via stimulated scattering; outcome
+  depends on film geometry AND SEQUENCE of the pumping fields. Closest prior art to the
+  tone-1 3-wave $k{+}m$ idler channel (simulation-only counterpart — our channel is
+  measured and extracted analytically).
+- Zautkin, Orel, Cherepanov, "Parametric excitation of spin waves by noise modulation of
+  their frequencies", 1983 — RESOLVED 1118 23:2x: Zh. Eksp. Teor. Fiz. 85, 414 (1983)
+  [Sov. Phys. JETP 58, 414] (title + author list confirmed via Zautkin's Wikipedia
+  publication list + L'vov's refs index; page 414 double-sourced; volume 85/58 from the
+  JETP translation-year correspondence). S-theory-era precursor for noise-modulated
+  parametric excitation: supports A3 (thermal seeding homogeneous) and the burst-wise
+  statistics picture (GAMMA §4.3). Before print: eyeball the article once (library) to
+  confirm vol/page — web-verified to A level only.
 
 **Neuromorphic framing (ONE sentence max in the paper — no hype).**
 - Körber et al. 2023, Nat. Comms 14, 3723 (A): magnon-scattering reservoir — sequence-
@@ -152,8 +152,10 @@ sequence-non-commutativity companion; claim phase-continuum memory + gap-control
 
 - Sample, antenna angles, bias field; SA chain; AWG 64 GS/s.
 - Waveform grammar (Fig. 2 / Methods): `build_loop` pulse list $[P(a_i, f_i, t_0, T_{\rm on}, \phi)]$;
-  June geometry for non-overlap: tone1 300 ns → gap $t_{\rm gap}$ → tone2 400 ns, 2 µs loop,
-  32 ns tukey edges, duty 35%; CW-overlap geometry for Fig 3/meas3.
+  June geometry for non-overlap: tone1 300 ns → gap $t_{\rm gap}$ → tone2 400 ns, 2 µs loop
+  (duty 35%), ~1 ns (essentially rectangular) tukey-programmed edges — June-verified;
+  **32-ns edges silently destroy the gating signal** (meas5, see Fig 3 / SM), so the edge
+  width is a declared knob, not a free choice; CW-overlap geometry for Fig 3/meas3.
 - **Data hygiene boxes**: exclude 1EX sweeps (different SA settings) — fig4/delay recheck
   learned this the hard way; baseline recalibration ~90 s vs ~8 s blocks → repeat-block
   design of meas3 kills the step artifacts.
@@ -171,13 +173,26 @@ versions elsewhere note their $V/2$):
 2. Internal 4B cross-pump $W e^{i\phi_W} \propto P_{mk} b_k^2$, stationary iff
    $|\Delta| \lesssim \Gamma$ (CW) or re-selected per burst (pulsed, GEM §4.3).
 3. Threshold rule (THE formula):
-   $$h_{2,\rm th}(\Psi) = \frac{\sqrt{\Gamma^2+\delta^2 - W^2\sin^2\Psi} - W\cos\Psi}{V}
+   $$h_{2,\rm th}(\Psi) = \frac{\sqrt{\Gamma^2+\tilde\delta^2 - W^2\sin^2\Psi} - W\cos\Psi}{V}
      \xrightarrow{W\,\ll\,\Gamma} h_{\rm th}^{(0)} - \frac{W}{V}\cos\Psi \quad \text{(GEM 6, 7)}$$
+   **$\tilde\delta = \delta + \Delta^{(4A)}$** (the seed's mutual 4A NFS shift of the target,
+   $\Delta^{(4A)} = n_{21}|a_1|^2$): solver-verified 1118 (`tmp/nmm_check_out.md`, 2.1e-11 mT);
+   with the bare $\delta$ the threshold curve is off by up to 13% of $h_{\rm th}(0)$ — larger
+   than the modulation depth itself. Composites/fitting must therefore allow a detuning offset
+   when the seed carries power.
 4. Effective damping split (phase-insensitive $C h_1^2$ vs phase-sensitive $W\cos\Psi$,
    GEM 8); self-consistency $C_m \sim K_{2B}$ at 10–20% (idler report, VERIFIED scale).
+   Gating depth in the sub-threshold overlap regime follows GEM Eq. (8a): exact
+   $P_{\max}/P_{\min} = \big(\tfrac{1-x+w}{1-x-w}\big)^2$ with $x = Ch_1^2/\Gamma'$,
+   $w = W\cos\Psi/\Gamma'$ — DEPTH $\ge 50\% \Leftrightarrow 4w/(1-x) \ge 3-2\sqrt{2} = 0.686$
+   (exact, sympy-verified `tmp/check_depth_criterion.py`; the older "ratio 1.5 ⇔ 50%" text
+   was an inversion error: ratio 1.5 = 33.3% depth).
 5. Gap phase accumulation: $\Psi(t_{\rm on}) = \phi + 2\pi\Delta\, t_{\rm gap} + \rm const$
-   (GEM 9, measured slew 74–80% of $2\pi\Delta$ — mode pulling, honest caveat).
-6. Memory: $W(t_{\rm gap}) = W_0 e^{-2\Gamma_k t_{\rm gap}}$ (GEM 10) — low-$\Delta$ limit;
+   (GEM 9, measured slew 74–83% of $2\pi\Delta$ where $A_1$ is strong (16-phase);
+   60-phase points span 69.7–82.9% — mode pulling, honest caveat).
+6. Memory: $W(t_{\rm gap}) = W_0 e^{-2\Gamma_k t_{\rm gap}}$ (GEM 10; $\Gamma_k$ in rad/s —
+   for HWHM linewidths in Hz this reads $\tau_{\rm mem} = 1/(4\pi\Gamma_{k,\rm Hz})$,
+   2$\pi$-convention RESOLVED 1118, GEM S4.2) — low-$\Delta$ limit;
    measured collapse toward $\Delta \approx 74.5$ MHz (identity-switch line) = open.
    **[PENDING] meas1 at $\Delta = 50, 58$ MHz tests the limit case directly.**
 
@@ -208,11 +223,16 @@ Status: HAVE data, skeleton only.
   primary = the symmetric amplitude ratio to be chosen by meas3 statistics). [PENDING]
 - **NEW (meas5 edge sweep, 1117):** the pulse edge width is the phase-smearing knob —
   $A_1/A_0 = 0.38/0.35/0.19/0.045/0.073/0.042$ at edge 0.5/1/2/4/7/10 ns, end-control
-  1 ns = 0.35 (no drift), A0 constant while A1 dies. Falloff scale ~2 ns matches
-  $\tau_{\rm mem}(\Delta = 74) = \tau_b$. Methodological trap worth an SM paragraph:
+  1 ns = 0.35 (no drift), A0 constant while A1 dies. H5 REFIT (1118, `tmp/parse_meas5_edges.py`,
+  medfilt9 + 2074.5 MHz ± 1.5 MHz window — quotes THIS, not live eyeball):
+  $A_1({\rm edge}) = A_{1,0} e^{-{\rm edge}/\tau_s} + {\rm floor}$ with
+  $\tau_s = 1.87$ ns ($A_1$) / $1.72$ ns ($A_1/A_0$), floor $\approx 8\,$nW / $0.037$ —
+  $\tau_s = \tau_{\rm mem}(\Delta = 74) = 2.13 \pm 0.08$ ns $= \tau_b = 2.15 \pm 0.08$ ns
+  within errors: the smearing constant IS the memory time ("same number", not just
+  "same order"). Methodological trap worth an SM paragraph:
   over-smoothed programming edges DESTROY the gating signal without moving the line
   power — all data must be taken with ~1 ns edges (June geometry). Candidate SM figure:
-  A1/A0 vs edge width at fixed OP.
+  A1/A0 vs edge width at fixed OP (built from the h5 refit: `tmp/meas5_refit2.png`).
 
 ### Fig 4 — Memory / long-gap delay ← meas1 (the campaign centerpiece)
 - a: $P_m(\phi)$ heat maps vs $t_{\rm gap}$ (0 → 200 ns), $\Delta = 50$ and $58$ MHz.
@@ -220,6 +240,34 @@ Status: HAVE data, skeleton only.
 - c: $\phi_{\rm eff}$ slew check $d\phi_0/dt_{\rm gap}$ vs $2\pi\Delta$ (expect ~75–100%).
 - Existing inset data: old delay.h5 stop at +15 ns; delay-recheck2: Δ=74 τ=2.13±0.08 ns,
   Δ=61 no decay to 7.4 ns. meas1 extends to 200 ns. [PENDING — the open-tension killer]
+- **FIRST OVERNIGHT RESULT (c0, Δ=50 MHz, 2026-11-18 01:16, 60 phases, corrected 300/400 ns
+  geometry — control run c0WRONG with the 4.69/6.25 ns bug shows A0 ≈ 0 nW at ALL delays,
+  i.e. the "short bursts never worked" signature, so this file is the decisive negative
+  control):** at Δ=50 the modulation is strong at zero gap ($A_1/A_0 = 0.190$, $A_0 =
+  80.9$ nW, noise 0.09 nW), $A_1/A_0$ decays smoothly to the $A_1 = 0.4$ nW noise floor by
+  $t_{\rm gap} \approx 30$ ns and stays there to 200 ns. Grid exponential fit
+  $\tau = 19.8$ ns (rms 2.2 nW). **Theory tension now measured, not just argued:**
+  $\tau_{\rm meas} = 19.8$ ns vs $\tau_{\rm mem} = 1/(4\pi\Gamma_k) = 52.6$ ns at
+  $\Gamma_k = 1.51$ MHz — factor $\approx 2.7$ too short (the extra dephasing grows with
+  $\Delta$: at $\Delta = 74$ the factor is already $\approx 25$); slew $+11.2$ deg/ns $=
+  62\%$ of $2\pi\Delta$.
+- **A0-rise RESOLVED (not a baseline artifact):** baseline in the line window is flat
+  (160.5–161.1 nW over the whole scan, `tmp/a0_rise_diag.py`) — the extra $\sim$42–45 nW
+  (line window \emph{and} broadband 4–12 MHz off-band, 19 → 47 nW) lives in the signal
+  and saturates on the same $\sim$30 ns scale. Fit (`tmp/a0_rise_fit.py`,
+  `a0_rise_t2t1.py`): off-band release $\tau_{\rm rise} = 9.5$ ns (rms 0.9 nW), and
+  **forcing $\tau_{\rm rise} = \tau_{A1}/2 = 9.95$ ns reproduces the free fit exactly**
+  (rms 0.90 vs 0.90). Consistent single-mechanism picture: $A_1 \propto b_k$ (linear,
+  $\tau = 19.9$ ns coherence decay, $T_2$-like) while the suppression of the direct
+  mode-$m$ excitation scales $\propto |b_k|^2$ (quadratic, $\tau = \tau_{A1}/2$, i.e.
+  $T_1$-like) — $T_2 \lesssim 2T_1$ satisfied (19.9 vs 9.95$\times$2), pure dephasing
+  small at $\Delta = 50$. New observable for the paper: phase memory $T_2$ and population
+  release $T_1 = T_2/2$ extracted from the SAME scan.
+  This also means the physical placed-here caveat: the extra broadband is real sample
+  response (total SA power in band would be shift-invariant for two non-overlapping
+  tones), so it is seed-population physics, not AWG/SA timing. [PENDING: repeat on c1]
+  Parser/QC: `tmp/parse_meas1.py` (selftest PASS) → `tmp/qc_meas1_c0.md` +
+  `tmp/qc_meas1_c0_fig/`. [PENDING: c1 (Δ=58), repeat-fit with CI, A0-rise investigation]
 
 ### Fig 5 — Threshold vs relative phase ← meas2 
 - a: $h_{2,\rm th}$ vs $\Psi$ (2 mV steps, 4–8 phases over $2\pi$), fit to GEM (6) full form
@@ -230,7 +278,7 @@ Status: script ready, data PENDING.
 ### Fig 6 (maybe, or 5b) — Identity switch / fine detune map
 - $c_2$ $\pi$-jump at $\Delta = 74.5$ MHz (VERIFIED cross-dataset), $c_1$ continuous;
   July bracketing 76±2 / 103±2 at different $\Sigma$.
-- Memory-collapsevs detuning: $\tau_{\rm mem}(\Delta)$ from old data + meas1 low-Δ points.
+- Memory collapse vs detuning: $\tau_{\rm mem}(\Delta)$ from old data + meas1 low-Δ points.
 
 ## 5. Discussion
 
@@ -241,6 +289,15 @@ Status: script ready, data PENDING.
 - Honest limitations: burst-wise re-selection interpretation is still a hypothesis
   (pulse-width tomography = proposed follow-up); $\delta_{\rm eff} \approx (0.26-0.37)\Delta$
   slew shortfall unexplained (mode pulling?); memory law fails near identity line.
+
+Synthesis figure (LAST theory figure, PREDICTS the Fig 1/2 contours): **BUILT 1118 →
+`reports/mistral/fig_synthesis.{png,pdf}`** (script `tmp/fig_synthesis.py`, element-by-element
+provenance in `tmp/fig_synthesis_manifest.md`, VERIFIED/PREDICTION/SIM tagged): (a) Eq. 2
+threshold with Γ-tension bands + the −10–15% K₂B shift arrow; (b) Eqs. 6/7 + Eq. 8a depth
+inset with the 49–60% measured band; (c) Eq. 10 memory bands vs all τ points, FAIL zone
+Δ≳74 annotated; (d) Eq. 9 slew; (e) meas5 edge series (no theory curve — turn-on is not
+δ-like); (f) "3"-dataset build-up ⇒ Γ_dyn ≈ 233 MHz feed. To be placed as the paper's
+closing theory figure / Fig 1-2 bridge once meas1–3 data land.
 
 ## 6. Methods / SM
 
@@ -282,6 +339,10 @@ $\Gamma_k$, idler linewidth $\Gamma_m$; both constants in mV$^{-2}$):
 
 Both constants rise $+29\text{–}44\%$ when $f_1$: $4071 \to 4081$ MHz — same spectral
 weighting of the coupling tensor; consistency check for the SM narrative.
+Linewidth cross-check (solver, 1118, `tmp/nmm_check_out.md`): at the NMM's coded damping
+$\alpha = 0.0005$ the mode table gives $\Gamma_m = 1.04$–$1.55$ MHz — bracketing the measured
+HWHM values above; the earlier "8.2–9.8 MHz at $\alpha=0.002$" simulation scale was factor-$\sim2$
+high (correct ratio $\Gamma/\alpha = 0.42$–$0.63\,f_M$, i.e. 4.16–6.19 MHz at $\alpha = 0.002$).
 (SM only: no mode numbers anywhere — BOSS RULE; the NMM-based absolute identification
 stays out until the eigenmode-vs-bias-field fit.)
 
@@ -295,3 +356,4 @@ stays out until the eigenmode-vs-bias-field fit.)
 | Fig 4 | meas1_longgap_memory.h5 | meas1_longgap_memory.py | tonight |
 | Fig 5 | meas2_threshold_vs_phase.h5 | meas2_threshold_vs_phase.py | tonight |
 | Fig 6 | delay.h5 + delay2.h5 + detune | delay-recheck2 + july map | partial |
+| Synthesis | fig_synthesis.{png,pdf} | tmp/fig_synthesis.py (manifest: tmp/fig_synthesis_manifest.md) | theory build done; measured points update when meas1–3 land |

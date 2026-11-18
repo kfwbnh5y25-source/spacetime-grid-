@@ -1,0 +1,464 @@
+%% =====================================================================
+%%  Phase-gated parametric spin-wave memory in a two-tone-pumped BiYIG
+%%  microdisk ensemble -- manuscript for Physical Review B (Regular Article)
+%%
+%%  Revision 2 of the manuscript rewritten from PAPER_DRAFT_GEMINI.md.
+%%  Companion file: revision_notes.md (change log, corrections, data
+%%  provenance, points the authors must confirm).
+%%
+%%  Draft helpers:
+%%     \pend{...}  data still to be acquired / transferred
+%%     \chk{...}   inconsistency or open point needing an author decision
+%%  Set \draftfalse to suppress both for the submission version.
+%%
+%%  Figures are expected in ./figures/ (fig1_overview, fig2_interaction,
+%%  fig3_overlap, fig4_nonoverlap, fig5_harmonics, fig_synthesis,
+%%  figS_threshold_reduction); a framed placeholder is typeset if a file is
+%%  missing, so the document compiles without them.
+%% =====================================================================
+\documentclass[aps,prb,reprint,superscriptaddress,floatfix]{revtex4-2}
+
+\usepackage{amsmath,amssymb,bm}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{siunitx}
+
+%% ---- units -----------------------------------------------------------
+\sisetup{range-phrase = {\text{--}}, range-units = single,
+         group-minimum-digits = 4}
+\DeclareSIUnit{\dBm}{dBm}
+\DeclareSIUnit{\dBc}{dBc}
+\DeclareSIUnit{\sample}{Sa}
+
+%% ---- draft helpers ---------------------------------------------------
+\newif\ifdraft
+\drafttrue                       % <-- \draftfalse for the submission version
+\ifdraft
+  \newcommand{\pend}[1]{\textcolor{blue}{\textbf{[PENDING: #1]}}}
+  \newcommand{\chk}[1]{\textcolor{red}{\textbf{[CHECK: #1]}}}
+\else
+  \newcommand{\pend}[1]{}
+  \newcommand{\chk}[1]{}
+\fi
+
+%% ---- figure helper: framed placeholder if the file is missing --------
+\newcommand{\figfile}[2][\linewidth]{%
+  \IfFileExists{figures/#2.pdf}{\includegraphics[width=#1]{figures/#2.pdf}}{%
+  \IfFileExists{figures/#2.png}{\includegraphics[width=#1]{figures/#2.png}}{%
+  \fbox{\parbox[c][5.5cm][c]{#1}{\centering\texttt{figures/\detokenize{#2}}\\[2pt](figure file not found)}}}}}
+
+%% ---- notation --------------------------------------------------------
+\newcommand{\ii}{\mathrm{i}}
+\newcommand{\ee}{\mathrm{e}}
+\newcommand{\tgap}{t_{\mathrm{gap}}}
+\newcommand{\Deff}{\Delta_{\mathrm{eff}}}
+
+\begin{document}
+
+\title{Phase-gated parametric spin-wave memory in a two-tone-pumped BiYIG microdisk ensemble}
+
+\author{[Author list]}
+\affiliation{[Affiliations]}
+
+\date{\today}
+
+\begin{abstract}
+We study how two frequency-detuned parallel-pumping tones interact in an ensemble of about 12 Bi-substituted yttrium iron garnet (BiYIG) microdisks, using phase-coherent pulsed microwave spectroscopy with \SI{15.6}{\pico\second} timing resolution. A seed tone at $f_1\approx 2f_k$ excites a confined spin-wave mode $k$, and a second tone at $f_2\approx 2f_m$, detuned by $\Delta=f_2-f_1=\SIrange{50}{88}{\mega\hertz}$, pumps a target mode $m$. Below the seed threshold, the seed scatters target magnons into an intermodulation idler at $f_1-f_2/2$ whose power is close to quadratic in the seed amplitude $a_1$ (log-log slope 1.83--1.94) and proportional to the target emission. Its coefficient agrees, within a factor of 1.5, with the independently fitted quadratic reduction of the target threshold. With the seed excited, the $f_2/2$ emission is modulated as $\cos(\phi+\phi_0)$ by the relative carrier phase $\phi$ of the two tones, with a gating depth of 49--60\% at zero pulse separation. The phase dependence persists when the \SI{300}{\nano\second} seed pulse and the \SI{400}{\nano\second} target pulse are separated by a dark gap $\tgap$: the optimal phase $\phi_0$ then advances linearly with $\tgap$, at 70--83\% of the free-precession rate $2\pi\Delta$. For $\Delta\le\SI{58}{\mega\hertz}$ the gating is retained over the full \SI{7}{\nano\second} window studied, whereas at $\Delta=\SI{74}{\mega\hertz}$ it decays with a time constant of \SI{2.13+-0.08}{\nano\second}, 20--30 times shorter than expected from the small-signal linewidth; this detuning also marks a jump of $130^\circ$--$145^\circ$ in the phase of the second harmonic of the modulation. A time scale of about \SI{2}{\nano\second} also governs the single-tone build-up and the loss of gating when the turn-on edge of the target pulse is slowed. A closed-form two-mode normal-mode model with a phase-insensitive and a phase-sensitive coupling accounts for the periodicity, the depth, and the phase advance of the gating, but not for the detuning-dependent decay.
+\end{abstract}
+
+\maketitle
+
+%% =====================================================================
+\section{Introduction}\label{sec:intro}
+%% =====================================================================
+
+Parallel pumping, in which an oscillating magnetic field at $f_p\approx 2f_m$ parallel to the static magnetization splits a microwave photon into a pair of magnons at $f_m$, is a long-standing probe of magnetic relaxation, nonlinear magnon scattering, and magnon condensation \cite{suhl57,gurevich96,bracher17}. In laterally confined structures such as micron-scale disks of yttrium iron garnet (YIG) and Bi-substituted YIG (BiYIG), dipolar and exchange confinement discretizes the spin-wave spectrum into well-separated standing modes \cite{daquino09,srivastava23,abert19}, each with its own parametric threshold. Mode-resolved experiments and micromagnetic normal-mode reductions \cite{srivastava23,massouras24,perna22} have shown that driving two or more confined modes with distinct pump frequencies $f_1\neq f_2$ leads to nonlinear competition, frequency pulling, self-modulation instabilities, and sequence-dependent (non-commutative) steady states \cite{daquino26,soares26,yemeli25,kim24}.
+
+A central prediction of the two-mode normal-mode model (NMM) of d'Aquino \textit{et al.}\ \cite{daquino26} is that four-magnon interactions between an excited seed mode $k$ and a target mode $m$ generate two distinct couplings: a phase-insensitive mutual nonlinear frequency shift (NFS), and a phase-sensitive coupling through which $k$ acts on $m$ as an internal parametric pump at the seed frequency $2f_k$. The latter can interfere with an external pump driving $m$ and should therefore make the parametric threshold and gain of $m$ depend on the relative microwave phase of the two drives. Yet experiments on multi-tone parallel pumping, including the recent demonstration of non-commutative steady-state selection in YIG microdisks \cite{soares26}, have employed overlapping or phase-uncontrolled drives and have recorded time- or phase-averaged emission. Two questions therefore remain open: (i)~Can the relative phase $\phi$ between two frequency-detuned pumps continuously gate the parametric emission of a target mode, and with what modulation depth? (ii)~Does this phase information survive a dark interval $\tgap>0$ in which the two pump pulses do not overlap, and for how long?
+
+Here we answer both questions in an ensemble of BiYIG microdisks by phase-coherent pulsed two-tone microwave spectroscopy. The drive waveforms are synthesized at \SI{64}{\giga\sample\per\second}, so that $\phi$ and $\tgap$ are programmed independently with picosecond resolution, and the subharmonic ($f/2$) emission is read out with a swept spectrum analyzer. Our main results are as follows. First, below the seed threshold we resolve the phase-insensitive channel: a quadratic idler emission whose coefficient is consistent with the quadratic threshold reduction of the target mode. Second, once the seed is excited, the relative phase modulates the target emission with period $2\pi$ and a depth of up to 60\%. Third, this modulation persists across a dark gap, with its optimal phase advancing linearly in $\tgap$ at a rate close to the free-precession value $2\pi\Delta$ set by the detuning $\Delta=f_2-f_1$. Fourth, the gating amplitude is retained for at least \SI{7}{\nano\second} at small $\Delta$ but is lost within about \SI{2}{\nano\second} near $\Delta=\SI{74}{\mega\hertz}$; a time scale of this order also appears in the single-tone build-up and in the sensitivity to the turn-on edge of the pulse. The phase advance, the periodicity, and the depth follow from closed-form relations derived from the two-mode NMM; the fast, detuning-dependent decay does not, and we discuss it as an open problem.
+
+The paper is organized as follows. Section~\ref{sec:exp} describes the sample, the waveform synthesis, and the analysis conventions. Section~\ref{sec:theory} derives the model predictions. Section~\ref{sec:results} presents the measurements in the order of the model: single-tone response, phase-insensitive channel, phase gating, phase memory, harmonic structure, and time scales. Section~\ref{sec:disc} discusses the memory time scale, the origin of the phase sensitivity at large detuning, the relation to earlier work, and the limitations of the present data. Because the eigenmode spectrum of the ensemble has not yet been mapped as a function of bias field, we label the seed mode, excited near $f_1/2$, by $k$ and the target mode, excited near $f_2/2$, by $m$, without assigning microscopic mode indices \pend{FMR/eigenmode spectrum versus bias field}.
+
+%% =====================================================================
+\section{Experiment}\label{sec:exp}
+%% =====================================================================
+
+\subsection{Sample and microwave setup}\label{sec:setup}
+
+The device is an ensemble of about 12 nominally identical BiYIG microdisks (\SI{3}{\micro\metre} diameter, \SI{50}{\nano\metre} thickness; saturation magnetization $\mu_0M_s\approx\SI{176}{\milli\tesla}$, as used in the normal-mode modeling of Refs.~\cite{perna22,yemeli25}), coupled inductively to a microstrip antenna. The angle between the radio-frequency (RF) magnetic field of the antenna and the static in-plane bias field is $30^\circ$ \pend{bias-field value and calibration}.
+
+Drive waveforms in the \SIrange{3.76}{4.25}{\giga\hertz} band are synthesized digitally at \SI{64}{\giga\sample\per\second} (\SI{15.625}{\pico\second} per sample, 8-bit DAC) by a Keysight M8195A arbitrary waveform generator (AWG) and amplified by a \SI{35}{\decibel} Mini-Circuits ZHL power amplifier. The amplifier is operated in its linear regime: the waveform crest is limited to \SI{760}{\milli\volt} DAC amplitude (input power $\le\SI{-5}{\dBm}$, gain compression below \SI{0.1}{\decibel}), and third-order intermodulation products measured on the monitor path lie between \SI{-41}{\dBc} and \SI{-31}{\dBc}. A single-tone calibration at the excitation port gives $P_{\mathrm{dr}}\propto a^{1.994}$ (\SI{0.43}{\percent} rms log residual over \SIrange{4045}{4085}{\mega\hertz}) and $P_{\mathrm{dr}}\propto a^{1.965}$ (\SI{0.64}{\percent} over \SIrange{3760}{4250}{\mega\hertz}), with no kink or anomaly across the parametric threshold region [Fig.~\ref{fig:single}(g)]; here $a$ is the AWG amplitude. The microwave field at the sample is therefore proportional to $a$, and we use $a_i$ and the field amplitude $h_i$ interchangeably in scaling relations.
+
+Subharmonic spin-wave emission near $f/2$ (\SIrange{1.88}{2.13}{\giga\hertz}) is detected with an Agilent E4440A swept spectrum analyzer (SA) in rms-detection averaging mode with 1001 frequency points per trace. For every measurement point the SA records a baseline trace with the AWG output off and a signal trace with the looped AWG waveform active; all spectral powers are baseline-subtracted and processed in linear units. The AWG sequence memory is organized in blocks of 1280 samples (\SI{20}{\nano\second}), so that total loop durations (typically \SIrange{1}{2}{\micro\second}) are multiples of \SI{20}{\nano\second}, whereas all pulse start times, widths, and gaps within the loop are set with single-sample (\SI{15.625}{\pico\second}) resolution.
+
+\subsection{Pulse sequences and phase reference}\label{sec:pulses}
+
+The drive consists of two pulsed tones $i=1,2$ with amplitudes $a_i$ (in mV at the AWG output), carrier frequencies $f_i$, and programmed phases $\phi_i$; we write $\Delta=f_2-f_1$, $\Sigma=(f_1+f_2)/2$, and $\phi=\phi_2-\phi_1$. Three families of waveforms are used (Table~\ref{tab:series}; the timing is sketched in Fig.~\ref{fig:single}(h)).
+
+\emph{Single-tone sweeps} map the subharmonic response and the build-up of the instability. \emph{Simultaneous or overlapping two-tone sweeps} probe the phase-insensitive channel and the sensitivity to $\phi$ in overlap; in the sub-threshold scattering sweeps, delayed timing (D: a \SI{1000}{\nano\second} tone~1 leads a \SI{500}{\nano\second} tone~2, with \SI{500}{\nano\second} overlap) is compared with simultaneous timing (ND), and five SA channels are read out (excitation monitor, emission at $f_1/2$ and $f_2/2$, lower idler, upper sideband). \emph{Sequential two-tone sweeps} test the phase memory: tone~1 ($a_1=\SI{327}{\milli\volt}$, duration \SI{300}{\nano\second}) ends at $t=0$, and tone~2 ($a_2=\SI{588}{\milli\volt}$, duration \SI{400}{\nano\second}) occupies $[\tgap,\tgap+\SI{400}{\nano\second}]$ within a \SI{2}{\micro\second} loop, with \SI{1}{\nano\second} Tukey edges (64 samples). Negative $\tgap$ denotes overlapping pulses.
+
+\begin{table*}
+\caption{Measurement series. $a_i$ are AWG amplitudes, $\phi=\phi_2-\phi_1$, $\Sigma=(f_1+f_2)/2$, $\Delta=f_2-f_1$, and RBW is the SA resolution bandwidth.}
+\label{tab:series}
+\begin{ruledtabular}
+\begin{tabular}{p{2.9cm}p{5.3cm}p{6.6cm}p{2.0cm}}
+Series & Timing & Parameters & Figures\\
+\hline
+Single tone, overview & \SI{1}{\micro\second} segments of $a\sin(2\pi ft)$ in a \SI{50}{\micro\second} on / \SI{3}{\micro\second} off burst train (94\% duty) & $f=\SIrange{3760}{4250}{\mega\hertz}$, $a=\SIrange{200}{500}{\milli\volt}$, RBW \SI{20}{\kilo\hertz} & 1(a)--(c), (g)\\
+Single tone, zoom & as above & $f=\SIrange{4045}{4085}{\mega\hertz}$, $a=\SIrange{250}{350}{\milli\volt}$, RBW \SI{510}{\kilo\hertz} & 1(a) inset, (d)--(f)\\
+Single tone, pulse width & 50\% duty pulse train & $f=\SI{4072}{\mega\hertz}$, pulse width $\tau_p=\SIrange{0.3125}{9.22}{\nano\second}$, $a=\SIrange{200}{1000}{\milli\volt}$, RBW \SI{300}{\kilo\hertz} & 6(f)\\
+Two tones, sub-threshold scattering & D and ND timing (see text) & $f_1\in\{4071,4081\}$\,MHz, $f_2\in\{4125,4135\}$\,MHz, $a_1,a_2$ swept & 2, Table~\ref{tab:coeff}\\
+Two tones, overlap, two phases & simultaneous & $f_1=\SI{4069.5}{\mega\hertz}$, $a_1\le\SI{324}{\milli\volt}$, $a_2=\SIrange{200}{275}{\milli\volt}$, $f_2=\SIrange{4075}{4150}{\mega\hertz}$, $\phi\in\{1.31,4.55\}$\,rad, plus $a_1=0$ reference & 3, S1\\
+Sequential, $\tgap=0$, phase maps & \SI{300}{\nano\second} / \SI{400}{\nano\second} pulses, $\tgap=0$ & $(f_1,f_2)$ grids ($20\times15$) with 16 or 25 phases & 4(a)--(c), 5\\
+Sequential, delay scans & as above, $\tgap$ scanned & (i) $f_2=\SI{4142}{\mega\hertz}$, $f_1=\SIrange{4066}{4078}{\mega\hertz}$, $\tgap=-17.6$ to $+\SI{13.3}{\nano\second}$, 16 phases; (ii) $\Sigma=\SI{4106}{\mega\hertz}$, $\Delta=\SIrange{50}{88}{\mega\hertz}$, 16 phases, $\tgap$ up to \SI{7}{\nano\second}; (iii) $\Delta=61$ and \SI{74}{\mega\hertz}, 60 phases & 4(d), 6(c),(d), Table~\ref{tab:memory}\\
+Edge-width sweep & as above at $\Delta=\SI{74}{\mega\hertz}$ & tone-2 Tukey edge width $t_{\mathrm{edge}}=\SIrange{0.5}{10}{\nano\second}$ & 6(e)\\
+\end{tabular}
+\end{ruledtabular}
+\end{table*}
+
+All waveforms are synthesized with a common time origin $t_0$,
+\begin{equation}
+s_i(t)=\frac{a_i}{1000}\,w_i(t)\,\sin\!\big[2\pi f_i(t-t_0)+\phi_i\big],
+\label{eq:waveform}
+\end{equation}
+where $w_i(t)$ is the pulse envelope. We take $t_0$ at the end of tone~1 ($t_0=0$). The programmed phase $\phi$ is then referenced to $t_0$, and the relative phase of the two carriers at the turn-on of tone~2 contains the contribution $2\pi\Delta\,\tgap$ accumulated across the dark interval, independently of segment boundaries.%
+\footnote{\chk{The source draft does not state where $t_0$ lies. The stability of $\phi_0\approx-155^\circ$ (10--90\% spread $3.3^\circ$) across the hot band of Fig.~\ref{fig:nonoverlap}, which spans several MHz in $\Delta$, requires $t_0$ to lie within about \SI{2}{\nano\second} of the end of tone~1 (otherwise $\phi_0$ would vary as $2\pi\Delta$ times the offset); please confirm.}}
+
+\subsection{Analysis conventions}\label{sec:analysis}
+
+The phase-gated signal $I(\phi)$ is the baseline-subtracted SA power integrated over the band around the target line at $f_2/2$.%
+\footnote{\chk{The draft alternately calls this signal the ``$f_2/2$ response'' and the ``idler emission'', and does not state the integration band (Fig.~\ref{fig:overlap} uses a peak-power metric). Here the idler is reserved for the sideband at $f_1-f_2/2$, which cannot be generated when the two pulses do not overlap; the phase-gated signal is therefore taken to be the target emission at $f_2/2$. Please confirm, and state the integration band.}}
+For each configuration $(f_1,f_2,\tgap)$, $I$ is recorded at $N$ equally spaced phases $\phi_j=2\pi j/N$ ($N=16$, 25, or 60) in shuffled order, and decomposed as
+\begin{equation}
+I(\phi)=A_0+\sum_{n\ge1}A_n\cos(n\phi+\varphi_n),\quad c_n=\frac{2}{N}\sum_{j}I(\phi_j)\,\ee^{-\ii n\phi_j},
+\label{eq:dft}
+\end{equation}
+with $A_0=N^{-1}\sum_j I(\phi_j)$, $A_n=|c_n|$ and $\varphi_n=\arg c_n$; the fundamental amplitude $A_1$ and the optimal phase $\phi_0=\varphi_1$ are the central quantities (the maximum of $I$ lies at $\phi=-\phi_0$). We quantify the gating by the depth $D=1-P_{\min}/P_{\max}$ and by the symmetrized contrast $C=(P_{\max}-P_{\min})/(P_{\max}+P_{\min})$, where $P_{\max}$ and $P_{\min}$ are the extrema of $I(\phi)$; the two are related by $D=2C/(1+C)$, and $C=A_1/A_0$ for a pure cosine. The memory of the phase across a dark gap is characterized by the dependence of $A_1$ and $\phi_0$ on $\tgap$. Procedures for baseline recalibration, outlier rejection, and the choice of readout path are given in Appendix~\ref{app:data}.
+
+%% =====================================================================
+\section{Model}\label{sec:theory}
+%% =====================================================================
+
+We use the closed-form two-mode reduction of the NMM of d'Aquino \textit{et al.}\ \cite{daquino26}, built on the projection formalism of Ref.~\cite{perna22}. The model has two purposes: it identifies which couplings can gate the phase, and it yields four testable relations, namely the sinusoidal $2\pi$ periodicity (Sec.~\ref{sec:gatedthr}), the depth criterion (Sec.~\ref{sec:depth}), the phase advance (Sec.~\ref{sec:freeevol}), and the decay law (Sec.~\ref{sec:freeevol}).
+
+\subsection{Single-mode threshold and rate conventions}\label{sec:single}
+
+In the laboratory frame, free decay of the complex modal amplitude $b_m$ obeys $\dot b_m=-(\Gamma_m+\ii\,2\pi f_m)b_m$. In the frame rotating at $f_p/2$, and under a parallel pump $h_p\sin(2\pi f_p t+\phi)$ near $2f_m$,
+\begin{equation}
+\dot b=-(\Gamma_m+\ii\delta_m)\,b+\ii V_m h_p\,\ee^{-\ii\phi}\,b^*,\quad \delta_m=2\pi\!\left(f_m-\frac{f_p}{2}\right),
+\label{eq:single}
+\end{equation}
+where $\Gamma_m$ is the amplitude relaxation rate and $V_m$ is the parametric coupling coefficient (the off-diagonal pump matrix element, $\omega_h|(\boldsymbol\varphi_h,\boldsymbol\varphi_h^*)|/2$ in the notation of Ref.~\cite{daquino26}; conventions that define the threshold as $2\Gamma/V$ absorb a factor 2 into $V$). A free decay $b\propto\ee^{-\Gamma_mt}$ produces a Lorentzian power spectrum with half-width at half-maximum (HWHM) $\Gamma_{m,\mathrm{Hz}}=\Gamma_m/2\pi$ in cycles per second, so the amplitude lifetime is $(2\pi\Gamma_{m,\mathrm{Hz}})^{-1}$. The eigenvalues of the linearized system are $\lambda_\pm=-\Gamma_m\pm\sqrt{(V_mh_p)^2-\delta_m^2}$, which gives the single-tone threshold (Arnold tongue)
+\begin{equation}
+h^{(0)}_{\mathrm{th}}(\delta_m)=\frac{\sqrt{\Gamma_m^2+\delta_m^2}}{V_m},
+\label{eq:arnold}
+\end{equation}
+equal to $\Gamma_m/V_m$ at resonance.
+
+\subsection{Couplings induced by the seed}\label{sec:couplings}
+
+Three couplings modify the response of $m$ when tone~1 is present. They differ in whether they require an excited seed and in whether they are sensitive to $\phi$.
+
+(a)~\emph{Pump-mediated idler channel (phase-insensitive).} Tone~1 itself converts a magnon of the target mode into an idler magnon at $f_{\mathrm{id}}=f_1-f_2/2$ (a nondegenerate three-wave process, photon $\to$ magnon pair). The idler follows $P_{\mathrm{id}}=C_m a_1^2P_{f_2/2}$, and its adiabatic elimination adds a self-energy to $m$ that is independent of $\phi_1$ (Appendix~\ref{app:idler}) and lowers the effective damping, so that
+\begin{equation}
+h_{2,\mathrm{th}}(a_1)=h_{2,\mathrm{th}}(0)\,\big(1-K_{2B}\,a_1^2\big).
+\label{eq:K2B}
+\end{equation}
+This channel exists below the seed threshold, where $k$ is not excited.
+
+(b)~\emph{Mutual four-magnon frequency shift (phase-insensitive).} An excited seed shifts the target detuning, $\tilde\delta_m=\delta_m+\Delta^{(4A)}$ with $\Delta^{(4A)}=n_{mk}|b_k|^2$ [corresponding to $2\omega_mN_{mk}|a_k|^2$ in Ref.~\cite{daquino26}]. Omitting $\Delta^{(4A)}$ shifts the predicted threshold curve by up to about 13\% of $h^{(0)}_{\mathrm{th}}$ when the seed carries power, which exceeds the coherent phase modulation itself (Appendix~\ref{app:numerics}).
+
+(c)~\emph{Four-magnon cross-pump (phase-sensitive).} The term $P_{mk}b_k^2b_m^*$ acts on $m$ as an internal parametric pump at $2f_k\approx f_1$, with strength $W=|P_{mk}||b_k|^2$ and phase $\phi_W=2\theta_k+\arg P_{mk}$. Because the parametrically excited seed is phase-locked to tone~1 (up to the sign ambiguity $b_k\to-b_k$, which $b_k^2$ does not feel), $\phi_W$ is fixed relative to $\phi_1$. This is why the cross-pump is a well-defined reference for $\phi$ and why the modulation has period $2\pi$ rather than $\pi$.
+
+In the frame rotating at $f_2/2$, the linearized equation for $m$ is then Eq.~(\ref{eq:single}) with $\delta_m\to\tilde\delta_m$ and the pump term $\ii V_mh_2\ee^{-\ii\phi}$ replaced by $\ii A(t)$,
+\begin{equation}
+A(t)=V_mh_2\,\ee^{-\ii\phi}+W\,\ee^{-\ii[\phi_W-2\pi\Delta t]}.
+\label{eq:A}
+\end{equation}
+The relative phase of the two terms is
+\begin{equation}
+\Psi(t)=\phi+2\pi\Delta\,t-\phi_W,
+\label{eq:Psi}
+\end{equation}
+so that $|A|^2=(V_mh_2)^2+W^2+2V_mh_2W\cos\Psi$. For a stationary beat the two terms interfere only if $|\Delta|\lesssim\Gamma_m$. Our detunings are 30--60 times larger than the small-signal linewidth ($\Gamma_{\mathrm{Hz}}\approx\SI{1.5}{\mega\hertz}$, Sec.~\ref{sec:coeff}), so the beat is not stationary on the response time of $m$. We therefore use $\Psi$ evaluated at the turn-on of tone~2, $t=t_{\mathrm{on}}$, as the quantity that selects the threshold and the initial amplified quadrature; this frozen-phase assumption is revisited in Sec.~\ref{sec:disc}.
+
+\subsection{Phase-gated threshold}\label{sec:gatedthr}
+
+Setting $|A|=\sqrt{\Gamma_m^2+\tilde\delta_m^2}$ at fixed $\Psi$ gives a quadratic equation for $V_mh_2$ with the positive root
+\begin{equation}
+h_{2,\mathrm{th}}(\Psi)=\frac{\sqrt{\Gamma_m^2+\tilde\delta_m^2-W^2\sin^2\Psi}-W\cos\Psi}{V_m}.
+\label{eq:hth}
+\end{equation}
+For $W\ll\Gamma_m$ (we estimate $W/\Gamma_m\lesssim 0.04$ from the NMM) this linearizes to
+\begin{equation}
+h_{2,\mathrm{th}}(\Psi)\simeq\frac{\sqrt{\Gamma_m^2+\tilde\delta_m^2}}{V_m}-\frac{W}{V_m}\cos\Psi .
+\label{eq:hthlin}
+\end{equation}
+Three predictions follow. (i)~The threshold is modulated sinusoidally with period $2\pi$. (ii)~The peak-to-valley swing $2W/V_m$ measures $W$ in field units without microscopic tensor elements. (iii)~The phase-averaged threshold is unchanged to first order in $W$. Combining the three channels at resonance, the effective damping is $\Gamma_{\mathrm{eff}}/\Gamma_m=1-K_{2B}a_1^2-w\cos\Psi$ with $w=W/\Gamma_m$, which unifies the phase-insensitive reduction (a) and the phase-sensitive modulation (c) in a single threshold.
+
+\subsection{Sub-threshold gating depth}\label{sec:depth}
+
+Below threshold, the power in the amplified quadrature scales as $P(\Psi)\propto(1-|A|/\Gamma_m)^{-2}$. With $x=V_mh_2/\Gamma_m$ and $|A|/\Gamma_m\simeq x+w\cos\Psi$ (valid for $w\ll x$),
+\begin{equation}
+\frac{P_{\max}}{P_{\min}}=\left(\frac{1-x+w}{1-x-w}\right)^{2},\qquad x+w<1 .
+\label{eq:ratio}
+\end{equation}
+The de-amplified quadrature, which is also present in the measured power, reduces this contrast. A depth $D=1-P_{\min}/P_{\max}\ge50\%$ requires $P_{\max}/P_{\min}\ge2$, i.e.
+\begin{equation}
+\frac{w}{1-x}\ge\frac{\sqrt2-1}{\sqrt2+1}=3-2\sqrt2\approx0.172 .
+\label{eq:criterion}
+\end{equation}
+A weak cross-pump $w\approx0.005$--$0.04$ therefore suffices for $D\ge50\%$ once tone~2 is within $1-x\approx0.03$--$0.23$ of threshold. The depth is controlled by proximity to threshold as much as by $W$.
+
+\subsection{Free evolution across a dark gap}\label{sec:freeevol}
+
+When tone~1 ends at $t=0$ and tone~2 starts at $t_{\mathrm{on}}=\tgap$, the seed continues to precess at its free-running frequency $f_k'$. Evaluating Eq.~(\ref{eq:Psi}) at $t_{\mathrm{on}}$, with $2f_k'$ replacing $f_1$ in the phase of the cross-pump,
+\begin{equation}
+\Psi(\tgap)=\phi+2\pi\Deff\,\tgap+\text{const},\qquad \Deff=f_2-2f_k' ,
+\label{eq:slew}
+\end{equation}
+with $\Deff=\Delta$ if the seed precesses at exactly $f_1/2$. Equation~(\ref{eq:slew}) states that the programmed phase and the dark interval are interchangeable control parameters; in terms of the fitted phase, $\phi_0$ advances by $2\pi\Deff$ per unit time. Under linear relaxation $b_k(t)=b_k(0)\ee^{-\Gamma_kt}$, the quadratic cross-pump decays at twice the amplitude rate,
+\begin{equation}
+W(\tgap)=W(0)\,\ee^{-2\Gamma_k\tgap},\qquad\tau^{\mathrm{lin}}_{\mathrm{mem}}=\frac{1}{2\Gamma_k}=\frac{1}{4\pi\Gamma_{k,\mathrm{Hz}}} .
+\label{eq:decay}
+\end{equation}
+For $\Gamma_{k,\mathrm{Hz}}=1.50$--\SI{1.61}{\mega\hertz} this predicts $\tau_{\mathrm{mem}}^{\mathrm{lin}}=49.4$--\SI{53.1}{\nano\second}.
+
+%% =====================================================================
+\section{Results}\label{sec:results}
+%% =====================================================================
+
+\subsection{Single-tone response}\label{sec:single-tone}
+
+Figure~\ref{fig:single} summarizes the single-tone $f/2$ emission. Between 3.76 and \SI{4.25}{\giga\hertz} and for drive powers $P_{\mathrm{dr}}$ from \SI{-26.0}{\dBm} to \SI{-16.8}{\dBm} [Fig.~\ref{fig:single}(a)], the $3\sigma$ onset boundary (\SI{0.98}{\nano\watt} in the RBW $=\SI{20}{\kilo\hertz}$ overview) has a multi-lobed profile with local threshold minima at 3812, 3912, 3934, 4003, 4102, 4151, and \SI{4218}{\mega\hertz} (\SIrange{-23.2}{-20.7}{\dBm}). We attribute the lobes to discrete confined modes \pend{Fig.~\ref{fig:single}(i): FMR/eigenmode spectrum}. At fixed $a=\SI{335}{\milli\volt}$ ($P_{\mathrm{dr}}\approx\SI{-20.8}{\dBm}$) the emission rises in steps between 4080 and \SI{4097}{\mega\hertz} toward a maximum near \SI{4117}{\mega\hertz} ($\approx\SI{231}{\nano\watt}$) [Fig.~\ref{fig:single}(c)].
+
+\begin{figure*}
+\figfile[0.95\textwidth]{fig1_overview}
+\caption{Single-tone parametric landscape and two-tone timing. (a)~Integrated $f/2$ power $\Sigma P$ versus pump frequency $f$ (\SIrange{3760}{4250}{\mega\hertz}) and calibrated drive power $P_{\mathrm{dr}}$ (\SI{-26.0}{\dBm} to \SI{-16.8}{\dBm}; RBW \SI{20}{\kilo\hertz}); inset: linear-scale zoom over \SIrange{4045}{4080}{\mega\hertz} (RBW \SI{510}{\kilo\hertz}) around $f_{\mathrm{exc}}=\SI{4065}{\mega\hertz}$. (b)~Single-tone pulse sequence (\SI{50}{\micro\second} on / \SI{3}{\micro\second} off) and baseline-subtracted SA protocol. (c)~Frequency slice at $a=335\pm2$\,mV (\SI{-20.8}{\dBm}). (d),(e)~Amplitude cut and local slope $\mathrm{d}\Sigma P/\mathrm{d}a$ at $f_{\mathrm{exc}}$ ($a_{\mathrm{th}}=\SI{260.8}{\milli\volt}$ at $3\sigma$). (f)~Area-normalized $f/2$ spectra across $a_{k1}$ (RBW \SI{510}{\kilo\hertz}; inset: RBW \SI{20}{\kilo\hertz}, FWHM $\approx\SI{37}{\kilo\hertz}$). (g)~Drive-chain linearity ($P_{\mathrm{dr}}\propto a^{1.994}$). (h)~Two-tone pulse-timing schematic for Figs.~\ref{fig:overlap}--\ref{fig:nonoverlap} (\SI{64}{\giga\sample\per\second}, \SI{20}{\nano\second} loop quantum). (i)~Sample FMR/mode spectrum \pend{reserved}.}
+\label{fig:single}
+\end{figure*}
+
+In the zoom around $f_{\mathrm{exc}}=\SI{4065}{\mega\hertz}$ [Figs.~\ref{fig:single}(d)--(f)], the $f/2$ signal crosses $3\sigma$ (\SI{1.5}{\nano\watt}) at $a_{\mathrm{th}}=\SI{260.8}{\milli\volt}$ (\SI{-23.11}{\dBm}). Linear-power cuts show a convex slope increase near $a_{k1}=\SI{317.5}{\milli\volt}$, whose position shifts between 4059 and \SI{4070}{\mega\hertz}. A variance-stabilized logarithmic analysis finds no significant change of slope ($p\approx0.26$--$0.35$), narrow-RBW spectra show a single line of $\approx\SI{37}{\kilo\hertz}$ FWHM without a new resolved branch, and the drive-chain calibration excludes RF-electronics artifacts. We therefore treat the response as smooth growth of a single mode $k$ above $a_{\mathrm{th}}$. The band \SIrange{4065}{4150}{\mega\hertz} serves as the operating band of the two-tone protocols, with the seed amplitude $a_1=\SI{327}{\milli\volt}$ above $a_{\mathrm{th}}$ and $a_{k1}$.
+
+\subsection{Phase-insensitive channel below the seed threshold}\label{sec:coeff}
+
+Figure~\ref{fig:interaction} shows how the seed acts on the target below the seed threshold, $a_1<a_{1,\mathrm{th}}$. For $a_1\ge\SI{25}{\milli\volt}$ and $a_2\ge\SI{350}{\milli\volt}$, the idler power at $f_1-f_2/2$ ($2003.5$--\SI{2018.5}{\mega\hertz}), normalized to the target emission $P_{f_2/2}$, increases as a power law in $a_1$ over about two decades in power ($\propto a_1^2$). The log-log slopes are $1.888\pm0.014$ at $f_2=\SI{4125}{\mega\hertz}$ ($N=1101$) and $1.918\pm0.017$ at \SI{4135}{\mega\hertz} ($N=1085$), and 1.83--1.94 over all four $(f_1,f_2)$ pairs [Fig.~\ref{fig:interaction}(a)]. The slopes are close to, but statistically below, the quadratic value 2; we therefore regard $P_{\mathrm{id}}=C_ma_1^2P_{f_2/2}$ as an approximation accurate to about 5\% in the exponent. Across the full $(a_1,a_2)$ plane [Figs.~\ref{fig:interaction}(b)--(g)] the measured maps follow $C_ma_1^2P_{f_2/2}$ with a median $\log_{10}$ residual of 0.030--0.032 and an rms of 0.073--0.079. The mirror upper sideband at $f_2-f_1/2$ obeys $P_p\propto a_2^2P_{f_1/2}$ above $a_{1,\mathrm{th}}$ and is about 50 times weaker because $P_{f_1/2}\ll P_{f_2/2}$ at the operating point.
+
+\begin{figure}
+\figfile{fig2_interaction}
+\caption{Sub-threshold quadratic idler scaling. (a)~Log-log scaling of $P_m/P_{f_2/2}$ versus $a_1$ ($a_1\ge\SI{25}{\milli\volt}$, $a_2\ge\SI{350}{\milli\volt}$), with slopes $1.888\pm0.014$ ($f_2=\SI{4125}{\mega\hertz}$) and $1.918\pm0.017$ ($f_2=\SI{4135}{\mega\hertz}$). (b)--(g)~Maps over $(a_1,a_2)$ comparing measured $P_m$, the model $C_ma_1^2P_{f_2/2}$, and their $\log_{10}$ residual at $f_2=4125$ and \SI{4135}{\mega\hertz}.}
+\label{fig:interaction}
+\end{figure}
+
+The same seed also lowers the threshold of the target (Fig.~\ref{fig:thresholdS}), as Eq.~(\ref{eq:K2B}) predicts. Fitting the threshold reduction independently of the idler data gives $K_{2B}$, which Table~\ref{tab:coeff} compares with $C_m$. The two coefficients are of the same size for all four $(f_1,f_2)$ pairs, $C_m=(0.85$--$1.50)\times10^{-6}\,\mathrm{mV}^{-2}$ and $K_{2B}=(0.94$--$1.36)\times10^{-6}\,\mathrm{mV}^{-2}$, with $K_{2B}/C_m=0.81$--$1.44$ for individual pairs. Within the model of Appendix~\ref{app:idler}, this ratio equals $\beta_{mk}^{-2}$ when $\Gamma_k=\Gamma_{\mathrm{id}}$, which the measured linewidths satisfy to within 7\%; the ratios in Table~\ref{tab:coeff} then correspond to $\beta_{mk}=0.83$--$1.11$, i.e.\ to near-symmetric coupling ($\beta_{mk}=1$). We regard this as a consistency test rather than a parameter-free prediction, since the symmetric-coupling limit is assumed. At $a_1=\SI{327}{\milli\volt}$ the fitted $K_{2B}$ corresponds to a phase-insensitive threshold reduction $K_{2B}a_1^2\approx10$--$15\%$.%
+\footnote{\chk{This value lies above $a_{1,\mathrm{th}}\approx\SI{261}{\milli\volt}$ (at \SI{4065}{\mega\hertz}), where the seed is excited and channels (b) and (c) of Sec.~\ref{sec:couplings} also act; please state the fit range of $K_{2B}$ and whether $a_1=\SI{327}{\milli\volt}$ is an extrapolation.}}
+Both coefficients rise when $f_1$ is raised from 4071 to \SI{4081}{\mega\hertz}: $C_m$ by 29\% at both values of $f_2$, and $K_{2B}$ by 45\% at $f_2=\SI{4125}{\mega\hertz}$ but only by 2\% at \SI{4135}{\mega\hertz}. The shared $f_1$ dependence is thus reproduced for one of the two $f_2$ values.
+
+\begin{table}
+\caption{Small-signal linewidths and the two phase-insensitive coefficients. $\Gamma_k$ and $\Gamma_{\mathrm{id}}$ are Lorentzian HWHM values; $C_m$ is the idler coefficient and $K_{2B}$ the threshold-reduction coefficient (ND timing), both in $10^{-6}\,\mathrm{mV}^{-2}$. $R^2$ of the $K_{2B}$ fit is quoted where available.}
+\label{tab:coeff}
+\begin{ruledtabular}
+\begin{tabular}{ccccccc}
+$(f_1,f_2)$ (MHz) & $\Gamma_k$ (MHz) & $\Gamma_{\mathrm{id}}$ (MHz) & $C_m$ & $K_{2B}$ & $K_{2B}/C_m$ & $R^2$\\
+\hline
+4071, 4125 & 1.51 & 1.54 & 1.16 & 0.94 & 0.81 & 0.92\\
+4071, 4135 & 1.61 & 1.51 & 0.854 & 1.23 & 1.44 & --\\
+4081, 4125 & 1.51 & 1.50 & 1.50 & 1.36 & 0.91 & 0.98\\
+4081, 4135 & 1.60 & 1.55 & 1.10 & 1.25 & 1.14 & --\\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+\subsection{Phase gating at zero gap}\label{sec:gating}
+
+We now turn to the phase-sensitive channel. Figure~\ref{fig:overlap} analyzes the overlapping two-phase sweep at $f_1=\SI{4069.5}{\mega\hertz}$ and $a_1=\SI{324}{\milli\volt}$, with $\phi=1.31$ and \SI{4.55}{\radian}. The difference of the two maps gives a phase contrast reaching $+\SI{4.08}{\decibel}$ at $(a_2=\SI{272}{\milli\volt},f_2=\SI{4107}{\mega\hertz})$ and $-\SI{3.30}{\decibel}$ at $(\SI{235}{\milli\volt},\SI{4117}{\mega\hertz})$ [Fig.~\ref{fig:overlap}(c)]. The $f_2/2$ line is enhanced over the $f_2$-only reference by up to \SI{20.5}{\decibel} (total band) or \SI{26.5}{\decibel} (peak metric) at $f_2=\SI{4111}{\mega\hertz}$ [Fig.~\ref{fig:overlap}(d)]. Because the phase contrast is limited to about $\pm4$\,dB, most of this enhancement is phase-insensitive and reflects channel~(a) of Sec.~\ref{sec:couplings}. The two-phase threshold shift is small, \SI{1.33}{\milli\volt} (0.53\%) at \SI{4111}{\mega\hertz} and at most \SI{5.40}{\milli\volt} (2.0\%) at \SI{4105}{\mega\hertz} (Fig.~\ref{fig:thresholdS}).
+
+Two phases cannot resolve a cosine. The two states are nearly antipodal ($\Delta\phi=185.7^\circ$) and need not lie on the extrema. A pooled two-phase cosine fit over 1336 strong cells [Fig.~\ref{fig:overlap}(e)] therefore returns only a lower bound, $A_1/A_0=0.011$ ($|h_{4B}/h_2|\approx0.005$), with $\hat\phi_0=77.9^\circ$ (68\% interval $[13^\circ,160^\circ]$).%
+\footnote{\chk{This interval excludes $\phi_0\approx-155^\circ\;(=205^\circ)$ found in the sequential sweeps. The phase references differ (simultaneous waveforms versus $t_0$ at the end of tone~1), so a different $\phi_0$ is possible, but please state the reference of the overlap data explicitly.}}
+The full $2\pi$ waveform was resolved only in the sequential sweeps at $\tgap=0$, to which we now turn.
+
+\begin{figure}
+\figfile{fig3_overlap}
+\caption{Phase gating in the overlapping regime ($f_1=\SI{4069.5}{\mega\hertz}$, $a_1=\SI{324}{\milli\volt}$). (a),(b)~Gated $f_2/2$ emission (peak power) versus $(f_2,a_2)$ at $\phi=1.31$ and \SI{4.55}{\radian} on a common color scale. (c)~Contrast $10\log_{10}[P(4.55)/P(1.31)]$ (maximum $+\SI{4.08}{\decibel}$ at $(272,4107)$, minimum $-\SI{3.30}{\decibel}$ at $(235,4117)$). (d)~Spectra at $(a_2=\SI{265}{\milli\volt},f_2=\SI{4103}{\mega\hertz})$ for both phases and the $f_2$-only reference. (e)~Pooled two-phase cosine fit ($A_1/A_0=0.011$) \pend{60-phase repeat-averaged curve}.}
+\label{fig:overlap}
+\end{figure}
+
+In the sequential geometry at $\tgap=0$ [Figs.~\ref{fig:nonoverlap}(a)--(c)], the fundamental amplitude $A_1$ is concentrated in a hot band around $f_1\approx\SI{4070}{\mega\hertz}$, $f_2\approx\SI{4135}{\mega\hertz}$ ($\Delta=\SI{65}{\mega\hertz}$), where it exceeds the off-band median by \SI{2.73}{\decibel}. Inside the band $I(\phi)$ is highly sinusoidal (median $R^2=0.969$), the optimal phase is stable at $\phi_0\approx-155^\circ$ (10--90\% spread $3.3^\circ$), and the ratio $A_2/A_1$ falls from 0.324 off-band to 0.129. The 16-phase sweeps at $\Sigma=\SI{4106}{\mega\hertz}$ and $\Delta=\SIrange{50}{70}{\mega\hertz}$ give a depth
+\begin{equation}
+D=49\text{--}60\%\quad\Big(C=32\text{--}43\%\Big)
+\end{equation}
+at $\tgap=0$, i.e.\ $P_{\max}/P_{\min}\gtrsim2$ from the relative phase alone, consistent with $D=2C/(1+C)$. Equation~(\ref{eq:criterion}) shows that such a depth requires either a sizeable $W$ or tone~2 close to threshold.%
+\footnote{\chk{The operating point of tone~2 relative to its own single-tone threshold at $f_2$ is not given in the draft. Using the calibration $a=\SI{335}{\milli\volt}\leftrightarrow\SI{-20.8}{\dBm}$, $a_2=\SI{588}{\milli\volt}$ corresponds to about \SI{-15.9}{\dBm}, above the threshold minima of Fig.~\ref{fig:single}(a). If tone~2 is above threshold, Eqs.~(\ref{eq:ratio}) and (\ref{eq:criterion}) do not apply and the model should be read as selecting the initial growth quadrature. Please provide $x=V_mh_2/\Gamma_m$ or the measured threshold at the working point.}}
+\pend{60-phase repeat-averaged depth at a fixed operating point, with fresh per-trial baselines; direct fit of $h_{2,\mathrm{th}}(\Psi)$ to Eq.~(\ref{eq:hth})}
+
+\begin{figure*}
+\figfile[0.95\textwidth]{fig4_nonoverlap}
+\caption{Non-overlapping phase gating and phase memory ($\SI{300}{\nano\second}$ / $\SI{400}{\nano\second}$ pulses, \SI{1}{\nano\second} Tukey edges). (a)~Fundamental amplitude $A_1$ over $(f_1,f_2)$ at $\tgap=0$, peaking at $(4070,4135)$\,MHz ($\Delta=\SI{65}{\mega\hertz}$). (b)~Ratio $A_2/A_1$, falling from 0.324 off-band to 0.129 in the hot band. (c)~Representative $I(\phi)$ curves ($R^2=0.969$, $\phi_0\approx-155^\circ$). (d)~Delay scan at $f_2=\SI{4142}{\mega\hertz}$: $I(\phi,\tgap)$ with the phase advance ($\SI{20.9}{\degree\per\nano\second}$ at $\Delta=\SI{70}{\mega\hertz}$) and the collapse of $A_1(\tgap)$ ($\tau=\SI{2.4+-0.7}{\nano\second}$). \pend{extension to $\tgap=\SI{200}{\nano\second}$ at $\Delta=50,58$\,MHz}}
+\label{fig:nonoverlap}
+\end{figure*}
+
+\subsection{Phase memory across the dark gap}\label{sec:memory}
+
+Scanning $\tgap$ from \SI{-17.6}{\nano\second} (overlap) to \SI{+13.3}{\nano\second} at $f_2=\SI{4142}{\mega\hertz}$ [Fig.~\ref{fig:nonoverlap}(d)] reveals two signatures, summarized for all datasets in Table~\ref{tab:memory}.
+
+\emph{Phase advance.} For $\tgap\ge\SI{-2}{\nano\second}$ the optimal phase advances linearly with the gap, as Eq.~(\ref{eq:slew}) predicts. Wherever $A_1$ stays above 20\% of its plateau, the fitted slope $\mathrm{d}\phi_0/\mathrm{d}\tgap$ is 70--83\% of the bare value $2\pi\Delta$ (Table~\ref{tab:memory}). The shortfall is consistent across runs. Expressed as an effective detuning it is $\Deff\approx(0.70$--$0.83)\Delta$, i.e.\ an absolute shortfall $\Delta-\Deff$ of about 11--\SI{19}{\mega\hertz} that does not grow in proportion to $\Delta$ over the range 50--\SI{74}{\mega\hertz}. In terms of Eq.~(\ref{eq:slew}) this means that the free-running seed does not precess at $f_1/2$ but at a frequency shifted by $\Delta-\Deff$ over two, about 5--\SI{10}{\mega\hertz}, which is much larger than the linewidth; we return to this in Sec.~\ref{sec:disc}.
+
+\emph{Detuning-dependent decay.} In the scan at $f_2=\SI{4142}{\mega\hertz}$ ($\Delta=64$--\SI{76}{\mega\hertz}), $A_1$ stays on a plateau of about \SI{94}{\micro\watt} over $0$--\SI{2}{\nano\second} and then collapses with a median exponential time constant $\tau_{\mathrm{mem}}=\SI{2.4+-0.7}{\nano\second}$ (independent DFT re-extraction: median \SI{1.80}{\nano\second}, interquartile range 1.28--\SI{2.09}{\nano\second} for $\tgap\ge\SI{1.5}{\nano\second}$). Extending to $\Delta=\SIrange{50}{88}{\mega\hertz}$ at fixed $\Sigma$ and to 60-phase sweeps shows that the decay depends strongly on detuning:
+\begin{itemize}
+\item $\Delta=50$--\SI{58}{\mega\hertz}: a depth of 32--36\% persists without measurable decay over the whole \SI{7}{\nano\second} window ($\tau_{\mathrm{mem}}>\SI{7}{\nano\second}$, a lower bound only).
+\item $\Delta=\SI{61}{\mega\hertz}$: $A_1$ rises from \SI{46}{\micro\watt} (overlap) to a plateau of 59--\SI{62}{\micro\watt} (31--42\% depth) that persists to about \SI{6.5}{\nano\second} and then decays with $\tau_{\mathrm{mem}}\approx2.3$--\SI{3.0}{\nano\second} (half-contrast time \SI{7.4}{\nano\second}).
+\item $\Delta=\SI{74}{\mega\hertz}$: $A_1$ falls from \SI{111}{\micro\watt} at $\tgap=0$ with $\tau=\SI{2.13+-0.08}{\nano\second}$ (half-contrast time \SI{2.68}{\nano\second}). The initial drop is faster than exponential (a Gaussian onset with $\sigma=\SI{1.69}{\nano\second}$ gives a lower $\chi^2_{\mathrm{red}}$), followed by a residual plateau of 8--\SI{16}{\micro\watt} ($6$--$12\sigma$) over 4--\SI{9}{\nano\second}.
+\item $\Delta\ge\SI{80}{\mega\hertz}$: the initial depth is only 4--16\% and vanishes within less than \SI{1}{\nano\second} ($\tau\approx0.1$--\SI{0.8}{\nano\second}).
+\end{itemize}
+The persistence for $\Delta\le\SI{58}{\mega\hertz}$ is therefore established only up to \SI{7}{\nano\second}, an order of magnitude below the linear prediction of Eq.~(\ref{eq:decay}) (\SIrange{49}{53}{\nano\second}) \pend{extension of the gap to \SI{200}{\nano\second} at $\Delta=50,58,64,70$\,MHz}. By contrast, for $\Delta\ge\SI{61}{\mega\hertz}$ a decay time of 2--\SI{3}{\nano\second} is observed, 20--30 times shorter than $\tau_{\mathrm{mem}}^{\mathrm{lin}}$.
+
+\begin{table*}
+\caption{Phase advance and decay of the gating for the delay scans. The slope is $\mathrm{d}\phi_0/\mathrm{d}\tgap$, with its fraction of the bare rate $360^\circ\Delta$ in parentheses. Only scans where $A_1$ stays above 20\% of its plateau enter the slope.}
+\label{tab:memory}
+\begin{ruledtabular}
+\begin{tabular}{lcccp{6.0cm}}
+$\Delta$ (MHz) & Phases & Slope ($^\circ$/ns) & Bare ($^\circ$/ns) & Decay of $A_1$\\
+\hline
+50--58 & 16 & fraction 0.74--0.79 & 18.0--20.9 & no decay over \SI{7}{\nano\second} ($\tau_{\mathrm{mem}}>\SI{7}{\nano\second}$)\\
+61 & 60 & $15.32\pm0.04$ (0.70); $17.56\pm0.19$ (0.80) in $[0,3]$\,ns & 22.0 & plateau to $\approx\SI{6.5}{\nano\second}$, then $\tau=2.3$--\SI{3.0}{\nano\second}\\
+64--76 ($f_2=\SI{4142}{\mega\hertz}$) & 16 & 20.9 (0.83) at $\Delta=\SI{70}{\mega\hertz}$ & 25.2 at 70 & $\tau_{\mathrm{mem}}=\SI{2.4+-0.7}{\nano\second}$ (median)\\
+74 & 60 & $20.70\pm0.07$ (0.78) & 26.6 & $\tau=\SI{2.13+-0.08}{\nano\second}$, plateau 8--\SI{16}{\micro\watt}\\
+$\ge80$ & 16 & -- & -- & $\tau\approx0.1$--\SI{0.8}{\nano\second}\\
+\end{tabular}
+\end{ruledtabular}
+\end{table*}
+
+\subsection{Harmonic structure and the line at $\Delta=\SI{74.5}{\mega\hertz}$}\label{sec:harm}
+
+To see whether anything in the gating itself changes near $\Delta\approx\SI{74}{\mega\hertz}$, where the memory collapses, Fig.~\ref{fig:harmonics} presents the model-free DFT of Eq.~(\ref{eq:dft}) for the $20\times15$ grid in $(f_1,f_2)$ at $\tgap=0$ (16 phases), cross-checked with a 25-phase dataset.
+
+Three findings emerge. First, the fundamental dominates along the strong-response ridge ($\Delta\approx65$--\SI{85}{\mega\hertz}, $\Sigma\approx4106$--\SI{4116}{\mega\hertz}), with a peak $A_1=\SI{117.2}{\micro\watt}$ at $(4075,4150)$\,MHz and a phase-mean $A_0$ peaking at \SI{635}{\micro\watt} at $(4065,4154)$\,MHz. On the ridge $A_2/A_1\le0.30$ and $A_3/A_1\le0.25$; harmonics $n\ge4$ are negligible (median $|c_{4..7}|$ is 6.4\% of the median $A_1$), and a three-harmonic truncation reconstructs $I(\phi)$ to $\le3.8\%$ rms of its mean (median 2.3\%). Second, $\arg c_1$ stays within $[-156^\circ,-148^\circ]$ over the whole grid, with no flip of the first harmonic. Third, $\arg c_2$ jumps by $132^\circ$ (median step) along a straight line of constant detuning $\Delta=\SI{74.5}{\mega\hertz}$ (interquartile range 73.5--\SI{74.5}{\mega\hertz}, line rms \SI{0.22}{\mega\hertz}), while $\arg c_1$ varies by $\le1.4^\circ$ over the same pixels [Fig.~\ref{fig:harmonics}(d)]. The independent 25-phase dataset gives a step of $143^\circ$ at the same line (interquartile range 73.5--\SI{75.5}{\mega\hertz}, rms \SI{0.72}{\mega\hertz}). We summarize this as a second-harmonic phase jump approaching $\pi$ (130--$145^\circ$ measured) at constant $\Delta$.%
+\footnote{\chk{The draft describes the step as ``$\sim\pi$'' although the measured medians are $132^\circ$ and $143^\circ$; the text now quotes the measured values. Please confirm that nothing wraps the phase at $\pm\pi$.}}
+In the 60-phase scan at $\Delta=\SI{74}{\mega\hertz}$, $A_2$ has a sharp dip in the co-drive window (\SI{6.0}{\micro\watt} for $\tgap\in[-1,0)$\,ns versus \SI{19.7}{\micro\watt} for $[-2,-1)$\,ns), consistent with proximity to this line.
+
+\begin{figure*}
+\figfile[0.95\textwidth]{fig5_harmonics}
+\caption{DFT harmonic decomposition at $\tgap=0$ (16 phases, cross-checked with 25 phases). (a)~Phase-mean power $A_0$ (peak \SI{635}{\micro\watt}). (b)~Fundamental $A_1$ (peak \SI{117.2}{\micro\watt} at $\Delta=\SI{75}{\mega\hertz}$). (c)~Ratio $A_2/A_1$. (d)~Second-harmonic phase $\arg c_2$, showing a jump along $\Delta=\SI{74.5}{\mega\hertz}$ (rms \SI{0.22}{\mega\hertz}); contours of $\arg c_1$ (green) remain continuous ($\le1.4^\circ$ variation). (e)~Example $I(\phi)$ traces and three-harmonic reconstructions ($\le3.8\%$ rms residual). (f)~Joint $(\Delta,\Sigma)$ projection of $|c_1|$ and $|c_2|$ contours.}
+\label{fig:harmonics}
+\end{figure*}
+
+A jump of $\arg c_2$ at constant $\arg c_1$ means that the shape of $I(\phi)$ changes (the flattening or sharpening of its extrema flips) while the position of the maximum does not. Because the first harmonic carries the gating, the line marks a change in how the response is gated rather than a loss of gating. In a second data set recorded in July at a different operating point, with tone~2 preceding tone~1 ($\Sigma\approx\SI{4113}{\mega\hertz}$), $\arg c_2$ flips at $\Delta\approx76\pm2$ and $103\pm2$\,MHz. The first of these is compatible with the same constant-$\Delta$ line, so these data do not show that the line moves with $\Sigma$.%
+\footnote{\chk{The draft states that the jump line ``tracks the interacting mode-pair resonance condition as $\Sigma$ shifts''. The data as given (a line of constant $\Delta$ at both $\Sigma$ values, within \SI{2}{\mega\hertz}) do not support this; the second flip at \SI{103}{\mega\hertz} is not discussed in the draft. Please clarify, or provide the $\Sigma$ dependence.}}
+
+\subsection{Recurring time scale near \SI{2}{\nano\second}}\label{sec:timescales}
+
+Two further measurements probe the dynamics on the few-ns scale (Fig.~\ref{fig:synthesis}).
+
+\emph{Single-tone build-up.} At $f=\SI{4072}{\mega\hertz}$ we measure the single-tone threshold $a_{\mathrm{th}}(\tau_p)$ under a 50\%-duty pulse train of width $\tau_p=0.3125$--\SI{9.22}{\nano\second} [Fig.~\ref{fig:synthesis}(f)]. The threshold decreases from \SI{590}{\milli\volt} at $\tau_p=\SI{0.31}{\nano\second}$ to a plateau $a_\infty=\SI{320}{\milli\volt}$ for $\tau_p\gtrsim\SI{8}{\nano\second}$. A fit of $a_{\mathrm{th}}(\tau_p)=a_\infty/\sqrt{1-\ee^{-\tau_p/\tau_b}}$ gives $\tau_b=\SI{2.15+-0.08}{\nano\second}$ (rms \SI{28}{\milli\volt} over 57 points), in agreement with onset-restricted ring-up fits ($\tau_r=2.1$--\SI{2.7}{\nano\second} at $a=420$--\SI{430}{\milli\volt}).%
+\footnote{\chk{The quoted fit function with $a_\infty=\SI{320}{\milli\volt}$ and $\tau_b=\SI{2.15}{\nano\second}$ gives $a_{\mathrm{th}}\approx\SI{870}{\milli\volt}$ at $\tau_p=\SI{0.31}{\nano\second}$, not \SI{590}{\milli\volt}. Please state the fit range or the fitted $a_\infty$, which seems to differ from the plateau value.}}
+The corresponding rate $(2\tau_b)^{-1}=\SI{232.6}{\mega\radian\per\second}$ is equivalent to a HWHM of $(4\pi\tau_b)^{-1}=\SI{37.0}{\mega\hertz}$, about 24 times the small-signal value, so the driven dynamics run on a few-ns scale. We treat $\tau_b$ as a driven growth time, not as a damping time: above threshold the growth rate is set by the drive and the nonlinear saturation, not by $\Gamma_m$ alone.
+
+\emph{Turn-on edge.} At $\Delta=\SI{74}{\mega\hertz}$ we vary the tone-2 Tukey edge width $t_{\mathrm{edge}}$ from 0.5 to \SI{10}{\nano\second} [Fig.~\ref{fig:synthesis}(e)]. The phase-mean power $A_0$ is nearly constant, while the modulation ratio $A_1/A_0$ falls from 0.38 (\SI{0.5}{\nano\second}) and 0.35 (\SI{1}{\nano\second}) to 0.19 (\SI{2}{\nano\second}) and saturates near 0.04--0.07 for $t_{\mathrm{edge}}=4$--\SI{10}{\nano\second}; an end-of-run repeat at \SI{1}{\nano\second} reproduces 0.35 and excludes drift. An exponential fit with a floor gives $\tau_s=\SI{1.87}{\nano\second}$ for $A_1$ ($\tau_s=\SI{1.72}{\nano\second}$ for $A_1/A_0$, floor $\sim\SI{8}{\micro\watt}$ or 0.037). In an earlier diagnostic run, \SI{32}{\nano\second} edges gave $A_1/A_0\le0.005$. Slowing the turn-on therefore removes the gating without reducing the total parametric power. The three numbers $\tau_{\mathrm{mem}}(\Delta=74)=\SI{2.13}{\nano\second}$, $\tau_s\approx\SI{1.8}{\nano\second}$, and $\tau_b=\SI{2.15}{\nano\second}$ agree within 15\%; Sec.~\ref{sec:disc} discusses how independent they are.
+
+\begin{figure*}
+\figfile[0.95\textwidth]{fig_synthesis}
+\caption{Model-versus-experiment synthesis. (a)~Threshold cone [Eq.~(\ref{eq:arnold})] and $K_{2B}$ shift. (b)~Phase-gated threshold [Eqs.~(\ref{eq:hth}), (\ref{eq:hthlin})] and sub-threshold depth [Eqs.~(\ref{eq:ratio}), (\ref{eq:criterion})], with the measured $49$--$60\%$ band \pend{overlay of measured $h_{2,\mathrm{th}}(\Psi)$}. (c)~$\tau_{\mathrm{mem}}(\Delta)$ from 16- and 60-phase sweeps against the linear prediction $\tau_{\mathrm{mem}}^{\mathrm{lin}}=49.4$--\SI{53.1}{\nano\second} [Eq.~(\ref{eq:decay})]. (d)~Phase advance versus $2\pi\Delta$ [Eq.~(\ref{eq:slew})]. (e)~Edge-width sweep and exponential fit ($\tau_s\approx1.7$--\SI{1.9}{\nano\second}). (f)~Single-tone build-up $a_{\mathrm{th}}(\tau_p)$ ($\tau_b=\SI{2.15+-0.08}{\nano\second}$).}
+\label{fig:synthesis}
+\end{figure*}
+
+Taken together, Fig.~\ref{fig:synthesis} compares the model with the data: the threshold relations (a,b), the phase advance (d), and the depth (b) are matched, whereas the linear decay law (c) is violated above $\Delta\approx\SI{61}{\mega\hertz}$.
+
+%% =====================================================================
+\section{Discussion}\label{sec:disc}
+%% =====================================================================
+
+\subsection{Linewidth versus memory time}\label{sec:disc-tension}
+
+With the $2\pi$ factor between the Lorentzian HWHM and the amplitude rate enforced, the measured sub-threshold linewidths $\Gamma_{k,\mathrm{Hz}}=1.50$--\SI{1.61}{\mega\hertz} lie at the upper end of the intrinsic damping scale of the NMM solver for a Gilbert damping $\alpha=0.0005$ (\SIrange{1.04}{1.55}{\mega\hertz}; at $\alpha=0.0020$ the solver gives \SIrange{4.17}{6.19}{\mega\hertz}). Equation~(\ref{eq:decay}) then predicts $\tau_{\mathrm{mem}}^{\mathrm{lin}}=49.4$--\SI{53.1}{\nano\second}. The low-detuning observations ($\tau_{\mathrm{mem}}>\SI{7}{\nano\second}$ at $\Delta\le\SI{58}{\mega\hertz}$; half-contrast time \SI{7.4}{\nano\second} at \SI{61}{\mega\hertz}) are compatible with this prediction but do not test it. The decay at $\Delta=74$--\SI{78}{\mega\hertz} (1.1--\SI{2.5}{\nano\second}) and above \SI{80}{\mega\hertz} ($<\SI{1}{\nano\second}$) is 20--30 times faster than linear damping allows and cannot follow from Eq.~(\ref{eq:decay}) or from a static branch-selection rule.
+
+Several mechanisms could produce a fast, $\Delta$-dependent decay of the phase information, and the present data do not discriminate between them. (i)~\emph{Nonlinear ring-down and multimode dephasing of the driven seed.} Above its threshold the seed is saturated by nonlinear coupling to other modes, and when tone~1 ends the amplitude, and with it the nonlinear frequency shift of the seed, change on the nonlinear time scale rather than on $1/\Gamma_k$. (ii)~\emph{Inhomogeneity of the ensemble.} The 12 disks are only nominally identical; a spread of mode frequencies dephases the ensemble-averaged cross-pump. A spread $\sigma_f$ gives a dephasing time of order $(2\pi\sigma_f)^{-1}$, which would require $\sigma_f\sim\SI{70}{\mega\hertz}$ for \SI{2}{\nano\second} and so seems too large by itself, but a spread of the shift $\Delta-\Deff$ is plausible. (iii)~\emph{A change of the participating mode pair near the line $\Delta=\SI{74.5}{\mega\hertz}$}, suggested by the jump of $\arg c_2$. A constant-$\Delta$ line is what a fixed mode splitting $f_m-f_k=\Delta/2\approx\SI{37}{\mega\hertz}$ would produce, but it is equally what any process that depends only on the beat frequency would produce, so we do not call it an identity switch. The 29-mode NMM solver can test (iii) directly by tracking which mode pair dominates the response as $\Delta$ varies.
+
+The shortfall of the phase advance, $\Deff\approx(0.70$--$0.83)\Delta$ (Sec.~\ref{sec:memory}), is of similar origin. If it is a constant frequency offset of the free-running seed from $f_1/2$, as the roughly constant absolute shortfall of 11--\SI{19}{\mega\hertz} suggests, then a seed pulled by the nonlinear frequency shift during excitation \cite{massouras24} is the natural explanation; a fractional shortfall would instead point to a coupling that scales with $\Delta$.
+
+\subsection{Phase sensitivity at large detuning}\label{sec:disc-burst}
+
+In the stationary picture, a cross-pump detuned by $\Delta=50$--\SI{80}{\mega\hertz}\,$\gg\Gamma_m/2\pi$ averages out within tens of nanoseconds, yet $\cos\phi$ gating is observed with \SI{300}{\nano\second} and \SI{400}{\nano\second} pulses, including in overlap (Fig.~\ref{fig:overlap}; Fig.~\ref{fig:nonoverlap}(d), $\tgap<0$). We propose that the phase is selected once per burst, at the turn-on of tone~2. In each loop the target mode starts near thermal equilibrium (or from the decaying seed state) and chooses its parametric amplitude and phase basin \cite{elyasi22,zautkin83,brown63} during the first few nanoseconds, which is when the frozen-phase value $\Psi(t_{\mathrm{on}})$ of Eq.~(\ref{eq:Psi}) is relevant. The SA integrates over thousands of repetitions, so a small turn-on bias $W\cos\Psi(t_{\mathrm{on}})$ shifts the basin-selection probability per burst, restoring a phase sensitivity beyond the stationary limit $|\Delta|\lesssim\Gamma_m$. This picture is consistent with the sub-ns resolution needed for the edge (Sec.~\ref{sec:timescales}), but it is a hypothesis, not a result. It predicts a dependence on pulse width and repetition rate that differs from that of multi-pulse frequency-comb accumulation \cite{hula22,dreyer22,li26}; the corresponding pulse-width test is not yet done \pend{burst-wise versus comb control (duty and burst-train analysis)}.
+
+\subsection{Are the three \SI{2}{\nano\second} scales independent?}\label{sec:disc-scales}
+
+A simple estimate shows that the edge sweep cannot be explained by phase averaging alone. For a linear turn-on ramp of duration $T$, averaging the beat phase over the ramp reduces the gating by $|\mathrm{sinc}(\pi\Deff T)|$. With $\Deff=0.78\Delta$ and $\Delta=\SI{74}{\mega\hertz}$ this removes about 2--4\% of $A_1/A_0$ at $T=\SI{2}{\nano\second}$ and 8--14\% at $T=\SI{4}{\nano\second}$, against the observed losses of about 50\% and 85\%. The collapse must therefore come from the nonlinear growth, not from smearing of $\Psi$. A more natural reading is that a slow ramp delays the effective turn-on of the instability by a fraction of $t_{\mathrm{edge}}$, so that the edge sweep samples the same seed decay as the gap sweep. In that case $\tau_s\approx\tau_{\mathrm{mem}}$ is expected and the two are not independent confirmations. The build-up time $\tau_b$ is measured in a separate single-tone experiment, and whether it is related to the decay is open. The reading makes a falsifiable prediction: at a detuning with long memory ($\Delta\le\SI{58}{\mega\hertz}$) the gating should survive edge widths up to several ns \pend{edge-width sweep at $\Delta=50$--\SI{58}{\mega\hertz}}.
+
+\subsection{Relation to earlier work}\label{sec:disc-soares}
+
+Soares \textit{et al.}\ \cite{soares26} also study two-tone parallel pumping of a confined microdisk within the NMM framework of Ref.~\cite{daquino26}, but along different axes. They resolve which discrete steady-state attractor the coupled mode pair reaches as a function of the \emph{temporal order} of two overlapping tones. We resolve a \emph{continuous} dependence on the relative carrier phase, its threshold-level origin, and its retention across a programmable dark gap with \SI{15.6}{\pico\second} resolution. The BiYIG ensemble belongs to the high-power instability family of Ref.~\cite{yemeli25}, and pulsed $f/2$ readout puts multi-attractor hopping into the burst-wise, probability-weighted regime of Sec.~\ref{sec:disc-burst}. A phase-programmable, isolation-free microwave gate of this kind is of interest for coherent spin-wave signal processing \cite{korber23,papp21}.
+
+\subsection{Limitations}\label{sec:disc-limits}
+
+(i)~The quoted gating depth of 49--60\% rests on 16-phase sweeps without repeat averaging \pend{60-phase repeat-averaged depth}. (ii)~The operating point of tone~2 relative to its threshold, which decides whether Eqs.~(\ref{eq:ratio}) and (\ref{eq:criterion}) apply, is not yet specified, and the direct phase-dependent threshold $h_{2,\mathrm{th}}(\Psi)$ has not been measured \pend{measurement of $h_{2,\mathrm{th}}(\Psi)$}. (iii)~Mode indices of $k$ and $m$ are unassigned. (iv)~Memory at low $\Delta$ is bounded only to \SI{7}{\nano\second}. (v)~The origin of the fast decay and of the line at $\Delta=\SI{74.5}{\mega\hertz}$ remains open, and an inhomogeneous ensemble of 12 disks cannot be excluded as a contributor.
+
+%% =====================================================================
+\section{Conclusions}\label{sec:concl}
+%% =====================================================================
+
+In an ensemble of BiYIG microdisks driven by two detuned parallel-pumping tones, we have observed a phase-insensitive idler channel below the seed threshold, a phase-sensitive modulation of the target emission with period $2\pi$ and depth 49--60\% once the seed is excited, and retention of this modulation across a dark gap, where the optimal phase advances at 70--83\% of $2\pi\Delta$. The memory time depends strongly on detuning: gating persists over at least \SI{7}{\nano\second} for $\Delta\le\SI{58}{\mega\hertz}$ but decays within about \SI{2}{\nano\second} at $\Delta=\SI{74}{\mega\hertz}$, next to a second-harmonic phase jump at constant $\Delta$. A closed-form two-mode model describes the periodicity, the depth criterion, and the phase advance, but not the fast decay. Pinning down this decay will need the longer gap scans, the direct threshold-versus-phase measurement, and the edge and pulse-width controls identified above. Phase-gated parametric emission is, in the meantime, a quantitative probe of nonlinear magnon dynamics in confined geometries.
+
+\begin{acknowledgments}
+[Acknowledgments and funding.]
+\end{acknowledgments}
+
+%% =====================================================================
+\appendix
+%% =====================================================================
+
+\section{Data processing}\label{app:data}
+
+(i)~Where a file stores both the sample-path readout and the excitation-monitor readout, only the sample path is used. (ii)~In the June/July single-sweep files the SA baseline cache refreshes every $\sim\SI{90}{\second}$, whereas shuffled phase blocks last 18--\SI{140}{\second}, producing baseline steps of about 3--8\% within blocks. A change-point filter ($|z|>5$) and a soft-$L_1$ outlier filter remove the 3.1--8.0\% of blocks that are step-corrupted; fits on clean blocks alone change the results by $<1\%$. (iii)~Truncated legacy files were checked against complete datasets of the same measurement and not used alone. (iv)~All integrated spectral powers are given as band-integrated $\mu$W. (v)~Pulse edges must be sharp compared with the seed dynamics ($t_{\mathrm{edge}}\lesssim\SI{1}{\nano\second}$): over-smoothed tapers (Sec.~\ref{sec:timescales}) destroy $A_1/A_0$ while preserving $A_0$ and could be mistaken for the absence of phase gating.
+
+\section{Idler self-energy and coupling constants}\label{app:idler}
+
+Consider the target mode $m$ at $f_2/2$ and an idler mode at $f_{\mathrm{id}}=f_1-f_2/2$, coupled through the pump $h_1$ at $f_1$ with strengths $\kappa_{mi}$ and $\kappa_{im}$. For $|\kappa h_1|\ll\sqrt{\Gamma_{\mathrm{id}}^2+\delta_{\mathrm{id}}^2}$, adiabatic elimination of the idler amplitude gives the complex self-energy of $m$
+\begin{equation}
+\Sigma_m=\frac{\kappa_{mi}\kappa_{im}^*\,h_1^2}{\Gamma_{\mathrm{id}}+\ii\delta_{\mathrm{id}}} .
+\end{equation}
+\chk{The source draft labels this self-energy $\Sigma_k$ although it enters the threshold of the target; it is written $\Sigma_m$ here. Please confirm.}
+Because $\phi_1$ cancels in $\kappa_{mi}\kappa_{im}^*$, $\Sigma_m$ shifts the effective damping and detuning, $\Gamma_{\mathrm{eff}}=\Gamma_m-\mathrm{Re}\,\Sigma_m$ and $\delta'=\delta-\mathrm{Im}\,\Sigma_m$, without phase sensitivity, which gives Eq.~(\ref{eq:K2B}). The idler amplitude is $\propto h_1b_m^*/(\Gamma_{\mathrm{id}}+\ii\delta_{\mathrm{id}})$, which gives $P_{\mathrm{id}}=C_ma_1^2P_{f_2/2}$. In the aligned symmetric limit ($\kappa_{mi}=\kappa_{im}$, $\beta_{mk}=1$, $\Gamma_k=\Gamma_{\mathrm{id}}$), symbolic algebra gives $C_m\equiv K_{2B}$; more generally $K_{2B}/C_m=\beta_{mk}^{-2}$. Under the exchange $1\leftrightarrow2$, $k\leftrightarrow m$, the upper sideband at $f_2-f_1/2$ obeys the mirror law $P_p\propto a_2^2P_{f_1/2}$.
+
+\section{Numerical verification of the closed-form relations}\label{app:numerics}
+
+Equations~(\ref{eq:arnold}), (\ref{eq:hth}), (\ref{eq:ratio}), and (\ref{eq:slew})--(\ref{eq:decay}) were checked against exact eigenvalue bisection, algebraic steady states, and fourth-order Runge--Kutta integration of the asymptotic growth slope (relative error $<10^{-6}$), and symbolically for the depth criterion, the $2\pi$ convention, and the idler law. Against the full 29-mode NMM solver, the single-mode thresholds agree to $<3.5\times10^{-14}$ (relative) over 84 frequency and detuning grid points, and the 16-phase thresholds agree to \SI{2.1e-11}{\milli\tesla} once the mutual frequency shift $\Delta^{(4A)}=n_{mk}|b_k|^2$ is included.
+
+\section{Supplementary figure}\label{app:figS}
+
+\begin{figure}
+\renewcommand{\thefigure}{S1}
+\figfile{figS_threshold_reduction}
+\caption{Threshold reduction in the overlapping two-phase sweep ($f_1=\SI{4069.5}{\mega\hertz}$, $a_1=\SI{324}{\milli\volt}$). (a)~Gain versus $a_2$ at $f_2=\SI{4111}{\mega\hertz}$ for $\phi=1.31$ and \SI{4.55}{\radian}, with onset sigmoid fits. (b)~Two-point threshold shifts in mV ($\SI{1.33}{\milli\volt}=0.53\%$ at \SI{4111}{\mega\hertz}; $\SI{5.40}{\milli\volt}=2.0\%$ at \SI{4105}{\mega\hertz}). (c),(d)~Gain (peak \SI{20.53}{\decibel}) and phase-contrast maps over $(f_2,a_2)$.}
+\label{fig:thresholdS}
+\end{figure}
+\addtocounter{figure}{-1}
+
+%% =====================================================================
+%% References
+%% =====================================================================
+\begin{thebibliography}{99}
+
+\bibitem{suhl57} H.~Suhl, J.~Phys.\ Chem.\ Solids \textbf{1}, 209 (1957).
+\bibitem{gurevich96} A.~G.~Gurevich and G.~A.~Melkov, \textit{Magnetization Oscillations and Waves} (CRC Press, Boca Raton, 1996).
+\bibitem{bracher17} T.~Br\"acher, P.~Pirro, and B.~Hillebrands, Phys.\ Rep.\ \textbf{699}, 1 (2017).
+\bibitem{daquino09} M.~d'Aquino, C.~Serpico, G.~Miano, and C.~Forestiere, J.~Comput.\ Phys.\ \textbf{228}, 6130 (2009).
+\bibitem{srivastava23} T.~Srivastava \textit{et al.}, Phys.\ Rev.\ Applied \textbf{19}, 064078 (2023).
+\bibitem{abert19} C.~Abert, Eur.\ Phys.\ J.~B \textbf{92}, 57 (2019).
+\bibitem{massouras24} M.~Massouras, S.~Perna, M.~d'Aquino, C.~Serpico, and G.~de Loubens, Phys.\ Rev.\ B \textbf{110}, 064435 (2024).
+\bibitem{perna22} S.~Perna, F.~Bruckner, C.~Serpico, D.~Suess, and M.~d'Aquino, J.~Magn.\ Magn.\ Mater.\ \textbf{546}, 168683 (2022).
+\bibitem{daquino26} M.~d'Aquino, S.~Perna, H.~Merbouche, and G.~de~Loubens, arXiv:2601.07798 (2026).
+\bibitem{soares26} D.~Soares \textit{et al.}, arXiv:2601.05775 (2026).
+\bibitem{yemeli25} A.~Yemeli \textit{et al.}, arXiv:2503.07159 (2025).
+\bibitem{kim24} S.~Kim and H.~Merbouche, Appl.\ Phys.\ Lett.\ \textbf{125}, 122401 (2024).
+\bibitem{elyasi22} M.~Elyasi, E.~Saitoh, and G.~E.~W.~Bauer, Phys.\ Rev.\ B \textbf{105}, 054403 (2022).
+\bibitem{zautkin83} V.~S.~Zautkin, B.~I.~Orel, and V.~B.~Cherepanov, Zh.\ Eksp.\ Teor.\ Fiz.\ \textbf{85}, 414 (1983) [Sov.\ Phys.\ JETP \textbf{58}, 414 (1983)].
+\bibitem{brown63} W.~F.~Brown, Phys.\ Rev.\ \textbf{130}, 1677 (1963).
+\bibitem{hula22} T.~Hula \textit{et al.}, Appl.\ Phys.\ Lett.\ \textbf{121}, 082401 (2022).
+\bibitem{dreyer22} R.~Dreyer \textit{et al.}, Nat.\ Commun.\ \textbf{13}, 4924 (2022).
+\bibitem{li26} J.~Li \textit{et al.}, Nat.\ Commun.\ (2026), doi:10.1038/s41467-026-71916-9.
+\bibitem{korber23} L.~K\"orber \textit{et al.}, Nat.\ Commun.\ \textbf{14}, 3723 (2023).
+\bibitem{papp21} A.~Papp, W.~Porod, and G.~Csaba, Nat.\ Commun.\ \textbf{12}, 6422 (2021).
+
+\end{thebibliography}
+
+\end{document}
